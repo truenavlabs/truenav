@@ -71,13 +71,14 @@ You should see, with an explorer link per transaction: sub-accounts for the cont
 
 ### Live instance
 
-Contract [`registry.tnlab-dd2a56.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-dd2a56.testnet), deployed 6 Nov 2026. Roles: admin and registrar `tnlab-dd2a56.testnet`, pauser `pauser.tnlab-dd2a56.testnet`, servicer `servicer.tnlab-dd2a56.testnet`. Certificate signer `0x287be84d0a5adf8625f6f46e8e45c6706a1da2d0` (test key, not TEE). TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `6914a054ec8b29ce...`).
+Contract [`registry.tnlab-dd2a56.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-dd2a56.testnet), deployed 6 Nov 2026. Roles: admin and registrar `tnlab-dd2a56.testnet`, pauser `pauser.tnlab-dd2a56.testnet`, servicer `servicer.tnlab-dd2a56.testnet`. Certificate signers `0xf6614559e450f6b8c5922066ceeaa96fd50d520c` (signs the current certificates) and `0x287be84d0a5adf8625f6f46e8e45c6706a1da2d0` (earlier run), both test keys, not TEE. TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `6914a054ec8b29ce...`).
 
 - Deploy and init: [7aeCGRHJ...](https://explorer.testnet.near.org/transactions/7aeCGRHJ3e29k5UZgGFdxsJnAwAENcrvERuhtHYdCauE)
 - Pauser role moved: [C6ENiXd7...](https://explorer.testnet.near.org/transactions/C6ENiXd7h5jrjyGqo5tDYLqPAip7c4LPcriSLWd5iiJx)
 - Servicer role moved: [99HzaxEJ...](https://explorer.testnet.near.org/transactions/99HzaxEJEuuAeAKNsmBTdG7ZtM6ZXagvpPhV73C9Kgco)
 - TEE signer registered by the registrar: [CMJWpFrN...](https://explorer.testnet.near.org/transactions/CMJWpFrNGm8BFyXpEKqTRWL5vp2mdZhY859hBmKJPB3F)
 - Servicer submits the TEE verdict for H-RE-01: [J8X8dSNG...](https://explorer.testnet.near.org/transactions/J8X8dSNG5DD6U6kcELEQtfBdBRNVaJ3iWR8AuGSk1CSW)
+- Code redeployed from commit `8ff3ee5` (state kept), code hash `FKiqEe3GZ2Wae3iuKG1riCQPi99V6sZQXftWAbi2yK6D`: [C9UY1FUz...](https://explorer.testnet.near.org/transactions/C9UY1FUzonMCZxuDpcXJvjZqFBX5xCPcM7Q5uapxhan4)
 - Rival submits a genuine TEE flag on Harbor's loan: rejected: [F5pH6F8a...](https://explorer.testnet.near.org/transactions/F5pH6F8adz4sTCkerSz8XuMN5Pw5DwLXMUAhScDS7mJE)
 - Edited TEE verdict: rejected: [G3LiR4by...](https://explorer.testnet.near.org/transactions/G3LiR4bypH6635ZMEYh3rCWaSFWyc5R9mSXDCLxPHFk9)
 - Harbor certificate stored: [DFYV31zA...](https://explorer.testnet.near.org/transactions/DFYV31zABx2CC1zi7R8gy13KjeYa1jHnTnBQPTfuTGwQ)
@@ -94,7 +95,19 @@ The first instance, `registry.tnlab-07775b.testnet`, ran the earlier contract la
 
 The contract is built reproducibly (NEP-330): `contract/Cargo.toml` pins the build image `sourcescan/cargo-near:0.22.0-rust-1.99.0` by digest.
 
-1. `cd contract && cargo near build reproducible-wasm` (needs Docker and network access to crates.io). It prints `SHA-256 checksum bs58: <hash>` for the checked-out commit.
+1. Check out the commit that `contract_source_metadata` names (step 3) and build it in the pinned image with the same build info (needs Docker and network access to crates.io):
+
+   ```bash
+   REV=8ff3ee57d76bad4bf7d9a23f2a93e818b1582c46
+   IMG=sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e
+   git checkout $REV && docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/contract \
+     -e NEP330_BUILD_INFO_BUILD_ENVIRONMENT="$IMG" -e NEP330_BUILD_INFO_CONTRACT_PATH=contract \
+     -e NEP330_BUILD_INFO_SOURCE_CODE_SNAPSHOT="git+https://github.com/truenavlabs/truenav?rev=$REV" \
+     -e NEP330_LINK="https://github.com/truenavlabs/truenav/tree/$REV" \
+     "$IMG" cargo near build non-reproducible-wasm --locked
+   ```
+
+   It prints `SHA-256 checksum bs58: FKiqEe3GZ2Wae3iuKG1riCQPi99V6sZQXftWAbi2yK6D` for that commit.
 2. Compare with `code_hash` from `curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"registry.tnlab-dd2a56.testnet"}}'` when you build the commit named in step 3.
 3. The contract names its own source: view method `contract_source_metadata` returns the repository commit, the build image and the build command.
 

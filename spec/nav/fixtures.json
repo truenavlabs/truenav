@@ -1,0 +1,322 @@
+{
+  "valuation_time": "2026-11-10T12:00:00Z",
+  "note": "Fictional demo data. PD: demo, not calibrated. LGD: inference from a corporate stress table; KBRA methodology does not address CRE CLOs. real_estate is first-lien real estate; invoices are treated as unsecured. cert_store is the verifier's certificate history, passed to the engine as opts.certStore.",
+  "pd": {
+    "current": 0.02,
+    "dpd_1_30": 0.1,
+    "dpd_31_60": 0.25,
+    "dpd_61_90": 0.45,
+    "dpd_over_90": 1.0
+  },
+  "lgd": {
+    "real_estate": 0.31,
+    "invoices": 0.67
+  },
+  "funds": [
+    {
+      "fund_id": "harbor-credit-fund",
+      "name": "Harbor Credit Fund",
+      "headline_nav": 9500000,
+      "cash": 0,
+      "cash_attested": false,
+      "liabilities": 0,
+      "liabilities_attested": false,
+      "nav_report_date": "2026-11-09T06:00:00Z",
+      "certificate": {
+        "signed_at": "2026-11-09T06:00:00Z",
+        "data_asof": "2026-11-09T06:00:00Z",
+        "signer": "mgr-harbor.demo",
+        "history": [
+          {
+            "fund_id": "harbor-credit-fund",
+            "signed_at": "2026-11-02T06:00:00Z"
+          }
+        ]
+      },
+      "policy_markdown": {
+        "dpd_61_90": 0.3,
+        "dpd_over_90": 0.75
+      },
+      "blocked_attempts": [],
+      "loans": [
+        {
+          "id": "H-RE-01",
+          "asset": "real_estate",
+          "principal": 1791000,
+          "accrued": 9000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-RE-01",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-RE-02",
+          "asset": "real_estate",
+          "principal": 1492500,
+          "accrued": 7500,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-RE-02",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-RE-03",
+          "asset": "real_estate",
+          "principal": 1393000,
+          "accrued": 7000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-RE-03",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z",
+          "note": "Meridian tried to pledge this property and was blocked"
+        },
+        {
+          "id": "H-RE-04",
+          "asset": "real_estate",
+          "principal": 1194000,
+          "accrued": 6000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-RE-04",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-RE-05",
+          "asset": "real_estate",
+          "principal": 990000,
+          "accrued": 10000,
+          "repaid": 0,
+          "bucket": "dpd_1_30",
+          "nft": true,
+          "nft_id": "nft-H-RE-05",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-RE-06",
+          "asset": "real_estate",
+          "principal": 895500,
+          "accrued": 4500,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-RE-06",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-RE-07",
+          "asset": "real_estate",
+          "principal": 796000,
+          "accrued": 4000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-RE-07",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-RE-08",
+          "asset": "real_estate",
+          "principal": 588000,
+          "accrued": 12000,
+          "repaid": 0,
+          "bucket": "dpd_over_90",
+          "dpd": 120,
+          "nft": true,
+          "nft_id": "nft-H-RE-08",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-IN-01",
+          "asset": "invoices",
+          "principal": 298500,
+          "accrued": 1500,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-IN-01",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-IN-02",
+          "asset": "invoices",
+          "principal": 249000,
+          "accrued": 1000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-H-IN-02",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-IN-03",
+          "asset": "invoices",
+          "principal": 198000,
+          "accrued": 2000,
+          "repaid": 0,
+          "bucket": "dpd_1_30",
+          "nft": true,
+          "nft_id": "nft-H-IN-03",
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z"
+        },
+        {
+          "id": "H-IN-04",
+          "asset": "invoices",
+          "principal": 350000,
+          "accrued": 2000,
+          "repaid": 352000,
+          "bucket": "current",
+          "nft": false,
+          "anomaly": false,
+          "servicer_asof": "2026-11-09T06:00:00Z",
+          "note": "Repaid on due date by Keel-signed event; NFT burned, lock released"
+        }
+      ],
+      "expected": {
+        "headline": 9500000,
+        "policy": 9500000,
+        "trueVal": 9665110,
+        "trueRange": 345554,
+        "trueRangeLow": 9319556,
+        "trueRangeHigh": 10010664,
+        "raw": "99.2",
+        "score": 99,
+        "band": "green",
+        "status": "scored"
+      }
+    },
+    {
+      "fund_id": "meridian-yield-fund",
+      "name": "Meridian Yield Fund",
+      "headline_nav": 3735000,
+      "cash": 0,
+      "cash_attested": false,
+      "liabilities": 0,
+      "liabilities_attested": false,
+      "nav_report_date": "2026-11-08T12:00:00Z",
+      "certificate": {
+        "signed_at": "2026-11-08T12:00:00Z",
+        "data_asof": "2026-11-08T12:00:00Z",
+        "signer": "mgr-meridian.demo",
+        "history": [
+          {
+            "fund_id": "meridian-yield-fund",
+            "signed_at": "2026-11-01T12:00:00Z"
+          }
+        ]
+      },
+      "policy_markdown": {
+        "dpd_over_90": 0.15
+      },
+      "blocked_attempts": [
+        {
+          "action_id": "act-meridian-0001",
+          "age_days": 2
+        }
+      ],
+      "loans": [
+        {
+          "id": "M-RE-01",
+          "asset": "real_estate",
+          "principal": 1592000,
+          "accrued": 8000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-M-RE-01",
+          "anomaly": false,
+          "servicer_asof": "2026-11-08T12:00:00Z"
+        },
+        {
+          "id": "M-RE-02",
+          "asset": "real_estate",
+          "principal": 1078000,
+          "accrued": 22000,
+          "repaid": 0,
+          "bucket": "dpd_over_90",
+          "nft": true,
+          "nft_id": "nft-M-RE-02",
+          "anomaly": false,
+          "servicer_asof": "2026-11-08T12:00:00Z"
+        },
+        {
+          "id": "M-IN-01",
+          "asset": "invoices",
+          "principal": 492000,
+          "accrued": 8000,
+          "repaid": 0,
+          "bucket": "dpd_61_90",
+          "nft": true,
+          "nft_id": "nft-M-IN-01",
+          "anomaly": false,
+          "servicer_asof": "2026-11-08T12:00:00Z"
+        },
+        {
+          "id": "M-IN-02",
+          "asset": "invoices",
+          "principal": 398000,
+          "accrued": 2000,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-M-IN-02",
+          "anomaly": false,
+          "servicer_asof": "2026-11-08T12:00:00Z"
+        },
+        {
+          "id": "M-IN-03",
+          "asset": "invoices",
+          "principal": 298500,
+          "accrued": 1500,
+          "repaid": 0,
+          "bucket": "current",
+          "nft": true,
+          "nft_id": "nft-M-IN-03",
+          "anomaly": true,
+          "servicer_asof": "2026-11-08T12:00:00Z",
+          "note": "Underwriter flagged a tampered invoice"
+        }
+      ],
+      "expected": {
+        "headline": 3735000,
+        "policy": 3435000,
+        "trueVal": 3092970,
+        "trueRange": 361435,
+        "trueRangeLow": 2731535,
+        "trueRangeHigh": 3454405,
+        "raw": "42.8",
+        "score": 43,
+        "band": "red",
+        "status": "scored"
+      }
+    }
+  ],
+  "cert_store": {
+    "harbor-credit-fund": [
+      {
+        "fund_id": "harbor-credit-fund",
+        "signed_at": "2026-11-02T06:00:00Z"
+      }
+    ],
+    "meridian-yield-fund": [
+      {
+        "fund_id": "meridian-yield-fund",
+        "signed_at": "2026-11-01T12:00:00Z"
+      }
+    ]
+  }
+}

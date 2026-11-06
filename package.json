@@ -1,0 +1,33 @@
+{
+  "name": "truenav",
+  "private": true,
+  "type": "module",
+  "license": "BUSL-1.1",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs certify/certify.test.mjs certify/chain.test.mjs && node spec/nav/check.mjs",
+    "certify": "node certify/run.mjs --out out/certificates.json",
+    "e2e": "node certify/run.mjs --fixture && cd contract && cargo test",
+    "e2e:testnet": "node certify/testnet.mjs",
+    "tee:attest": "node tee/attest.mjs",
+    "tee:underwrite": "node tee/underwrite.mjs",
+    "tee:docs": "node tee/docs.mjs",
+    "tee:demo": "node tee/demo.mjs",
+    "e2e:sandbox": "node certify/sandbox.mjs",
+    "chain:read": "node certify/chain-read.mjs"
+  },
+  "dependencies": {
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "@phala/dcap-qvl": "0.7.0",
+    "near-api-js": "7.3.1"
+  },
+  "devDependencies": {
+    "near-sandbox": "0.3.4"
+  },
+  "overrides": {
+    "tar": "7.5.22"
+  }
+}

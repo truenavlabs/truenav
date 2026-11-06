@@ -1,0 +1,13 @@
+DEMO, NOT A REAL DOCUMENT
+TITLE REPORT AND RECORDED MORTGAGE SUMMARY
+Document id: TITLE-DEMO-HRE07
+Recording reference: TITLE-DEMO-HRE07
+Property: Parcel PARCEL-DEMO-HRE07, Lot 07, Demo Estates, Demo County
+Borrower: Demo Borrower RE-07 LLC (fictional)
+Lender of record: fund named in the pledge request
+Lien position: first mortgage
+Original principal: USD 796,000.00
+Interest: 6.00% fixed, monthly payments
+Recorded: 2026-03-17
+Encumbrances other than this mortgage: none of record
+DEMO, NOT A REAL DOCUMENT

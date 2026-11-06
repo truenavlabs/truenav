@@ -1,0 +1,78 @@
+# CI: engine, certificates and TEE tests; contract tests and lint; dependency audits; secret scan.
+# Every third-party action is pinned to a full commit SHA (tag in the comment). No secrets are used.
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+      - run: npm run tee:demo
+      - run: npm audit --audit-level=high
+
+  contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Rust 1.97.0 with clippy
+        run: rustup toolchain install 1.97.0 --profile minimal --component clippy && rustup default 1.97.0
+      - name: Unit tests (incl. real TEE-signed verdicts)
+        working-directory: contract
+        run: cargo test --locked
+      - name: Clippy
+        working-directory: contract
+        run: cargo clippy --locked --tests -- -D warnings
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: cargo-audit@0.22.2
+      - name: RustSec audit
+        working-directory: contract
+        run: cargo audit
+
+  sandbox:
+    # Full flow on a local NEAR sandbox node: deploy the wasm, signers, funds, 16 pledges, 16 TEE-signed
+    # verdicts verified by the contract, score from chain, certificates, double-pledge refusal.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Build the wasm in the pinned reproducible-build image
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/contract \
+            sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
+            cargo near build non-reproducible-wasm --locked
+      - name: End to end on the sandbox
+        run: ulimit -n 65535 && npm run e2e:sandbox
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: gitleaks 8.30.1 (checksum pinned) over the full history
+        run: |
+          curl -sSfL -o gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz" | sha256sum -c -
+          tar xzf gitleaks.tgz gitleaks
+          ./gitleaks git --redact --no-banner .

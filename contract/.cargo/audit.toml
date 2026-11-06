@@ -1,0 +1,9 @@
+# cargo audit configuration. Every ignore needs a reason and is reviewed when dependencies change.
+[advisories]
+ignore = [
+  # RUSTSEC-2026-0387 crypto-bigint 0.5.5 timing variability. Reaches this crate only through test code:
+  # k256 (dev-dependency that signs test vectors) and near-vm-runner (near-sdk's unit-testing VM).
+  # Neither is in the deployed wasm: `cargo tree --target wasm32-unknown-unknown -e normal -i crypto-bigint`
+  # prints nothing. No fixed version is reachable while elliptic-curve 0.13 is used.
+  "RUSTSEC-2026-0387",
+]

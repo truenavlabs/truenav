@@ -1,0 +1,12 @@
+# Trust model and known limits
+
+The score engine runs offline on the inputs it is given. These are the inputs it cannot verify today, and what that allows.
+
+- `cash_attested` is a free boolean in the fund payload. The engine checks that a `cash_asof` is present and not older than 168 hours, but not that a signed cash statement exists. A fund can claim attested cash. Next: verify the cash statement signature.
+- The blocked-attempt list is fund supplied. A fund can delete its own attempts: Meridian without its attempt scores 57.17 instead of 42.84. Next: read attempts from the registry, not the fund payload.
+- manager_id comes from `certificate.manager_id` or `certificate.signer`, and certificate signatures are not checked yet. Changing either field splits a fund from its manager, so manager-wide penalties and warnings stop reaching it. Next: check certificate signatures and bind manager_id to the live NEAR registry signer.
+- A shell that grows after its attempt escapes when there is no verifier record in `opts.attemptLog`: the engine then judges it on its current size. Example: Q grown to 950,000 next to Harbor (exactly 10% on Policy NAV) is not a shell, and Harbor stays 99 green.
+- previously_certified depends on the verifier passing `opts.certStore`. Without it the engine falls back to the payload history, which the fund controls, and flags "no cert store: previously_certified not verifiable".
+- Liabilities can be understated without detection by gap or the 50% test. `liabilities_attested` labels them, but a live liability oracle is roadmap.
+- An invented liability or overdraft can explain away a headline that does not match the book. Harbor reporting 8,500,000 instead of 9,500,000 scores 65.25 yellow, flagged "headline below book". With cash of minus 1,000,000 it scores 99.17 green, flagged only "negative cash treated as liability", the same as declaring liabilities of 1,000,000. Both 99.17 values are pinned in `engine/test/fixes2.test.mjs`. Next: liability oracle and signed liability statements.
+- fund_id is chosen by the fund payload, and it keys both verifier inputs: the cert store and the attempt log. Renaming a fund escapes both. A previously certified fund with no headline is verification_failed as "H" but not_rated as "H-new". A shell Q with a verifier record makes a sibling 96.25 ("shell: empty") as "Q" but leaves it 100 green as "Q-new". Pinned in `engine/test/fixes3.test.mjs` (hole 5). Next: the NEAR contract binds fund_id inside the signed certificate.

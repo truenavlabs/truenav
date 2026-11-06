@@ -98,6 +98,8 @@ The contract is built reproducibly (NEP-330): `contract/Cargo.toml` pins the bui
 2. Compare with the code hash on chain: `curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"registry.tnlab-07775b.testnet"}}'` returns the same value as `"code_hash"` when you build the commit named in step 3.
 3. The contract names its own source: view method `contract_source_metadata` returns the repository commit, the build image and the build command.
 
+The live instance runs commit `b56db05` of this repository: its reproducible build gives `SHA-256 checksum bs58: E9qrhLrgjiLzQfntQNx85zcJRnS9wwxkAs4rkcu7Vd7N`, the same as the on-chain `code_hash`, and `contract_source_metadata` links `https://github.com/truenavlabs/truenav/tree/b56db05230f91a4bd594a44ead1b558496e71ffc`. Deploy: [iFKjXxwJ...](https://explorer.testnet.near.org/transactions/iFKjXxwJ4G35eUxznEpcyCNicmmgXC4Geb5shhA4Acc).
+
 Read it yourself without any account:
 
 ```

@@ -59,6 +59,7 @@ export const THRESHOLDS = Object.freeze({
   concentrationLargest: 0.15,
   concentrationTopFive: 0.5,
   teeGraceDays: 7,
+  clockSkewMinutes: 10,
 });
 
 /** R14 sort order. not_rated is outside the order (rank null). invalid_fund_fields ranks 0 with verification_failed (decided by owner). */
@@ -70,6 +71,9 @@ const isId = (x) => (typeof x === "string" && x.length > 0) || isNum(x);
 // Own-property lookup, so bucket or asset names like "toString" or "__proto__" never hit Object.prototype (hole 3).
 const own = (obj, key) => (obj !== null && typeof obj === "object" && Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined);
 const toCents = (x) => Math.round(x * 100);
+
+/** Strict ISO 8601 date-time with a time zone, as required for cash_asof (6b). */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:\d{2})$/;
 
 function parseTime(x) {
   if (typeof x === "string") return Date.parse(x);
@@ -210,7 +214,9 @@ function teeStatus(teeStore, l, nowMs) {
   if (!isId(l.loan_hash)) return { status: "not checked" };
   const e = own(teeStore, String(l.loan_hash));
   if (!e || typeof e !== "object") return { status: "not checked" };
-  const v = e.latest && typeof e.latest === "object" ? e.latest : null;
+  // C2 (decided by owner 6 Nov 2026): a verdict counts only if stored at or after the current pledge time.
+  const raw = e.latest && typeof e.latest === "object" ? e.latest : null;
+  const v = raw && (!isNum(e.pledged_at_ms) || (isNum(raw.at_ms) && raw.at_ms >= e.pledged_at_ms)) ? raw : null;
   if (v && v.verdict === "flag") return { status: "flag", anomalies: Array.isArray(v.anomalies) ? v.anomalies.map(String) : [] };
   if (v && v.verdict === "pass") return { status: "pass" };
   if (isNum(e.pledged_at_ms) && nowMs - e.pledged_at_ms > THRESHOLDS.teeGraceDays * 86400000) return { status: "overdue" };
@@ -289,8 +295,16 @@ function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now(
     if (nftHeld && nftId !== null) {
       if (seenNft.has(nftId)) push("duplicate nft");
       else seenNft.add(nftId);
-      // An nft_id verified in more than one fund counts as verified in neither (decided by owner 6 Nov 2026 13:32).
-      if (sharedNfts && sharedNfts.has(nftId)) push("nft_id listed by several funds");
+      // Offline fallback (6a, decided by owner 6 Nov 2026): with no chain data, an nft_id verified in more than one
+      // fund counts as verified in neither. With chain data the on-chain pledge holder decides (below).
+      if (!teeStore && sharedNfts && sharedNfts.has(nftId)) push("nft_id listed by several funds");
+    }
+    // 6a (decided by owner 6 Nov 2026): with chain data, a loan counts as verified only for the fund whose on-chain
+    // pledge holds it. A rival listing the same loan is unverified for the rival only.
+    if (nftHeld && teeStore) {
+      const e = isId(l.loan_hash) ? own(teeStore, String(l.loan_hash)) : undefined;
+      if (!e || typeof e !== "object") push("not pledged on chain");
+      else if (isId(e.fund_id) && String(e.fund_id) !== String(fund.fund_id)) push("pledged by another fund");
     }
 
     // TEE underwriter verdict for a pledged loan (owner decisions 6 Nov 2026).
@@ -418,13 +432,29 @@ export function scoreFund(model, fund, opts = {}) {
   liabilities += negativeCash;
   const liabilitiesAttested = f.liabilities_attested === true;
 
-  // R20 cash statement.
+  // R20 cash statement (6b, decided by owner 6 Nov 2026): only a valid ISO 8601 date within 168 h, and no more
+  // than 10 minutes in the future (clock skew), attests cash. Expired, malformed, missing, future and not-claimed
+  // attestations are all unattested cash with no freshness penalty, each flagged with its own reason.
   const cashClaimed = f.cash_attested === true;
-  const cashAsofOk = cashClaimed && Number.isFinite(parseTime(f.cash_asof));
-  if (cashClaimed && !cashAsofOk) flags.push("cash attested without cash_asof, treated as unattested");
-  const cashAgeH = cashAsofOk ? ageHours(f.cash_asof, now) : null;
-  const cashRevokedForAge = cashAsofOk && cashAgeH > THRESHOLDS.cashMaxAgeHours;
-  const cashAttested = cashAsofOk && !cashRevokedForAge;
+  let cashStatus = cashClaimed ? "valid" : "not claimed";
+  let cashAgeH = null;
+  if (cashClaimed) {
+    const t = typeof f.cash_asof === "string" && ISO_DATE.test(f.cash_asof) ? Date.parse(f.cash_asof) : NaN;
+    if (!Number.isFinite(t)) {
+      cashStatus = "invalid";
+      flags.push("attestation date invalid");
+    } else if (t - now > THRESHOLDS.clockSkewMinutes * 60000) {
+      cashStatus = "future";
+      flags.push("attestation date in the future");
+    } else {
+      cashAgeH = Math.max(0, (now - t) / 3600000);
+      if (cashAgeH > THRESHOLDS.cashMaxAgeHours) {
+        cashStatus = "expired";
+        flags.push("cash attestation expired");
+      }
+    }
+  }
+  const cashAttested = cashStatus === "valid";
   const attestedCash = cashAttested ? cash : 0;
   const unattestedCash = cashAttested ? 0 : cash;
 
@@ -452,6 +482,7 @@ export function scoreFund(model, fund, opts = {}) {
   const sharedNfts = opts.sharedNftIds instanceof Set ? opts.sharedNftIds : null;
   const teeStore = validTeeStore(opts.teeStore) ? opts.teeStore : null;
   if (!teeStore) flags.push("TEE verdicts not checked");
+  if (!teeStore) flags.push("ownership not checkable (no chain data)");
   const { lines } = assessLoans(model, f, sharedNfts, teeStore, now);
   if (lines.some((l) => l.reasons && l.reasons.includes("nft_id listed by several funds"))) flags.push("nft_id listed by several funds");
   const open = lines.filter((l) => l.open);
@@ -487,14 +518,13 @@ export function scoreFund(model, fund, opts = {}) {
   // and the certificate data_asof.
   const loanInputs = Array.isArray(f.loans) ? f.loans : [];
   const asofs = [...loanInputs.map((l) => (l && typeof l === "object" ? l.servicer_asof : undefined)), f.nav_report_date];
-  // Hole 6 (decided by owner 6 Nov 2026 13:32): only a live cash attestation enters the data age. An expired
-  // claimed attestation is unattested cash: it stays out of the stale-certificate rule, and its freshness is 0.
+  // Only a valid cash attestation enters the data age (6b, decided by owner 6 Nov 2026; replaces hole 6 and V4).
   if (cashAttested) asofs.push(f.cash_asof);
   if (cert) asofs.push(cert.data_asof);
   const ages = asofs.map((x) => ageHours(x, now));
   // A missing or unparseable as-of makes the data age unknown: null, scored as stale with freshness 0.
   const dataAgeHours = ages.length && ages.every((x) => Number.isFinite(x)) ? Math.max(...ages) : null;
-  const freshPts = cashRevokedForAge ? 0 : 20 * freshness(dataAgeHours);
+  const freshPts = 20 * freshness(dataAgeHours);
 
   // R9 own penalty.
   const own = dedupeAttempts(f.blocked_attempts);
@@ -578,7 +608,7 @@ export function scoreFund(model, fund, opts = {}) {
     headline,
     headlinePresent,
     listedBook,
-    cash: { amount: cash, attested: cashAttested, attestationClaimed: cashClaimed, asof: typeof f.cash_asof === "string" ? f.cash_asof : null, ageHours: cashAgeH, attestationRevokedForAge: cashRevokedForAge },
+    cash: { amount: cash, attested: cashAttested, attestationClaimed: cashClaimed, asof: typeof f.cash_asof === "string" ? f.cash_asof : null, ageHours: cashAgeH, attestationStatus: cashStatus, attestationRevokedForAge: cashStatus === "expired" },
     liabilities: { amount: liabilities, attested: liabilitiesAttested, label: liabilitiesAttested ? "liabilities attested" : "liabilities self-reported" },
     lih,
     residual: notListed > 0 ? { kind: "not listed in book", amount: notListed, percent: headline > 0 ? notListed / headline : null } : headlineBelowBook ? { kind: "headline below book", ...headlineBelowBook } : { kind: "none", amount: 0, percent: 0 },

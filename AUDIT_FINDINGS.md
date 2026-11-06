@@ -1,0 +1,26 @@
+# Audit findings
+
+Every finding from the reviews of 6 Nov 2026, with what happened to it. Reviews: the NEAR contract audit checklist (bundled kit skill, by hand), Gemini 3.1 Pro (two passes), GPT-5.5 and Claude Opus 5.5 second opinions on scoring rules. Each claim was checked by a test or by running code before it was accepted.
+
+| # | Finding | Source | Status | Evidence |
+| --- | --- | --- | --- | --- |
+| 1 | pledge_loan panics without a storage deposit | Gemini pass 1 and 2 | **Rejected (false)**: the mint passes no refund account; the contract pays storage | `audit_1_*`; live pledges on testnet |
+| 2 | release_loan keeps a deposit / leaks approval storage | Gemini pass 1 and 2 | **Rejected (false)**: no deposit is taken; the standard mint writes no approvals | `audit_4_*` |
+| 3 | Refused pledges grow storage the contract pays for | Gemini pass 1 | **Accepted for the demo**: only allowlisted funds can pledge; mainnet needs storage deposits | `audit_2_*`; README "Roles, pause, upgrades and storage" |
+| 4 | Full-list views can run out of view gas | Gemini, checklist | **Fixed**: full-list views removed, paged views only, stored flag counter | `audit_3_*`, `get_flag_count` |
+| 5 | A pipe inside a field could make two certificates sign alike | own review | **Fixed**: `|` rejected in fund_id, manager_id, engine_commit | `audit_pipe_*` |
+| 6 | Certificate money as u128 numbers in JSON | checklist (JSON integer types) | **Fixed**: U128 strings | `certify/certify.test.mjs` |
+| 7 | Sensitive calls callable from a function-call key | checklist (one yocto) | **Fixed**: exactly 1 yoctoNEAR on admin, registrar, pauser, servicer and pledge calls | `*_without_one_yocto_*` |
+| 8 | Anyone could submit a TEE-signed flag on a rival's loan (score griefing, verdict spam) | own review, confirmed by two models | **Fixed**: only the servicer submits verdicts (owner decision 6 Nov) | `tee_verdicts.rs` rival tests; live: rival flag rejected |
+| 9 | A rival listing another fund's nft_id lowered that fund's score (99 to 52) | engine review, two models | **Fixed**: with chain data, ownership comes from the on-chain pledge (owner decision 6 Nov) | `engine/test/ownership6a.test.mjs` |
+| 10 | Verdicts attached to the loan_hash, not the pledge (pre-loaded or inherited verdicts) | Opus, own review | **Fixed**: verdicts count only since the current pledge; unpledged loans refused | `verdict_counts_only_for_the_current_pledge` |
+| 11 | A malformed or future cash attestation date beat an honest expired one (future scored 100 forever) | Gemini, Opus, verified by running the engine | **Fixed**: all invalid attestations count as unattested with no extra penalty (owner decision 6 Nov) | `engine/test/cash6b.test.mjs` |
+| 12 | Signed verdicts could be replayed on another deployment or network | owner review | **Fixed**: binding with contract, network, version and 30-day expiry | binding tests in `tee_verdicts.rs` |
+| 13 | One key held every power | owner review | **Fixed in code, partly in deployment**: admin, registrar, pauser, servicer roles and a pause switch; on testnet the pauser and servicer are separate accounts | `contract/tests/roles.rs`; live roles |
+| 14 | TEE trust rested on "the admin checked it" | owner review | **Fixed**: the attestation report is published and anyone can re-verify it | `npm run verify:attestation` |
+| 15 | crypto-bigint timing advisory (RUSTSEC-2026-0387) | cargo audit | **Accepted**: test-only dependency path, not in the wasm | `contract/.cargo/audit.toml`, SECURITY.md |
+| 16 | node-tar critical advisories through near-sandbox | npm audit | **Fixed**: tar overridden to 7.5.22 | `package.json` overrides |
+| 17 | wee_alloc unmaintained, in the wasm | cargo audit | **Accepted**: near-sdk's default allocator, not switchable here | SECURITY.md |
+| 18 | The underwriter flags some honest title reports as duplicates (7.5% false positives) | TEE eval | **Open, owner decision**: adjust the template or the duplicate check, then rerun the eval | `tee/eval/REPORT.md` |
+| 19 | The certificate signer is a test key, not TEE | own review | **Open, next step**: run the engine in a TEE | TRUST_MODEL.md |
+| 20 | The demo loan fingerprint is guessable | own review | **Open, next step**: HMAC with a key that never leaves a TEE | README "Limits" |

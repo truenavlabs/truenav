@@ -24,14 +24,19 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 | 18 | Leak keys through the repo | gitleaks over full history in CI; keys only in `~/.near-credentials` and gitignored `.keys/` | CI `secrets` job |
 | 19 | Supply-chain swap of CI actions | actions pinned to commit SHAs; gitleaks checksum pinned | `.github/workflows/ci.yml` |
 
+| 20 | A rival submits a genuine TEE flag on another fund's loan | only the servicer submits verdicts | `a_rival_fund_cannot_submit_a_verdict`; live: rival flag rejected |
+| 21 | A rival lists another fund's nft_id to lower its score | with chain data, only the on-chain pledge holder's line verifies | `engine/test/ownership6a.test.mjs` |
+| 22 | Replay a signed verdict on another contract or network, or after it is stale | binding with contract, network, version and a 30-day expiry | binding tests in `tee_verdicts.rs` |
+| 23 | Pre-load or inherit a verdict across pledges | a verdict counts only since the current pledge; unpledged loans refused | `verdict_counts_only_for_the_current_pledge` |
+| 24 | Skip the cash expiry rule with a malformed or future date | all invalid attestations are unattested, each flagged | `engine/test/cash6b.test.mjs` |
+| 25 | A leaked key of one role takes over the contract | separate admin, registrar, pauser and servicer roles; pause switch | `contract/tests/roles.rs` |
+| 26 | "Trust us" on the TEE key | published attestation report, re-checkable by anyone | `npm run verify:attestation` |
+
 ## Open risks (known, not fixed)
 
-- Single admin key (see TRUST_MODEL).
-- The demo loan fingerprint is guessable for real identifiers.
-- Engine inputs other than TEE verdicts (attempt list, cash attestation, liabilities) are fund supplied; see `engine/TRUST_MODEL.md`.
-- A copycat fund listing someone else's nft_id can lower that fund's score (open scoring rule question; verifying nft_id ownership on chain would close it).
-- The LLM underwriter can be wrong in either direction; T1 and T2 carry one extra anomaly code beside the expected one.
-- Anyone may submit a TEE-signed verdict for any loan_hash. A rival can obtain a genuine TEE flag on another fund's loan with a fake document and submit it; the latest verdict counts, so the loan becomes unverified until a newer pass is submitted. Verdicts can also be added in bulk at low cost, with storage paid by the contract.
-- Verdicts attach to the loan_hash, not to the current pledge: a verdict submitted before the pledge counts, and after release and re-pledge the previous holder's latest verdict still applies.
-- A malformed, missing or future-dated cash attestation date is not penalized the way an honestly expired one is (a future date reads as fresh).
-- Full-list views (get_certificate_history, get_attempts, get_alerts) can run out of view gas on long lists; use the paged views.
+- The role holders and the contract account key are held by one operator on testnet (see TRUST_MODEL).
+- The demo loan fingerprint is guessable for real identifiers; real use needs salted commitments (an HMAC with a key kept in a TEE).
+- Engine inputs other than chain data (attempt list, cash attestation, liabilities) are fund supplied; see `engine/TRUST_MODEL.md`.
+- The LLM underwriter can be wrong in either direction: 3 of 40 honest documents flagged in the eval (`tee/eval/REPORT.md`).
+- The servicer chooses which verdicts to submit and can re-run the TEE; an independent servicer is assumed.
+- The contract pays for storage on testnet; mainnet needs storage deposits.

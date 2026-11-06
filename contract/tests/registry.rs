@@ -84,7 +84,7 @@ fn certificate_with_registered_signer_is_stored_and_readable() {
     let stored = r.submit_certificate(c.clone(), sign(&key, &c));
     assert_eq!(stored.signer, address_of(&key));
     assert_eq!(r.get_latest_certificate("harbor-credit-fund".into()).unwrap().certificate, c);
-    assert_eq!(r.get_certificate_history("harbor-credit-fund".into()), vec![NOW]);
+    assert_eq!(r.get_certificate_history_page("harbor-credit-fund".into(), 0, 100), vec![NOW]);
 }
 
 #[test]
@@ -155,8 +155,8 @@ fn rotated_signer_works_and_removed_signer_does_not() {
 }
 
 #[test]
-#[should_panic(expected = "admin only")]
-fn only_admin_adds_signers() {
+#[should_panic(expected = "registrar only")]
+fn only_the_registrar_adds_signers() {
     let (mut r, _) = setup();
     ctx(&harbor_acct(), NOW);
     r.add_signer(address_of(&test_key(3)));
@@ -206,9 +206,9 @@ fn second_fund_is_refused_counted_and_holder_alerted() {
         PledgeOutcome::Refused { message, .. } => assert_eq!(message, "already pledged elsewhere"),
         other => panic!("expected refusal, got {other:?}"),
     }
-    assert_eq!(r.get_attempts("meridian-yield-fund".into()).count, 1);
-    assert_eq!(r.get_attempts("harbor-credit-fund".into()).count, 0);
-    assert_eq!(r.get_alerts("harbor-credit-fund".into()), vec![NOW + 1000]);
+    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 100).count, 1);
+    assert_eq!(r.get_attempts_page("harbor-credit-fund".into(), 0, 100).count, 0);
+    assert_eq!(r.get_alerts_page("harbor-credit-fund".into(), 0, 100), vec![NOW + 1000]);
     // Token still with Harbor.
     assert_eq!(r.nft_token(LOAN.into()).unwrap().owner_id, harbor_acct());
 }
@@ -220,7 +220,7 @@ fn same_fund_pledging_again_is_not_an_attempt() {
     r.pledge_loan(LOAN.into(), "real_estate".into());
     let out = r.pledge_loan(LOAN.into(), "real_estate".into());
     assert_eq!(out, PledgeOutcome::AlreadyYours { token_id: LOAN.into() });
-    assert_eq!(r.get_attempts("harbor-credit-fund".into()).count, 0);
+    assert_eq!(r.get_attempts_page("harbor-credit-fund".into(), 0, 100).count, 0);
 }
 
 #[test]

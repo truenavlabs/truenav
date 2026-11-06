@@ -7,7 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs certify/certify.test.mjs certify/chain.test.mjs && node spec/nav/check.mjs",
+    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs engine/test/cash6b.test.mjs engine/test/ownership6a.test.mjs certify/certify.test.mjs certify/chain.test.mjs && node spec/nav/check.mjs",
     "certify": "node certify/run.mjs --out out/certificates.json",
     "e2e": "node certify/run.mjs --fixture && cd contract && cargo test",
     "e2e:testnet": "node certify/testnet.mjs",
@@ -16,7 +16,12 @@
     "tee:docs": "node tee/docs.mjs",
     "tee:demo": "node tee/demo.mjs",
     "e2e:sandbox": "node certify/sandbox.mjs",
-    "chain:read": "node certify/chain-read.mjs"
+    "chain:read": "node certify/chain-read.mjs",
+    "verify:attestation": "node tee/verify-attestation.mjs",
+    "demo": "node tee/demo.mjs",
+    "check:fixtures": "node certify/check-fixtures.mjs",
+    "eval": "node tee/eval/score.mjs",
+    "eval:run": "node tee/eval/run.mjs"
   },
   "dependencies": {
     "@noble/curves": "2.4.0",

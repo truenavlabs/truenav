@@ -40,11 +40,12 @@ for (const f of funds) for (const l of f.loans) {
   const m = loans.find((x) => x.fund_id === f.fund_id && x.loan_id === l.id);
   if (m) l.loan_hash = m.loan_hash;
 }
-const store = Object.fromEntries(honest.map((r) => [r.loan_hash, { pledged_at_ms: now - 4 * 86400000, latest: r.verdict }]));
+// Chain-shaped store: pledge holder and time, and each verdict stored after the pledge (C2).
+const store = Object.fromEntries(honest.map((r) => [r.loan_hash, { fund_id: r.fund_id, pledged_at_ms: now - 4 * 86400000, latest: { ...r.verdict, at_ms: now - 3 * 86400000 } }]));
 const score = (st) => scorePortfolio({ pd: fx.pd, lgd: fx.lgd }, JSON.parse(JSON.stringify(funds)), { now: fx.valuation_time, certStore: fx.cert_store, teeStore: st }).find((r) => r.fundId === "harbor-credit-fund");
 const before = score(store);
 const t1 = tee.results.find((r) => r.tampered && r.tampered.id === "T1-altered-amount");
-const after = score({ ...store, [t1.loan_hash]: { ...store[t1.loan_hash], latest: t1.verdict } });
+const after = score({ ...store, [t1.loan_hash]: { ...store[t1.loan_hash], latest: { ...t1.verdict, at_ms: now - 86400000 } } });
 const fmt = (r) => `${(Math.round(r.raw * 100) / 100).toFixed(2)} ${r.band}`;
 console.log(`Harbor with every document passing:      ${fmt(before)}`);
 console.log(`Harbor after the TEE flags H-RE-01 (T1): ${fmt(after)}  (${after.unverified.reasons.find((x) => x.id === "H-RE-01").reason})`);

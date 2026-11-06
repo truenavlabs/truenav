@@ -6,13 +6,34 @@
 // pledge holder per loan, blocked attempts and alerts per fund, registered signers, and the deployed code hash.
 
 export const DEFAULT_RPC = "https://test.rpc.fastnear.com"; // public testnet RPC (docs.near.org RPC providers)
-export const DEFAULT_CONTRACT = "registry.tnlab-07775b.testnet";
+/** Backups from the same docs page, tried in order when the default fails or rate-limits. */
+export const BACKUP_RPCS = ["https://near-testnet.drpc.org", "https://testnet-rpc.intea.rs"];
+export const DEFAULT_CONTRACT = "registry.tnlab-dd2a56.testnet";
 
 async function rpc(url, method, params) {
+  // Only the default endpoint falls back; an explicit endpoint (sandbox, own node) is used as given.
+  const urls = url === DEFAULT_RPC ? [DEFAULT_RPC, ...BACKUP_RPCS] : [url];
+  let last;
+  for (const u of urls) {
+    try {
+      return await rpcOnce(u, method, params);
+    } catch (e) {
+      last = e;
+      if (e.contractError) throw e; // the chain answered: do not hide it behind another endpoint
+    }
+  }
+  throw last;
+}
+
+async function rpcOnce(url, method, params) {
   const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "truenav", method, params }) });
   if (!r.ok) throw new Error(`RPC ${method} failed: HTTP ${r.status}`);
   const j = await r.json();
-  if (j.error) throw new Error(`RPC ${method} failed: ${j.error.message || JSON.stringify(j.error).slice(0, 200)}`);
+  if (j.error) {
+    const e = new Error(`RPC ${method} failed: ${j.error.message || JSON.stringify(j.error).slice(0, 200)}`);
+    e.contractError = j.error.name === "HANDLER_ERROR" || /does not exist|CodeDoesNotExist|wasm execution failed/i.test(JSON.stringify(j.error));
+    throw e;
+  }
   return j.result;
 }
 
@@ -72,7 +93,7 @@ export async function loadChainState({ funds, loans, contract = DEFAULT_CONTRACT
   const teeStore = {};
   for (const l of loanRows) {
     if (!l.lock) continue;
-    teeStore[l.loan_hash] = { pledged_at_ms: l.lock.locked_at_ms, latest: l.latest ? { verdict: l.latest.verdict, anomalies: l.latest.anomalies, at_ms: l.latest.at_ms } : null };
+    teeStore[l.loan_hash] = { fund_id: l.lock.fund_id, pledged_at_ms: l.lock.locked_at_ms, latest: l.latest ? { verdict: l.latest.verdict, anomalies: l.latest.anomalies, at_ms: l.latest.at_ms } : null };
   }
   return { contract, rpc: url, codeHash: hash, sourceMetadata, signers, teeSigners, funds: fundRows, loans: loanRows, teeStore, readAt: new Date().toISOString() };
 }

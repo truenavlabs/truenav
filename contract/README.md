@@ -23,17 +23,21 @@ The digest is `keccak256("\x19Ethereum Signed Message:\n" + len(message) + messa
 
 ## Methods
 
+Sensitive calls need exactly 1 yoctoNEAR (only a full-access key can make them). Pause stops the calls marked (p).
+
 | Method | Who | What |
 | --- | --- | --- |
-| `new(admin, servicer)` | deployer | init |
-| `add_signer(address)`, `remove_signer(address)` | admin | signer registry |
-| `register_fund(fund_id, account_id, manager_id)` | admin | binds fund_id |
-| `submit_certificate(certificate, signature)` | anyone | verify and store; panics on any failure |
-| `pledge_loan(loan_hash, asset_type)` | registered fund account | returns `pledged`, `already_yours` or `refused` |
-| `release_loan(loan_hash)` | servicer | unlock and burn on repay |
-| views | anyone | `get_signers`, `get_fund`, `get_latest_certificate`, `get_certificate_history`, `get_lock`, `get_attempts`, `get_alerts`, `nft_token`, `nft_metadata` |
-| NEP-181 views | anyone | `nft_total_supply`, `nft_tokens`, `nft_supply_for_owner`, `nft_tokens_for_owner` |
-| paged views | anyone | `get_certificate_count`, `get_certificate_history_page(fund_id, from_index, limit)`, `get_attempts_page(...)`, `get_alerts_page(...)`, `get_alert_count`; `limit` is capped at 100. Use these for long lists so a view call never runs out of gas. |
+| `new(admin, servicer)` | deployer | init; registrar and pauser start on the admin |
+| `set_role(role, account_id)`, `get_roles()` | admin / anyone | roles: admin, registrar, pauser, servicer |
+| `pause()`, `unpause()` | pauser | emergency stop |
+| `register_fund(fund_id, account_id, manager_id)` | admin | the fund allowlist; binds fund_id |
+| `add_signer`, `remove_signer` | registrar | certificate signers |
+| `add_tee_signer(address, model_id, attestation_ref, attestation_sha256)`, `remove_tee_signer` | registrar | TEE signers, with the published attestation report hash |
+| `submit_certificate(certificate, signature)` (p) | anyone | verify and store a signed certificate |
+| `pledge_loan(loan_hash, asset_type)` (p) | registered fund account | `pledged`, `already_yours` or `refused` |
+| `release_loan(loan_hash)` (p) | servicer | unlock and burn on repay |
+| `submit_verdict(loan_hash, model_id, request_sha256, response_body, signature)` (p) | servicer | TEE verdict on a pledged loan; binding `truenav-verdict-v1\|contract\|network\|expiry` checked; a flag clears only with a pass from a new request |
+| views | anyone | `get_signers`, `get_tee_signers`, `get_fund`, `get_latest_certificate`, `get_certificate_count`, `get_certificate_history_page`, `get_lock`, `get_attempts_page`, `get_alerts_page`, `get_alert_count`, `get_latest_verdict` (current pledge only), `get_verdict_count`, `get_verdicts_page`, `get_flag_count`, `nft_token`, NEP-181 views, `nft_metadata` |
 
 ## Test
 
@@ -42,7 +46,7 @@ cd contract
 cargo test
 ```
 
-30 unit tests, native target, no network after crates are fetched. The tests sign with a fixed throwaway secp256k1 key that exists only inside the tests; it holds no value and is not a NEAR account key.
+80 unit tests, native target, no network after crates are fetched. The tests sign with a fixed throwaway secp256k1 key that exists only inside the tests; it holds no value and is not a NEAR account key.
 
 ## Storage
 

@@ -1,0 +1,11 @@
+DEMO, NOT A REAL DOCUMENT
+COMMERCIAL INVOICE (FINANCED RECEIVABLE)
+Document id: INV-EVAL-133
+Seller: Demo Supplier 133 Ltd (fictional)
+Buyer (debtor): Demo Buyer 133 Co (fictional)
+Goods: industrial parts, 95 units
+Invoice amount financed: USD 437,500.00
+Issue date: 2026-09-02
+Due date: 2026-12-06
+Assignment: receivable assigned to the fund named in the pledge request
+DEMO, NOT A REAL DOCUMENT

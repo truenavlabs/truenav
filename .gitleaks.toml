@@ -1,0 +1,7 @@
+# gitleaks configuration: the default rules, plus one documented allowlist.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Published NEAR AI Cloud attestation report (both encodings). Its signing_key fields are 32-byte public verification keys and its ohttp_key_config fields are public OHTTP key configurations (RFC 9458: key id, X25519 KEM 0x0020, public key, cipher suites), served by NEAR AI Cloud's public attestation endpoint. No private key is in these files."
+paths = ['''^tee/fixtures/attestation-report\.json(\.b64)?$''']

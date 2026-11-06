@@ -655,7 +655,7 @@ test("V3 liabilities invalid -> invalid_fund_fields; 0 unattested scored and lab
   assert.equal(ok.liabilities.label, "liabilities self-reported");
 });
 
-test("V4 cash statement as-of over 168 h: cash unattested for LIH and 50% test, freshness 0; 12 h matches X2", () => {
+test("V4 (replaced by 6b, owner 6 Nov) cash statement as-of over 168 h: cash unattested for LIH and 50% test, no freshness penalty; 12 h matches X2", () => {
   const f = harbor();
   Object.assign(f, { cash: 1000000, cash_attested: true, cash_asof: ago(200), headline_nav: 10500000 });
   const r = score(f);
@@ -663,7 +663,8 @@ test("V4 cash statement as-of over 168 h: cash unattested for LIH and 50% test, 
   assert.equal(r.cash.attestationRevokedForAge, true);
   assert.equal(r.lih, 10500000);
   close(r.unverified.unattestedCash, 1000000, 1e-9);
-  assert.equal(r.pillars.freshness, 0);
+  assert.ok(r.pillars.freshness > 0);
+  assert.ok(r.flags.includes("cash attestation expired"));
   // 200 h is under the 30-day line, so a previously certified fund stays scored here (see README open question).
   assert.equal(r.status, "scored");
   const g = harbor();

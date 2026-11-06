@@ -1,0 +1,11 @@
+DEMO, NOT A REAL DOCUMENT
+COMMERCIAL INVOICE (FINANCED RECEIVABLE)
+Document id: INV-EVAL-105
+Seller: Demo Supplier 105 Ltd (fictional)
+Buyer (debtor): Demo Buyer 105 Co (fictional)
+Goods: office furniture, 33 units
+Invoice amount financed: USD 166,500.00
+Issue date: 2026-09-09
+Due date: 2026-12-04
+Assignment: receivable assigned to the fund named in the pledge request
+DEMO, NOT A REAL DOCUMENT

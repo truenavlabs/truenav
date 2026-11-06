@@ -56,7 +56,9 @@ const provider = new JsonRpcProvider({ url: RPC });
 const loadKey = (id) => JSON.parse(readFileSync(`${credDir}/${id}.json`, "utf8")).private_key;
 const accountOf = (id) => new Account(id, provider, loadKey(id));
 const admin = accountOf(master);
-const ids = { registry: `registry.${master}`, harbor: `harbor.${master}`, meridian: `meridian.${master}` };
+// Roles (owner decision 6 Nov): the runner's account is admin and registrar; pauser and servicer get their own
+// sub-accounts so the split is real on chain.
+const ids = { registry: `registry.${master}`, harbor: `harbor.${master}`, meridian: `meridian.${master}`, pauser: `pauser.${master}`, servicer: `servicer.${master}` };
 const FUND_ACCOUNT = { "harbor-credit-fund": ids.harbor, "meridian-yield-fund": ids.meridian };
 const log = [];
 
@@ -103,7 +105,7 @@ function record(step, tx, expectFailure = false) {
 
 /** Function call that returns the decoded result and records the transaction, never throwing on failure. */
 // Admin, servicer and pledge calls must carry exactly 1 yoctoNEAR (full-access key check in the contract).
-const ONE_YOCTO = new Set(["add_signer", "remove_signer", "register_fund", "pledge_loan", "release_loan", "add_tee_signer", "remove_tee_signer"]);
+const ONE_YOCTO = new Set(["add_signer", "remove_signer", "register_fund", "pledge_loan", "release_loan", "add_tee_signer", "remove_tee_signer", "submit_verdict", "set_role", "pause", "unpause"]);
 async function call(signer, step, methodName, args, gasT = "100", expectFailure = false) {
   const tx = await signer.signAndSendTransaction({
     receiverId: ids.registry,
@@ -127,6 +129,8 @@ console.log(`Testnet run as ${master} (RPC ${RPC})`);
 await ensureSub(ids.registry, "4");
 await ensureSub(ids.harbor, "0.3");
 await ensureSub(ids.meridian, "0.3");
+await ensureSub(ids.pauser, "0.2");
+await ensureSub(ids.servicer, "0.3");
 const registry = accountOf(ids.registry);
 const harbor = accountOf(ids.harbor);
 const meridian = accountOf(ids.meridian);
@@ -147,10 +151,21 @@ if (initialized) {
 }
 const wasm = readFileSync(wasmPath);
 const deployActions = [actions.deployContract(new Uint8Array(wasm))];
+if (initialized && !hasTee) stop([`${ids.registry} holds an older contract layout; use a fresh throwaway account (this release has no migration).`]);
 if (!initialized) deployActions.push(actions.functionCall("new", { admin: master, servicer: master }, teraToGas("50"), 0n));
-else if (!hasTee) deployActions.push(actions.functionCall("migrate", {}, teraToGas("100"), 0n));
-const deployStep = !initialized ? "deploy contract and init" : !hasTee ? "deploy new code and migrate state" : "redeploy contract (state kept)";
+const deployStep = !initialized ? "deploy contract and init" : "redeploy contract (state kept)";
 record(deployStep, await registry.signAndSendTransaction({ receiverId: ids.registry, actions: deployActions, throwOnFailure: false, waitUntil: "FINAL" }));
+
+// ---------- 1b. roles ----------
+const pauserAcc = accountOf(ids.pauser);
+const servicerAcc = accountOf(ids.servicer);
+{
+  const roles = await view("get_roles");
+  if (roles.pauser !== ids.pauser) await call(admin, "set_role pauser", "set_role", { role: "pauser", account_id: ids.pauser });
+  if (roles.servicer !== ids.servicer) await call(admin, "set_role servicer", "set_role", { role: "servicer", account_id: ids.servicer });
+  const now = await view("get_roles");
+  expect(now.admin === master && now.registrar === master && now.pauser === ids.pauser && now.servicer === ids.servicer && !now.paused, `roles: admin and registrar ${master}, pauser ${ids.pauser}, servicer ${ids.servicer}`);
+}
 
 // ---------- 2. signer (test key, not TEE) and funds ----------
 const keyFile = new URL(`.keys/testnet-signer-${master}.json`, root);
@@ -185,27 +200,36 @@ for (const l of demo) {
 }
 
 // ---------- 2c. TEE underwriter verdicts ----------
-// The verdicts in tee/fixtures/verdicts.json were produced by node tee/underwrite.mjs: each document was read
-// by the NEAR AI Cloud model TEE, whose signer was attested first with a fresh nonce (tee/attest.mjs). Phase 1:
-// the admin registers that attested signer; the contract then checks every verdict's TEE signature itself.
-const tee = JSON.parse(readFileSync(new URL("tee/fixtures/verdicts.json", root), "utf8"));
-const teeSigner = tee.attestation.signers[0].signing_address.toLowerCase();
-const teeSigners = await view("get_tee_signers");
-if (!teeSigners.some((t) => t.address === teeSigner)) {
-  await call(admin, "add_tee_signer (attested NEAR AI Cloud model TEE)", "add_tee_signer", { address: teeSigner, model_id: tee.model, attestation_ref: `tee/attest.mjs nonce ${tee.attestation.nonce} at ${tee.attestation.checked_at}` });
-}
-for (const r of tee.results.filter((x) => !x.tampered)) {
-  if ((await view("get_verdict_count", { loan_hash: r.loan_hash })) > 0) continue;
-  const o = r.onchain;
-  const d = await call(admin, `submit_verdict ${r.loan_id} (${r.verdict.verdict})`, "submit_verdict", { loan_hash: o.loan_hash, model_id: o.model_id, request_sha256: o.request_sha256, response_body: o.response_body, signature: o.signature });
-  expect(d.ok && d.value && d.value.signer === teeSigner, `${r.loan_id} TEE verdict verified on chain: ${d.value && d.value.verdict}`);
-}
-// A TEE verdict with its reply edited (flag turned into pass) must fail the TEE signature check.
-{
+// Each recorded verdict set was produced by node tee/underwrite.mjs --contract <id>: the NEAR AI Cloud model TEE
+// read each document after its signer was attested with a fresh nonce, and every reply is bound to one contract,
+// network, version and a 30-day expiry (owner decision 6 Nov). A set signed for another contract cannot be used
+// here; on an instance with no matching set the loans stay pending (7-day grace, score unchanged).
+const sets = ["tee/fixtures/verdicts.json", "tee/fixtures/verdicts-sandbox.json"].map((f) => JSON.parse(readFileSync(new URL(f, root), "utf8")));
+const tee = sets.find((t) => t.contract_id === ids.registry) || null;
+const teeSigner = tee ? tee.attestation.signers[0].signing_address.toLowerCase() : null;
+if (!tee) {
+  console.log(`note no recorded TEE verdicts for ${ids.registry}; loans stay pending. With a NEAR AI Cloud key: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts-own.json`);
+} else {
+  const left = tee.expires_at_ms - Date.now();
+  expect(left > 0, `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
+  const teeSigners = await view("get_tee_signers");
+  if (!teeSigners.some((t) => t.address === teeSigner)) {
+    await call(admin, "add_tee_signer (registrar; attested NEAR AI Cloud model TEE)", "add_tee_signer", { address: teeSigner, model_id: tee.model, attestation_ref: `tee/attest.mjs nonce ${tee.attestation.nonce} at ${tee.attestation.checked_at}`, attestation_sha256: tee.attestation.report_sha256 });
+  }
+  for (const r of tee.results.filter((x) => !x.tampered)) {
+    if (await view("get_latest_verdict", { loan_hash: r.loan_hash })) continue;
+    const o = r.onchain;
+    const d = await call(servicerAcc, `servicer submits verdict ${r.loan_id} (${r.verdict.verdict})`, "submit_verdict", { loan_hash: o.loan_hash, model_id: o.model_id, request_sha256: o.request_sha256, response_body: o.response_body, signature: o.signature });
+    expect(d.ok && d.value && d.value.signer === teeSigner && d.value.attestation_sha256 === tee.attestation.report_sha256, `${r.loan_id} TEE verdict verified on chain: ${d.value && d.value.verdict}`);
+  }
+  // A rival fund holding a genuine TEE flag on Harbor's loan is refused (only the servicer submits).
   const t1 = tee.results.find((x) => x.tampered && x.tampered.id === "T1-altered-amount").onchain;
+  const rv = await call(meridian, "Meridian submits a TEE flag on Harbor's loan (must be rejected)", "submit_verdict", { loan_hash: t1.loan_hash, model_id: t1.model_id, request_sha256: t1.request_sha256, response_body: t1.response_body, signature: t1.signature }, "100", true);
+  expect(!rv.ok && /servicer only|deposit/.test(rv.failure || ""), "rival verdict rejected: servicer only");
+  // A TEE verdict with its reply edited (flag turned into pass) must fail the TEE signature check.
   const forged = t1.response_body.replace('\\"verdict\\":\\"flag\\"', '\\"verdict\\":\\"pass\\"');
   if (forged === t1.response_body) throw new Error("edited-reply check did not change the reply");
-  const d = await call(admin, "submit_verdict with an edited reply (must be rejected)", "submit_verdict", { loan_hash: t1.loan_hash, model_id: t1.model_id, request_sha256: t1.request_sha256, response_body: forged, signature: t1.signature }, "100", true);
+  const d = await call(servicerAcc, "submit_verdict with an edited reply (must be rejected)", "submit_verdict", { loan_hash: t1.loan_hash, model_id: t1.model_id, request_sha256: t1.request_sha256, response_body: forged, signature: t1.signature }, "100", true);
   expect(!d.ok && /TEE signer not registered|bad signature|verdict and anomalies disagree/.test(d.failure || ""), "edited TEE verdict rejected");
 }
 
@@ -215,12 +239,12 @@ const teeStore = {};
 for (const l of demo) {
   const lock = await view("get_lock", { loan_hash: l.loan_hash });
   const latest = await view("get_latest_verdict", { loan_hash: l.loan_hash });
-  teeStore[l.loan_hash] = { pledged_at_ms: lock ? lock.locked_at_ms : null, latest: latest ? { verdict: latest.verdict, anomalies: latest.anomalies, at_ms: latest.at_ms } : null };
+  teeStore[l.loan_hash] = { fund_id: lock ? lock.fund_id : null, pledged_at_ms: lock ? lock.locked_at_ms : null, latest: latest ? { verdict: latest.verdict, anomalies: latest.anomalies, at_ms: latest.at_ms } : null };
   const loan = funds.find((f) => f.fund_id === l.fund_id).loans.find((x) => x.id === l.loan_id);
   loan.loan_hash = l.loan_hash;
 }
 const results = scorePortfolio({ pd: fx.pd, lgd: fx.lgd }, funds, { now: fx.valuation_time, certStore: fx.cert_store, teeStore });
-for (const r of results) expect(r.tee.checked && r.tee.flag === 0 && r.tee.overdue === 0, `${r.fundId} TEE from chain: ${r.tee.pass} pass, ${r.tee.pending} pending, ${r.tee.flag} flag`);
+for (const r of results) expect(r.tee.checked && r.tee.flag === 0 && r.tee.overdue === 0 && (!tee || r.tee.pending === 0), `${r.fundId} TEE from chain: ${r.tee.pass} pass, ${r.tee.pending} pending, ${r.tee.flag} flag`);
 
 // ---------- 3. signed certificates ----------
 // Scores are computed as of the fixture valuation time (the demo pins); the certificate is signed now, because

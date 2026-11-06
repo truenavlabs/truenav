@@ -1,5 +1,24 @@
 # Architecture
 
+## Trust flow
+
+```mermaid
+flowchart TB
+  NAC[NEAR AI Cloud TEE<br/>Intel TDX + NVIDIA CC] -- "attestation report<br/>(published, hash on chain)" --> REG
+  ANY[Anyone] -. "npm run verify:attestation" .-> NAC
+  REG[Registrar] -- add_tee_signer(key, report hash) --> C[(Registry contract)]
+  ADM[Admin] -- register_fund (allowlist), set_role --> C
+  PAU[Pauser] -- pause / unpause --> C
+  FUND[Fund account] -- pledge_loan --> C
+  SRV[Servicer] -- "submit_verdict<br/>(TEE-signed, bound to contract, network, version, expiry)" --> C
+  SRV -- release_loan --> C
+  ENG[Score engine<br/>public, deterministic] -- reads chain --> C
+  ENG -- "certificate (test key, not TEE)" --> C
+  INV[Investor] -- "npm run chain:read" --> C
+```
+
+## Data flow
+
 ```mermaid
 flowchart LR
   subgraph Fund side

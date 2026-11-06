@@ -57,7 +57,7 @@ export async function checkNearReport(report, nonceHex) {
   const okIdentity = { ecdsa: 20, ed25519: 32 }[report.signing_algo] === identity.length;
   const fp = report.tls_cert_fingerprint;
   const bound = fp ? hash("sha256", identity, hexBytes(fp)) : Buffer.concat([identity, Buffer.alloc(Math.max(0, 32 - identity.length))]);
-  add("Quote binds the signing address and our fresh nonce", okIdentity && Buffer.from(quote.reportData).equals(Buffer.concat([bound, hexBytes(nonceHex)])), `${report.signing_algo} ${report.signing_address}`);
+  add("Quote binds the signing address and the request nonce", okIdentity && Buffer.from(quote.reportData).equals(Buffer.concat([bound, hexBytes(nonceHex)])), `${report.signing_algo} ${report.signing_address}`);
   add("Echoed nonce matches", String(report.request_nonce || "").toLowerCase() === nonceHex.toLowerCase());
   const appCompose = parse(report.info.tcb_info).app_compose;
   const expected = Buffer.concat([Buffer.from([1]), hash("sha256", Buffer.from(appCompose, "utf8")), Buffer.alloc(15)]);
@@ -92,7 +92,8 @@ export async function attest(model = MODEL) {
   const url = `${API}/attestation/report?${new URLSearchParams({ model, provider: "near", signing_algo: "ecdsa", nonce })}`;
   const r = await fetch(url, { headers: { ...AUTH, "x-no-aliasing": "true" } });
   if (!r.ok) throw new Error(`attestation request failed: ${r.status}`);
-  const body = await r.json();
+  const raw = Buffer.from(await r.arrayBuffer()); // published base64-encoded as tee/fixtures/attestation-report.json.b64
+  const body = JSON.parse(raw.toString("utf8"));
   const sections = [{ name: "NEAR AI Cloud gateway", checks: await checkNearReport(body.gateway_attestation, nonce) }];
   const candidates = body.model_attestations || [];
   if (!candidates.length) sections.push({ name: `Model ${model}`, checks: [{ check: "Model attestation returned", pass: false }] });
@@ -101,7 +102,15 @@ export async function attest(model = MODEL) {
   }
   const signers = sections.filter((s) => s.signer && s.checks.every((c) => c.pass)).map((s) => s.signer);
   const pass = sections.every((s) => s.checks.every((c) => c.pass)) && signers.length > 0;
-  return { model, nonce, checked_at: new Date().toISOString(), pass, signers, sections };
+  return { model, nonce, checked_at: new Date().toISOString(), pass, signers, sections, raw, reportSha256: createHash("sha256").update(raw).digest("hex") };
+}
+
+/** Re-check a saved report (anyone, no API key): quote, nonce and signer binding, measurements, GPU evidence. */
+export async function verifyReport(body, nonce, model = MODEL) {
+  const sections = [{ name: "NEAR AI Cloud gateway", checks: await checkNearReport(body.gateway_attestation, nonce) }];
+  for (const c of body.model_attestations || []) sections.push({ name: `Model ${c.model_name || model}`, signer: { signing_algo: c.signing_algo, signing_address: c.signing_address }, checks: [...(await checkNearReport(c, nonce)), ...(await checkGpu(c, nonce))] });
+  const signers = sections.filter((s) => s.signer && s.checks.every((c) => c.pass)).map((s) => s.signer);
+  return { pass: sections.every((s) => s.checks.every((c) => c.pass)) && signers.length > 0, signers, sections };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

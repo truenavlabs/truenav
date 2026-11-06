@@ -1,0 +1,11 @@
+DEMO, NOT A REAL DOCUMENT
+COMMERCIAL INVOICE (FINANCED RECEIVABLE)
+Document id: INV-EVAL-119
+Seller: Demo Supplier 119 Ltd (fictional)
+Buyer (debtor): Demo Buyer 119 Co (fictional)
+Goods: solar inverters, 94 units
+Invoice amount financed: USD 148,000.00
+Issue date: 2026-09-07
+Due date: 2026-12-08
+Assignment: receivable assigned to the fund named in the pledge request
+DEMO, NOT A REAL DOCUMENT

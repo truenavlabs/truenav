@@ -1,0 +1,12 @@
+DEMO, NOT A REAL DOCUMENT
+TITLE REPORT AND RECORDED MORTGAGE SUMMARY
+Document id: TITLE-EVAL-304
+Recording reference: TITLE-EVAL-304
+Property: Parcel PARCEL-EVAL-304, Demo Estates, Demo County
+Borrower: Demo Borrower 304 LLC (fictional)
+Lien position: first mortgage
+Original principal: USD 550,000.00
+Interest: 7.10% fixed, monthly payments
+Recorded: 2026-01-17
+Encumbrances other than this mortgage: none of record
+DEMO, NOT A REAL DOCUMENT

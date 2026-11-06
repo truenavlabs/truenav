@@ -60,10 +60,10 @@ test("hole 5 (documented limit, TRUST_MODEL): renaming fund_id escapes previousl
   assert.equal(r.shell_renamed.band, "green");
 });
 
-test("hole 6: an expired claimed cash attestation is unattested, freshness 0, fund stays scored", () => {
+test("hole 6 (replaced by 6b, owner 6 Nov): an expired claimed cash attestation is unattested, freshness unchanged, fund stays scored", () => {
   const r = run("6 expired but claimed cash attestation");
   assert.equal(r.claimed.status, "scored");
-  assert.equal(r.claimed.freshness, 0);
+  assert.equal(r.claimed.freshness, 20);
   assert.equal(r.claimed.sibling.raw, 100);
   assert.equal(r.claimed.sibling.band, "green");
 });

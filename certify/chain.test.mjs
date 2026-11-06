@@ -28,7 +28,7 @@ test("loadChainState reads views and builds the TEE store (latest verdict, pledg
   try {
     const st = await loadChainState({ funds: ["f"], loans: [{ fund_id: "f", loan_id: "L1", loan_hash: H }], contract: "c.testnet", url: "http://rpc" });
     assert.equal(st.codeHash, "HASH");
-    assert.deepEqual(st.teeStore[H], { pledged_at_ms: 123, latest: { verdict: "flag", anomalies: ["amount_mismatch"], at_ms: 456 } });
+    assert.deepEqual(st.teeStore[H], { fund_id: "f", pledged_at_ms: 123, latest: { verdict: "flag", anomalies: ["amount_mismatch"], at_ms: 456 } });
     assert.equal(st.funds[0].attempts, 2);
     assert.equal(st.loans[0].holder, "f.testnet");
     assert.ok(calls.every((p) => p.finality === "final"), "reads final state only");
@@ -44,6 +44,26 @@ test("an RPC error surfaces instead of returning made-up state", async () => {
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ error: { message: "boom" } }) });
   try {
     await assert.rejects(view("c.testnet", "get_signers", {}, "http://rpc"), /boom/);
+  } finally {
+    globalThis.fetch = saved;
+  }
+});
+
+test("the default RPC falls back to the backups when it fails, an explicit RPC does not", async () => {
+  const { DEFAULT_RPC, BACKUP_RPCS } = await import("../web/chain.mjs");
+  const saved = globalThis.fetch;
+  const hits = [];
+  globalThis.fetch = async (url) => {
+    hits.push(url);
+    if (url === DEFAULT_RPC || url.endsWith("/x")) return { ok: false, status: 429, json: async () => ({}) };
+    return { ok: true, json: async () => ({ result: { result: [...new TextEncoder().encode('["0xs"]')] } }) };
+  };
+  try {
+    assert.deepEqual(await view("c.testnet", "get_signers"), ["0xs"]);
+    assert.deepEqual(hits, [DEFAULT_RPC, BACKUP_RPCS[0]]);
+    hits.length = 0;
+    await assert.rejects(view("c.testnet", "get_signers", {}, DEFAULT_RPC + "/x"));
+    assert.equal(hits.length, 1);
   } finally {
     globalThis.fetch = saved;
   }

@@ -50,6 +50,7 @@ enum Key {
     Verdicts,
     VerdictList { loan_hash: Vec<u8> },
     SeenResponses,
+    FlagCounts,
 }
 
 /// A fund bound to its account and manager by the admin.
@@ -137,6 +138,8 @@ pub struct TeeSigner {
     pub model_id: String,
     /// Where the off-chain attestation check is recorded (e.g. nonce and time).
     pub attestation_ref: String,
+    /// sha256 (hex) of the published attestation report the registrar checked (tee/fixtures/attestation-report.json).
+    pub attestation_sha256: String,
     pub registered_at_ms: u64,
 }
 
@@ -150,33 +153,43 @@ pub struct StoredVerdict {
     pub model_id: String,
     pub request_sha256: String,
     pub response_sha256: String,
+    /// sha256 of the attestation report of the TEE signer that signed this verdict.
+    pub attestation_sha256: String,
+    /// Expiry inside the signed binding (ms); the verdict was submitted before it.
+    pub expires_at_ms: u64,
+    /// "servicer" for every stored verdict (only the servicer may submit, owner decision 6 Nov).
+    pub submitted_by: AccountId,
     pub at_ms: u64,
+}
+
+/// Every TEE verdict reply carries "truenav-verdict-v1|<contract id>|<network>|<expires_at_ms>" (owner decision
+/// 6 Nov): a verdict signed for another deployment, another network or another version is rejected, and so is an
+/// expired one or one that claims more than VERDICT_TTL_MS of validity.
+pub const VERDICT_DOMAIN: &str = "truenav-verdict-v1";
+pub const VERDICT_TTL_MS: u64 = 30 * 24 * 3600 * 1000;
+
+/// Network name from the account suffix: .testnet is testnet, .near is mainnet, anything else is that suffix
+/// (a local sandbox account such as registry.sandbox gives "sandbox").
+pub fn network_of(account: &str) -> String {
+    match account.rsplit('.').next().unwrap_or("") {
+        "testnet" => "testnet".to_string(),
+        "near" => "mainnet".to_string(),
+        other => other.to_string(),
+    }
 }
 
 pub const ANOMALY_CODES: [&str; 6] = ["amount_mismatch", "asset_mismatch", "id_mismatch", "injection_attempt", "duplicate_document", "unreadable"];
 
-/// State layout before the TEE verdicts were added (first testnet release), for migrate().
-#[near(serializers = [borsh])]
-pub struct RegistryV1 {
-    admin: AccountId,
-    servicer: AccountId,
-    signers: IterableSet<String>,
-    funds: LookupMap<String, Fund>,
-    fund_by_account: LookupMap<AccountId, String>,
-    certs: LookupMap<String, Vector<StoredCertificate>>,
-    locks: LookupMap<String, Lock>,
-    attempts: LookupMap<String, Vector<Attempt>>,
-    alerts: LookupMap<String, Vector<u64>>,
-    attempt_seq: u64,
-    tokens: NonFungibleToken,
-    metadata: LazyOption<NFTContractMetadata>,
-}
-
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct Registry {
+    /// Roles (owner decision 6 Nov): admin assigns roles and registers funds; registrar manages signers;
+    /// pauser pauses; servicer releases loans and submits TEE verdicts.
     admin: AccountId,
     servicer: AccountId,
+    registrar: AccountId,
+    pauser: AccountId,
+    paused: bool,
     signers: IterableSet<String>,
     funds: LookupMap<String, Fund>,
     fund_by_account: LookupMap<AccountId, String>,
@@ -190,6 +203,18 @@ pub struct Registry {
     tee_signers: IterableMap<String, TeeSigner>,
     verdicts: LookupMap<String, Vector<StoredVerdict>>,
     seen_responses: LookupSet<String>,
+    flag_counts: LookupMap<String, u32>,
+}
+
+/// Role assignment, readable by anyone.
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Roles {
+    pub admin: AccountId,
+    pub registrar: AccountId,
+    pub pauser: AccountId,
+    pub servicer: AccountId,
+    pub paused: bool,
 }
 
 fn fund_hash(fund_id: &str) -> Vec<u8> {
@@ -212,7 +237,7 @@ fn is_hex64(h: &str) -> bool {
 
 /// Read {loan_hash, verdict, anomalies} from the model's reply inside the exact response body.
 /// The model writes the loan hash in 8-character groups; spaces are removed before comparing.
-pub fn parse_verdict(response_body: &str) -> Option<(String, String, Vec<String>)> {
+pub fn parse_verdict(response_body: &str) -> Option<(String, String, Vec<String>, String)> {
     let body: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(response_body).ok()?;
     let content = body.get("choices")?.get(0)?.get("message")?.get("content")?.as_str()?.trim();
     let content = content.trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
@@ -220,7 +245,8 @@ pub fn parse_verdict(response_body: &str) -> Option<(String, String, Vec<String>
     let loan_hash: String = v.get("loan_hash")?.as_str()?.chars().filter(|c| !c.is_whitespace()).collect::<String>().to_ascii_lowercase();
     let verdict = v.get("verdict")?.as_str()?.to_string();
     let anomalies = v.get("anomalies")?.as_array()?.iter().map(|a| a.as_str().map(|x| x.to_string())).collect::<Option<Vec<_>>>()?;
-    Some((loan_hash, verdict, anomalies))
+    let binding: String = v.get("binding")?.as_str()?.chars().filter(|c| !c.is_whitespace()).collect();
+    Some((loan_hash, verdict, anomalies, binding))
 }
 
 /// Canonical message signed by the engine. The contract id prevents replay on another deployment.
@@ -297,6 +323,9 @@ impl Registry {
             reference_hash: None,
         };
         Self {
+            registrar: admin.clone(),
+            pauser: admin.clone(),
+            paused: false,
             admin,
             servicer,
             signers: IterableSet::new(Key::Signers),
@@ -312,30 +341,7 @@ impl Registry {
             tee_signers: IterableMap::new(Key::TeeSigners),
             verdicts: LookupMap::new(Key::Verdicts),
             seen_responses: LookupSet::new(Key::SeenResponses),
-        }
-    }
-
-    /// Upgrade a deployment made with the previous state layout. Call once, right after deploying new code.
-    #[private]
-    #[init(ignore_state)]
-    pub fn migrate() -> Self {
-        let old: RegistryV1 = env::state_read().expect("no old state to migrate");
-        Self {
-            admin: old.admin,
-            servicer: old.servicer,
-            signers: old.signers,
-            funds: old.funds,
-            fund_by_account: old.fund_by_account,
-            certs: old.certs,
-            locks: old.locks,
-            attempts: old.attempts,
-            alerts: old.alerts,
-            attempt_seq: old.attempt_seq,
-            tokens: old.tokens,
-            metadata: old.metadata,
-            tee_signers: IterableMap::new(Key::TeeSigners),
-            verdicts: LookupMap::new(Key::Verdicts),
-            seen_responses: LookupSet::new(Key::SeenResponses),
+            flag_counts: LookupMap::new(Key::FlagCounts),
         }
     }
 
@@ -345,18 +351,67 @@ impl Registry {
         require!(env::predecessor_account_id() == self.admin, "admin only");
     }
 
+    fn assert_registrar(&self) {
+        assert_one_yocto();
+        require!(env::predecessor_account_id() == self.registrar, "registrar only");
+    }
+
+    fn assert_servicer(&self) {
+        assert_one_yocto();
+        require!(env::predecessor_account_id() == self.servicer, "servicer only");
+    }
+
+    fn assert_not_paused(&self) {
+        require!(!self.paused, "paused");
+    }
+
+    // ---------- roles and pause ----------
+
+    /// Admin moves a role to another account: "admin", "registrar", "pauser" or "servicer".
+    #[payable]
+    pub fn set_role(&mut self, role: String, account_id: AccountId) {
+        self.assert_admin();
+        match role.as_str() {
+            "admin" => self.admin = account_id,
+            "registrar" => self.registrar = account_id,
+            "pauser" => self.pauser = account_id,
+            "servicer" => self.servicer = account_id,
+            _ => env::panic_str("role must be admin, registrar, pauser or servicer"),
+        }
+    }
+
+    pub fn get_roles(&self) -> Roles {
+        Roles { admin: self.admin.clone(), registrar: self.registrar.clone(), pauser: self.pauser.clone(), servicer: self.servicer.clone(), paused: self.paused }
+    }
+
+    /// Emergency stop: pledges, releases, certificate and verdict submissions are refused; views and role
+    /// changes keep working.
+    #[payable]
+    pub fn pause(&mut self) {
+        assert_one_yocto();
+        require!(env::predecessor_account_id() == self.pauser, "pauser only");
+        self.paused = true;
+    }
+
+    #[payable]
+    pub fn unpause(&mut self) {
+        assert_one_yocto();
+        require!(env::predecessor_account_id() == self.pauser, "pauser only");
+        self.paused = false;
+    }
+
     // ---------- signer registry ----------
 
     #[payable]
     pub fn add_signer(&mut self, address: String) {
-        self.assert_admin();
+        self.assert_registrar();
         let a = norm_address(&address);
         self.signers.insert(a);
     }
 
     #[payable]
     pub fn remove_signer(&mut self, address: String) {
-        self.assert_admin();
+        self.assert_registrar();
         let a = norm_address(&address);
         self.signers.remove(&a);
     }
@@ -388,6 +443,7 @@ impl Registry {
 
     /// Verify the engine signature and store the certificate. Panics (and stores nothing) on any failure.
     pub fn submit_certificate(&mut self, certificate: Certificate, signature: String) -> StoredCertificate {
+        self.assert_not_paused();
         let c = certificate;
         let fund = self.funds.get(&c.fund_id).cloned();
         require!(fund.is_some(), "fund_id not registered");
@@ -430,20 +486,13 @@ impl Registry {
         list.get(list.len().checked_sub(1)?).cloned()
     }
 
-    /// Signing times of every stored certificate: the engine's cert store for previously_certified.
-    pub fn get_certificate_history(&self, fund_id: String) -> Vec<u64> {
-        match self.certs.get(&fund_id) {
-            Some(list) => list.iter().map(|s| s.certificate.signed_at_ms).collect(),
-            None => vec![],
-        }
-    }
-
     // ---------- loan pledges and NEP-171 tokens ----------
 
     /// Pledge a loan by its hash (64 lowercase hex). Only a registered fund's own account may call it.
     #[payable]
     pub fn pledge_loan(&mut self, loan_hash: String, asset_type: String) -> PledgeOutcome {
         assert_one_yocto();
+        self.assert_not_paused();
         require!(is_loan_hash(&loan_hash), "loan_hash must be 64 lowercase hex characters");
         require!(asset_type == "real_estate" || asset_type == "invoices", "asset_type must be real_estate or invoices");
         let caller = env::predecessor_account_id();
@@ -495,8 +544,8 @@ impl Registry {
     /// Servicer releases a repaid loan: the lock is removed and the token burned.
     #[payable]
     pub fn release_loan(&mut self, loan_hash: String) {
-        assert_one_yocto();
-        require!(env::predecessor_account_id() == self.servicer, "servicer only");
+        self.assert_servicer();
+        self.assert_not_paused();
         require!(self.locks.remove(&loan_hash).is_some(), "loan not pledged");
         let owner = self.tokens.owner_by_id.remove(&loan_hash);
         if let Some(meta) = self.tokens.token_metadata_by_id.as_mut() {
@@ -536,21 +585,6 @@ impl Registry {
         self.locks.get(&loan_hash).cloned()
     }
 
-    pub fn get_attempts(&self, fund_id: String) -> AttemptSummary {
-        match self.attempts.get(&fund_id) {
-            Some(list) => AttemptSummary { count: list.len(), attempts: list.iter().cloned().collect() },
-            None => AttemptSummary { count: 0, attempts: vec![] },
-        }
-    }
-
-    /// Times at which another fund tried to pledge one of this fund's loans. The other fund is not named.
-    pub fn get_alerts(&self, fund_id: String) -> Vec<u64> {
-        match self.alerts.get(&fund_id) {
-            Some(list) => list.iter().cloned().collect(),
-            None => vec![],
-        }
-    }
-
     /// One page of a fund's blocked attempts, oldest first (limit capped at PAGE_MAX).
     pub fn get_attempts_page(&self, fund_id: String, from_index: u32, limit: u32) -> AttemptSummary {
         match self.attempts.get(&fund_id) {
@@ -559,7 +593,8 @@ impl Registry {
         }
     }
 
-    /// One page of a fund's alert times, oldest first (limit capped at PAGE_MAX).
+    /// One page of the times at which another fund tried to pledge one of this fund's loans (the other fund is
+    /// not named), oldest first (limit capped at PAGE_MAX).
     pub fn get_alerts_page(&self, fund_id: String, from_index: u32, limit: u32) -> Vec<u64> {
         match self.alerts.get(&fund_id) {
             Some(list) => page(list, from_index, limit).cloned().collect(),
@@ -574,19 +609,21 @@ impl Registry {
     // ---------- TEE underwriter verdicts ----------
 
     /// Register a TEE signing address after its attestation was checked off chain with a fresh nonce
-    /// (phase 1, see TRUST_MODEL.md). Admin only.
+    /// (phase 1, see TRUST_MODEL.md). Registrar only. attestation_sha256 is the sha256 (hex) of the published
+    /// attestation report, so anyone can re-check it (npm run verify:attestation).
     #[payable]
-    pub fn add_tee_signer(&mut self, address: String, model_id: String, attestation_ref: String) {
-        self.assert_admin();
+    pub fn add_tee_signer(&mut self, address: String, model_id: String, attestation_ref: String, attestation_sha256: String) {
+        self.assert_registrar();
+        require!(is_hex64(&attestation_sha256), "attestation_sha256 must be 64 lowercase hex characters");
         require!(!model_id.is_empty() && model_id.len() <= 128 && !model_id.contains(':'), "model_id must be 1 to 128 characters without ':'");
         require!(attestation_ref.len() <= 256, "attestation_ref too long");
         let a = norm_address(&address);
-        self.tee_signers.insert(a.clone(), TeeSigner { address: a, model_id, attestation_ref, registered_at_ms: env::block_timestamp_ms() });
+        self.tee_signers.insert(a.clone(), TeeSigner { address: a, model_id, attestation_ref, attestation_sha256, registered_at_ms: env::block_timestamp_ms() });
     }
 
     #[payable]
     pub fn remove_tee_signer(&mut self, address: String) {
-        self.assert_admin();
+        self.assert_registrar();
         self.tee_signers.remove(&norm_address(&address));
     }
 
@@ -594,12 +631,21 @@ impl Registry {
         self.tee_signers.values().cloned().collect()
     }
 
-    /// Store a TEE verdict for a loan. Anyone may submit; what is trusted is the TEE signature over
-    /// "<model_id>:<sha256(request)>:<sha256(response)>" (EIP-191, provider_tee). The request (which holds
-    /// the private document) is only a hash; the response must be the exact verdict-only body, which the
-    /// contract hashes itself and reads the verdict from. The same signed response is accepted once.
+    /// Store a TEE verdict for a pledged loan. Only the servicer may submit (owner decision 6 Nov). What is trusted
+    /// is the TEE signature over "<model_id>:<sha256(request)>:<sha256(response)>" (EIP-191, provider_tee). The
+    /// request (which holds the private document) is only a hash; the response must be the exact verdict-only
+    /// body, which the contract hashes itself and reads the verdict and binding from. The binding must name this
+    /// contract, this network, the current version and an unexpired time. A flag on the current pledge is cleared
+    /// only by a later servicer pass from a different request (a speed bump, not a lock: the servicer controls the
+    /// request). Each signed response is accepted once.
+    #[payable]
     pub fn submit_verdict(&mut self, loan_hash: String, model_id: String, request_sha256: String, response_body: String, signature: String) -> StoredVerdict {
+        self.assert_servicer();
+        self.assert_not_paused();
         require!(is_loan_hash(&loan_hash), "loan_hash must be 64 lowercase hex characters");
+        let lock = self.locks.get(&loan_hash).cloned();
+        require!(lock.is_some(), "loan not pledged");
+        let lock = lock.unwrap();
         require!(is_hex64(&request_sha256), "request_sha256 must be 64 lowercase hex characters");
         require!(response_body.len() <= 4096, "response_body too long");
         let response_sha256 = hex::encode(env::sha256_array(response_body.as_bytes()));
@@ -610,16 +656,47 @@ impl Registry {
         let signer = signer.unwrap();
         let reg = self.tee_signers.get(&signer).cloned();
         require!(reg.is_some(), "TEE signer not registered");
-        require!(reg.unwrap().model_id == model_id, "model_id does not match the registered TEE signer");
+        let reg = reg.unwrap();
+        require!(reg.model_id == model_id, "model_id does not match the registered TEE signer");
         let parsed = parse_verdict(&response_body);
         require!(parsed.is_some(), "response is not a verdict");
-        let (echoed, verdict, anomalies) = parsed.unwrap();
+        let (echoed, verdict, anomalies, binding) = parsed.unwrap();
         require!(echoed == loan_hash, "verdict is for another loan_hash");
+        let now = env::block_timestamp_ms();
+        let parts: Vec<&str> = binding.split('|').collect();
+        require!(parts.len() == 4 && parts[0] == VERDICT_DOMAIN, "verdict binding has an unknown version");
+        let me = env::current_account_id();
+        require!(parts[1] == me.as_str(), "verdict is bound to another contract");
+        require!(parts[2] == network_of(me.as_str()), "verdict is bound to another network");
+        let expires_at_ms: u64 = parts[3].parse().unwrap_or(0);
+        require!(expires_at_ms >= now, "verdict expired");
+        require!(expires_at_ms <= now + VERDICT_TTL_MS + 3_600_000, "verdict validity longer than 30 days");
         require!(anomalies.iter().all(|a| ANOMALY_CODES.contains(&a.as_str())), "unknown anomaly code");
         require!((verdict == "pass" && anomalies.is_empty()) || (verdict == "flag" && !anomalies.is_empty()), "verdict and anomalies disagree");
+        // A flag on the current pledge clears only with a pass from a different request.
+        if verdict == "pass" {
+            if let Some(prev) = self.latest_for_pledge(&loan_hash, &lock) {
+                require!(!(prev.verdict == "flag" && prev.request_sha256 == request_sha256), "a flag clears only with a pass from a new request");
+            }
+        }
 
-        let stored = StoredVerdict { verdict, anomalies, signer, model_id, request_sha256, response_sha256: response_sha256.clone(), at_ms: env::block_timestamp_ms() };
+        let stored = StoredVerdict {
+            verdict,
+            anomalies,
+            signer,
+            model_id,
+            request_sha256,
+            response_sha256: response_sha256.clone(),
+            attestation_sha256: reg.attestation_sha256,
+            expires_at_ms,
+            submitted_by: env::predecessor_account_id(),
+            at_ms: now,
+        };
         self.seen_responses.insert(response_sha256);
+        if stored.verdict == "flag" {
+            let n = self.flag_counts.get(&loan_hash).copied().unwrap_or(0);
+            self.flag_counts.insert(loan_hash.clone(), n + 1);
+        }
         if !self.verdicts.contains_key(&loan_hash) {
             let k = Key::VerdictList { loan_hash: env::sha256(loan_hash.as_bytes()) };
             self.verdicts.insert(loan_hash.clone(), Vector::new(k));
@@ -628,10 +705,17 @@ impl Registry {
         stored
     }
 
-    /// The latest verdict counts for the score (owner decision 6 Nov); the history stays public.
+    fn latest_for_pledge(&self, loan_hash: &String, lock: &Lock) -> Option<StoredVerdict> {
+        let list = self.verdicts.get(loan_hash)?;
+        let last = list.get(list.len().checked_sub(1)?)?;
+        if last.at_ms >= lock.locked_at_ms { Some(last.clone()) } else { None }
+    }
+
+    /// The latest verdict for the current pledge counts for the score (owner decisions 6 Nov): None when the loan
+    /// is not pledged or has no verdict since its pledge. The full history stays public (get_verdicts_page).
     pub fn get_latest_verdict(&self, loan_hash: String) -> Option<StoredVerdict> {
-        let list = self.verdicts.get(&loan_hash)?;
-        list.get(list.len().checked_sub(1)?).cloned()
+        let lock = self.locks.get(&loan_hash).cloned()?;
+        self.latest_for_pledge(&loan_hash, &lock)
     }
 
     pub fn get_verdict_count(&self, loan_hash: String) -> u32 {
@@ -645,12 +729,9 @@ impl Registry {
         }
     }
 
-    /// Number of flag verdicts a loan has had, including ones later replaced by a pass.
+    /// Number of flag verdicts a loan has had, including ones later replaced by a pass (stored counter).
     pub fn get_flag_count(&self, loan_hash: String) -> u32 {
-        match self.verdicts.get(&loan_hash) {
-            Some(list) => list.iter().filter(|v| v.verdict == "flag").count() as u32,
-            None => 0,
-        }
+        self.flag_counts.get(&loan_hash).copied().unwrap_or(0)
     }
 
     // ---------- NEP-171 core (pledge tokens are not transferable) ----------

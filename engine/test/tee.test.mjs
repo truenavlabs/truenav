@@ -24,7 +24,7 @@ function funds() {
   return fs;
 }
 const allPass = (pledgedAgoDays = 30) =>
-  Object.fromEntries(loans.map((l) => [l.loan_hash, { pledged_at_ms: NOW_MS - pledgedAgoDays * DAY, latest: { verdict: "pass", anomalies: [], at_ms: NOW_MS - DAY } }]));
+  Object.fromEntries(loans.map((l) => [l.loan_hash, { fund_id: l.fund_id, pledged_at_ms: NOW_MS - pledgedAgoDays * DAY, latest: { verdict: "pass", anomalies: [], at_ms: NOW_MS - DAY } }]));
 const run = (teeStore, fs = funds()) => E.scorePortfolio(model, fs, { now: NOW, certStore: STORE, ...(teeStore !== undefined ? { teeStore } : {}) });
 const by = (rs, id) => rs.find((r) => r.fundId === id);
 
@@ -78,13 +78,13 @@ test("no verdict after 7 days is overdue and unverified", () => {
   assert.ok(h.unverified.reasons.some((x) => x.id === "H-RE-02" && x.reason === "TEE check overdue"));
 });
 
-test("a loan with no loan_hash or no store entry is not checked and unchanged", () => {
+test("with chain data, a claimed loan with no chain entry is not pledged on chain and unverified (6a over R25 detail, owner 6 Nov)", () => {
   const store = allPass();
   const h3 = loans.find((l) => l.loan_id === "H-RE-03").loan_hash;
   delete store[h3];
   const h = by(run(store), "harbor-credit-fund");
-  assert.equal(r2(h.raw), 99.17);
-  assert.equal(h.tee.notChecked, 1);
+  assert.ok(h.raw < 99.17);
+  assert.ok(h.unverified.reasons.some((x) => x.id === "H-RE-03" && x.reason === "not pledged on chain"));
 });
 
 test("malformed TEE store is ignored like no store", () => {

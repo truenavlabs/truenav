@@ -31,3 +31,7 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 - Engine inputs other than TEE verdicts (attempt list, cash attestation, liabilities) are fund supplied; see `engine/TRUST_MODEL.md`.
 - A copycat fund listing someone else's nft_id can lower that fund's score (open scoring rule question; verifying nft_id ownership on chain would close it).
 - The LLM underwriter can be wrong in either direction; T1 and T2 carry one extra anomaly code beside the expected one.
+- Anyone may submit a TEE-signed verdict for any loan_hash. A rival can obtain a genuine TEE flag on another fund's loan with a fake document and submit it; the latest verdict counts, so the loan becomes unverified until a newer pass is submitted. Verdicts can also be added in bulk at low cost, with storage paid by the contract.
+- Verdicts attach to the loan_hash, not to the current pledge: a verdict submitted before the pledge counts, and after release and re-pledge the previous holder's latest verdict still applies.
+- A malformed, missing or future-dated cash attestation date is not penalized the way an honestly expired one is (a future date reads as fresh).
+- Full-list views (get_certificate_history, get_attempts, get_alerts) can run out of view gas on long lists; use the paged views.

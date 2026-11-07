@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { score, sourceFreshnessBps, rhu, CAPS } from "./score.mjs";
+import { score, sourceFreshnessBps, isFresh, rhu, CAPS } from "./score.mjs";
 
 const { cases } = JSON.parse(readFileSync(new URL("./fixtures/score-cases.json", import.meta.url), "utf8"));
 const byId = Object.fromEntries(cases.map((c) => [c.id, c]));
@@ -69,12 +69,19 @@ test("any sponsor-funded distribution caps the score", () => {
   assert.equal(score(m).score, 59);
 });
 
-test("a tier-3 source past its zero point is not fresh: self-reported only", () => {
+test("a tier-3 source counts as fresh only inside its full-freshness window: else self-reported only", () => {
   const m = base();
-  m.sources[0].age_hours = 168;
-  assert.ok(codes(m).includes("self_reported_only"));
-  m.sources[0].age_hours = 167;
+  m.sources[0].age_hours = 24;
   assert.ok(!codes(m).includes("self_reported_only"));
+  for (const h of [25, 96, 167, 168]) {
+    m.sources[0].age_hours = h;
+    assert.ok(codes(m).includes("self_reported_only"), `bank feed ${h} h old must not lift the cap`);
+  }
+  const monthlyBank = base();
+  monthlyBank.sources[0] = { ...monthlyBank.sources[0], cadence: "monthly", age_hours: 35 * 24 };
+  assert.ok(!codes(monthlyBank).includes("self_reported_only"));
+  monthlyBank.sources[0].age_hours = 35 * 24 + 1;
+  assert.ok(codes(monthlyBank).includes("self_reported_only"));
 });
 
 test("cash match is clamped at 10,000 bps", () => {
@@ -91,6 +98,7 @@ test("freshness is measured from the source as-of with a window per cadence; mon
   assert.equal(sourceFreshnessBps({ cadence: "monthly", age_hours: 50 * 24 }), 5000);
   assert.equal(sourceFreshnessBps({ cadence: "monthly", age_hours: 65 * 24 }), 0);
   assert.equal(sourceFreshnessBps({ cadence: "monthly", age_hours: 10, carried_forward: true }), 0);
+  assert.deepEqual([isFresh({ cadence: "daily", age_hours: 24 }), isFresh({ cadence: "daily", age_hours: 25 }), isFresh({ cadence: "monthly", age_hours: 840 }), isFresh({ cadence: "monthly", age_hours: 841 }), isFresh({ cadence: "daily", age_hours: 1, carried_forward: true })], [true, false, true, false, false]);
 });
 
 test("round half up on integers", () => {

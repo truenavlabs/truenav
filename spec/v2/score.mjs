@@ -17,6 +17,14 @@ const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 /** Freshness windows by source cadence: [full until, zero at], in hours (section 5.6). */
 export const CADENCE = { daily: [24, 168], monthly: [35 * 24, 65 * 24] };
 
+/** A source is fresh only inside its full-freshness window (daily 24 h, monthly 35 days) and not carried forward. */
+export function isFresh(src) {
+  if (src.carried_forward) return false;
+  const w = CADENCE[src.cadence];
+  if (!w) throw new Error(`unknown cadence ${src.cadence}`);
+  return Number.isSafeInteger(src.age_hours) && src.age_hours >= 0 && src.age_hours <= w[0];
+}
+
 /** Freshness of one source in bps: 10,000 inside the full window, linear to 0 at the zero point; 0 if carried forward. */
 export function sourceFreshnessBps(src) {
   if (src.carried_forward) return 0;
@@ -58,7 +66,8 @@ export function score(m) {
   const uncapped = rhu(raw_x100, 100);
 
   const caps = [];
-  const freshTier3 = fresh.some((s) => s.tier === 3 && !s.carried_forward && s.freshness_bps > 0);
+  // "fresh" for the cap means inside the full-freshness window, not merely above 0 (owner review 7 Nov)
+  const freshTier3 = fresh.some((s) => s.tier === 3 && isFresh(s));
   if (!freshTier3) caps.push("self_reported_only");
   if (m.kind === "credit" && m.yield_gap_bps >= 300) caps.push("yield_gap");
   if (m.kind === "rental" && m.rental_coverage_bps < 10000) caps.push("payout_exceeds_net_cash");

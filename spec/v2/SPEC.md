@@ -127,14 +127,17 @@ Per `unit_ref` (loan or lease), days past due = days from the `due_date` of the 
 
 ### 5.5 TrueVal and TrueRange (credit)
 
-Reuses the `legacy-nav-v1` loss math with bank-verified days past due: EAD = principal outstanding (including capitalized interest, flagged) + accrued interest not yet settled. PD by cohort, aligned with the four v2 cohorts (the `legacy-nav-v1` bands and pins are unchanged), "demo, not calibrated":
+Reuses the `legacy-nav-v1` loss math with bank-verified days past due: EAD = principal outstanding (including capitalized interest, flagged) + accrued interest not yet settled. PD, "demo, not calibrated". The four reported cohorts are unchanged; the PD table splits `current` into on time and 1 to 29 days late:
 
-| Cohort (bank-verified days past due) | PD |
-| --- | --- |
-| current (0 to 29) | 2% |
-| 30 (30 to 59) | 25% |
-| 60 (60 to 89) | 45% |
-| 90+ (90 or more) | 100% |
+| Bank-verified days past due | Cohort | PD |
+| --- | --- | --- |
+| 0 or less (on time) | current | 2% |
+| 1 to 29 | current | 10% |
+| 30 to 59 | 30 | 25% |
+| 60 to 89 | 60 | 45% |
+| 90 or more | 90+ | 100% |
+
+Why the split (owner review 7 Nov): aligning PD strictly to the cohorts would give a loan 1 to 29 days late the on-time PD of 2%, down from 10% under `legacy-nav-v1`, which makes TrueVal more lenient exactly on early lates, the first sign of the trouble TrueNav exists to show. Keeping 10% for 1 to 29 days costs nothing in reporting (the cohorts stay 0-29 / 30-59 / 60-89 / 90+) and keeps TrueVal at least as strict as v1 for early lates. Late days are measured from bank-settled cash, and the matcher's settlement window (-2 to +5 days, M3) already absorbs ordinary payment-processing delay, so a loan is not counted late for a slow transfer. The legacy pins are unchanged.
 
 LGD: real-estate-secured 31%, unsecured 67% (v1 inference, labeled as such). TrueVal and TrueRange use the v1 formulas in section 1.
 
@@ -149,7 +152,7 @@ Per source, age = run as-of minus the source's own as-of: the export timestamp f
 
 f is 10,000 bps inside the full window, linear to 0 at the zero point. A monthly export does not lose freshness during its own month.
 
-A source is `carried_forward` when its snapshot hash equals the snapshot hash the previous run recorded for that source, or its as-of did not advance past the previous run's as-of for that source although a new period has started. A carried-forward source has freshness 0 and raises exception `carried_forward`. The run's freshness is the minimum over required sources.
+A source is `carried_forward` only once a new reporting period has started since the previous run, and then when either its snapshot hash equals the snapshot hash the previous run recorded for that source, or its as-of did not advance past the previous run's as-of for that source. Within the same period an unchanged snapshot is not carried forward (a quiet bank account with no new transactions is normal). A carried-forward source has freshness 0 and raises exception `carried_forward`. The run's freshness is the minimum over required sources.
 
 ## 6. TrueNav score (`cashflow-v2.0.0`)
 
@@ -168,7 +171,7 @@ Reference implementation: `spec/v2/score.mjs` (integer math, section 10); fixtur
 
 | Code | When | Reason shown |
 | --- | --- | --- |
-| `self_reported_only` | no tier-3 source that is fresh (freshness above 0 and not carried forward) | "red because no fresh bank-sourced evidence was available: self-reported only" |
+| `self_reported_only` | no tier-3 source that is fresh: inside its full-freshness window (daily 24 h, monthly 35 days) and not carried forward | "red because no fresh bank-sourced evidence was available: self-reported only" |
 | `yield_gap` | credit, yield_gap_bps of 300 or more | "red because the reported yield is at least 3.00 percentage points above the cash yield" |
 | `payout_exceeds_net_cash` | rental, coverage below 1.00 | "red because payouts exceed net cash from rent" |
 | `distribution_funded_by_sponsor` | any count above 0 | "red because part of a payout was funded by a sponsor transfer, not by income" |

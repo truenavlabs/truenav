@@ -36,7 +36,7 @@ Sensitive calls need exactly 1 yoctoNEAR (only a full-access key can make them).
 | `submit_certificate(certificate, signature)` (p) | anyone | verify and store a signed certificate |
 | `pledge_loan(loan_hash, asset_type)` (p) | registered fund account | `pledged`, `already_yours` or `refused` |
 | `release_loan(loan_hash)` (p) | servicer | unlock and burn on repay |
-| `submit_verdict(loan_hash, model_id, request_sha256, response_body, signature)` (p) | servicer | TEE verdict on a pledged loan; binding `truenav-verdict-v1\|contract\|network\|expiry` checked; a flag clears only with a pass from a new request |
+| `submit_verdict(loan_hash, model_id, request_sha256, response_body, signature)` (p) | servicer | TEE verdict on a pledged loan; the reply may hold only the allowed keys and value types (`reply_problem`, checked first, because the arguments are public); binding `truenav-verdict-v1\|contract\|network\|expiry` checked; a flag clears only with a pass from a new request |
 | views | anyone | `get_signers`, `get_tee_signers`, `get_fund`, `get_latest_certificate`, `get_certificate_count`, `get_certificate_history_page`, `get_lock`, `get_attempts_page`, `get_alerts_page`, `get_alert_count`, `get_latest_verdict` (current pledge only), `get_verdict_count`, `get_verdicts_page`, `get_flag_count`, `nft_token`, NEP-181 views, `nft_metadata` |
 
 ## Test

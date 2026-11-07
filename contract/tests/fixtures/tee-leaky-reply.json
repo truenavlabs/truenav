@@ -1,0 +1,21 @@
+{
+  "note": "One REAL TEE-signed reply from 6 Nov that echoed document fields (document_id, asset, amount). Kept only to prove the contract refuses such a reply; it is never submitted to a live network.",
+  "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+  "attestation_sha256": "7b20e2e4f4cd749036bfd2662d3aea6e5f800b63ba06d734874c0362f4648ce8",
+  "signed_at_ms": 1793979871060,
+  "record": {
+    "loan_id": "H-IN-02",
+    "fund_id": "harbor-credit-fund",
+    "asset_type": "invoices",
+    "tampered": null,
+    "expected_verdict": "pass",
+    "expected_anomalies": [],
+    "loan_hash": "1a79acd616248c278be1ac8088476269ce4dd5592f6b947a7475219702fec457",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "e9b2d4ae3c0bb3610ad115b30ab5385645fc103abb807cd71eda998a64cc0173",
+    "response_body": "{\"id\":\"chatcmpl-63f48e7c-c8ed-4fd2-95ef-3ab2168e9304\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"1a79acd6 16248c27 8be1ac80 88476269 ce4dd559 2f6b947a 74752197 02fec457\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.test.near|mainnet|1796571871060\\\",\\\"asset\\\":\\\"invoice\\\",\\\"document_id\\\":\\\"INV-DEMO-HIN02\\\",\\\"amount\\\":\\\"USD 249,000.00\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1793979886,\"usage\":{\"prompt_tokens\":642,\"total_tokens\":817,\"completion_tokens\":175,\"prompt_tokens_details\":{\"cached_tokens\":352}}}",
+    "signature": "0x5fd02b6809eda75a1e5f529537ba2f37b1f30a83590a4df278b827ed13984cab3f37110c0fd870eef2e34effafca300905012ab6d0af4c4a0eb2d6772d07133a1c",
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
+  }
+}

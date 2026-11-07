@@ -1,0 +1,11 @@
+FICTIONAL DEMO RECORD, NOT A REAL DOCUMENT
+RECEIVABLE FOR FINANCING: INVOICE COPY
+Document id: INV-HOLD-109
+Supplier: Demo Works 109 GmbH (fictional)
+Customer: Demo Retail 109 Inc (fictional)
+Line items: corrugated boxes x 178
+Total due: USD 452,000.00
+Terms: net 60
+Certified by the seller's finance team as a true receivable.
+Notice of assignment: payable to the financing fund.
+FICTIONAL DEMO RECORD, NOT A REAL DOCUMENT

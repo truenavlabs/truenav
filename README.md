@@ -24,7 +24,7 @@ Needs Node 18 or later. Every step below runs from a fresh clone with no API key
 3. `npm run demo`. Replays the TEE-signed verdicts and re-checks every signature: the three tampered documents are flagged, `honest documents: 16 of 16 pass, every signature checked`, and Harbor goes from `99.17 green` to `51.59 red` when the TEE flags one of its loans.
 4. `npm run chain:read`. Reads the live contract on NEAR testnet and recomputes both scores from chain data only; you should see each fund followed by `-> matches the recomputed score`.
 5. `npm run verify:attestation`. Checks the published NEAR AI Cloud attestation yourself: the Intel TDX quote, that the TEE signing key and nonce are bound into it, the measurements and the NVIDIA GPU evidence, that this key signed every verdict, and that it is the key the live contract accepts. Ends with `Attestation verified`.
-6. `npm run eval`. Re-checks the 86 signed replies of the TEE eval and prints precision and recall (see below).
+6. `npm run eval`. Re-checks the 126 signed replies of the TEE eval (main set and frozen hold-out set) and prints precision and recall, raw and grounded (see below).
 
 The contract tests need Rust: `npm run e2e` (engine output, signed certificates, 80 contract tests).
 
@@ -53,9 +53,9 @@ Every stored verdict records the signer, the model, the attestation report hash,
 
 With a NEAR AI Cloud key in `NEAR_AI_CLOUD_API_KEY`: `npm run tee:attest` attests the TEE with a fresh nonce; `node tee/underwrite.mjs --contract <id> --out <file>` signs verdicts bound to your contract. The recorded verdicts expire 30 days after signing; CI fails 10 days before (`npm run check:fixtures`).
 
-### TEE eval (86 documents)
+### TEE eval (86 documents plus a 40-document hold-out)
 
-`tee/eval/`: 40 honest documents and 46 tampered ones (amount edits, id edits, asset swaps, six prompt-injection styles, duplicates, unreadable scans), one first answer each from the attested TEE, every reply signed. Result: recall 100% (46 of 46 tampered flagged), precision 93.9%, false positive rate 7.5% (3 honest title reports flagged as duplicates). Findings, open items and limits: `tee/eval/REPORT.md`.
+`tee/eval/`: 40 honest documents and 46 tampered ones (amount edits, id edits, asset swaps, six prompt-injection styles, duplicates, unreadable scans); `tee/eval/holdout/`: 40 more in new wording (20 honest with near-miss words such as "certified by" and "INVOICE COPY"), frozen in its own commit before the current prompt ran. One first answer each from the attested TEE, every reply signed. 7 Nov result, raw and grounded alike: main set recall 100%, precision 100%, false positive rate 0 of 40; hold-out recall 100%, precision 100%, false positive rate 0 of 20. The 6 Nov run (kept) had 3 of 40 honest title reports flagged as duplicates. Grounding: a duplicate flag counts only if its evidence line number points at a line with the phrase. Findings, what changed and limits: `tee/eval/REPORT.md`.
 
 ### Testnet run (your own instance)
 
@@ -139,14 +139,14 @@ Scores are computed as of the demo valuation time in `spec/nav/fixtures.json`; c
 
 - Testnet only; fictional funds, loans and documents.
 - The roles sit on testnet accounts held by the operator; the certificate signer is a test key, not TEE; the TEE signer is registered by the registrar after an attestation check that anyone can repeat (`npm run verify:attestation`), not by an on-chain quote check.
-- Privacy: the demo loan fingerprint `sha256("truenav-demo-v1|" + asset type + "|" + document id)` is guessable for real identifiers. Real use needs salted commitments: an HMAC whose key never leaves a TEE (next step). Pledges, verdicts, attempts and alerts are public chain state; they never name the other fund or show a loan, but they are not hidden.
-- The TEE underwriter is an LLM: in the eval it flagged 3 of 40 honest documents (see `tee/eval/REPORT.md`).
+- Privacy: the demo loan fingerprint `sha256("truenav-demo-v1|" + asset type + "|" + document id)` is guessable for real identifiers. Real use needs salted commitments: an HMAC whose key never leaves a TEE (next step). Pledges, verdicts, attempts and alerts are public chain state; they never name the other fund or show a loan, but they are not hidden. Each `submit_verdict` transaction publishes the whole signed TEE reply, so the reply may hold only fixed keys (`tee/reply.mjs`, enforced by the client, the contract and CI). A duplicate flag carries a line number, never a quote: nothing from the document goes on chain, and the trade-off is that nobody outside the TEE can check that evidence from chain alone; the eval checks it against the documents.
+- The TEE underwriter is an LLM. On 6 Nov it flagged 3 of 40 honest documents; with the 7 Nov prompt it flagged none of 40 (main set) and none of 20 (frozen hold-out set), and missed no tampered document. One run each on synthetic documents (see `tee/eval/REPORT.md`).
 - With chain data, a loan counts only for the fund whose on-chain pledge holds it. Offline mode (no chain data, used by `npm test`) falls back to "verified in neither" for an nft_id two funds list; offline mode is for tests and the chain path is the real score.
 - PD tables are demo, not calibrated; TrueRange assumes independent defaults.
 
 ## Next steps
 
-HMAC loan fingerprints inside a TEE (OutLayer); certificate signer running in a TEE; on-chain quote verification; a multisig or DAO admin; storage deposits; the Chain Signatures certificate mirror to EVM chains and NEAR Intents settlement (not built, to keep the surface small).
+HMAC loan fingerprints inside a TEE (OutLayer); keyword rules such as the duplicate phrases run as attested code inside a TEE (OutLayer) before the reply is signed, instead of being asked of the model; certificate signer running in a TEE; on-chain quote verification; a multisig or DAO admin; storage deposits; the Chain Signatures certificate mirror to EVM chains and NEAR Intents settlement (not built, to keep the surface small).
 
 ## Prior art
 

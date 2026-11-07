@@ -20,6 +20,7 @@ import { homedir } from "node:os";
 import { createHash } from "node:crypto";
 import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } from "near-api-js";
 import { scorePortfolio } from "../engine/src/score.mjs";
+import { replyProblem } from "../tee/reply.mjs";
 import { toCertificate, signCertificate, addressOf, newSecretKey } from "./certificate.mjs";
 
 const root = new URL("../", import.meta.url);
@@ -210,6 +211,10 @@ const teeSigner = tee ? tee.attestation.signers[0].signing_address.toLowerCase()
 if (!tee) {
   console.log(`note no recorded TEE verdicts for ${ids.registry}; loans stay pending. With a NEAR AI Cloud key: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts-own.json`);
 } else {
+  // Every submitted response body becomes public transaction data, even when the call fails: never send a reply
+  // with anything beyond the allowed keys (owner decision 7 Nov). The contract refuses them too.
+  const leaky = tee.results.filter((x) => replyProblem(x.onchain.response_body));
+  if (leaky.length) stop([`${leaky.length} recorded replies in this set break the reply rule (${replyProblem(leaky[0].onchain.response_body)}); re-sign the set.`]);
   const left = tee.expires_at_ms - Date.now();
   expect(left > 0, `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
   const teeSigners = await view("get_tee_signers");
@@ -231,6 +236,13 @@ if (!tee) {
   if (forged === t1.response_body) throw new Error("edited-reply check did not change the reply");
   const d = await call(servicerAcc, "submit_verdict with an edited reply (must be rejected)", "submit_verdict", { loan_hash: t1.loan_hash, model_id: t1.model_id, request_sha256: t1.request_sha256, response_body: forged, signature: t1.signature }, "100", true);
   expect(!d.ok && /TEE signer not registered|bad signature|verdict and anomalies disagree/.test(d.failure || ""), "edited TEE verdict rejected");
+  // Sandbox only (a refused call still publishes its arguments): a REAL TEE-signed reply from 6 Nov that echoed
+  // document_id, asset and amount is refused by the contract's reply rule.
+  if (SANDBOX) {
+    const lk = JSON.parse(readFileSync(new URL("tee/fixtures/leaky-reply-sandbox.json", root), "utf8")).record;
+    const lr = await call(servicerAcc, "submit_verdict with a reply that echoes document fields (must be rejected)", "submit_verdict", { loan_hash: lk.loan_hash, model_id: lk.model_id, request_sha256: lk.request_sha256, response_body: lk.response_body, signature: lk.signature }, "100", true);
+    expect(!lr.ok && /reply has a key outside the allowed list/.test(lr.failure || ""), "reply with document fields rejected: allowed keys only");
+  }
 }
 
 // ---------- 2d. score from chain data ----------

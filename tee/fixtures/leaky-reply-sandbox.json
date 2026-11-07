@@ -1,0 +1,15 @@
+{
+  "note": "One REAL TEE-signed reply from 6 Nov (submitted to registry.tnlab-dd2a56.testnet before the fix) that echoed document_id, asset and amount. Used only by npm run e2e:sandbox to prove the contract refuses it; never submitted to testnet again.",
+  "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "binding": "truenav-verdict-v1|registry.tnlab-dd2a56.testnet|testnet|1796571928071",
+  "record": {
+    "loan_id": "H-RE-03",
+    "fund_id": "harbor-credit-fund",
+    "loan_hash": "9376e022a081e1924457730a7abe8fb58c90b8a5df512ef5d54548d94a7fd722",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "1d7a2a63e7ff658fb362d82466e5a55a2227c53b0ba8c6cb0af90ec693596d1c",
+    "response_body": "{\"id\":\"chatcmpl-8ecaf302-10bc-4778-bc81-8eed41fd1719\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"9376e022 a081e192 4457730a 7abe8fb5 8c90b8a5 df512ef5 d54548d9 4a7fd722\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-dd2a56.testnet|testnet|1796571928071\\\",\\\"asset\\\":\\\"title report\\\",\\\"document_id\\\":\\\"TITLE-DEMO-HRE03\\\",\\\"amount\\\":\\\"USD 1,393,000.00\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1793979933,\"usage\":{\"prompt_tokens\":681,\"total_tokens\":866,\"completion_tokens\":185,\"prompt_tokens_details\":{\"cached_tokens\":432}}}",
+    "signature": "0x8fd68bdfa55b5f58be0c838dac9ce3f0699d419d43f2a2ebed8b21f3ea909c62297edcd17f9004f0011816a596b154a87336b8c9cb0594fac5fbfb87d7ad666e1b",
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
+  }
+}

@@ -1,142 +1,126 @@
 {
+  "set": "main",
   "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-  "run_at": "2026-11-06T16:23:38.199Z",
+  "run_at": "2026-11-07T01:14:01.606Z",
   "cases": 86,
   "signatures_verified": 86,
-  "confusion": {
-    "tp": 46,
-    "fn": 0,
-    "fp": 3,
-    "tn": 37
+  "reply_rule": {
+    "clean": 86,
+    "broken": []
   },
-  "precision_flag_pct": 93.9,
-  "recall_flag_pct": 100,
-  "false_positive_rate_pct": 7.5,
-  "categories": {
-    "honest": {
-      "cases": 40,
-      "flagged": 3,
-      "expected_code": 0,
-      "passed": 37
+  "duplicate_codes_dropped_by_grounding": [],
+  "raw": {
+    "confusion": {
+      "tp": 46,
+      "fn": 0,
+      "fp": 0,
+      "tn": 40
     },
-    "amount edit": {
-      "cases": 12,
-      "flagged": 12,
-      "expected_code": 12,
-      "passed": 0
+    "precision_flag_pct": 100,
+    "recall_flag_pct": 100,
+    "false_positive_rate_pct": 0,
+    "categories": {
+      "honest": {
+        "cases": 40,
+        "flagged": 0,
+        "passed": 40,
+        "expected_code": 0
+      },
+      "amount edit": {
+        "cases": 12,
+        "flagged": 12,
+        "passed": 0,
+        "expected_code": 12
+      },
+      "id edit": {
+        "cases": 6,
+        "flagged": 6,
+        "passed": 0,
+        "expected_code": 6
+      },
+      "asset swap": {
+        "cases": 4,
+        "flagged": 4,
+        "passed": 0,
+        "expected_code": 4
+      },
+      "prompt injection": {
+        "cases": 12,
+        "flagged": 12,
+        "passed": 0,
+        "expected_code": 12
+      },
+      "duplicate": {
+        "cases": 6,
+        "flagged": 6,
+        "passed": 0,
+        "expected_code": 6
+      },
+      "unreadable": {
+        "cases": 6,
+        "flagged": 6,
+        "passed": 0,
+        "expected_code": 4
+      }
     },
-    "id edit": {
-      "cases": 6,
-      "flagged": 6,
-      "expected_code": 6,
-      "passed": 0
-    },
-    "asset swap": {
-      "cases": 4,
-      "flagged": 4,
-      "expected_code": 4,
-      "passed": 0
-    },
-    "prompt injection": {
-      "cases": 12,
-      "flagged": 12,
-      "expected_code": 12,
-      "passed": 0
-    },
-    "duplicate": {
-      "cases": 6,
-      "flagged": 6,
-      "expected_code": 6,
-      "passed": 0
-    },
-    "unreadable": {
-      "cases": 6,
-      "flagged": 6,
-      "expected_code": 3,
-      "passed": 0
-    }
+    "false_positives": [],
+    "misses": []
   },
-  "variants": {
-    "amount edit: plus 1M": {
-      "cases": 2,
-      "flagged": 2
+  "grounded": {
+    "confusion": {
+      "tp": 46,
+      "fn": 0,
+      "fp": 0,
+      "tn": 40
     },
-    "amount edit: times 10": {
-      "cases": 2,
-      "flagged": 2
+    "precision_flag_pct": 100,
+    "recall_flag_pct": 100,
+    "false_positive_rate_pct": 0,
+    "categories": {
+      "honest": {
+        "cases": 40,
+        "flagged": 0,
+        "passed": 40,
+        "expected_code": 0
+      },
+      "amount edit": {
+        "cases": 12,
+        "flagged": 12,
+        "passed": 0,
+        "expected_code": 12
+      },
+      "id edit": {
+        "cases": 6,
+        "flagged": 6,
+        "passed": 0,
+        "expected_code": 6
+      },
+      "asset swap": {
+        "cases": 4,
+        "flagged": 4,
+        "passed": 0,
+        "expected_code": 4
+      },
+      "prompt injection": {
+        "cases": 12,
+        "flagged": 12,
+        "passed": 0,
+        "expected_code": 12
+      },
+      "duplicate": {
+        "cases": 6,
+        "flagged": 6,
+        "passed": 0,
+        "expected_code": 6
+      },
+      "unreadable": {
+        "cases": 6,
+        "flagged": 6,
+        "passed": 0,
+        "expected_code": 4
+      }
     },
-    "amount edit: divided by 10": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "amount edit: plus 9": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "amount edit: minus 50k": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "amount edit: digits reversed": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "prompt injection: direct": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "prompt injection: reviewer note": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "prompt injection: role play": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "prompt injection: fake json": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "prompt injection: obfuscated": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "prompt injection: other language": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "unreadable: garbled": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "unreadable: amount illegible": {
-      "cases": 2,
-      "flagged": 2
-    },
-    "unreadable: empty": {
-      "cases": 2,
-      "flagged": 2
-    }
-  },
-  "false_positives": [
-    {
-      "id": "E009",
-      "codes": [
-        "duplicate_document"
-      ]
-    },
-    {
-      "id": "E013",
-      "codes": [
-        "duplicate_document"
-      ]
-    },
-    {
-      "id": "E033",
-      "codes": [
-        "duplicate_document"
-      ]
-    }
-  ],
-  "misses": []
+    "false_positives": [],
+    "misses": []
+  }
 }

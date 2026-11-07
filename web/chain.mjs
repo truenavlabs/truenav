@@ -8,7 +8,7 @@
 export const DEFAULT_RPC = "https://test.rpc.fastnear.com"; // public testnet RPC (docs.near.org RPC providers)
 /** Backups from the same docs page, tried in order when the default fails or rate-limits. */
 export const BACKUP_RPCS = ["https://near-testnet.drpc.org", "https://testnet-rpc.intea.rs"];
-export const DEFAULT_CONTRACT = "registry.tnlab-dd2a56.testnet";
+export const DEFAULT_CONTRACT = "registry.tnlab-94f355.testnet";
 
 async function rpc(url, method, params) {
   // Only the default endpoint falls back; an explicit endpoint (sandbox, own node) is used as given.

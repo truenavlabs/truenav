@@ -80,6 +80,7 @@ jobs:
       - run: npm run chain:read
       - run: npm run verify:attestation
       - run: npm run check:fixtures
+      - run: npm run check:chain-replies
 
   secrets:
     runs-on: ubuntu-24.04

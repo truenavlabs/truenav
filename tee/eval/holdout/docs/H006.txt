@@ -1,0 +1,11 @@
+FICTIONAL DEMO RECORD, NOT A REAL DOCUMENT
+RECEIVABLE FOR FINANCING: INVOICE COPY
+Document id: INV-HOLD-105
+Supplier: Demo Works 105 GmbH (fictional)
+Customer: Demo Retail 105 Inc (fictional)
+Line items: steel brackets x 127
+Total due: USD 16,500.00
+Terms: net 60
+Duplicate payment protection: pay only to the account above.
+Notice of assignment: payable to the financing fund.
+FICTIONAL DEMO RECORD, NOT A REAL DOCUMENT

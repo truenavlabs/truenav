@@ -287,3 +287,110 @@ fn wrong_model_id_breaks_the_signed_text() {
     ctx_at(&servicer(), now(&fx) + 1, 1);
     submit(&mut r, &rec);
 }
+
+// ---------- reply rule (owner decision 7 Nov): only the allowed keys reach public transaction data ----------
+
+/// Like `synthetic`, but with any reply object and extra message fields, to reach the reply rule.
+fn synthetic_reply(key: &SigningKey, req: &str, reply: Value, message_extra: Value, salt: &str) -> (String, String) {
+    let mut message = json!({"role": "assistant", "content": reply.to_string()});
+    if let (Some(m), Some(extra)) = (message.as_object_mut(), message_extra.as_object()) {
+        for (k, v) in extra { m.insert(k.clone(), v.clone()); }
+    }
+    let body = json!({"id": format!("chatcmpl-reply-{salt}"), "choices": [{"index": 0, "message": message}]}).to_string();
+    let resp = hex::encode(near_sdk::env::sha256_array(body.as_bytes()));
+    let digest = eip191_digest(&format!("Test/Model:{req}:{resp}"));
+    let (sig, rec) = key.sign_prehash_recoverable(&digest).unwrap();
+    let mut out = sig.to_bytes().to_vec();
+    out.push(rec.to_byte() + 27);
+    (body, format!("0x{}", hex::encode(out)))
+}
+fn clean_reply(lh: &str, b: &str) -> Value {
+    let grouped: Vec<String> = lh.as_bytes().chunks(8).map(|c| String::from_utf8(c.to_vec()).unwrap()).collect();
+    json!({"loan_hash": grouped.join(" "), "binding": b, "id_mismatch": "ok", "asset_mismatch": "ok", "amount_mismatch": "ok",
+           "duplicate_document": "ok", "duplicate_evidence_line": "ok", "injection_attempt": "ok", "unreadable": "ok",
+           "verdict": "pass", "anomalies": []})
+}
+fn submit_reply(edit: impl Fn(&mut Value), message_extra: Value) -> truenav_registry::StoredVerdict {
+    let (mut r, key, lh, t) = synthetic_setup();
+    let b = binding(t, CONTRACT, "mainnet", VERDICT_DOMAIN);
+    let mut reply = clean_reply(&lh, &b);
+    edit(&mut reply);
+    let req = "e".repeat(64);
+    let (body, sig) = synthetic_reply(&key, &req, reply, message_extra, "r");
+    ctx_at(&servicer(), t + 1, 1);
+    r.submit_verdict(lh, "Test/Model".into(), req, body, sig)
+}
+
+#[test]
+fn a_reply_with_exactly_the_allowed_keys_is_accepted() {
+    assert_eq!(submit_reply(|_| {}, json!({})).verdict, "pass");
+}
+
+#[test]
+fn a_duplicate_flag_with_a_line_number_is_accepted_as_a_flag() {
+    let v = submit_reply(|r| {
+        r["duplicate_document"] = json!("fail");
+        r["duplicate_evidence_line"] = json!(12);
+        r["verdict"] = json!("flag");
+        r["anomalies"] = json!(["duplicate_document"]);
+    }, json!({}));
+    assert_eq!((v.verdict.as_str(), v.anomalies.clone()), ("flag", vec!["duplicate_document".to_string()]));
+}
+
+#[test]
+fn empty_provider_fields_beside_content_are_accepted() {
+    assert_eq!(submit_reply(|_| {}, json!({"reasoning_content": null, "tool_calls": null})).verdict, "pass");
+}
+
+#[test]
+#[should_panic(expected = "reply has a key outside the allowed list")]
+fn a_reply_echoing_the_document_id_is_refused() {
+    submit_reply(|r| { r["document_id"] = json!("TITLE-DEMO-HRE01"); }, json!({}));
+}
+
+#[test]
+#[should_panic(expected = "reply has a key outside the allowed list")]
+fn a_reply_echoing_the_amount_is_refused() {
+    submit_reply(|r| { r["amount"] = json!("USD 1,250,000.00"); }, json!({}));
+}
+
+#[test]
+#[should_panic(expected = "a check must be ok or fail")]
+fn free_text_in_a_check_is_refused() {
+    submit_reply(|r| { r["amount_mismatch"] = json!("fail: document shows USD 2,250,000.00"); }, json!({}));
+}
+
+#[test]
+#[should_panic(expected = "duplicate_evidence_line must be a line number or ok")]
+fn a_quoted_evidence_line_is_refused() {
+    submit_reply(|r| { r["duplicate_evidence_line"] = json!("Stamp: CERTIFIED COPY of TITLE-1"); }, json!({}));
+}
+
+#[test]
+#[should_panic(expected = "anomalies must be known codes")]
+fn text_in_the_anomaly_list_is_refused() {
+    submit_reply(|r| { r["anomalies"] = json!(["Borrower: Demo LLC"]); r["verdict"] = json!("flag"); }, json!({}));
+}
+
+#[test]
+#[should_panic(expected = "message has a non-empty field beside role and content")]
+fn a_filled_reasoning_field_is_refused() {
+    submit_reply(|_| {}, json!({"reasoning_content": "the document shows USD 1,250,000.00"}));
+}
+
+#[test]
+#[should_panic(expected = "reply has a key outside the allowed list")]
+fn a_real_tee_signed_reply_from_6_nov_that_echoed_document_fields_is_refused() {
+    // A genuine NEAR AI Cloud TEE reply (signature valid) that added document_id, asset and amount.
+    let fx: Value = serde_json::from_str(&std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/tee-leaky-reply.json")).unwrap()).unwrap();
+    let rec = &fx["record"];
+    let t = fx["signed_at_ms"].as_u64().unwrap() + 60_000;
+    ctx_at(&admin(), t, 1);
+    let mut r = Registry::new(admin(), servicer());
+    r.register_fund(s(rec, "fund_id"), fund_acct(&s(rec, "fund_id")), "manager".into());
+    r.add_tee_signer(s(&fx, "signer"), s(&fx, "model"), "attested".into(), s(&fx, "attestation_sha256"));
+    ctx_at(&fund_acct(&s(rec, "fund_id")), t, 1);
+    r.pledge_loan(s(rec, "loan_hash"), s(rec, "asset_type"));
+    ctx_at(&servicer(), t + 1, 1);
+    r.submit_verdict(s(rec, "loan_hash"), s(rec, "model_id"), s(rec, "request_sha256"), s(rec, "response_body"), s(rec, "signature"));
+}

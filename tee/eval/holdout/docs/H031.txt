@@ -1,0 +1,12 @@
+FICTIONAL DEMO RECORD, NOT A REAL DOCUMENT
+PROPERTY TITLE ABSTRACT
+Document id: ASSET-HOLD-501
+Instrument type: deed to secure debt
+Collateral: Lot 74, Block 4, Demo Heights subdivision
+Mortgagor: Demo Holdings 501 LP (fictional)
+Loan amount secured: USD 98,000.00
+Rate and term: 5.9% over 7 years
+Lien priority: senior
+Original lender: Demo Bank of Demo County (fictional).
+Exceptions to title: utility easement along the rear line
+FICTIONAL DEMO RECORD, NOT A REAL DOCUMENT

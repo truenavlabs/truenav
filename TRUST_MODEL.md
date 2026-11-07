@@ -24,6 +24,8 @@ What TrueNav proves, what it assumes, and who can break what. Testnet demo; all 
 ## Privacy
 
 - On chain: loan_hash, pledge holder, verdict and anomaly codes, request and response hashes, certificates with fund totals. Never the document, the borrower or a single loan's amount.
+- Public transaction data: each `submit_verdict` call publishes the whole signed TEE reply, even when the call fails. The reply may hold only the allowed keys (`tee/reply.mjs`): the loan hash, the binding, the six check results (ok or fail), the duplicate evidence line number, the verdict and the anomaly codes. The client rejects any other key or value, the contract refuses such a reply before anything else, and CI decodes every `submit_verdict` transaction on the live contract (`npm run check:chain-replies`). The line number points into the private document; nobody outside the TEE can check it from chain, only the eval, which has the documents.
+- Found and fixed on 7 Nov: on the earlier instance `registry.tnlab-dd2a56.testnet`, 15 of 20 `submit_verdict` transactions carried the document id, asset and amount (fictional data; see AUDIT_FINDINGS 21). The current instance never received such a reply.
 - The loan fingerprint is a demo: `sha256("truenav-demo-v1|" + asset type + "|" + document id)`. It is guessable for real identifiers. Next: an HMAC whose key never leaves a TEE (OutLayer).
 - Blocked attempts and alerts are public state. They never name the other fund, but they are not private.
 - The underwriter request (document plus claim) is sent to NEAR AI Cloud over TLS; NEAR AI Cloud's private-inference guarantees apply. This repo keeps no document server-side; the demo documents are fictional and committed.

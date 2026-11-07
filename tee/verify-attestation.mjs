@@ -4,7 +4,7 @@
 //
 // 1. Decodes the published NEAR AI Cloud attestation report (tee/fixtures/attestation-report.json.b64) and checks
 //    its sha256 equals the hash recorded with the verdicts, and the hash the live contract stores for its TEE
-//    signer (get_tee_signers on registry.tnlab-dd2a56.testnet, read over public RPC).
+//    signer (get_tee_signers on the live contract, read over public RPC).
 // 2. Re-verifies the report: Intel TDX quote and collateral (Phala PCCS), TCB status, debug off, the signing key
 //    and the request nonce bound in the quote's report data, MRCONFIGID and RTMR3, NVIDIA GPU evidence (NRAS).
 // 3. Checks the attested signing key is the key that signed every recorded verdict, and the key the contract

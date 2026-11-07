@@ -179,6 +179,14 @@ pub fn network_of(account: &str) -> String {
 }
 
 pub const ANOMALY_CODES: [&str; 6] = ["amount_mismatch", "asset_mismatch", "id_mismatch", "injection_attempt", "duplicate_document", "unreadable"];
+/// The only keys a verdict reply may carry (owner decision 7 Nov). The whole response body is public transaction
+/// data, so a reply with anything else is rejected, never rewritten. Mirrors tee/reply.mjs.
+pub const REPLY_KEYS: [&str; 11] = [
+    "loan_hash", "binding", "id_mismatch", "asset_mismatch", "amount_mismatch", "duplicate_document",
+    "duplicate_evidence_line", "injection_attempt", "unreadable", "verdict", "anomalies",
+];
+pub const CHECK_KEYS: [&str; 6] = ["id_mismatch", "asset_mismatch", "amount_mismatch", "duplicate_document", "injection_attempt", "unreadable"];
+pub const MAX_EVIDENCE_LINE: u64 = 10_000;
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -233,6 +241,55 @@ fn norm_address(a: &str) -> String {
 
 fn is_hex64(h: &str) -> bool {
     h.len() == 64 && h.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+}
+
+/// None when the reply holds only the allowed keys with the allowed value types; otherwise the first problem.
+/// Rejects: extra keys in the reply, free text in check fields, a non-number evidence line, unknown anomaly codes,
+/// a non-empty provider field beside role and content, and anything but exactly one choice.
+pub fn reply_problem(response_body: &str) -> Option<&'static str> {
+    use near_sdk::serde_json::Value;
+    let body: Value = match near_sdk::serde_json::from_str(response_body) { Ok(v) => v, Err(_) => return Some("response is not JSON") };
+    let choices = match body.get("choices").and_then(|c| c.as_array()) { Some(c) if c.len() == 1 => c, _ => return Some("response must have exactly one choice") };
+    let msg = match choices[0].get("message").and_then(|m| m.as_object()) { Some(m) => m, None => return Some("response has no message") };
+    if msg.iter().any(|(k, v)| k != "role" && k != "content" && !v.is_null()) {
+        return Some("message has a non-empty field beside role and content");
+    }
+    let content = match msg.get("content").and_then(|c| c.as_str()) { Some(c) => c.trim(), None => return Some("reply is not one JSON object") };
+    let content = content.trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
+    let r = match near_sdk::serde_json::from_str::<Value>(content) { Ok(Value::Object(o)) => o, _ => return Some("reply is not one JSON object") };
+    if r.keys().any(|k| !REPLY_KEYS.contains(&k.as_str())) {
+        return Some("reply has a key outside the allowed list");
+    }
+    match r.get("loan_hash").and_then(|v| v.as_str()) {
+        Some(h) if h.len() <= 71 && h.chars().filter(|c| !c.is_whitespace()).count() == 64 && h.chars().all(|c| c.is_ascii_hexdigit() || c.is_whitespace()) => {}
+        _ => return Some("loan_hash is not a 64-hex hash"),
+    }
+    match r.get("binding").and_then(|v| v.as_str()) {
+        Some(b) if b.len() <= 160 && b.chars().all(|c| c.is_ascii_alphanumeric() || "._|- ".contains(c)) => {}
+        _ => return Some("binding is not a binding"),
+    }
+    for k in CHECK_KEYS {
+        if let Some(v) = r.get(k) {
+            if v.as_str() != Some("ok") && v.as_str() != Some("fail") {
+                return Some("a check must be ok or fail");
+            }
+        }
+    }
+    if let Some(v) = r.get("duplicate_evidence_line") {
+        let ok = v.as_str() == Some("ok") || v.as_u64().map(|n| (1..=MAX_EVIDENCE_LINE).contains(&n)).unwrap_or(false);
+        if !ok {
+            return Some("duplicate_evidence_line must be a line number or ok");
+        }
+    }
+    match r.get("verdict").and_then(|v| v.as_str()) {
+        Some("pass") | Some("flag") => {}
+        _ => return Some("verdict must be pass or flag"),
+    }
+    match r.get("anomalies").and_then(|v| v.as_array()) {
+        Some(a) if a.iter().all(|x| x.as_str().map(|s| ANOMALY_CODES.contains(&s)).unwrap_or(false)) => {}
+        _ => return Some("anomalies must be known codes"),
+    }
+    None
 }
 
 /// Read {loan_hash, verdict, anomalies} from the model's reply inside the exact response body.
@@ -643,11 +700,16 @@ impl Registry {
         self.assert_servicer();
         self.assert_not_paused();
         require!(is_loan_hash(&loan_hash), "loan_hash must be 64 lowercase hex characters");
+        // The response body is public transaction data: a reply with anything beyond the allowed keys and value
+        // types is refused first, whatever its signature (owner decision 7 Nov). A rejection, never a rewrite.
+        require!(response_body.len() <= 4096, "response_body too long");
+        if let Some(problem) = reply_problem(&response_body) {
+            env::panic_str(problem);
+        }
         let lock = self.locks.get(&loan_hash).cloned();
         require!(lock.is_some(), "loan not pledged");
         let lock = lock.unwrap();
         require!(is_hex64(&request_sha256), "request_sha256 must be 64 lowercase hex characters");
-        require!(response_body.len() <= 4096, "response_body too long");
         let response_sha256 = hex::encode(env::sha256_array(response_body.as_bytes()));
         require!(!self.seen_responses.contains(&response_sha256), "this signed response was already submitted");
         let text = format!("{model_id}:{request_sha256}:{response_sha256}");

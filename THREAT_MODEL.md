@@ -31,12 +31,13 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 | 24 | Skip the cash expiry rule with a malformed or future date | all invalid attestations are unattested, each flagged | `engine/test/cash6b.test.mjs` |
 | 25 | A leaked key of one role takes over the contract | separate admin, registrar, pauser and servicer roles; pause switch | `contract/tests/roles.rs` |
 | 26 | "Trust us" on the TEE key | published attestation report, re-checkable by anyone | `npm run verify:attestation` |
+| 27 | Read document text out of the public `submit_verdict` arguments (the model echoing fields or quoting evidence) | reply holds only fixed keys and value types; evidence is a line number, never a quote; client, contract and CI reject anything else | `tee/test/reply.test.mjs`, `a_real_tee_signed_reply_from_6_nov_that_echoed_document_fields_is_refused`, sandbox e2e, `npm run check:chain-replies` |
 
 ## Open risks (known, not fixed)
 
 - The role holders and the contract account key are held by one operator on testnet (see TRUST_MODEL).
 - The demo loan fingerprint is guessable for real identifiers; real use needs salted commitments (an HMAC with a key kept in a TEE).
 - Engine inputs other than chain data (attempt list, cash attestation, liabilities) are fund supplied; see `engine/TRUST_MODEL.md`.
-- The LLM underwriter can be wrong in either direction: 3 of 40 honest documents flagged in the eval (`tee/eval/REPORT.md`).
+- The LLM underwriter can be wrong in either direction. With the 7 Nov prompt it flagged no honest document in 60 and missed no tampered one in 66 (one run each, synthetic documents; on 6 Nov it flagged 3 of 40 honest ones); see `tee/eval/REPORT.md`.
 - The servicer chooses which verdicts to submit and can re-run the TEE; an independent servicer is assumed.
 - The contract pays for storage on testnet; mainnet needs storage deposits.

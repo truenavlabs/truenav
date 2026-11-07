@@ -71,7 +71,7 @@ You should see, with an explorer link per transaction: sub-accounts for the cont
 
 ### Live instance
 
-Contract [`registry.tnlab-dd2a56.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-dd2a56.testnet), deployed 6 Nov 2026. Roles: admin and registrar `tnlab-dd2a56.testnet`, pauser `pauser.tnlab-dd2a56.testnet`, servicer `servicer.tnlab-dd2a56.testnet`. Certificate signers `0xf6614559e450f6b8c5922066ceeaa96fd50d520c` (signs the current certificates) and `0x287be84d0a5adf8625f6f46e8e45c6706a1da2d0` (earlier run), both test keys, not TEE. TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `6914a054ec8b29ce...`).
+Contract [`registry.tnlab-dd2a56.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-dd2a56.testnet), deployed 6 Nov 2026. Roles: admin, registrar and pauser `truenav-admin.testnet` (the owner's account, handed over 7 Nov), servicer `servicer.tnlab-dd2a56.testnet`. The contract account holds two full-access keys: the owner's and the operator's backup. Certificate signers `0xf6614559e450f6b8c5922066ceeaa96fd50d520c` (signs the current certificates) and `0x287be84d0a5adf8625f6f46e8e45c6706a1da2d0` (earlier run), both test keys, not TEE. TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `6914a054ec8b29ce...`).
 
 - Deploy and init: [7aeCGRHJ...](https://explorer.testnet.near.org/transactions/7aeCGRHJ3e29k5UZgGFdxsJnAwAENcrvERuhtHYdCauE)
 - Pauser role moved: [C6ENiXd7...](https://explorer.testnet.near.org/transactions/C6ENiXd7h5jrjyGqo5tDYLqPAip7c4LPcriSLWd5iiJx)
@@ -79,6 +79,7 @@ Contract [`registry.tnlab-dd2a56.testnet`](https://explorer.testnet.near.org/acc
 - TEE signer registered by the registrar: [CMJWpFrN...](https://explorer.testnet.near.org/transactions/CMJWpFrNGm8BFyXpEKqTRWL5vp2mdZhY859hBmKJPB3F)
 - Servicer submits the TEE verdict for H-RE-01: [J8X8dSNG...](https://explorer.testnet.near.org/transactions/J8X8dSNG5DD6U6kcELEQtfBdBRNVaJ3iWR8AuGSk1CSW)
 - Code redeployed from commit `8ff3ee5` (state kept), code hash `FKiqEe3GZ2Wae3iuKG1riCQPi99V6sZQXftWAbi2yK6D`: [C9UY1FUz...](https://explorer.testnet.near.org/transactions/C9UY1FUzonMCZxuDpcXJvjZqFBX5xCPcM7Q5uapxhan4)
+- Roles handed to the owner: [GgfbBV9H...](https://explorer.testnet.near.org/transactions/GgfbBV9HcDD8hYYfuu4xTwmuBtkNp1ygh9bHVxBhoeNS) (owner key added), [Hxe1GtQe...](https://explorer.testnet.near.org/transactions/Hxe1GtQeqi93Xu47v7K1Fif4XxCHfZUzSQyeKS56tXo3) (registrar), [3nzwdwEn...](https://explorer.testnet.near.org/transactions/3nzwdwEnJQjvhQep5UeP6bXFozjFJBBE2JwSFfB8ZuSa) (pauser), [3TnEn938...](https://explorer.testnet.near.org/transactions/3TnEn938ii5wgNwBrNN4R8v5rKkDk8ryLUBrtBy1vYTZ) (admin)
 - Rival submits a genuine TEE flag on Harbor's loan: rejected: [F5pH6F8a...](https://explorer.testnet.near.org/transactions/F5pH6F8adz4sTCkerSz8XuMN5Pw5DwLXMUAhScDS7mJE)
 - Edited TEE verdict: rejected: [G3LiR4by...](https://explorer.testnet.near.org/transactions/G3LiR4bypH6635ZMEYh3rCWaSFWyc5R9mSXDCLxPHFk9)
 - Harbor certificate stored: [DFYV31zA...](https://explorer.testnet.near.org/transactions/DFYV31zABx2CC1zi7R8gy13KjeYa1jHnTnBQPTfuTGwQ)

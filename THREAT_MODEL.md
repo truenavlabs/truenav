@@ -35,7 +35,7 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 
 ## Open risks (known, not fixed)
 
-- The role holders and the contract account key are held by one operator on testnet (see TRUST_MODEL).
+- The servicer and a backup contract-account key are held by the operator on testnet; admin, registrar and pauser are the owner's account (see TRUST_MODEL).
 - The demo loan fingerprint is guessable for real identifiers; real use needs salted commitments (an HMAC with a key kept in a TEE).
 - Engine inputs other than chain data (attempt list, cash attestation, liabilities) are fund supplied; see `engine/TRUST_MODEL.md`.
 - The LLM underwriter can be wrong in either direction. With the 7 Nov prompt it flagged no honest document in 60 and missed no tampered one in 66 (one run each, synthetic documents; on 6 Nov it flagged 3 of 40 honest ones); see `tee/eval/REPORT.md`.

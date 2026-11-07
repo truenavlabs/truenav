@@ -71,22 +71,19 @@ You should see, with an explorer link per transaction: sub-accounts for the cont
 
 ### Live instance
 
-Contract [`registry.tnlab-dd2a56.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-dd2a56.testnet), deployed 6 Nov 2026. Roles: admin, registrar and pauser `truenav-admin.testnet` (the owner's account, handed over 7 Nov), servicer `servicer.tnlab-dd2a56.testnet`. The contract account holds two full-access keys: the owner's and the operator's backup. Certificate signers `0xf6614559e450f6b8c5922066ceeaa96fd50d520c` (signs the current certificates) and `0x287be84d0a5adf8625f6f46e8e45c6706a1da2d0` (earlier run), both test keys, not TEE. TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `6914a054ec8b29ce...`).
+Contract [`registry.tnlab-22cfb2.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-22cfb2.testnet), deployed 7 Nov 2026 from truenav commit `c28c825` (code hash `7mNZwh1dWzyWr5VGB9zqamptFXEaVm1omAMKRpavQZgR`). Roles: admin, registrar and pauser `truenav-admin.testnet` (the owner's account), servicer `servicer.tnlab-22cfb2.testnet`. The contract account holds two full-access keys: the owner's and the operator's backup. Certificate signer `0x768b86584d1103734cd6a229c73e55a8ac121ed4` (test key, not TEE). TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `ffa2e57dcec32164...`, published and re-checkable with `npm run verify:attestation`). Every `submit_verdict` transaction on it holds only the allowed reply keys (`npm run check:chain-replies`).
 
-- Deploy and init: [7aeCGRHJ...](https://explorer.testnet.near.org/transactions/7aeCGRHJ3e29k5UZgGFdxsJnAwAENcrvERuhtHYdCauE)
-- Pauser role moved: [C6ENiXd7...](https://explorer.testnet.near.org/transactions/C6ENiXd7h5jrjyGqo5tDYLqPAip7c4LPcriSLWd5iiJx)
-- Servicer role moved: [99HzaxEJ...](https://explorer.testnet.near.org/transactions/99HzaxEJEuuAeAKNsmBTdG7ZtM6ZXagvpPhV73C9Kgco)
-- TEE signer registered by the registrar: [CMJWpFrN...](https://explorer.testnet.near.org/transactions/CMJWpFrNGm8BFyXpEKqTRWL5vp2mdZhY859hBmKJPB3F)
-- Servicer submits the TEE verdict for H-RE-01: [J8X8dSNG...](https://explorer.testnet.near.org/transactions/J8X8dSNG5DD6U6kcELEQtfBdBRNVaJ3iWR8AuGSk1CSW)
-- Code redeployed from commit `8ff3ee5` (state kept), code hash `FKiqEe3GZ2Wae3iuKG1riCQPi99V6sZQXftWAbi2yK6D`: [C9UY1FUz...](https://explorer.testnet.near.org/transactions/C9UY1FUzonMCZxuDpcXJvjZqFBX5xCPcM7Q5uapxhan4)
-- Roles handed to the owner: [GgfbBV9H...](https://explorer.testnet.near.org/transactions/GgfbBV9HcDD8hYYfuu4xTwmuBtkNp1ygh9bHVxBhoeNS) (owner key added), [Hxe1GtQe...](https://explorer.testnet.near.org/transactions/Hxe1GtQeqi93Xu47v7K1Fif4XxCHfZUzSQyeKS56tXo3) (registrar), [3nzwdwEn...](https://explorer.testnet.near.org/transactions/3nzwdwEnJQjvhQep5UeP6bXFozjFJBBE2JwSFfB8ZuSa) (pauser), [3TnEn938...](https://explorer.testnet.near.org/transactions/3TnEn938ii5wgNwBrNN4R8v5rKkDk8ryLUBrtBy1vYTZ) (admin)
-- Rival submits a genuine TEE flag on Harbor's loan: rejected: [F5pH6F8a...](https://explorer.testnet.near.org/transactions/F5pH6F8adz4sTCkerSz8XuMN5Pw5DwLXMUAhScDS7mJE)
-- Edited TEE verdict: rejected: [G3LiR4by...](https://explorer.testnet.near.org/transactions/G3LiR4bypH6635ZMEYh3rCWaSFWyc5R9mSXDCLxPHFk9)
-- Harbor certificate stored: [DFYV31zA...](https://explorer.testnet.near.org/transactions/DFYV31zABx2CC1zi7R8gy13KjeYa1jHnTnBQPTfuTGwQ)
-- Public test key certificate: rejected: [2cUYTan2...](https://explorer.testnet.near.org/transactions/2cUYTan2sx2oGL3686ft7ieAACi99YsABdSwvmWu5tNd)
-- Meridian pledges Harbor's loan: refused, attempt counted: [FYXZ447c...](https://explorer.testnet.near.org/transactions/FYXZ447c8vDh3HP3vCgiems5Z8ganc46M1EvnQHC2PdS)
+- Deploy and init: [8WQUd6Uv...](https://explorer.testnet.near.org/transactions/8WQUd6UvMzGBXCZtW6dTKhGvB9zwjgZAsKx8Gv9AfLc1)
+- TEE signer registered by the registrar: [CUfKS5Uw...](https://explorer.testnet.near.org/transactions/CUfKS5UwCtWVk7vRuR9YCCYA7p5R7mxEgXMkdeVmUmAc)
+- Servicer submits the TEE verdict for H-RE-01: [6VBicZmc...](https://explorer.testnet.near.org/transactions/6VBicZmcwA5zeWwEXpmDjimbGud5A2hwhSzJbDYohjBJ)
+- Rival submits a genuine TEE flag on Harbor's loan: rejected: [98kxkhKU...](https://explorer.testnet.near.org/transactions/98kxkhKUE6h9mYbxWtJS2TBnoSmuSX3NhgGQA6HLKcYY)
+- Edited TEE verdict: rejected: [HwZ576ov...](https://explorer.testnet.near.org/transactions/HwZ576ovtw2XvZ2xjN8aztS5pRMyeHX1f3U3ujcRYEPx)
+- Harbor certificate stored: [EmWqWujV...](https://explorer.testnet.near.org/transactions/EmWqWujVpeDWNXyiT1EwHjX92B2SBXUp44Qmc6oCPSw3)
+- Public test key certificate: rejected: [DVXqHXop...](https://explorer.testnet.near.org/transactions/DVXqHXopCLM42i8LJMH2gxCBF5MUvbeWZNij8tmUn8rs)
+- Meridian pledges Harbor's loan: refused, attempt counted: [DhvfpTzK...](https://explorer.testnet.near.org/transactions/DhvfpTzKgG7VF3L8oYNZAvV2BX6XbdEt3F7hX6etZNk2)
+- Roles handed to the owner: [922r3rRo...](https://explorer.testnet.near.org/transactions/922r3rRoSQPpNmNKYfXWxS9hsw7MjfkMogWBpdJHN6yK) (owner key added), [8GuQsYMe...](https://explorer.testnet.near.org/transactions/8GuQsYMe9YVAxAuBoxeUgsysVFMHCRaLwTnLWmWrfE2o) (registrar), [5cDcQB2T...](https://explorer.testnet.near.org/transactions/5cDcQB2TJHM5AVQnAgDK7KuJM3hxtB4kesn6KWRBEdt6) (pauser), [GgHTfDP3...](https://explorer.testnet.near.org/transactions/GgHTfDP3XgbUnV86PnBjWpKkWZBJbwBdhH3n4a98n42F) (admin)
 
-The first instance, `registry.tnlab-07775b.testnet`, ran the earlier contract layout and is kept as history.
+Earlier instances, kept as history: `registry.tnlab-07775b.testnet` (first contract layout); `registry.tnlab-dd2a56.testnet` (its TEE replies echoed document fields into public transaction data, AUDIT_FINDINGS 21); `registry.tnlab-94f355.testnet` (clean replies, but its TEE signer was registered with the hash of an attestation report that was overwritten before it was published, so it could not be re-verified; replaced the same day).
 
 ### Investor view from chain (no key)
 
@@ -99,7 +96,7 @@ The contract is built reproducibly (NEP-330): `contract/Cargo.toml` pins the bui
 1. Check out the commit that `contract_source_metadata` names (step 3) and build it in the pinned image with the same build info (needs Docker and network access to crates.io):
 
    ```bash
-   REV=8ff3ee57d76bad4bf7d9a23f2a93e818b1582c46
+   REV=c28c8257f111324c16a82fe1332675765ebc99a3
    IMG=sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e
    git checkout $REV && docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/contract \
      -e NEP330_BUILD_INFO_BUILD_ENVIRONMENT="$IMG" -e NEP330_BUILD_INFO_CONTRACT_PATH=contract \
@@ -108,14 +105,14 @@ The contract is built reproducibly (NEP-330): `contract/Cargo.toml` pins the bui
      "$IMG" cargo near build non-reproducible-wasm --locked
    ```
 
-   It prints `SHA-256 checksum bs58: FKiqEe3GZ2Wae3iuKG1riCQPi99V6sZQXftWAbi2yK6D` for that commit.
-2. Compare with `code_hash` from `curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"registry.tnlab-dd2a56.testnet"}}'` when you build the commit named in step 3.
+   It prints `SHA-256 checksum bs58: 7mNZwh1dWzyWr5VGB9zqamptFXEaVm1omAMKRpavQZgR` for that commit.
+2. Compare with `code_hash` from `curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"registry.tnlab-22cfb2.testnet"}}'` when you build the commit named in step 3.
 3. The contract names its own source: view method `contract_source_metadata` returns the repository commit, the build image and the build command.
 
 Read it yourself without any account:
 
 ```
-curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"registry.tnlab-dd2a56.testnet","method_name":"get_attempts_page","args_base64":"'$(printf '{"fund_id":"meridian-yield-fund","from_index":0,"limit":10}' | base64 -w0)'"}}' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(Buffer.from(JSON.parse(s).result.result).toString()))'
+curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"registry.tnlab-22cfb2.testnet","method_name":"get_attempts_page","args_base64":"'$(printf '{"fund_id":"meridian-yield-fund","from_index":0,"limit":10}' | base64 -w0)'"}}' | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(Buffer.from(JSON.parse(s).result.result).toString()))'
 ```
 
 Scores are computed as of the demo valuation time in `spec/nav/fixtures.json`; certificates are signed at run time, because the contract refuses a signing time in the future.
@@ -138,7 +135,7 @@ Scores are computed as of the demo valuation time in `spec/nav/fixtures.json`; c
 ## Limits
 
 - Testnet only; fictional funds, loans and documents.
-- The roles sit on testnet accounts held by the operator; the certificate signer is a test key, not TEE; the TEE signer is registered by the registrar after an attestation check that anyone can repeat (`npm run verify:attestation`), not by an on-chain quote check.
+- Admin, registrar and pauser sit on the owner's testnet account; the servicer is held by the operator; the certificate signer is a test key, not TEE; the TEE signer is registered by the registrar after an attestation check that anyone can repeat (`npm run verify:attestation`), not by an on-chain quote check.
 - Privacy: the demo loan fingerprint `sha256("truenav-demo-v1|" + asset type + "|" + document id)` is guessable for real identifiers. Real use needs salted commitments: an HMAC whose key never leaves a TEE (next step). Pledges, verdicts, attempts and alerts are public chain state; they never name the other fund or show a loan, but they are not hidden. Each `submit_verdict` transaction publishes the whole signed TEE reply, so the reply may hold only fixed keys (`tee/reply.mjs`, enforced by the client, the contract and CI). A duplicate flag carries a line number, never a quote: nothing from the document goes on chain, and the trade-off is that nobody outside the TEE can check that evidence from chain alone; the eval checks it against the documents.
 - The TEE underwriter is an LLM. On 6 Nov it flagged 3 of 40 honest documents; with the 7 Nov prompt it flagged none of 40 (main set) and none of 20 (frozen hold-out set), and missed no tampered document. One run each on synthetic documents (see `tee/eval/REPORT.md`).
 - With chain data, a loan counts only for the fund whose on-chain pledge holds it. Offline mode (no chain data, used by `npm test`) falls back to "verified in neither" for an nft_id two funds list; offline mode is for tests and the chain path is the real score.

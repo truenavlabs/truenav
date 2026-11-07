@@ -55,7 +55,18 @@ With a NEAR AI Cloud key in `NEAR_AI_CLOUD_API_KEY`: `npm run tee:attest` attest
 
 ### TEE eval (86 documents plus a 40-document hold-out)
 
-`tee/eval/`: 40 honest documents and 46 tampered ones (amount edits, id edits, asset swaps, six prompt-injection styles, duplicates, unreadable scans); `tee/eval/holdout/`: 40 more in new wording (20 honest with near-miss words such as "certified by" and "INVOICE COPY"), frozen in its own commit before the current prompt ran. One first answer each from the attested TEE, every reply signed. 7 Nov result, raw and grounded alike: main set recall 100%, precision 100%, false positive rate 0 of 40; hold-out recall 100%, precision 100%, false positive rate 0 of 20. The 6 Nov run (kept) had 3 of 40 honest title reports flagged as duplicates. Grounding: a duplicate flag counts only if its evidence line number points at a line with the phrase. Findings, what changed and limits: `tee/eval/REPORT.md`.
+`tee/eval/`: 40 honest documents and 46 tampered ones (amount edits, id edits, asset swaps, six prompt-injection styles, duplicates, unreadable scans); `tee/eval/holdout/`: 40 more in new wording (20 honest with near-miss words such as "certified by" and "INVOICE COPY"), frozen in its own commit before the current prompt ran. One first answer each from the attested TEE, every reply signed. Before and after (main set; the 6 Nov run is kept unchanged in `tee/eval/results-2026-11-06.json`):
+
+| | 6 Nov | 7 Nov |
+| --- | --- | --- |
+| Honest documents flagged (false positives) | 3 of 40 (7.5%), all `duplicate_document` with no line to point at | 0 of 40 |
+| Tampered documents flagged (recall) | 46 of 46 | 46 of 46 |
+| Replies echoing document fields into public transaction data | 66 of 86 | 0 of 86 |
+| Frozen hold-out set (40 new documents, 20 honest) | not run | 0 of 20 honest flagged, 20 of 20 tampered flagged |
+
+What changed: the model must give the number of the evidence line for a duplicate flag (never a quote), only the exact words count, a repeated line or watermark is not a duplicate, and the reply may hold only fixed keys. Raw and grounded counts are the same on 7 Nov: every duplicate flag pointed at a line with the phrase.
+
+Read the 7 Nov numbers with care (limits, word for word from the eval report): 126 synthetic documents in four templates, written by the same team that wrote the prompt; real loan documents vary far more. One model, one prompt, one run each; LLM answers can vary between runs even at temperature 0. A perfect score here means no failure was found in these documents, not that the underwriter cannot fail. Findings, what changed and limits: `tee/eval/REPORT.md`.
 
 ### Testnet run (your own instance)
 

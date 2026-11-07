@@ -63,14 +63,17 @@ export function addressOf(secretKey) {
   return `0x${hex(keccak_256(pub.slice(1)).slice(12))}`;
 }
 
-/** 65-byte r || s || v (v = 27 or 28) as 0x hex, which the contract accepts. */
-export function signCertificate(contractId, cert, secretKey) {
-  const digest = eip191Digest(canonicalMessage(contractId, cert));
-  const rec = secp256k1.sign(digest, secretKey, { prehash: false, format: "recovered" }); // recovery byte first
+/** EIP-191 signature of `message` as 65-byte r || s || v (v = 27 or 28) in 0x hex, which the contract accepts. */
+export function signEip191(message, secretKey) {
+  const rec = secp256k1.sign(eip191Digest(message), secretKey, { prehash: false, format: "recovered" }); // recovery byte first
   const out = new Uint8Array(65);
   out.set(rec.slice(1), 0);
   out[64] = rec[0] + 27;
   return `0x${hex(out)}`;
+}
+
+export function signCertificate(contractId, cert, secretKey) {
+  return signEip191(canonicalMessage(contractId, cert), secretKey);
 }
 
 export function newSecretKey() {

@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { eip191Recover, readVerdict } from "../underwrite.mjs";
-import { replyProblem } from "../reply.mjs";
+import { replyProblem, replyObject, REPLY_KEYS } from "../reply.mjs";
 import { groundVerdict } from "./ground.mjs";
 
 const root = new URL("../../", import.meta.url);
@@ -41,12 +41,16 @@ function metricsOf(rows, key) {
 }
 
 let failed = false;
-for (const [set, dir] of [["main", "tee/eval"], ["holdout", "tee/eval/holdout"]]) {
-  if (!existsSync(new URL(`${dir}/results.json`, root))) {
+// npm run eval                  scores the current runs of the main and hold-out sets and writes metrics.json
+// npm run eval -- 2026-11-06    replays the kept 6 Nov run of the main set (old prompt) and prints its numbers only
+const archived = process.argv[2];
+const runs = archived ? [[`main, run of ${archived}`, "tee/eval", `results-${archived}.json`]] : [["main", "tee/eval", "results.json"], ["holdout", "tee/eval/holdout", "results.json"]];
+for (const [set, dir, file] of runs) {
+  if (!existsSync(new URL(`${dir}/${file}`, root))) {
     console.log(`${set}: no recorded run yet (${dir}/results.json); run it with npm run eval:run -- ${set}`);
     continue;
   }
-  const run = JSON.parse(readFileSync(new URL(`${dir}/results.json`, root), "utf8"));
+  const run = JSON.parse(readFileSync(new URL(`${dir}/${file}`, root), "utf8"));
   const { cases } = JSON.parse(readFileSync(new URL(`${dir}/cases.json`, root), "utf8"));
   const docOf = Object.fromEntries(cases.map((c) => [c.id, readFileSync(new URL(c.file, root), "utf8")]));
   const attested = run.attestation.signers.map((s) => s.signing_address.toLowerCase());
@@ -59,7 +63,9 @@ for (const [set, dir] of [["main", "tee/eval"], ["holdout", "tee/eval/holdout"]]
     const signed = attested.includes(signer) && v.loan_hash === o.loan_hash;
     if (!signed) bad++;
     const g = groundVerdict(v, docOf[r.id]);
-    return { ...r, signed, problem: replyProblem(o.response_body), raw: { verdict: v.verdict, anomalies: v.anomalies }, grounded: g, evidence_line: v.duplicate_evidence_line };
+    const parsed = replyObject(o.response_body);
+    const extra = parsed && parsed.reply && typeof parsed.reply === "object" ? Object.keys(parsed.reply).filter((k) => !REPLY_KEYS.includes(k)) : [];
+    return { ...r, signed, problem: replyProblem(o.response_body), extra, raw: { verdict: v.verdict, anomalies: v.anomalies }, grounded: g, evidence_line: v.duplicate_evidence_line };
   });
   const raw = metricsOf(rows, "raw");
   const grounded = metricsOf(rows, "grounded");
@@ -74,9 +80,12 @@ for (const [set, dir] of [["main", "tee/eval"], ["holdout", "tee/eval/holdout"]]
     raw,
     grounded,
   };
-  writeFileSync(new URL(`${dir}/metrics.json`, root), JSON.stringify(metrics, null, 2) + "\n");
+  if (!archived) writeFileSync(new URL(`${dir}/metrics.json`, root), JSON.stringify(metrics, null, 2) + "\n");
+  const leaky = rows.filter((r) => r.extra.length);
   console.log(`${set}: ${rows.length} cases, ${rows.length - bad} signatures verified against the attested TEE key, ${metrics.reply_rule.clean} replies within the reply rule`);
-  for (const [k, m] of [["raw", raw], ["grounded", grounded]]) {
+  console.log(`  replies echoing extra fields: ${leaky.length} of ${rows.length} (${leaky.reduce((n, r) => n + r.extra.length, 0)} field values${leaky.length ? ": " + [...new Set(leaky.flatMap((r) => r.extra))].join(", ") : ""})`);
+  // An archived run predates duplicate_evidence_line, so grounding has nothing to check there: raw only.
+  for (const [k, m] of archived ? [["raw", raw]] : [["raw", raw], ["grounded", grounded]]) {
     console.log(`  ${k.padEnd(8)} precision ${m.precision_flag_pct}%, recall ${m.recall_flag_pct}%, false positive rate ${m.false_positive_rate_pct}% (tp ${m.confusion.tp}, fn ${m.confusion.fn}, fp ${m.confusion.fp}, tn ${m.confusion.tn})`);
   }
   if (bad !== 0 || raw.confusion.tp + raw.confusion.fn === 0) failed = true;

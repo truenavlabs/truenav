@@ -7,7 +7,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE01",
       "principal": 1791000,
-      "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
+      "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
       "file": "tee/docs/H-RE-01.txt",
       "tampered": null
     },
@@ -17,7 +17,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE02",
       "principal": 1492500,
-      "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
+      "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
       "file": "tee/docs/H-RE-02.txt",
       "tampered": null
     },
@@ -27,7 +27,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE03",
       "principal": 1393000,
-      "loan_hash": "9376e022a081e1924457730a7abe8fb58c90b8a5df512ef5d54548d94a7fd722",
+      "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
       "file": "tee/docs/H-RE-03.txt",
       "tampered": null
     },
@@ -37,7 +37,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE04",
       "principal": 1194000,
-      "loan_hash": "693c94f003f098e8b8e5ac1a66e8597ddca3e7b6e4eb0f3dac0c8e509bd0cbf3",
+      "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
       "file": "tee/docs/H-RE-04.txt",
       "tampered": null
     },
@@ -47,7 +47,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE05",
       "principal": 990000,
-      "loan_hash": "e5de671a7184ceb27345580c6ab2626f2f665263c3a4f0c2092bfefe8226d477",
+      "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
       "file": "tee/docs/H-RE-05.txt",
       "tampered": null
     },
@@ -57,7 +57,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE06",
       "principal": 895500,
-      "loan_hash": "57429d56072eedc493dff4e1d75cbd875ee6f966f7d17e512b5242c4291c4736",
+      "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
       "file": "tee/docs/H-RE-06.txt",
       "tampered": null
     },
@@ -67,7 +67,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE07",
       "principal": 796000,
-      "loan_hash": "a4dd573b8bd78d6267dd665708ca84d1ffcb3cc49be02b8588811da5be977ca2",
+      "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
       "file": "tee/docs/H-RE-07.txt",
       "tampered": null
     },
@@ -77,7 +77,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE08",
       "principal": 588000,
-      "loan_hash": "488f23290c81aee2be86f7ac44eb9811fe2f89676444b86eba42c0df94479be8",
+      "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
       "file": "tee/docs/H-RE-08.txt",
       "tampered": null
     },
@@ -87,7 +87,7 @@
       "asset_type": "invoices",
       "document_id": "INV-DEMO-HIN01",
       "principal": 298500,
-      "loan_hash": "78b1c8df3abfb2566c0f810f10dbb4945bf5e0e7b858c4454e1a0bbed222a1c8",
+      "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
       "file": "tee/docs/H-IN-01.txt",
       "tampered": null
     },
@@ -97,7 +97,7 @@
       "asset_type": "invoices",
       "document_id": "INV-DEMO-HIN02",
       "principal": 249000,
-      "loan_hash": "1a79acd616248c278be1ac8088476269ce4dd5592f6b947a7475219702fec457",
+      "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
       "file": "tee/docs/H-IN-02.txt",
       "tampered": null
     },
@@ -107,7 +107,7 @@
       "asset_type": "invoices",
       "document_id": "INV-DEMO-HIN03",
       "principal": 198000,
-      "loan_hash": "7bdd3061252eeccdc8254fcbcf77515bef04e2a4bc171f7b845add5022e93df5",
+      "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
       "file": "tee/docs/H-IN-03.txt",
       "tampered": null
     },
@@ -117,7 +117,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-MRE01",
       "principal": 1592000,
-      "loan_hash": "ab260a566e2e97bcc7c289dc14f7addd338ede9903276d5a992ff473e19ae95b",
+      "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
       "file": "tee/docs/M-RE-01.txt",
       "tampered": null
     },
@@ -127,7 +127,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-MRE02",
       "principal": 1078000,
-      "loan_hash": "849a881bab213879bbdcca6083f609c82ecc38152fc0bdf846e2d19058ef6efe",
+      "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
       "file": "tee/docs/M-RE-02.txt",
       "tampered": null
     },
@@ -137,7 +137,7 @@
       "asset_type": "invoices",
       "document_id": "INV-DEMO-MIN01",
       "principal": 492000,
-      "loan_hash": "5c4e1503b831511b8eede7932745df733fc0919643b60cf6834ddfb463bb2673",
+      "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
       "file": "tee/docs/M-IN-01.txt",
       "tampered": null
     },
@@ -147,7 +147,7 @@
       "asset_type": "invoices",
       "document_id": "INV-DEMO-MIN02",
       "principal": 398000,
-      "loan_hash": "6deb7956192a61d5e9dd01bb1a2f6d1fa9fb0ef967457bce536cabe600fb3acb",
+      "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
       "file": "tee/docs/M-IN-02.txt",
       "tampered": null
     },
@@ -157,7 +157,7 @@
       "asset_type": "invoices",
       "document_id": "INV-DEMO-MIN03",
       "principal": 298500,
-      "loan_hash": "2bee4bf4ce1f4bf738aac5d79711f8ce30c22e591fa35c914fd20a59f7807827",
+      "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
       "file": "tee/docs/M-IN-03.txt",
       "tampered": null
     },
@@ -167,7 +167,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE01",
       "principal": 1791000,
-      "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
+      "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
       "file": "tee/docs/tampered/T1-altered-amount.txt",
       "tampered": {
         "id": "T1-altered-amount",
@@ -180,7 +180,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE02",
       "principal": 1492500,
-      "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
+      "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
       "file": "tee/docs/tampered/T2-hidden-injection.txt",
       "tampered": {
         "id": "T2-hidden-injection",
@@ -193,7 +193,7 @@
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE09",
       "principal": 1393000,
-      "loan_hash": "4827f94795d335835378111fde5058be11e85a4dae3a283641c61f52f15eb622",
+      "loan_hash": "8728a8bd444aa13edb5e77bfd4597340fec2b930c8d19d0d2f7d00b9dec67669",
       "file": "tee/docs/tampered/T3-duplicate-as-new.txt",
       "tampered": {
         "id": "T3-duplicate-as-new",

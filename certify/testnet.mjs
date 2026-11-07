@@ -21,7 +21,7 @@ import { createHash } from "node:crypto";
 import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } from "near-api-js";
 import { scorePortfolio } from "../engine/src/score.mjs";
 import { replyProblem } from "../tee/reply.mjs";
-import { toCertificate, signCertificate, addressOf, newSecretKey } from "./certificate.mjs";
+import { toCertificate, signCertificate, signEip191, addressOf, newSecretKey } from "./certificate.mjs";
 
 const root = new URL("../", import.meta.url);
 // Public testnet RPC listed in docs.near.org/api/rpc/providers (rpc.testnet.near.org is deprecated and rate limited).
@@ -304,6 +304,65 @@ expect(attemptsAfter === attemptsBefore + 1, `Meridian blocked attempts ${attemp
 expect((await view("get_alert_count", { fund_id: "harbor-credit-fund" })) === alertsBefore + 1, "Harbor alerted (time only, other fund not named)");
 const token = await view("nft_token", { token_id: loanHash });
 expect(token && token.owner_id === ids.harbor, `token ${loanHash.slice(0, 12)}... owned by ${ids.harbor}`);
+
+// ---------- 4b. sandbox only: every rejection path on a real node ----------
+// Role boundaries, the pause switch on every guarded call, and the verdict rules that need a signed reply
+// (unpledged loan, expired binding, another network or contract). A throwaway test TEE key, generated for this run
+// and registered only on the local sandbox, signs synthetic replies the way the NEAR AI Cloud TEE signs real ones.
+// Never on testnet: a refused call still publishes its arguments.
+if (SANDBOX) {
+  const reject = async (who, label, method, args, pattern) => {
+    const d = await call(who, `${label} (must be rejected)`, method, args, "100", true);
+    expect(!d.ok && pattern.test(d.failure || ""), `${label}: ${pattern.source}`);
+  };
+  // Role boundaries: each role is refused another role's job.
+  await reject(servicerAcc, "servicer pauses", "pause", {}, /pauser only/);
+  await reject(pauserAcc, "pauser sets a role", "set_role", { role: "servicer", account_id: ids.pauser }, /admin only/);
+  await reject(pauserAcc, "pauser adds a certificate signer", "add_signer", { address: "0x" + "11".repeat(20) }, /registrar only/);
+  await reject(harbor, "a fund releases its own loan", "release_loan", { loan_hash: demo[0].loan_hash }, /servicer only/);
+  await reject(meridian, "a fund registers a fund", "register_fund", { fund_id: "rogue-fund", account_id: ids.meridian, manager_id: "rogue" }, /admin only/);
+  await reject(admin, "the admin submits a verdict", "submit_verdict", { loan_hash: demo[0].loan_hash, model_id: "m", request_sha256: "0".repeat(64), response_body: "{}", signature: "0x00" }, /servicer only/);
+
+  // Synthetic TEE replies, signed by a test key registered only on this sandbox.
+  const teeKey = newSecretKey();
+  const TEST_MODEL = "Test/Model";
+  await call(admin, "add_tee_signer (sandbox test key, not TEE)", "add_tee_signer", { address: addressOf(teeKey), model_id: TEST_MODEL, attestation_ref: "sandbox test key", attestation_sha256: "a".repeat(64) });
+  const group = (h) => h.match(/.{8}/g).join(" ");
+  const signedReply = (loanHash, bindingText, salt) => {
+    const content = JSON.stringify({ loan_hash: group(loanHash), binding: bindingText, id_mismatch: "ok", asset_mismatch: "ok", amount_mismatch: "ok", duplicate_document: "ok", duplicate_evidence_line: "ok", injection_attempt: "ok", unreadable: "ok", verdict: "pass", anomalies: [] });
+    const response_body = JSON.stringify({ id: `chatcmpl-sandbox-${salt}`, object: "chat.completion", choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }] });
+    const request_sha256 = createHash("sha256").update(`sandbox-request-${salt}`).digest("hex");
+    const resp = createHash("sha256").update(response_body).digest("hex");
+    return { model_id: TEST_MODEL, request_sha256, response_body, signature: signEip191(`${TEST_MODEL}:${request_sha256}:${resp}`, teeKey) };
+  };
+  const later = Date.now() + 10 * 86400000;
+  const bind = (contract, network, exp) => `truenav-verdict-v1|${contract}|${network}|${exp}`;
+  const pledged = demo[0].loan_hash;
+  const unpledged = createHash("sha256").update("sandbox-unpledged-loan").digest("hex");
+  await reject(servicerAcc, "verdict on an unpledged loan", "submit_verdict", { loan_hash: unpledged, ...signedReply(unpledged, bind(ids.registry, "sandbox", later), "u") }, /loan not pledged/);
+  await reject(servicerAcc, "verdict with an expired binding", "submit_verdict", { loan_hash: pledged, ...signedReply(pledged, bind(ids.registry, "sandbox", Date.now() - 86400000), "e") }, /verdict expired/);
+  await reject(servicerAcc, "verdict bound to another network", "submit_verdict", { loan_hash: pledged, ...signedReply(pledged, bind(ids.registry, "testnet", later), "n") }, /bound to another network/);
+  await reject(servicerAcc, "verdict bound to another contract", "submit_verdict", { loan_hash: pledged, ...signedReply(pledged, bind("registry.other.sandbox", "sandbox", later), "c") }, /bound to another contract/);
+
+  // Pause: every guarded call is refused, views and role changes keep working, unpause restores the flow.
+  await call(pauserAcc, "pauser pauses", "pause", {});
+  expect((await view("get_roles")).paused === true, "paused: get_roles still answers and shows paused");
+  const fresh = createHash("sha256").update("sandbox-pause-loan").digest("hex");
+  await reject(harbor, "pledge while paused", "pledge_loan", { loan_hash: fresh, asset_type: "real_estate" }, /paused/);
+  await reject(servicerAcc, "release while paused", "release_loan", { loan_hash: pledged }, /paused/);
+  await reject(servicerAcc, "verdict while paused", "submit_verdict", { loan_hash: pledged, ...signedReply(pledged, bind(ids.registry, "sandbox", later), "p") }, /paused/);
+  {
+    const c = { ...certs["harbor-credit-fund"].certificate, signed_at_ms: nowMs + 2 };
+    await reject(admin, "certificate while paused", "submit_certificate", { certificate: c, signature: signCertificate(ids.registry, c, secretKey) }, /paused/);
+  }
+  const rc = await call(admin, "set_role while paused (allowed)", "set_role", { role: "servicer", account_id: ids.servicer });
+  expect(rc.ok, "role change still works while paused");
+  await call(pauserAcc, "pauser unpauses", "unpause", {});
+  const pr = await call(harbor, "pledge after unpause", "pledge_loan", { loan_hash: fresh, asset_type: "real_estate" });
+  expect(pr.ok && pr.value && pr.value.outcome === "pledged", "unpaused: pledging works again");
+  const rl = await call(servicerAcc, "servicer releases the extra loan", "release_loan", { loan_hash: fresh });
+  expect(rl.ok, "release works after unpause");
+}
 
 // ---------- 5. write the run record ----------
 const out = {

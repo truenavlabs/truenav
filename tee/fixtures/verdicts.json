@@ -1,13 +1,13 @@
 {
   "note": "TEE underwriter verdicts. Each record is signed by the attested NEAR AI Cloud model TEE; documents are not included.",
   "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-  "contract_id": "registry.tnlab-22cfb2.testnet",
-  "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
-  "signed_at_ms": 1794014817255,
-  "expires_at_ms": 1796606817255,
+  "contract_id": "registry.tnlab-718ca9.testnet",
+  "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
+  "signed_at_ms": 1794019874623,
+  "expires_at_ms": 1796611874623,
   "attestation": {
-    "nonce": "eb73159369bb11d8d65db6cb5dab733ed52fe135ebb09cbdc57287455313e950",
-    "checked_at": "2026-11-07T01:26:59.790Z",
+    "nonce": "d92bebe155f799dff96081774d2193ee4913c5c1e17c49b2f8d6090971b4d929",
+    "checked_at": "2026-11-07T02:51:16.707Z",
     "signers": [
       {
         "signing_algo": "ecdsa",
@@ -105,17 +105,17 @@
         ]
       }
     ],
-    "report_sha256": "ffa2e57dcec321648433ee5113067faf932d03187e410f1ddd4bb9959d07909d"
+    "report_sha256": "529cbac44368739b3ba3f97f3121e7913055aa5cf2d41c4ea0ff98df9cbac199"
   },
   "results": [
     {
       "loan_id": "H-RE-01",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
+      "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
       "tampered": null,
       "verdict": {
-        "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -131,22 +131,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
+        "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "12697443e456fc7d71bab7ed0d62618ddd631e77b8dced2804d59fc446d8cf24",
-        "response_body": "{\"id\":\"chatcmpl-4e752946-a24e-45cc-ae06-e5de422832f4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"948815db 81a318c7 d7ca6ca4 43888aca 77fb9a66 6d97706b 81f44707 edecef1d\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014820,\"usage\":{\"prompt_tokens\":803,\"total_tokens\":960,\"completion_tokens\":157,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0xb430363520eed64080d3c65e41855c3cf722f809bd06a44e4874c0b7206a874861704b274c52cc03fd10c0e103bc6cd0c6edbbdbfc19692090720c11c9360e5a1b",
+        "request_sha256": "fd87b8429009fac22d0566bcb45269ee6c2eba70bf2099f9533abd7db4ae994b",
+        "response_body": "{\"id\":\"chatcmpl-48677b21-d0be-4703-8934-7408f4166353\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"8856cc9c 5eab3213 9d5e76dd 2efb873e 78ef198c 259ed9d1 d0fac145 cc781998\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019877,\"usage\":{\"prompt_tokens\":803,\"total_tokens\":960,\"completion_tokens\":157,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x08b08fc282fb11478314625389e3d78778bb1b9e2188e29c79875a8ac782ac4835173d3cb69c8ce6d8a018955091d483a869cdfa58fce5d00623f4db97b4064b1b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "fd87b8429009fac22d0566bcb45269ee6c2eba70bf2099f9533abd7db4ae994b",
+          "response_sha256": "badc3b8f06611e8e8a3a3f23d8cc32b2e935930bc2fd5dbb7c52c1001d157959",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-02",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
+      "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
       "tampered": null,
       "verdict": {
-        "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -162,22 +171,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
+        "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "0df4daa0aed3b3f02f19ae8877ea739b9855f7f0d751edaecacc47ce46e76db3",
-        "response_body": "{\"id\":\"chatcmpl-60ab7ba0-3b54-4b9b-adf5-98f7f0bfea18\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"5432c5db be5b1f01 cca48176 dc16af3e 57615fd5 65e3a272 3ebb75a1 dee3a2c2\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014821,\"usage\":{\"prompt_tokens\":800,\"total_tokens\":954,\"completion_tokens\":154,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0x5e77f19286ed6a1fd2eef956b7becce7d644a0267406b67806c613c573740c4d2a98d351f5e41b6eb5c5667f94f41b257aed0ffa4599c0583ec782593aade9231c",
+        "request_sha256": "a946f96aaa1f69b687ab30089be0153a9cd9962345e0d7dcff87774602c11729",
+        "response_body": "{\"id\":\"chatcmpl-0e5d571f-223d-4de1-a256-0911394037a4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"cbab23ee 08822e39 c1806c55 dbad20a9 a80992ea 19afc7ce 2d9edcf1 d3fae64b\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019878,\"usage\":{\"prompt_tokens\":798,\"total_tokens\":950,\"completion_tokens\":152,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x615cfa7644a33aff4f09b5e2220068119bab25f0dc788e1beb739fbc49c18dac28f741007b453572dda67b6505c986aeb30b90e79138459e8fa0052d54e36d4e1c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "a946f96aaa1f69b687ab30089be0153a9cd9962345e0d7dcff87774602c11729",
+          "response_sha256": "fb30c8fd40fb19d63b307875d5e6d294f2978b19d506d00cf9bea96b3e0bd76a",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-03",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "9376e022a081e1924457730a7abe8fb58c90b8a5df512ef5d54548d94a7fd722",
+      "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
       "tampered": null,
       "verdict": {
-        "loan_hash": "9376e022a081e1924457730a7abe8fb58c90b8a5df512ef5d54548d94a7fd722",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -193,22 +211,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "9376e022a081e1924457730a7abe8fb58c90b8a5df512ef5d54548d94a7fd722",
+        "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "d679ec0baac503ec5d41d7226b0791304698ef80d99fbfd75b2d06c1e2561610",
-        "response_body": "{\"id\":\"chatcmpl-69e9bb4a-c392-402b-90db-8e63bfc212b0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"9376e022 a081e192 4457730a 7abe8fb5 8c90b8a5 df512ef5 d54548d9 4a7fd722\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014823,\"usage\":{\"prompt_tokens\":805,\"total_tokens\":964,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0xc2d4e13b7f77a0fd641c6cc0a0f93a51b1fe3bed25c709416debd8b3a1beb68d6e06357ab4705f49fa973a0c87f8553dcc348f46dfa420a045bc578e9d6c1a3a1b",
+        "request_sha256": "6a7b56936ca38c894e66938d9e03020083263545b01a04992bf51be7ff61218e",
+        "response_body": "{\"id\":\"chatcmpl-6a36516e-f335-443c-92d8-609da6b471e7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"e179b87d e5b28d5f d7eaa2bb 191699f4 f1336851 3b307292 ae246459 463e92b7\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019879,\"usage\":{\"prompt_tokens\":807,\"total_tokens\":968,\"completion_tokens\":161,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0xc4ceafd9026211aa82f9b743ba465a171ede1c651691adefd7c0d8866ab100cd061ab022de86069fb32a7d2ad73fcf5f0af9901e9f33bc08b77318b9c44605c11c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "6a7b56936ca38c894e66938d9e03020083263545b01a04992bf51be7ff61218e",
+          "response_sha256": "0a387a3f6269feaf83c621d7e3a4b74546609ef1a0ea497ab3bd6ed2abba40f1",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-04",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "693c94f003f098e8b8e5ac1a66e8597ddca3e7b6e4eb0f3dac0c8e509bd0cbf3",
+      "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
       "tampered": null,
       "verdict": {
-        "loan_hash": "693c94f003f098e8b8e5ac1a66e8597ddca3e7b6e4eb0f3dac0c8e509bd0cbf3",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -224,22 +251,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "693c94f003f098e8b8e5ac1a66e8597ddca3e7b6e4eb0f3dac0c8e509bd0cbf3",
+        "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "f0fcc40601f4bbbdc9fc1c83d26107557907fa62b08643169ba1cb24bcc3f483",
-        "response_body": "{\"id\":\"chatcmpl-d4f10230-3f2d-460d-b3d8-6b7f4c26f6b0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"693c94f0 03f098e8 b8e5ac1a 66e8597d dca3e7b6 e4eb0f3d ac0c8e50 9bd0cbf3\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014824,\"usage\":{\"prompt_tokens\":804,\"total_tokens\":962,\"completion_tokens\":158,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0x384093f6d0d3a004bbf2654228c560073ce6eee7d765fbd36b42ed577e76e7db527a178ffd0ad5f91269b82d9f7cd0cb5ffe3cf7b73154031a66f7fe547882151b",
+        "request_sha256": "6f6e4cbadc9ae282607ba9597b63a1f86ba04c01145512660c6542c07b61616b",
+        "response_body": "{\"id\":\"chatcmpl-1e5140af-0a38-4a0e-9240-a6041d3c1cbc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"fb41a41f 0b0d40e2 4bfad2fc e8b6b4c7 f786a9f7 44f43dae 8b3b4ff1 4b8ed1ff\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019881,\"usage\":{\"prompt_tokens\":803,\"total_tokens\":960,\"completion_tokens\":157,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0xf7ab7c7c7c4876d20d06cd8535ca0ddca3e79e6f5f2cd8fa5f057ca02edfe4352e11bc697e4d935326560abd164bdd73961bfabe2047ffc3b09b348f2fb3ecff1b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "6f6e4cbadc9ae282607ba9597b63a1f86ba04c01145512660c6542c07b61616b",
+          "response_sha256": "57f2dfe17fd935f60f0842eaed1104527bd8e46e7a58f4c74909e0199d9e2885",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-05",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "e5de671a7184ceb27345580c6ab2626f2f665263c3a4f0c2092bfefe8226d477",
+      "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
       "tampered": null,
       "verdict": {
-        "loan_hash": "e5de671a7184ceb27345580c6ab2626f2f665263c3a4f0c2092bfefe8226d477",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -255,22 +291,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "e5de671a7184ceb27345580c6ab2626f2f665263c3a4f0c2092bfefe8226d477",
+        "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "06afd02f02ae30c7c823832f565e0018e4a625a5a15d228f26a6b3f0ce65c765",
-        "response_body": "{\"id\":\"chatcmpl-affb35c1-8060-479f-a0ac-8bc1bc28b120\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"e5de671a 7184ceb2 7345580c 6ab2626f 2f665263 c3a4f0c2 092bfefe 8226d477\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014826,\"usage\":{\"prompt_tokens\":802,\"total_tokens\":962,\"completion_tokens\":160,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0x97aa9f0c32a300de527d8bcfa165895f85ebce31885ddf928621281362095eae47a6e6b05bc87bc992ec2658c55bd64bcae536c570b65081b50a234f4a7654591c",
+        "request_sha256": "0ee1c0636e9d04e54c31e81754ef76bc989f695d71716477b19898f229d9ea7e",
+        "response_body": "{\"id\":\"chatcmpl-13f898f5-d4a2-45ab-b32b-3a0329753e3c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"57be7f1b 69c3064d d1d39fd3 834db254 3ab90839 7c29a23e c18f81a6 2b6dcc57\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019882,\"usage\":{\"prompt_tokens\":802,\"total_tokens\":962,\"completion_tokens\":160,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0xa79e601aeed5c638b2c020072a3a38b5caff5cfad44200b31ca5a96eedd46fd744765b539350986d1d263f058a22ed40f32e04e7f741fbee58df87ae4125fc7d1c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "0ee1c0636e9d04e54c31e81754ef76bc989f695d71716477b19898f229d9ea7e",
+          "response_sha256": "1f9a05c83ec49d0f5a7787c3052bff7ba6b0eaa9d44819f6c4c68aa5d04dcfa8",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-06",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "57429d56072eedc493dff4e1d75cbd875ee6f966f7d17e512b5242c4291c4736",
+      "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
       "tampered": null,
       "verdict": {
-        "loan_hash": "57429d56072eedc493dff4e1d75cbd875ee6f966f7d17e512b5242c4291c4736",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -286,22 +331,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "57429d56072eedc493dff4e1d75cbd875ee6f966f7d17e512b5242c4291c4736",
+        "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "bd2198950b3801f7b1deef87310449436b13ee2915a3e09db20b6a9494dbcc23",
-        "response_body": "{\"id\":\"chatcmpl-0077653a-095c-4641-8176-d5d27ac7c66b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"57429d56 072eedc4 93dff4e1 d75cbd87 5ee6f966 f7d17e51 2b5242c4 291c4736\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014827,\"usage\":{\"prompt_tokens\":801,\"total_tokens\":960,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0xe130dae5d8179a93b9cce1b68bd4c76d5395ca0c28c3fd2b4bb11942724536220d7cab61db643e450413fee466f5bf7a21b79d6a7900dd9fd243e8a1bbd53dc71c",
+        "request_sha256": "02d50402cd5405a6c8c8e932d450c103a139f821e5b404b4dd3dbfc9ece06333",
+        "response_body": "{\"id\":\"chatcmpl-673a5c88-3892-4c47-a87a-7c59175cfccf\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"736d374c 9094b4f4 da338ee5 1adaf274 4dfd6907 d827037f 87b44253 1be78a14\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019884,\"usage\":{\"prompt_tokens\":801,\"total_tokens\":960,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x4d1318d5d93bcdc034ba5fe2abb501fb5d49a3c8ea2a2fc51a36c5de0fdfab4c484033106ab7b99ac3e2a8569093950cd05466fbe26e5864fa1f5f7ee0bec00a1c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "02d50402cd5405a6c8c8e932d450c103a139f821e5b404b4dd3dbfc9ece06333",
+          "response_sha256": "82856a5bf5fdb36e9f2c077256de5d7c5f8b77ee019bce8fdf98d1308135bc6b",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-07",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "a4dd573b8bd78d6267dd665708ca84d1ffcb3cc49be02b8588811da5be977ca2",
+      "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
       "tampered": null,
       "verdict": {
-        "loan_hash": "a4dd573b8bd78d6267dd665708ca84d1ffcb3cc49be02b8588811da5be977ca2",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -317,22 +371,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "a4dd573b8bd78d6267dd665708ca84d1ffcb3cc49be02b8588811da5be977ca2",
+        "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "b2d00010493f35e5b4840b44d7bfbd5ce6768e036f77e7e863b987de50e697e9",
-        "response_body": "{\"id\":\"chatcmpl-612ca087-496b-4604-a2b9-6da344690fe6\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"a4dd573b 8bd78d62 67dd6657 08ca84d1 ffcb3cc4 9be02b85 88811da5 be977ca2\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014828,\"usage\":{\"prompt_tokens\":797,\"total_tokens\":952,\"completion_tokens\":155,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0xb7d963ac7ca101848c2ff96aad3deac3cf7d66efcecc0af56c03d4b79fdbf02e0d1850f61e2a932f6096147999c71aee114e884bd951e89e29c51e932c46244c1b",
+        "request_sha256": "29c7cffffd51f2aeb935c92821100c60f50ba163432610cff22c8f3fb6caddde",
+        "response_body": "{\"id\":\"chatcmpl-78fefb47-9acd-4dd2-8825-152f31ed4025\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"a3915fdb 17399798 396b7b83 39a06c42 cff38093 e6f03a2f 5146f907 7050036e\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019885,\"usage\":{\"prompt_tokens\":805,\"total_tokens\":968,\"completion_tokens\":163,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
+        "signature": "0x29e208380a93723bdc4450d650ceb9a9ed4c5ddf61c58b9479eafb6cb23975457be9adb2adde256bb0615421cf8e5d689034a75ce2573b145c6b08fa2a9acf981c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "29c7cffffd51f2aeb935c92821100c60f50ba163432610cff22c8f3fb6caddde",
+          "response_sha256": "820b1a13544b6d7a561869d8e28bef0c32a6a2f926547e1a0b509a3c057b0ad2",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-08",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "488f23290c81aee2be86f7ac44eb9811fe2f89676444b86eba42c0df94479be8",
+      "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
       "tampered": null,
       "verdict": {
-        "loan_hash": "488f23290c81aee2be86f7ac44eb9811fe2f89676444b86eba42c0df94479be8",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -348,22 +411,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "488f23290c81aee2be86f7ac44eb9811fe2f89676444b86eba42c0df94479be8",
+        "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "cdf5bb34b74fbe7e78773db94a9a74a1512d12063a8b17d9101f1a6bd4d45f26",
-        "response_body": "{\"id\":\"chatcmpl-d94817c7-83b3-46f5-8cd2-f1fdd2979c74\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"488f2329 0c81aee2 be86f7ac 44eb9811 fe2f8967 6444b86e ba42c0df 94479be8\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014830,\"usage\":{\"prompt_tokens\":799,\"total_tokens\":956,\"completion_tokens\":157,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0x8dfd8260a4e51194d1576bed448d36288d94ec1cc59d6b742085248d8190acdb69eb9a380e6374a9c281ee9192984ac16fd61551ae523b34d84471985e03d6a91b",
+        "request_sha256": "b2dc1b177459b7725f54d6851eae60980a0f284f5a7162064e59d3a44602ba46",
+        "response_body": "{\"id\":\"chatcmpl-acaad0f8-befb-4a09-918c-de231bd83a6a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"44b9aeff 3d0ac514 ee015c8b aa8297d9 7160f883 dc0095f3 c1234697 bdaaa620\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019886,\"usage\":{\"prompt_tokens\":797,\"total_tokens\":952,\"completion_tokens\":155,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x913fdca92f34ab01a6d416b7c881711248f95131b73efeb7830a57654a4cefa60369fe7c55595517c1d7e6c41d1113307e01fa166ffba63c5788af22ee89bdb91b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "b2dc1b177459b7725f54d6851eae60980a0f284f5a7162064e59d3a44602ba46",
+          "response_sha256": "a657e68d98d437823ae8037ada468d50e81dd8399f2943294829ee0c8425a6f9",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-IN-01",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "78b1c8df3abfb2566c0f810f10dbb4945bf5e0e7b858c4454e1a0bbed222a1c8",
+      "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
       "tampered": null,
       "verdict": {
-        "loan_hash": "78b1c8df3abfb2566c0f810f10dbb4945bf5e0e7b858c4454e1a0bbed222a1c8",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -379,22 +451,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "78b1c8df3abfb2566c0f810f10dbb4945bf5e0e7b858c4454e1a0bbed222a1c8",
+        "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "997161d7313a56a77cc89b1ca8bbe47c7e4782995495868ae9eb8627c6099448",
-        "response_body": "{\"id\":\"chatcmpl-c5dbb410-d7c0-4619-9af3-b88f32ba092f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"78b1c8df 3abfb256 6c0f810f 10dbb494 5bf5e0e7 b858c445 4e1a0bbe d222a1c8\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014831,\"usage\":{\"prompt_tokens\":768,\"total_tokens\":927,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0xc043a01fbed99ae8c2e73783d37d2e2e31d6eb11d5417eb0cafc9b1e65d986ac6685e673211ab1008e325681dc830d4a149dd7b775927bf20bfc85e6b95cfee71b",
+        "request_sha256": "60a10124fe636deff51c2abc1e41b6753e0e2521321ccc431e01251ba1a87f59",
+        "response_body": "{\"id\":\"chatcmpl-55d78759-47a9-450a-b8c0-9eb2f3e279ca\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"834998ad baff7fbd 7336465c 751e7228 06ed2139 420d89e1 7f3d0872 3698b955\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019888,\"usage\":{\"prompt_tokens\":770,\"total_tokens\":931,\"completion_tokens\":161,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0xedecd49e7d960f0f760818f494406b7bdd453cec8eb072b5dc84cff5daac48f3700836bed1c97ea83aec72d8d8b4f3de83e0a3c816427c7862914a315e8281581b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "60a10124fe636deff51c2abc1e41b6753e0e2521321ccc431e01251ba1a87f59",
+          "response_sha256": "4230eae2b45c77a20930f796f6d5a3c9edcf6081b91d4306e4998774ca03c589",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-IN-02",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "1a79acd616248c278be1ac8088476269ce4dd5592f6b947a7475219702fec457",
+      "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
       "tampered": null,
       "verdict": {
-        "loan_hash": "1a79acd616248c278be1ac8088476269ce4dd5592f6b947a7475219702fec457",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -410,22 +491,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "1a79acd616248c278be1ac8088476269ce4dd5592f6b947a7475219702fec457",
+        "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "c1d1b1835f4d7bc5d39211e4ab33c1d5f0b508dd9a9bfc815bced6701339eb67",
-        "response_body": "{\"id\":\"chatcmpl-e29c536e-0039-4c80-b327-1d823181a139\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"1a79acd6 16248c27 8be1ac80 88476269 ce4dd559 2f6b947a 74752197 02fec457\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014833,\"usage\":{\"prompt_tokens\":768,\"total_tokens\":927,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0x4326c970dbdfef52cdd14f6742631b3753ca3be297d0cc8ad9a8d850c6316b1f136ed7bc9ca99cabc07674b0e93b6d2f3324a063c44ef38edb4de1e5acceb7f01c",
+        "request_sha256": "a0e8ac00b17480674876268bceef4f20eb405f5f1b4a4438626523ce34a1e733",
+        "response_body": "{\"id\":\"chatcmpl-e19e3016-2b1e-4135-b3cc-20ae19b777bb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"441f2e6d 1497be47 eb675752 9f53ee15 8384ea92 202e42ca 15ba6b77 bffeeca4\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019889,\"usage\":{\"prompt_tokens\":765,\"total_tokens\":921,\"completion_tokens\":156,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0xb97721df188a092d63c2292a8c3b1fd656d4f24c675cc8b88f7011f9d2ae4bd2332264a1a5c527448c0c141b087fe1dc8871dca0a07e6266ac8b24b4a3af4ee61b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "a0e8ac00b17480674876268bceef4f20eb405f5f1b4a4438626523ce34a1e733",
+          "response_sha256": "664206ea0a9d2029c2dd9b03b97d858b288bc36afeed18d963feed0415659fa2",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-IN-03",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "7bdd3061252eeccdc8254fcbcf77515bef04e2a4bc171f7b845add5022e93df5",
+      "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
       "tampered": null,
       "verdict": {
-        "loan_hash": "7bdd3061252eeccdc8254fcbcf77515bef04e2a4bc171f7b845add5022e93df5",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -441,22 +531,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "7bdd3061252eeccdc8254fcbcf77515bef04e2a4bc171f7b845add5022e93df5",
+        "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "8e1359963dbdc258eab080d70fafd5a069e41dd90fe967ca2bc20e2e322f5bff",
-        "response_body": "{\"id\":\"chatcmpl-81e4c126-0a6a-4409-b2ed-f2c4a9eb1a35\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"7bdd3061 252eeccd c8254fcb cf77515b ef04e2a4 bc171f7b 845add50 22e93df5\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014834,\"usage\":{\"prompt_tokens\":761,\"total_tokens\":913,\"completion_tokens\":152,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0xe36104989d1ff74ed7820b51a9ea755f9c89aea59d6b3e4221d4971d61546e296af6d31ef4a503b8139b484767f7a82acb6417ba974b3264acfff942fe25c32f1b",
+        "request_sha256": "c7fb303c6d04adea7075de4deef63f82f91d122f7cc6acefb8c93c720254ea42",
+        "response_body": "{\"id\":\"chatcmpl-b3bb923d-413c-4eea-acc4-30e6916f1302\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"972778be 582c4c37 c5de9714 6ff93142 b2c77649 7be4dff7 dcad706d c337bb79\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019890,\"usage\":{\"prompt_tokens\":764,\"total_tokens\":919,\"completion_tokens\":155,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x931097482012a4ba14f4bf671e630043fac7cde928956308592ea3fad4f284c31db76b0243073f12788693022cdc7dc34189e1616a0504926954c2c60cc967ec1c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "c7fb303c6d04adea7075de4deef63f82f91d122f7cc6acefb8c93c720254ea42",
+          "response_sha256": "98a464940cd77dcd6f8e1f64702efa883b168e563a45abadcfd39f5b5ab47275",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "M-RE-01",
       "fund_id": "meridian-yield-fund",
-      "loan_hash": "ab260a566e2e97bcc7c289dc14f7addd338ede9903276d5a992ff473e19ae95b",
+      "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
       "tampered": null,
       "verdict": {
-        "loan_hash": "ab260a566e2e97bcc7c289dc14f7addd338ede9903276d5a992ff473e19ae95b",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -472,22 +571,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "ab260a566e2e97bcc7c289dc14f7addd338ede9903276d5a992ff473e19ae95b",
+        "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "e95b6f7505ca2323c6edd0053a5298bcb2c44daffde59f63c527e99b083454f6",
-        "response_body": "{\"id\":\"chatcmpl-5fb72817-4ae3-4f74-8579-0d83e44cf3c7\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"ab260a56 6e2e97bc c7c289dc 14f7addd 338ede99 03276d5a 992ff473 e19ae95b\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014835,\"usage\":{\"prompt_tokens\":803,\"total_tokens\":960,\"completion_tokens\":157,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0x67719b2c047921d0fe7b86fd3f2e7da1610ad06b4bcda41a61043fa6444fda16359c228f25fa8c9a59735e52fae147743718f846b5c301c4be11a0258b2ce1b81c",
+        "request_sha256": "1266117e56df43309c1d2b74f3caadbe1ab8fb9c4acd3e7702a1fb9e7623f1bd",
+        "response_body": "{\"id\":\"chatcmpl-cc674eb8-7f18-4788-8a0f-f284c9a9fc46\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"c92bd512 37157251 92333807 507a1b9c 61204973 78bfccc8 12a9220e 502e6237\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019892,\"usage\":{\"prompt_tokens\":810,\"total_tokens\":974,\"completion_tokens\":164,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
+        "signature": "0x7482d3403f4dfd35c4304cec58ab3552837fa877e269aa4e3a8a1bd2ce6aede801be7328addd4fe815ac42bb7233b9ba8ece22ca82f08460c266bba7af6512661c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "1266117e56df43309c1d2b74f3caadbe1ab8fb9c4acd3e7702a1fb9e7623f1bd",
+          "response_sha256": "d82b2e2125dc2be6e75ede4230e5c9b9bd1111a693988d5537b710e92212a44d",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "M-RE-02",
       "fund_id": "meridian-yield-fund",
-      "loan_hash": "849a881bab213879bbdcca6083f609c82ecc38152fc0bdf846e2d19058ef6efe",
+      "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
       "tampered": null,
       "verdict": {
-        "loan_hash": "849a881bab213879bbdcca6083f609c82ecc38152fc0bdf846e2d19058ef6efe",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -503,22 +611,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "849a881bab213879bbdcca6083f609c82ecc38152fc0bdf846e2d19058ef6efe",
+        "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "30f7961478f0cc7dff752479b9e3d70edeadb436878b06c08a653a0af2f7f666",
-        "response_body": "{\"id\":\"chatcmpl-c0085720-e0c7-4733-82a5-bffb3d308f1e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"849a881b ab213879 bbdcca60 83f609c8 2ecc3815 2fc0bdf8 46e2d190 58ef6efe\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014837,\"usage\":{\"prompt_tokens\":801,\"total_tokens\":956,\"completion_tokens\":155,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0xf17907a9740e6e79b3a25188f565b06589d446d762c5eeb30f199844f9c549cb7064388188b2f2e08503e71ebc6d4b834e7acf00e74c5d5b0c0c9643fc3ad16b1b",
+        "request_sha256": "b51495d9ce43e6846d5482795184af2025c53be1d07438766f38bbd2022c03c9",
+        "response_body": "{\"id\":\"chatcmpl-51b7e372-8553-4231-8047-52efb8bdab9a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"266070e0 4c5bdf51 2abd611e 2e92474f 934e185c 6b77a6f0 010ff7c4 c4038e2a\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019893,\"usage\":{\"prompt_tokens\":809,\"total_tokens\":972,\"completion_tokens\":163,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
+        "signature": "0x93a758814a8e5a3a8f819201aed9117f52638430a130ec34b0271acd9942eb7a1f25bfb43819819e4e7d174b8f231877a1cc246690022e0666da26d5f983785a1c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "b51495d9ce43e6846d5482795184af2025c53be1d07438766f38bbd2022c03c9",
+          "response_sha256": "28191c40d47eb04120ac422f2486a3b5b4a5562d938287caeb5ec5801576d85d",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "M-IN-01",
       "fund_id": "meridian-yield-fund",
-      "loan_hash": "5c4e1503b831511b8eede7932745df733fc0919643b60cf6834ddfb463bb2673",
+      "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
       "tampered": null,
       "verdict": {
-        "loan_hash": "5c4e1503b831511b8eede7932745df733fc0919643b60cf6834ddfb463bb2673",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -534,22 +651,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "5c4e1503b831511b8eede7932745df733fc0919643b60cf6834ddfb463bb2673",
+        "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "e63219a3106f4384b6ec4ab257b11eb9a881c90396703376e472f741206c5de6",
-        "response_body": "{\"id\":\"chatcmpl-fb9abf7d-fa88-40be-ba53-f4eb8f32ffd0\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"5c4e1503 b831511b 8eede793 2745df73 3fc09196 43b60cf6 834ddfb4 63bb2673\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014838,\"usage\":{\"prompt_tokens\":768,\"total_tokens\":927,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0xe453c276d98ce741b968a99defa79d161f8a5707a1018ef0c19241b0e563cd1553fa835a066e1a07b590f474e26914cdb2e7d1649eb214e24d9c0e980e34b56a1b",
+        "request_sha256": "b9cbcdee0434c52ddde598e96b3303416396db7305f916a6ee44b3ed46ece243",
+        "response_body": "{\"id\":\"chatcmpl-65380c31-e75d-4cdc-8ee5-5b75be6c910f\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"43d4722a ecaa5271 df1c9442 bac9a9a3 6d184bf3 c7ad2a18 844bf227 49851b65\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019895,\"usage\":{\"prompt_tokens\":765,\"total_tokens\":921,\"completion_tokens\":156,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x9c17f2c277fa2f6e1a4398b941c3f3401b79e2c884e0359b5adf29ed074886ed1fce5274bacf1bda8defa7f262a4313aa120c8f414c5b220e2efd26e7a01fdb11c",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "b9cbcdee0434c52ddde598e96b3303416396db7305f916a6ee44b3ed46ece243",
+          "response_sha256": "fd9af5317fd393d3e06eabd4eedb3ee60fe70713c201542fe9aeeb6a6f22aa3a",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "M-IN-02",
       "fund_id": "meridian-yield-fund",
-      "loan_hash": "6deb7956192a61d5e9dd01bb1a2f6d1fa9fb0ef967457bce536cabe600fb3acb",
+      "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
       "tampered": null,
       "verdict": {
-        "loan_hash": "6deb7956192a61d5e9dd01bb1a2f6d1fa9fb0ef967457bce536cabe600fb3acb",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -565,22 +691,31 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "6deb7956192a61d5e9dd01bb1a2f6d1fa9fb0ef967457bce536cabe600fb3acb",
+        "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "942ec7cc5d7d860154688aea51ac9d32fcc4c50b956b4376b65ea4f2484560e9",
-        "response_body": "{\"id\":\"chatcmpl-173faddb-f0de-45d6-992f-050d17905fd4\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"6deb7956 192a61d5 e9dd01bb 1a2f6d1f a9fb0ef9 67457bce 536cabe6 00fb3acb\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014839,\"usage\":{\"prompt_tokens\":763,\"total_tokens\":917,\"completion_tokens\":154,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0xec9feb535d279bf413a939305c3ad1180da66bee17c1a500343217a69c7e0614793f2da43f1fb73e0a9c32efe4ebe695eb7c586c8c739f4ed3d0937f6ac420591b",
+        "request_sha256": "42dcdd824ffa22a44178982eba700d89a4b27c88c68abd97d017558caff3e56f",
+        "response_body": "{\"id\":\"chatcmpl-70d70873-aef6-415f-bb02-61f6092724cc\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"f4fc8f51 78b0bb4f 62e959bd f24a6cdc 01a05f1e 2ae30f3a 97f6f8f4 e351337b\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019896,\"usage\":{\"prompt_tokens\":769,\"total_tokens\":929,\"completion_tokens\":160,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0xcf723808c1c76cde1277abe6e7f6533562656a2d9c88a00576b7786528cd0bac44fe35b49e57e2007cd202a2d98520d40688ecc2411e9ccf494a1c795c71f0241b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "42dcdd824ffa22a44178982eba700d89a4b27c88c68abd97d017558caff3e56f",
+          "response_sha256": "cd4b36040cabe1ecc47dd802376042ec4797be94be033608c0ca14aabbf6d239",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "M-IN-03",
       "fund_id": "meridian-yield-fund",
-      "loan_hash": "2bee4bf4ce1f4bf738aac5d79711f8ce30c22e591fa35c914fd20a59f7807827",
+      "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
       "tampered": null,
       "verdict": {
-        "loan_hash": "2bee4bf4ce1f4bf738aac5d79711f8ce30c22e591fa35c914fd20a59f7807827",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "pass",
         "anomalies": [],
         "duplicate_evidence_line": "ok"
@@ -596,28 +731,36 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "2bee4bf4ce1f4bf738aac5d79711f8ce30c22e591fa35c914fd20a59f7807827",
+        "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "ab8598314ce2f4f05eeab6efb558eb7043460d9283e6d8e2bdc41dcf7753c38e",
-        "response_body": "{\"id\":\"chatcmpl-07904f5c-cd00-47d8-90a9-0f53f4183147\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"2bee4bf4 ce1f4bf7 38aac5d7 9711f8ce 30c22e59 1fa35c91 4fd20a59 f7807827\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014841,\"usage\":{\"prompt_tokens\":765,\"total_tokens\":921,\"completion_tokens\":156,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
-        "signature": "0x383543833f03eb7a5fa5abf48fa386e8c344f3baf276461e00db29f1a958a1bc22bcd08e82780177f5f47429ceb4de525c232d429888395af86f5e9739b775df1b",
+        "request_sha256": "c2d46f72a567d03d2a02f2f40d8288622883ce8179e8c7e5a25e256887c11046",
+        "response_body": "{\"id\":\"chatcmpl-7e0abb8a-25e9-4c96-a7a1-03442de7c47b\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"33b1021e 2f696e6a 5832226e 6512df34 2213901f dc889c9e 189f93db 6f89cedc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019898,\"usage\":{\"prompt_tokens\":771,\"total_tokens\":933,\"completion_tokens\":162,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x8e198251ab6c4a9509f78a2f00d6957a6830782170da0ac96fc877b37fda68280b075919dcfb395baaeaebd8eaace09db477c509fce54adcc7a65c788c782d561b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "c2d46f72a567d03d2a02f2f40d8288622883ce8179e8c7e5a25e256887c11046",
+          "response_sha256": "1f2efbbcc646fd6cf2f8264ab850f649c056f7af5d0b6cbe0b8d64abae07d6dd",
+          "verdict": "pass",
+          "anomalies": [],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-01",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
+      "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
       "tampered": {
         "id": "T1-altered-amount",
         "expected_anomaly": "amount_mismatch"
       },
       "verdict": {
-        "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "flag",
         "anomalies": [
-          "asset_mismatch",
           "amount_mismatch"
         ],
         "duplicate_evidence_line": "ok"
@@ -633,25 +776,36 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "948815db81a318c7d7ca6ca443888aca77fb9a666d97706b81f44707edecef1d",
+        "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "55fc1cfd0e0ecec4e4a529b59394572f5a3e28ed9d89717a37588702892341e5",
-        "response_body": "{\"id\":\"chatcmpl-9cbb9d95-cd0e-4c3d-9662-15ca0b98c20e\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"948815db 81a318c7 d7ca6ca4 43888aca 77fb9a66 6d97706b 81f44707 edecef1d\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"fail\\\",\\\"amount_mismatch\\\":\\\"fail\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"asset_mismatch\\\",\\\"amount_mismatch\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014842,\"usage\":{\"prompt_tokens\":803,\"total_tokens\":967,\"completion_tokens\":164,\"prompt_tokens_details\":{\"cached_tokens\":720}}}",
-        "signature": "0xfa6733a2bb0777829b4771a708df612c55140214ed3e2ab95ad3cd4432014ca44b4013d5587e5c6f82a89bd9b7ca1c90a30439b1a91d326a842066359f3851001b",
+        "request_sha256": "9aa015e4d920248d689765af55216c5bfa3f27a562966450f13cc918019afc13",
+        "response_body": "{\"id\":\"chatcmpl-fc9f2936-cba9-48e4-a27e-d204bddf3fcb\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"8856cc9c 5eab3213 9d5e76dd 2efb873e 78ef198c 259ed9d1 d0fac145 cc781998\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"fail\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"amount_mismatch\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019899,\"usage\":{\"prompt_tokens\":803,\"total_tokens\":963,\"completion_tokens\":160,\"prompt_tokens_details\":{\"cached_tokens\":720}}}",
+        "signature": "0x5f4c983b7903ef9ecb0c649575c0792430debd0b7c2d69dead2e09e6579ed67940bc06fd9ef803e1a623e49ba33a12bbaa7a302a4c0b01dfb090abfef64588e81b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "9aa015e4d920248d689765af55216c5bfa3f27a562966450f13cc918019afc13",
+          "response_sha256": "fa9e46a5744e9931ea1f8a2c51cea82bfbcbc3641f55d0c3f8b407f0854dbe07",
+          "verdict": "flag",
+          "anomalies": [
+            "amount_mismatch"
+          ],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-02",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
+      "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
       "tampered": {
         "id": "T2-hidden-injection",
         "expected_anomaly": "injection_attempt"
       },
       "verdict": {
-        "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "flag",
         "anomalies": [
           "amount_mismatch",
@@ -670,25 +824,37 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "5432c5dbbe5b1f01cca48176dc16af3e57615fd565e3a2723ebb75a1dee3a2c2",
+        "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "be1b38faf13d5e86541146a7e9eb19bb93f54398174bd46118da512373c378fd",
-        "response_body": "{\"id\":\"chatcmpl-aa31047d-c712-4f8c-9e72-b309cb43f01c\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"5432c5db be5b1f01 cca48176 dc16af3e 57615fd5 65e3a272 3ebb75a1 dee3a2c2\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"fail\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"fail\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"amount_mismatch\\\",\\\"injection_attempt\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014844,\"usage\":{\"prompt_tokens\":827,\"total_tokens\":988,\"completion_tokens\":161,\"prompt_tokens_details\":{\"cached_tokens\":704}}}",
-        "signature": "0x4a8bb49e8b4cf81e22d343655fb9a1e7e52dd0eb771726183b2bef2486ee1c23036831bfd33862cc09f80f7110f8bd1ebc66e85b07de3eb7e63d7b24ea4451fa1c",
+        "request_sha256": "32815caecc4b12bdb42391ee05d0faafa0be4766c55888bb567d7516855ac923",
+        "response_body": "{\"id\":\"chatcmpl-d0961bff-8c16-4414-ba74-b59f93c79b3a\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"cbab23ee 08822e39 c1806c55 dbad20a9 a80992ea 19afc7ce 2d9edcf1 d3fae64b\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"fail\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"fail\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"amount_mismatch\\\",\\\"injection_attempt\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019900,\"usage\":{\"prompt_tokens\":825,\"total_tokens\":984,\"completion_tokens\":159,\"prompt_tokens_details\":{\"cached_tokens\":704}}}",
+        "signature": "0xd78edadd7bde6bec3cd3a93edf3dddc0d6ca06bc462574c7b38477bbc4579497790f723381758611e5225ab7132e71ed60bf1e6f7ed4b48955daa5cf3f7f89961b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "32815caecc4b12bdb42391ee05d0faafa0be4766c55888bb567d7516855ac923",
+          "response_sha256": "37d9c0970236de199b389ab089ae8907271d140e2db56b72ba4c1780e5742628",
+          "verdict": "flag",
+          "anomalies": [
+            "amount_mismatch",
+            "injection_attempt"
+          ],
+          "checks_passed": true
+        }
+      ]
     },
     {
       "loan_id": "H-RE-09",
       "fund_id": "harbor-credit-fund",
-      "loan_hash": "4827f94795d335835378111fde5058be11e85a4dae3a283641c61f52f15eb622",
+      "loan_hash": "8728a8bd444aa13edb5e77bfd4597340fec2b930c8d19d0d2f7d00b9dec67669",
       "tampered": {
         "id": "T3-duplicate-as-new",
         "expected_anomaly": "duplicate_document"
       },
       "verdict": {
-        "loan_hash": "4827f94795d335835378111fde5058be11e85a4dae3a283641c61f52f15eb622",
-        "binding": "truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255",
+        "loan_hash": "8728a8bd444aa13edb5e77bfd4597340fec2b930c8d19d0d2f7d00b9dec67669",
+        "binding": "truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623",
         "verdict": "flag",
         "anomalies": [
           "duplicate_document"
@@ -706,13 +872,24 @@
       },
       "ok": true,
       "onchain": {
-        "loan_hash": "4827f94795d335835378111fde5058be11e85a4dae3a283641c61f52f15eb622",
+        "loan_hash": "8728a8bd444aa13edb5e77bfd4597340fec2b930c8d19d0d2f7d00b9dec67669",
         "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "request_sha256": "e802f59b8eaf0bb6c9cd2c875d57ff05225fed77b793aa9f573c5bdc5ff0c851",
-        "response_body": "{\"id\":\"chatcmpl-31ab26e9-2bd7-4412-b472-8dce688d4d30\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"4827f947 95d33583 5378111f de5058be 11e85a4d ae3a2836 41c61f52 f15eb622\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-22cfb2.testnet|testnet|1796606817255\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"fail\\\",\\\"duplicate_evidence_line\\\":13,\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"duplicate_document\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794014845,\"usage\":{\"prompt_tokens\":839,\"total_tokens\":1003,\"completion_tokens\":164,\"prompt_tokens_details\":{\"cached_tokens\":528}}}",
-        "signature": "0x6c796f65a13d9a17f0dcaaf2a3e44805f00c4d1bb9571bc5221f24acba34a037317d3cd939d51a766474e89d31eaaf00cfd63c5ea48f5930519b17769876f6dd1b",
+        "request_sha256": "a62e71a5c8ba2739235888ddbdf126c848715d7ae9a6dcd3218a03528522453b",
+        "response_body": "{\"id\":\"chatcmpl-f07b41f8-35b3-4057-8602-53e6376a9d45\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"8728a8bd 444aa13e db5e77bf d4597340 fec2b930 c8d19d0d 2f7d00b9 dec67669\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.tnlab-718ca9.testnet|testnet|1796611874623\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"fail\\\",\\\"duplicate_evidence_line\\\":13,\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"duplicate_document\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"Qwen/Qwen3-VL-30B-A3B-Instruct\",\"created\":1794019902,\"usage\":{\"prompt_tokens\":833,\"total_tokens\":991,\"completion_tokens\":158,\"prompt_tokens_details\":{\"cached_tokens\":512}}}",
+        "signature": "0x0a145ee79828c71fd9718d04fe3626105642d3a1b9354d27697bfc95f26dc847014e3e60b2d233ad62608ee92f8786ddd5efd99d86ddd151f3f99c76429ea7421b",
         "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462"
-      }
+      },
+      "tries": [
+        {
+          "request_sha256": "a62e71a5c8ba2739235888ddbdf126c848715d7ae9a6dcd3218a03528522453b",
+          "response_sha256": "28654c7e80430872172538c54b7b0f6bd3bef4244504b629b4f03b5f12957517",
+          "verdict": "flag",
+          "anomalies": [
+            "duplicate_document"
+          ],
+          "checks_passed": true
+        }
+      ]
     }
   ]
 }

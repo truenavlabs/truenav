@@ -139,10 +139,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const results = [];
   for (const l of pick) {
     let res;
-    for (let tries = 0; tries < 3; tries++) {
+    // Every try is recorded with its request and response hashes, kept or not (TRUST_MODEL: the servicer could
+    // otherwise re-run the TEE until it gets a pass without anyone seeing the earlier answers).
+    const tries = [];
+    for (let t = 0; t < 3; t++) {
       res = await underwrite(l, readFileSync(new URL(l.file, root), "utf8"), att.signers, binding);
-      if (res.ok) break; // a miscopied echo or a reply with extra keys is retried; each try is a separate signed reply
+      tries.push({ request_sha256: res.onchain.request_sha256, response_sha256: createHash("sha256").update(res.onchain.response_body).digest("hex"), verdict: res.verdict.verdict, anomalies: res.verdict.anomalies, checks_passed: res.ok });
+      if (res.ok) break; // only a miscopied echo or a reply outside the reply rule is retried, never a flag
     }
+    res.tries = tries;
     results.push(res);
     const label = l.tampered ? `${l.tampered.id} (expect ${l.tampered.expected_anomaly})` : l.loan_id;
     console.log(`${res.ok ? "signed" : "UNVERIFIED"} ${label}: ${res.verdict.verdict} ${res.verdict.anomalies.join(",")}${res.ok ? "" : "  failed: " + Object.entries(res.checks).filter(([, v]) => !v).map(([k]) => k).join(",")}`);

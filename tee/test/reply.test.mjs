@@ -64,3 +64,8 @@ test("line numbers as the model sees them", () => {
   assert.equal(numberLines(doc).split("\n")[1], "2: B stamp: CERTIFIED COPY");
   assert.equal(lineOf(doc, 2), "B stamp: CERTIFIED COPY");
 });
+
+test("shared reply cases: the JS rule gives the expected verdict on every case (same file as the contract test)", () => {
+  const { cases } = JSON.parse(readFileSync(new URL("../../contract/tests/fixtures/reply-cases.json", import.meta.url), "utf8"));
+  for (const c of cases) assert.equal(replyProblem(c.body) === null, c.accept, `${c.name}: ${replyProblem(c.body)}`);
+});

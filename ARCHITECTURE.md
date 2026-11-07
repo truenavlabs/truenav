@@ -9,7 +9,10 @@ flowchart TB
   REG[Registrar] -- add_tee_signer(key, report hash) --> C[(Registry contract)]
   ADM[Admin] -- register_fund (allowlist), set_role --> C
   PAU[Pauser] -- pause / unpause --> C
-  FUND[Fund account] -- pledge_loan --> C
+  OLT[OutLayer TEE<br/>fingerprint module, Intel TDX] -- "loan_hash = HMAC(key in TEE, asset and doc id)<br/>(attested per run)" --> SRV
+  ANY -. "npm run verify:fingerprints" .-> OLT
+  FUND -- "asks for each loan's fingerprint" --> SRV
+  FUND[Fund account] -- pledge_loan(loan_hash) --> C
   SRV[Servicer] -- "submit_verdict<br/>(TEE-signed, bound to contract, network, version, expiry)" --> C
   SRV -- release_loan --> C
   ENG[Score engine<br/>public, deterministic] -- reads chain --> C

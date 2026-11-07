@@ -8,4 +8,4 @@ TrueNav needs three things in one place: a registry no fund controls, private co
 - **Verifiable code.** Reproducible builds with NEP-330 source metadata let anyone match the deployed code hash to the source ([reproducible builds](https://docs.near.org/smart-contracts/anatomy/reduce-size)).
 - **Sub-accounts.** Each run creates `registry.`, `harbor.` and `meridian.` under one account, which keeps a judge's own deployment isolated and cheap.
 
-Next on NEAR: an HMAC loan fingerprint whose key never leaves a TEE (OutLayer), and a certificate mirror to EVM chains through Chain Signatures ([chain signatures](https://docs.near.org/chain-abstraction/chain-signatures/getting-started)) so investors on other chains can read the same proof.
+Loan fingerprints are HMACs computed in an OutLayer TEE with a key that never leaves it. Next on NEAR: a certificate mirror to EVM chains through Chain Signatures ([chain signatures](https://docs.near.org/chain-abstraction/chain-signatures/getting-started)) so investors on other chains can read the same proof.

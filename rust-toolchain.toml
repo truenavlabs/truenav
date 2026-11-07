@@ -1,0 +1,6 @@
+# Local and CI toolchain (matches CI: Rust 1.97.0). The reproducible build runs in the pinned image
+# (contract/Cargo.toml), which uses its own rustc 1.99.0 and ignores this file: checked 7 Nov, code hash unchanged.
+[toolchain]
+channel = "1.97.0"
+components = ["clippy"]
+targets = ["wasm32-unknown-unknown"]

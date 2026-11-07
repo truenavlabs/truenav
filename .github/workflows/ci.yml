@@ -37,6 +37,9 @@ jobs:
       - name: Clippy
         working-directory: contract
         run: cargo clippy --locked --tests -- -D warnings
+      - name: Circuit breaker vault tests and clippy
+        working-directory: vault
+        run: cargo test --locked && cargo clippy --locked --tests -- -D warnings
       - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
         with:
           tool: cargo-audit@0.22.2
@@ -65,8 +68,11 @@ jobs:
         run: ulimit -n 65535 && npm run e2e:sandbox
 
   judge-path:
-    # What screening bots and judges run, with no keys: a fresh clone, the offline demo, the live chain read,
-    # the attestation check, and the fixture expiry guard (fails within 10 days of expiry).
+    # README "Try it" steps 3 to 8, from a fresh checkout with no secrets: the offline demo, the live chain read,
+    # the NEAR AI Cloud attestation, every OutLayer fingerprint, the fixture guard (fails within 10 days of expiry)
+    # and the reply check over every submit_verdict on the live contract. npm test, the demo again and the eval run
+    # in the engine job; contract and vault tests, clippy and RustSec in the contract job; the full flow on a local
+    # node in the sandbox job; gitleaks in the secrets job.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -79,6 +85,7 @@ jobs:
       - run: npm run demo
       - run: npm run chain:read
       - run: npm run verify:attestation
+      - run: npm run verify:fingerprints
       - run: npm run check:fixtures
       - run: npm run check:chain-replies
 

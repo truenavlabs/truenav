@@ -243,25 +243,71 @@ fn is_hex64(h: &str) -> bool {
     h.len() == 64 && h.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
 }
 
+/// True when any JSON object in `text` repeats a key (escapes decoded). serde_json keeps the LAST value of a
+/// duplicated key while the earlier value stays in the public transaction data, so a duplicate could carry document
+/// text past every other check. Mirrors duplicateKey in tee/reply.mjs. The text must already be valid JSON.
+pub fn has_duplicate_key(text: &str) -> bool {
+    let b = text.as_bytes();
+    let mut stack: Vec<Option<Vec<String>>> = Vec::new();
+    let mut expect_key = false;
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'{' => { stack.push(Some(Vec::new())); expect_key = true; }
+            b'[' => { stack.push(None); expect_key = false; }
+            b'}' | b']' => { stack.pop(); expect_key = false; }
+            b',' => { expect_key = matches!(stack.last(), Some(Some(_))); }
+            b'"' => {
+                let mut j = i + 1;
+                while j < b.len() && b[j] != b'"' { j += if b[j] == b'\\' { 2 } else { 1 }; }
+                if expect_key {
+                    let key: String = match near_sdk::serde_json::from_str(&text[i..(j + 1).min(b.len())]) { Ok(k) => k, Err(_) => return true };
+                    if let Some(Some(keys)) = stack.last_mut() {
+                        if keys.contains(&key) { return true; }
+                        keys.push(key);
+                    }
+                    expect_key = false;
+                }
+                i = j;
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    false
+}
+
+/// The model's reply text inside the message content: one optional code fence stripped, as tee/reply.mjs does.
+fn strip_fence(content: &str) -> &str {
+    let c = content.trim();
+    let c = c.strip_prefix("```json").or_else(|| c.strip_prefix("```")).unwrap_or(c).trim_start();
+    c.strip_suffix("```").unwrap_or(c).trim_end()
+}
+
 /// None when the reply holds only the allowed keys with the allowed value types; otherwise the first problem.
 /// Rejects: extra keys in the reply, free text in check fields, a non-number evidence line, unknown anomaly codes,
 /// a non-empty provider field beside role and content, and anything but exactly one choice.
 pub fn reply_problem(response_body: &str) -> Option<&'static str> {
     use near_sdk::serde_json::Value;
     let body: Value = match near_sdk::serde_json::from_str(response_body) { Ok(v) => v, Err(_) => return Some("response is not JSON") };
+    if has_duplicate_key(response_body) {
+        return Some("response has a duplicate key");
+    }
     let choices = match body.get("choices").and_then(|c| c.as_array()) { Some(c) if c.len() == 1 => c, _ => return Some("response must have exactly one choice") };
     let msg = match choices[0].get("message").and_then(|m| m.as_object()) { Some(m) => m, None => return Some("response has no message") };
     if msg.iter().any(|(k, v)| k != "role" && k != "content" && !v.is_null()) {
         return Some("message has a non-empty field beside role and content");
     }
-    let content = match msg.get("content").and_then(|c| c.as_str()) { Some(c) => c.trim(), None => return Some("reply is not one JSON object") };
-    let content = content.trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
+    let content = match msg.get("content").and_then(|c| c.as_str()) { Some(c) => strip_fence(c), None => return Some("reply is not one JSON object") };
     let r = match near_sdk::serde_json::from_str::<Value>(content) { Ok(Value::Object(o)) => o, _ => return Some("reply is not one JSON object") };
+    if has_duplicate_key(content) {
+        return Some("reply has a duplicate key");
+    }
     if r.keys().any(|k| !REPLY_KEYS.contains(&k.as_str())) {
         return Some("reply has a key outside the allowed list");
     }
     match r.get("loan_hash").and_then(|v| v.as_str()) {
-        Some(h) if h.len() <= 71 && h.chars().filter(|c| !c.is_whitespace()).count() == 64 && h.chars().all(|c| c.is_ascii_hexdigit() || c.is_whitespace()) => {}
+        Some(h) if h.len() <= 71 && h.bytes().filter(|c| *c != b' ').count() == 64 && h.bytes().all(|c| c.is_ascii_hexdigit() || c == b' ') => {}
         _ => return Some("loan_hash is not a 64-hex hash"),
     }
     match r.get("binding").and_then(|v| v.as_str()) {
@@ -296,8 +342,7 @@ pub fn reply_problem(response_body: &str) -> Option<&'static str> {
 /// The model writes the loan hash in 8-character groups; spaces are removed before comparing.
 pub fn parse_verdict(response_body: &str) -> Option<(String, String, Vec<String>, String)> {
     let body: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(response_body).ok()?;
-    let content = body.get("choices")?.get(0)?.get("message")?.get("content")?.as_str()?.trim();
-    let content = content.trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
+    let content = strip_fence(body.get("choices")?.get(0)?.get("message")?.get("content")?.as_str()?);
     let v: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(content).ok()?;
     let loan_hash: String = v.get("loan_hash")?.as_str()?.chars().filter(|c| !c.is_whitespace()).collect::<String>().to_ascii_lowercase();
     let verdict = v.get("verdict")?.as_str()?.to_string();

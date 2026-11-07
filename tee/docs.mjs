@@ -5,14 +5,20 @@
 //
 //   node tee/docs.mjs      writes tee/docs/*.txt and tee/loans.json
 //
-// loan_hash is the lab demo fingerprint (owner decision 6 Nov): sha256("truenav-demo-v1|" + asset + "|" + document id).
-// It is guessable for real identifiers; production uses an HMAC inside a TEE (OutLayer, next step).
+// loan_hash is the private fingerprint from the OutLayer TEE (owner decision D1, 7 Nov):
+// HMAC-SHA256(key inside the TEE, "truenav-fp-v1|" + asset + "|" + document id), recorded with its attestation in
+// tee/fixtures/fingerprints.json (made by node tee/fingerprint.mjs, checked by npm run verify:fingerprints).
+// Nobody can recompute it from a document id; the old guessable sha256 demo fingerprint is gone.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { createHash } from "node:crypto";
 
 const root = new URL("../", import.meta.url);
 const fx = JSON.parse(readFileSync(new URL("spec/nav/fixtures.json", root), "utf8"));
-export const loanHash = (asset, documentId) => createHash("sha256").update(`truenav-demo-v1|${asset}|${documentId}`).digest("hex");
+const fingerprints = new Map(JSON.parse(readFileSync(new URL("tee/fixtures/fingerprints.json", root), "utf8")).records.map((r) => [`${r.asset_type}|${r.document_id}`, r.loan_hash]));
+export const loanHash = (asset, documentId) => {
+  const h = fingerprints.get(`${asset}|${documentId}`);
+  if (!h) throw new Error(`no attested fingerprint for ${asset}|${documentId}: run node tee/fingerprint.mjs with the servicer's payment key`);
+  return h;
+};
 const WATERMARK = "DEMO, NOT A REAL DOCUMENT";
 const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 

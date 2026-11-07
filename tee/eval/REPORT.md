@@ -43,9 +43,9 @@ Grounding changed nothing: every duplicate flag (6 main, 3 hold-out) gave a line
 | False positive rate | 7.5% (3 of 40: E009, E013, E033, all `duplicate_document`) | 0% (0 of 40) |
 | Precision | 93.9% | 100% |
 | Recall | 100% | 100% |
-| Replies echoing document fields (`document_id`, `asset`, `amount`) | 66 of 86 | 0 of 86 |
+| Replies echoing document fields (`document_id`, `asset`, `amount`) | 22 of 86 replies (66 field values) | 0 of 86 |
 
-The 6 Nov run is kept unchanged in `results-2026-11-06.json` and `metrics-2026-11-06.json`.
+The 6 Nov run is kept unchanged in `results-2026-11-06.json` and `metrics-2026-11-06.json`; `npm run eval -- 2026-11-06` replays it and prints these 6 Nov numbers.
 
 Cause of the 6 Nov false positives: the three flags quoted no line; the documents contain neither phrase. The prompt now (1) numbers every document line, (2) asks for `duplicate_evidence_line` and says the check is ok when no line can be given, (3) says only the exact words count and a repeated line or watermark is not a duplicate, and (4) lists the exact allowed reply keys. Point 3 was added after a smoke test on the demo documents (not the eval or hold-out sets): with points 1, 2 and 4 alone, the honest demo document H-RE-01 was flagged with line 13, its closing watermark, which repeats line 1. The hold-out set was frozen before either change was run.
 
@@ -53,9 +53,11 @@ Cause of the 6 Nov false positives: the three flags quoted no line; the document
 
 1. **No tampered document passed** in either set, including a 1-dollar and a 9-dollar change and every injection style (10 styles across both sets).
 2. **The false positives are gone on both sets** with an evidence line number required; the grounding check found no ungrounded duplicate flag to drop.
-3. **The reply leak is gone.** On 6 Nov most replies repeated the document id, asset and amount, which became public transaction data (AUDIT_FINDINGS 21). Every 7 Nov reply holds only the allowed keys; the client, the contract and CI now reject anything else.
+3. **The reply leak is gone.** On 6 Nov, 22 of 86 replies repeated the document id, asset and amount (66 field values), which would have become public transaction data (AUDIT_FINDINGS 21). Every 7 Nov reply holds only the allowed keys; the client, the contract and CI now reject anything else.
 4. **Reason codes remain less reliable than verdicts.** Unreadable scans were all flagged, but 2 of 6 (main) and 1 of 2 (hold-out) carried an amount or id code instead of, or besides, `unreadable`. The score uses the verdict; codes are reasons only.
 
 ## Limits of this eval
 
 126 synthetic documents in four templates, written by the same team that wrote the prompt; real loan documents vary far more. One model, one prompt, one run each; LLM answers can vary between runs even at temperature 0. A perfect score here means no failure was found in these documents, not that the underwriter cannot fail. The evidence line number points into the private document, so outside the eval nobody can check it from chain.
+
+Note (7 Nov): the eval cases name each document by the old demo hash `sha256("truenav-demo-v1|asset|doc id")`, which the model only echoes back. Eval replies are never submitted to any chain, and the hold-out set is frozen, so the eval keeps it; every on-chain loan_hash is now the OutLayer fingerprint (`tee/fingerprint.mjs`).

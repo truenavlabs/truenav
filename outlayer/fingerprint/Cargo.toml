@@ -1,0 +1,21 @@
+[package]
+name = "truenav-fingerprint"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "TrueNav loan fingerprint: HMAC of the asset type and document id under a key that exists only inside an OutLayer TEE run."
+
+[[bin]]
+name = "truenav-fingerprint"
+path = "src/main.rs"
+
+[dependencies]
+wit-bindgen = "=0.36.0"
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.145"
+hex = "=0.4.3"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

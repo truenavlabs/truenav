@@ -2,7 +2,7 @@
 // chain data (TEE verdicts and pledge times), then check it against the signed certificate stored on chain.
 // Read only, no account or key needed.
 //
-//   npm run chain:read                     uses registry.tnlab-07775b.testnet on testnet
+//   npm run chain:read                     uses the live contract (DEFAULT_CONTRACT in web/chain.mjs) on testnet
 //   TRUENAV_CONTRACT=registry.<you>.testnet npm run chain:read
 import { readFileSync } from "node:fs";
 import { scorePortfolio } from "../engine/src/score.mjs";

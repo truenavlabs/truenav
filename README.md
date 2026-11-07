@@ -85,8 +85,9 @@ You should see, with an explorer link per transaction: sub-accounts for the cont
 
 ### Live instance
 
-Contract [`registry.tnlab-718ca9.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-718ca9.testnet), deployed 7 Nov 2026 (code hash `ANmbqcCs6m7WjivFFwcycjyDHPVF9bxvzpTXSkh8ndpj`). Every loan_hash on it is a private fingerprint from the OutLayer TEE (`npm run verify:fingerprints`). Roles: admin, registrar and pauser `truenav-admin.testnet` (the owner's account), servicer `servicer.tnlab-718ca9.testnet` (also the account that requests fingerprints). The contract account holds two full-access keys: the owner's and the operator's backup. Certificate signer `0x6b5be4ca4d2a0c454fd2aa30f8b47577f8d21c7b` (test key, not TEE). TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `529cbac44368739b...`, published and re-checkable with `npm run verify:attestation`). Every `submit_verdict` transaction on it holds only the allowed reply keys (`npm run check:chain-replies`).
+Contract [`registry.tnlab-718ca9.testnet`](https://explorer.testnet.near.org/accounts/registry.tnlab-718ca9.testnet), deployed 7 Nov 2026 and redeployed with state kept from truenav commit `d37b9d2` (code hash `Foc9f2oJ8Ja1ddKSt91kXTxVm33nRBMjx3e4LHMP13EW`; `contract_source_metadata` links that commit). Every loan_hash on it is a private fingerprint from the OutLayer TEE (`npm run verify:fingerprints`). Roles: admin, registrar and pauser `truenav-admin.testnet` (the owner's account), servicer `servicer.tnlab-718ca9.testnet` (also the account that requests fingerprints). The contract account holds two full-access keys: the owner's and the operator's backup. Certificate signer `0x6b5be4ca4d2a0c454fd2aa30f8b47577f8d21c7b` (test key, not TEE). TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` (attestation report hash `529cbac44368739b...`, published and re-checkable with `npm run verify:attestation`). Every `submit_verdict` transaction on it holds only the allowed reply keys (`npm run check:chain-replies`).
 
+- Code redeployed from `d37b9d2` (state kept): [8SdmXZjU...](https://explorer.testnet.near.org/transactions/8SdmXZjUrZKpt75XS4ugoZ7DsLiqsFqBDERANHs9CL3e)
 - Deploy and init: [7MgbSEK9...](https://explorer.testnet.near.org/transactions/7MgbSEK9oLZb3a2R5m1Jx9Jsrk8xVR26Tz8Nhb6yBZHM)
 - TEE signer registered by the registrar: [H2kjsK24...](https://explorer.testnet.near.org/transactions/H2kjsK24my1CQyj3CMgMzF7hZdc2cA34ndDNhRiGgW4r)
 - Servicer submits the TEE verdict for H-RE-01: [DnNE4rm7...](https://explorer.testnet.near.org/transactions/DnNE4rm7imbYnygoRpTTw9eGCroTaxS1iacbYGFm2czd)
@@ -108,7 +109,7 @@ Earlier instances, kept as history: `registry.tnlab-07775b.testnet` (first contr
 - Harbor with its certificate older than the vault's maximum age (owner set it to 1 minute: [HSCBKak5...](https://explorer.testnet.near.org/transactions/HSCBKak5SVyMrq9ePBRy7rfnFnmotrZk4EKvZq9vMsvE)): refused as stale, refunded: [4PNiNDEd...](https://explorer.testnet.near.org/transactions/4PNiNDEdVP7Zxr821XpvTta6XfU94hVN79M1tmeRcXuk); age restored to 7 days: [FzsAKqfV...](https://explorer.testnet.near.org/transactions/FzsAKqfVokYnzpjNqi31kcZ5TYhh51PJMP1dcjxVSHCF)
 - A fund with no certificate: refused: [DMKw7Z1k...](https://explorer.testnet.near.org/transactions/DMKw7Z1k5JEs5sBjjyKHte6HASQshbq4JYxVUTBbYxVC)
 
-Vaults: `vault-harbor.tnlab-718ca9.testnet`, `vault-meridian.tnlab-718ca9.testnet`, `vault-nocert.tnlab-718ca9.testnet` (code hash `GxsGhedzXTGdrLanRURh4YgixwiEUXhfeVFq8xfdbZny`, built in the same pinned image as the registry). Demo vaults are owned by their own operator accounts.
+Vaults: `vault-harbor.tnlab-718ca9.testnet`, `vault-meridian.tnlab-718ca9.testnet`, `vault-nocert.tnlab-718ca9.testnet` (code hash `9wUGnaG6N2npBfJaSvZHAsRcsSdAypLALyrMRcJWqQjH`, redeployed with state kept from `d37b9d2`: [GjKSNVzn...](https://explorer.testnet.near.org/transactions/GjKSNVznQiq2G8bpdiw9RaTWdPkkBp1oeKC4AayE3wjr), [4mfSHxmR...](https://explorer.testnet.near.org/transactions/4mfSHxmRJ2Mrs1kZ2j7gGkHC1YkksY21bozgqHhH6Nza), [CrmtF1g9...](https://explorer.testnet.near.org/transactions/CrmtF1g9cyws36m1P77rua8L9pft7gsNKYtdmPN7qxA4); the refusals above ran on the first build of the same code). Demo vaults are owned by their own operator accounts.
 
 ### Investor view from chain (no key)
 
@@ -121,16 +122,16 @@ The contract is built reproducibly (NEP-330): `contract/Cargo.toml` pins the bui
 1. Check out the commit that `contract_source_metadata` names (step 3) and build it in the pinned image with the same build info (needs Docker and network access to crates.io):
 
    ```bash
-   REV=ea69d35cc9662017675026d73abad22bbddad48c
+   REV=d37b9d2033f69da121c9a69a615cd7ed027f4eef
    IMG=sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e
    git checkout $REV && docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/contract \
      -e NEP330_BUILD_INFO_BUILD_ENVIRONMENT="$IMG" -e NEP330_BUILD_INFO_CONTRACT_PATH=contract \
-     -e NEP330_BUILD_INFO_SOURCE_CODE_SNAPSHOT="git+https://github.com/truenavlabs/truenav-lab?rev=$REV" \
-     -e NEP330_LINK="https://github.com/truenavlabs/truenav-lab/tree/$REV" \
+     -e NEP330_BUILD_INFO_SOURCE_CODE_SNAPSHOT="git+https://github.com/truenavlabs/truenav?rev=$REV" \
+     -e NEP330_LINK="https://github.com/truenavlabs/truenav/tree/$REV" \
      "$IMG" cargo near build non-reproducible-wasm --locked
    ```
 
-   It prints `SHA-256 checksum bs58: ANmbqcCs6m7WjivFFwcycjyDHPVF9bxvzpTXSkh8ndpj` for that commit (lab build; the live instance is redeployed from the public repository's commit when the code is ported).
+   It prints `SHA-256 checksum bs58: Foc9f2oJ8Ja1ddKSt91kXTxVm33nRBMjx3e4LHMP13EW` for that commit. The same command with `-w /home/near/code/vault` and `NEP330_BUILD_INFO_CONTRACT_PATH=vault` builds the circuit-breaker vault: `9wUGnaG6N2npBfJaSvZHAsRcsSdAypLALyrMRcJWqQjH`.
 2. Compare with `code_hash` from `curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_account","finality":"final","account_id":"registry.tnlab-718ca9.testnet"}}'` when you build the commit named in step 3.
 3. The contract names its own source: view method `contract_source_metadata` returns the repository commit, the build image and the build command.
 

@@ -2,145 +2,145 @@
   "note": "Demo loan fingerprints from the OutLayer TEE (outlayer/fingerprint). Fictional documents, so the inputs are published to let anyone re-check each attestation (npm run verify:fingerprints); real inputs would stay private.",
   "project": "servicer.tnlab-718ca9.testnet/truenav-fingerprint",
   "caller": "servicer.tnlab-718ca9.testnet",
-  "wasm_sha256": "f2a880319fa2cf9917f062bb9c3da2342ca2c50a924c0899835a2fa499cdc71c",
+  "wasm_sha256": "4a7c0e4ed5007ac6720b30906db4105bc302e35fb495003692225f630d1f07e3",
   "domain": "truenav-fp-v1",
   "api": "https://testnet-api.outlayer.ai",
-  "created_at": "2026-11-07T02:48:43.907Z",
+  "created_at": "2026-11-07T07:15:00.794Z",
   "records": [
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE01",
       "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
-      "call_id": "a10eaa28-d152-4626-b35c-767b954cdeca",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE01\",\"nonce\":\"34a46884e3e7ddbc66ce2adfb403b0f3\"}",
+      "call_id": "018c52cc-8269-43a8-8f19-f67d6a6bb618",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE01\",\"nonce\":\"701040a6363418a458e1f1c126ebb790\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE02",
       "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
-      "call_id": "948b0f21-dee9-4517-9bf7-2ba93c3208e7",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE02\",\"nonce\":\"f78ac255cf2505343b140f16de4af110\"}",
+      "call_id": "62ebc66f-20bc-446f-99bd-152d87897bda",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE02\",\"nonce\":\"82ac3299067871eaca243ab733dab188\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE03",
       "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
-      "call_id": "e2fd7195-6628-44dd-8e8f-729f3444c74f",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE03\",\"nonce\":\"31b8a0204b5c0c1a41a4112a7836a5f7\"}",
+      "call_id": "7edd3827-e045-4ba9-9152-61a1fe025676",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE03\",\"nonce\":\"70f8ff5426bf355aa85f35b55a80850a\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE04",
       "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
-      "call_id": "912c1caa-c2c1-41fc-bdc4-c2584eca5ba2",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE04\",\"nonce\":\"c44f236a83b8fc3061ee420e5c9a1308\"}",
+      "call_id": "05b6a3b1-4de9-4697-be53-9313d1393b68",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE04\",\"nonce\":\"278f9ed84902c58f1a8b450e926b6b46\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE05",
       "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
-      "call_id": "1aeaf463-90d0-4664-b0dc-2c43bbdbbf8b",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE05\",\"nonce\":\"67e452ad8f11a33d4cee354d9ed3bf73\"}",
+      "call_id": "2d7e53a5-5540-4b61-be78-4b57c5e09dc4",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE05\",\"nonce\":\"7b81901b0e68387e453678f9d5b83811\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE06",
       "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
-      "call_id": "97ed4631-fd36-410e-810f-d18b2a5e00a8",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE06\",\"nonce\":\"25dcff611da8966328d0b6a33bb892fb\"}",
+      "call_id": "7b93fc30-cd8c-4c36-8399-63ab4c20e530",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE06\",\"nonce\":\"a4d0e36b49561753e1e985210010c13a\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE07",
       "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
-      "call_id": "e3d58def-28fe-43b1-af45-4ef04214542b",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE07\",\"nonce\":\"a567e5ae840dc54e543f2e3c9b38799a\"}",
+      "call_id": "c396c332-1082-4ec8-b214-918e202ef5fa",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE07\",\"nonce\":\"c16b3331dcb4b7cc180fbfd7cb5e7bf2\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE08",
       "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
-      "call_id": "f222be05-2b3b-4dea-b658-8c09028feaae",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE08\",\"nonce\":\"8f154e9efdac3afe70e31675e32637c8\"}",
+      "call_id": "8ddb3f48-b766-4863-965e-a5ecefafaf45",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE08\",\"nonce\":\"577b7ab9a35366f03d4355d4dd29f4bb\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620\"}"
     },
     {
       "asset_type": "invoices",
       "document_id": "INV-DEMO-HIN01",
       "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
-      "call_id": "f1e8f083-9f51-47a7-a708-9ff93372de21",
-      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-HIN01\",\"nonce\":\"7219c39f20252e77aaa44c9e226c6a93\"}",
+      "call_id": "1b43d390-16b4-43c1-93a7-963a2ec61e82",
+      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-HIN01\",\"nonce\":\"eb8113c6174de8be25acafc849acbfd6\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955\"}"
     },
     {
       "asset_type": "invoices",
       "document_id": "INV-DEMO-HIN02",
       "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
-      "call_id": "6b74e5a7-a8e8-46ee-906a-cc617e276336",
-      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-HIN02\",\"nonce\":\"f0fccf69a7d39bb2c991d7eae8955770\"}",
+      "call_id": "e3cb219e-399f-4c79-a0b1-53a9eddfe722",
+      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-HIN02\",\"nonce\":\"9faf94181d9f1ade87bea55ebe666981\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4\"}"
     },
     {
       "asset_type": "invoices",
       "document_id": "INV-DEMO-HIN03",
       "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
-      "call_id": "07f6593b-e36a-4832-be1f-b0b896ae4946",
-      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-HIN03\",\"nonce\":\"f110f4bf1062264e369b6a6e054e9eb6\"}",
+      "call_id": "3bdec4c9-df94-4368-ae6a-78a0f9a1172b",
+      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-HIN03\",\"nonce\":\"7bfeef8c2f2ad0562661947268e2ea01\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-MRE01",
       "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
-      "call_id": "09f5f935-cbf5-4b8a-b113-f9320b011f0d",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-MRE01\",\"nonce\":\"284a38b2e6bdd18253d2619528317f6b\"}",
+      "call_id": "698bd43a-62db-413b-b026-a04dcc9c748d",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-MRE01\",\"nonce\":\"15205fd998857013d6bb5c6578fff50d\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-MRE02",
       "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
-      "call_id": "29e45c0f-6bc4-47b1-82e0-5f232d86cfc8",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-MRE02\",\"nonce\":\"2a7bb2e141d845ea457b29f5dbef5591\"}",
+      "call_id": "2ad06c79-4472-4139-96bc-ef3267ab70f4",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-MRE02\",\"nonce\":\"812e8108230f8e269a326bc3ff0261a3\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a\"}"
     },
     {
       "asset_type": "invoices",
       "document_id": "INV-DEMO-MIN01",
       "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
-      "call_id": "82a96b58-8a40-454d-9180-549997c6b926",
-      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-MIN01\",\"nonce\":\"7194554b51ea22f0c22e0c5ca980945f\"}",
+      "call_id": "e7e9790a-6405-4301-85d5-ec0e0d08b157",
+      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-MIN01\",\"nonce\":\"da02e15708704eabc193757ee9e7a203\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65\"}"
     },
     {
       "asset_type": "invoices",
       "document_id": "INV-DEMO-MIN02",
       "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
-      "call_id": "7e8ca5af-b88f-431d-8a53-4d263a5a787c",
-      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-MIN02\",\"nonce\":\"d68abfb2fa4dfb05acfef3aece4df913\"}",
+      "call_id": "69ddfb9f-b0da-4af1-a3db-de1635933609",
+      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-MIN02\",\"nonce\":\"9b21639f905cdbad8d5dca57f543d155\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b\"}"
     },
     {
       "asset_type": "invoices",
       "document_id": "INV-DEMO-MIN03",
       "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
-      "call_id": "a79a3669-bd98-452a-9c42-c9aed1cd7b90",
-      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-MIN03\",\"nonce\":\"977f29dcc7a8f1e71adee40b983831d3\"}",
+      "call_id": "27afe914-de0c-42b3-b369-91257bcce93e",
+      "input": "{\"asset_type\":\"invoices\",\"document_id\":\"INV-DEMO-MIN03\",\"nonce\":\"54f17e8628e93c8a12c1c81bc7b44056\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc\"}"
     },
     {
       "asset_type": "real_estate",
       "document_id": "TITLE-DEMO-HRE09",
       "loan_hash": "8728a8bd444aa13edb5e77bfd4597340fec2b930c8d19d0d2f7d00b9dec67669",
-      "call_id": "f93c5024-56ec-4724-9b98-1d38ad1f5eba",
-      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE09\",\"nonce\":\"e587e57384a13fe1e87219a5107991b6\"}",
+      "call_id": "c5e7ec3d-5a86-477e-9d87-3a595dc31533",
+      "input": "{\"asset_type\":\"real_estate\",\"document_id\":\"TITLE-DEMO-HRE09\",\"nonce\":\"6caa682e4c09e9c90ca86d35c2d92d1e\"}",
       "output": "{\"domain\":\"truenav-fp-v1\",\"loan_hash\":\"8728a8bd444aa13edb5e77bfd4597340fec2b930c8d19d0d2f7d00b9dec67669\"}"
     }
   ]

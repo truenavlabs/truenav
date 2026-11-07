@@ -15,7 +15,7 @@ export const FP_API = process.env.TRUENAV_OUTLAYER_API || "https://testnet-api.o
 export const FP_PROJECT = "servicer.tnlab-718ca9.testnet/truenav-fingerprint";
 export const FP_CALLER = "servicer.tnlab-718ca9.testnet";
 /** sha256 of the deployed outlayer/fingerprint wasm (FastFS); `cargo build --release --target wasm32-wasip2` */
-export const FP_WASM_SHA256 = "f2a880319fa2cf9917f062bb9c3da2342ca2c50a924c0899835a2fa499cdc71c";
+export const FP_WASM_SHA256 = "4a7c0e4ed5007ac6720b30906db4105bc302e35fb495003692225f630d1f07e3";
 export const FP_DOMAIN = "truenav-fp-v1";
 const sha = (s) => createHash("sha256").update(Buffer.from(s, "utf8")).digest("hex");
 /**

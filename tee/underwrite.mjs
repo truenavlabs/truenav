@@ -150,8 +150,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (outPath) {
     mkdirSync(new URL(".", new URL(outPath, root)), { recursive: true });
     writeFileSync(new URL(outPath, root), JSON.stringify({ note: "TEE underwriter verdicts. Each record is signed by the attested NEAR AI Cloud model TEE; documents are not included.", model: MODEL, contract_id: contractId, binding, signed_at_ms: signedAt, expires_at_ms: signedAt + VERDICT_TTL_MS, attestation: { nonce: att.nonce, checked_at: att.checked_at, signers: att.signers, sections: att.sections, report_sha256: att.reportSha256 }, results }, null, 2) + "\n");
-    // Published base64-encoded (same bytes, same sha256) because the report embeds third-party text.
-    if (att.raw) writeFileSync(new URL("tee/fixtures/attestation-report.json.b64", root), att.raw.toString("base64").replace(/.{76}/g, "$&\n") + "\n");
+    // The published report belongs to the live set only (tee/fixtures/verdicts.json): signing another set must not
+    // overwrite it, or the hash registered on chain would point at a report nobody can read. Published
+    // base64-encoded (same bytes, same sha256) because the report embeds third-party text.
+    if (att.raw && outPath === "tee/fixtures/verdicts.json") writeFileSync(new URL("tee/fixtures/attestation-report.json.b64", root), att.raw.toString("base64").replace(/.{76}/g, "$&\n") + "\n");
     console.log(`wrote ${outPath}`);
   }
 }

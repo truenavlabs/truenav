@@ -11,4 +11,13 @@ for (const f of ["tee/fixtures/verdicts.json", "tee/fixtures/verdicts-sandbox.js
   ok &&= pass;
   console.log(`${pass ? "PASS" : "FAIL"} ${f}: ${Number.isFinite(days) ? days.toFixed(1) : "no expiry"} days left (minimum ${MIN_DAYS})`);
 }
+// The published attestation report must be the one the live verdict set was signed under.
+{
+  const live = JSON.parse(readFileSync(new URL("tee/fixtures/verdicts.json", root), "utf8"));
+  const raw = Buffer.from(readFileSync(new URL("tee/fixtures/attestation-report.json.b64", root), "utf8").replace(/\s+/g, ""), "base64");
+  const sha = (await import("node:crypto")).createHash("sha256").update(raw).digest("hex");
+  const pass = sha === live.attestation.report_sha256;
+  ok &&= pass;
+  console.log(`${pass ? "PASS" : "FAIL"} published attestation report is the one tee/fixtures/verdicts.json was signed under`);
+}
 process.exitCode = ok ? 0 : 1;

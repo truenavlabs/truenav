@@ -215,6 +215,12 @@ if (!tee) {
   // with anything beyond the allowed keys (owner decision 7 Nov). The contract refuses them too.
   const leaky = tee.results.filter((x) => replyProblem(x.onchain.response_body));
   if (leaky.length) stop([`${leaky.length} recorded replies in this set break the reply rule (${replyProblem(leaky[0].onchain.response_body)}); re-sign the set.`]);
+  // The TEE signer is registered with the hash of the published attestation report: it must be that report.
+  if (!SANDBOX) {
+    const pub = Buffer.from(readFileSync(new URL("tee/fixtures/attestation-report.json.b64", root), "utf8").replace(/\s+/g, ""), "base64");
+    const pubSha = createHash("sha256").update(pub).digest("hex");
+    if (pubSha !== tee.attestation.report_sha256) stop([`The published attestation report (sha256 ${pubSha.slice(0, 16)}...) is not the one this verdict set was signed under (${String(tee.attestation.report_sha256).slice(0, 16)}...). Re-sign the set: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts.json`]);
+  }
   const left = tee.expires_at_ms - Date.now();
   expect(left > 0, `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
   const teeSigners = await view("get_tee_signers");

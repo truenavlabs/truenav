@@ -1,0 +1,107 @@
+{
+  "note": "Synthetic score cases for cashflow-v2.0.0 (spec/v2/SPEC.md section 6). Metrics are aggregates as the matcher will produce them; every name is fictional. Expected values are checked by spec/v2/score.test.mjs.",
+  "cases": [
+    {
+      "id": "demo-credit-fund",
+      "about": "Demo credit fund: reports 11.00% yield, cash yield near 6% (the rest is accrued and added-on interest), 60+ day late share 12%, 3% of claimed cash never settled.",
+      "metrics": {
+        "kind": "credit",
+        "cash_match_bps": 9700,
+        "yield_gap_bps": 500,
+        "late_share_bps": 1200,
+        "claimed_cash_cents": 100000000,
+        "exceptions": { "claimed_not_settled_cents": 3000000, "distribution_funded_by_sponsor": 0 },
+        "sources": [
+          { "source": "bank_settlements", "tier": 3, "cadence": "daily", "age_hours": 6, "carried_forward": false },
+          { "source": "servicer_records", "tier": 2, "cadence": "monthly", "age_hours": 400, "carried_forward": false },
+          { "source": "issuer_claims", "tier": 1, "cadence": "monthly", "age_hours": 400, "carried_forward": false }
+        ]
+      },
+      "expect": { "uncapped_score": 65, "score": 59, "band": "red", "caps": ["yield_gap", "claimed_not_settled"] }
+    },
+    {
+      "id": "demo-rental-token",
+      "about": "Demo rental token: payouts exceed rent collected minus expenses and reserves (coverage 0.85); a sponsor transfer funded part of one payout.",
+      "metrics": {
+        "kind": "rental",
+        "cash_match_bps": 10000,
+        "rental_coverage_bps": 8500,
+        "late_share_bps": 500,
+        "claimed_cash_cents": 4200000,
+        "exceptions": { "claimed_not_settled_cents": 0, "distribution_funded_by_sponsor": 1 },
+        "sources": [
+          { "source": "bank_settlements", "tier": 3, "cadence": "daily", "age_hours": 3, "carried_forward": false },
+          { "source": "property_manager_records", "tier": 2, "cadence": "monthly", "age_hours": 200, "carried_forward": false }
+        ]
+      },
+      "expect": { "uncapped_score": 78, "score": 59, "band": "red", "caps": ["payout_exceeds_net_cash", "distribution_funded_by_sponsor"] }
+    },
+    {
+      "id": "honest-credit-fund",
+      "about": "Honest credit fund: reported yield 0.40 points above cash yield, 2% late 60+, bank evidence fresh.",
+      "metrics": {
+        "kind": "credit",
+        "cash_match_bps": 9950,
+        "yield_gap_bps": 40,
+        "late_share_bps": 200,
+        "claimed_cash_cents": 100000000,
+        "exceptions": { "claimed_not_settled_cents": 500000, "distribution_funded_by_sponsor": 0 },
+        "sources": [
+          { "source": "bank_settlements", "tier": 3, "cadence": "daily", "age_hours": 6, "carried_forward": false },
+          { "source": "servicer_records", "tier": 2, "cadence": "monthly", "age_hours": 400, "carried_forward": false }
+        ]
+      },
+      "expect": { "uncapped_score": 96, "score": 96, "band": "green", "caps": [] }
+    },
+    {
+      "id": "honest-rental-token",
+      "about": "Honest rental token: coverage 1.15, 3% late 60+, bank evidence fresh.",
+      "metrics": {
+        "kind": "rental",
+        "cash_match_bps": 10000,
+        "rental_coverage_bps": 11500,
+        "late_share_bps": 300,
+        "claimed_cash_cents": 4200000,
+        "exceptions": { "claimed_not_settled_cents": 0, "distribution_funded_by_sponsor": 0 },
+        "sources": [
+          { "source": "bank_settlements", "tier": 3, "cadence": "daily", "age_hours": 3, "carried_forward": false },
+          { "source": "property_manager_records", "tier": 2, "cadence": "monthly", "age_hours": 200, "carried_forward": false }
+        ]
+      },
+      "expect": { "uncapped_score": 98, "score": 98, "band": "green", "caps": [] }
+    },
+    {
+      "id": "honest-credit-no-bank",
+      "about": "The honest credit fund with no bank-sourced evidence: self-reported only.",
+      "metrics": {
+        "kind": "credit",
+        "cash_match_bps": 9950,
+        "yield_gap_bps": 40,
+        "late_share_bps": 200,
+        "claimed_cash_cents": 100000000,
+        "exceptions": { "claimed_not_settled_cents": 0, "distribution_funded_by_sponsor": 0 },
+        "sources": [
+          { "source": "servicer_records", "tier": 2, "cadence": "monthly", "age_hours": 400, "carried_forward": false }
+        ]
+      },
+      "expect": { "uncapped_score": 96, "score": 59, "band": "red", "caps": ["self_reported_only"] }
+    },
+    {
+      "id": "honest-credit-stale-bank",
+      "about": "The honest credit fund whose bank source was carried forward: no fresh tier-3 source, so self-reported only, and freshness 0.",
+      "metrics": {
+        "kind": "credit",
+        "cash_match_bps": 9950,
+        "yield_gap_bps": 40,
+        "late_share_bps": 200,
+        "claimed_cash_cents": 100000000,
+        "exceptions": { "claimed_not_settled_cents": 0, "distribution_funded_by_sponsor": 0 },
+        "sources": [
+          { "source": "bank_settlements", "tier": 3, "cadence": "daily", "age_hours": 6, "carried_forward": true },
+          { "source": "servicer_records", "tier": 2, "cadence": "monthly", "age_hours": 400, "carried_forward": false }
+        ]
+      },
+      "expect": { "uncapped_score": 76, "score": 59, "band": "red", "caps": ["self_reported_only"] }
+    }
+  ]
+}

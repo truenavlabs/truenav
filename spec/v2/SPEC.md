@@ -1,14 +1,14 @@
 # TrueNav spec v2: is the yield real?
 
-Status: draft for owner review, 7 Nov 2026 (Bangkok). Replaces the pledge-registry scope (owner reset, 7 Nov). Where this conflicts with `spec/nav/NAV_SPEC.md`, older docs or Notion pages, this file wins. Items marked **[proposed]** wait for an owner decision. All names, funds, properties, borrowers, tenants and numbers are fictional and synthetic.
+Status: draft for owner review, 7 Nov 2026 (Bangkok). Replaces the pledge-registry scope (owner reset, 7 Nov). Where this conflicts with `spec/nav/NAV_SPEC.md`, older docs or Notion pages, this file wins. Revision 2 after owner review of 7 Nov (red-flag caps, freshness by source as-of, request pinning, re-sign path). All names, funds, properties, borrowers, tenants and numbers are fictional and synthetic.
 
 TrueNav privately checks whether the cash behind a tokenized fund or tokenized rental property is actually coming in. It compares what the issuer says it was paid with cash a bank actually settled, without exposing borrower or tenant files, and publishes a verifiable score and a signed checks receipt. **TrueNav reports and scores only. It never holds, moves or controls investment or fund money.** The only money it receives is small testnet service fees from agents for paid queries.
 
 ## 1. Names and tooltips
 
-Tooltip strings are **[proposed]**; the owner approves them before they ship. The engine exports them as one `LABELS` table so the UI, the API and the docs read from one source.
+Tooltip strings below were approved by the owner on 7 Nov. Every demo value in the UI carries a "synthetic" chip. The engine exports them as one `LABELS` table so the UI, the API and the docs read from one source.
 
-| Name | Definition | Proposed tooltip |
+| Name | Definition | Tooltip |
 | --- | --- | --- |
 | TrueNav score | 0 to 100, how well bank-settled cash supports what the issuer reports (section 6). | "How well the cash that actually arrived supports what the issuer reports, 0 to 100. A trust score, not a credit rating." |
 | TrueVal | Credit only. Model-based value of the loans: sum over open loans of EAD x (1 - PD x LGD), with PD taken from the bank-verified late-payment cohort. | "What the loans are worth after expected losses, using payments the bank actually settled. A model estimate: not cash collected, not an audited NAV." |
@@ -104,7 +104,7 @@ All money is integer cents, all rates integer basis points, rounding per section
 
 ### 5.1 Cash received
 
-`cash_received` for a period = settled amounts linked to due items of that period (M3, M4), net of reversals (M1). Unlinked credits (M5) are excluded. `claimed_cash` = sum of non-reversed claims for the period. `cash_match_bps` = cash_received / claimed_cash (10,000 when both are 0).
+`cash_received` for a period = settled amounts linked to due items of that period (M3, M4), net of reversals (M1). Unlinked credits (M5) are excluded. `claimed_cash` = sum of non-reversed claims for the period. `cash_match_bps` = cash_received / claimed_cash, clamped to at most 10,000 (10,000 when both are 0; cash received beyond the claims is reported, not rewarded).
 
 ### 5.2 Credit: reported yield vs cash yield
 
@@ -118,42 +118,65 @@ All money is integer cents, all rates integer basis points, rounding per section
 - `rent_due`, `rent_collected` = due and settled amounts on `rent` items for the period.
 - `collection_rate_bps` = rent_collected / rent_due. Occupancy is shown separately and never used in place of collection.
 - `net_operating_cash` = rent_collected - expenses - reserves (expenses and reserves from bank debits tagged `expense` where present, else from the issuer claim, flagged `expenses_self_reported`).
+- `distributions_paid` = bank debits tagged `distribution` for the period. Only when the bank shows none is the issuer claim used, flagged `distributions_self_reported`.
 - `rental_coverage_bps` = net_operating_cash / distributions_paid (shown as a ratio, 1.00 = 10,000 bps). Below 10,000 is exception `payout_exceeds_net_cash`.
 
 ### 5.4 Late-payment cohorts
 
-Per `unit_ref`, days past due = days from the `due_date` of the oldest due item not `paid_full` (by bank-settled cash) to the run's as-of date. Cohorts **[proposed: the usual delinquency convention]**: `current` (0 to 29 days), `30` (30 to 59), `60` (60 to 89), `90+` (90 or more). Each cohort reports count and outstanding cents. Cohorts with fewer than 5 units are suppressed in every public or Q&A output (section 9).
+Per `unit_ref` (loan or lease), days past due = days from the `due_date` of the oldest due item not `paid_full` (by bank-settled cash) to the run's as-of date. Cohorts (owner decision 7 Nov): `current` (0 to 29 days), `30` (30 to 59), `60` (60 to 89), `90+` (90 or more). Each cohort reports count and outstanding cents. Cohorts with fewer than 5 units are suppressed in every public or Q&A output (section 9).
 
 ### 5.5 TrueVal and TrueRange (credit)
 
-Reuses the `legacy-nav-v1` loss math with bank-verified days past due: EAD = principal outstanding (including capitalized interest, flagged) + accrued interest not yet settled. PD comes from the v1 day bands (finer than the four reported cohorts), "demo, not calibrated":
+Reuses the `legacy-nav-v1` loss math with bank-verified days past due: EAD = principal outstanding (including capitalized interest, flagged) + accrued interest not yet settled. PD by cohort, aligned with the four v2 cohorts (the `legacy-nav-v1` bands and pins are unchanged), "demo, not calibrated":
 
-| Days past due (bank-verified) | PD |
+| Cohort (bank-verified days past due) | PD |
 | --- | --- |
-| 0 or less | 2% |
-| 1 to 30 | 10% |
-| 31 to 60 | 25% |
-| 61 to 90 | 45% |
-| 91 or more | 100% |
+| current (0 to 29) | 2% |
+| 30 (30 to 59) | 25% |
+| 60 (60 to 89) | 45% |
+| 90+ (90 or more) | 100% |
 
 LGD: real-estate-secured 31%, unsecured 67% (v1 inference, labeled as such). TrueVal and TrueRange use the v1 formulas in section 1.
 
 ### 5.6 Freshness
 
-Per source, age = run as-of minus the latest record date the source covers. f(age) = 1 at 24 h or less, linear to 0 at 168 h (v1 rule R8). A source is `carried_forward` when its balances or records for the current period are identical to the previous period's, or its as-of is before the period end; its freshness is 0 and exception `carried_forward` is raised. The run's freshness is the minimum over required sources.
+Per source, age = run as-of minus the source's own as-of: the export timestamp for an upload or manager export, the fetch time for a bank fetch made by the TEE. Never the latest record date inside it (a monthly statement's last transaction can be weeks old while the statement is current). Each source has a cadence and a window:
 
-## 6. TrueNav score (`cashflow-v2.0.0`) [proposed weights]
+| Cadence | Full freshness until | Zero at |
+| --- | --- | --- |
+| `daily` (bank fetch) | 24 h | 168 h |
+| `monthly` (manager or issuer export) | 35 days | 65 days |
+
+f is 10,000 bps inside the full window, linear to 0 at the zero point. A monthly export does not lose freshness during its own month.
+
+A source is `carried_forward` when its snapshot hash equals the snapshot hash the previous run recorded for that source, or its as-of did not advance past the previous run's as-of for that source although a new period has started. A carried-forward source has freshness 0 and raises exception `carried_forward`. The run's freshness is the minimum over required sources.
+
+## 6. TrueNav score (`cashflow-v2.0.0`)
+
+Reference implementation: `spec/v2/score.mjs` (integer math, section 10); fixtures `spec/v2/fixtures/score-cases.json`; test `spec/v2/score.test.mjs`.
 
 | Part | Max | Credit | Rental |
 | --- | --- | --- | --- |
-| Cash match | 40 | 40 x cash_match_bps / 10,000 | same |
-| Yield or payout gap | 25 | 25 x max(0, 1 - yield_gap_bps / 500) | 25 x min(1, rental_coverage_bps / 10,000) |
-| Late payments | 15 | 15 x max(0, 1 - (outstanding in 60 and 90+) / (outstanding total x 20%)) | same with rent due |
-| Freshness | 20 | 20 x run freshness | same |
+| Cash match | 40 | 40 x min(cash_match_bps, 10,000) / 10,000 | same |
+| Yield or payout | 25 | 25 x max(0, 1 - min(yield_gap_bps, 500) / 500) | 25 x clamp((coverage - 0.80) / 0.20, 0, 1) |
+| Late payments | 15 | 15 x max(0, 1 - late_share / 20%) | same |
+| Freshness | 20 | 20 x run freshness (5.6) | same |
 
-`raw` = sum of parts. **Evidence cap**: with no bank-sourced (tier 3) source, the score is capped at 59 (red) and labeled "self-reported only". Score = round half up of raw. Bands as in v1: green 85 and up, yellow 60 to 84, red below 60. A payment for a query never changes any input or output of a run.
+`late_share`: credit, principal outstanding in the 60 and 90+ cohorts over all principal outstanding; rental, rent past due in the 60 and 90+ cohorts over rent due for the period. `raw` = sum of parts. Score = round half up of raw.
 
-Demo targets (fixture design, section 12): the credit fund reports 11.00% and shows cash yield near 6% with rising 60+ cohorts, so the yield-gap part falls to 0 and the score drops into red; the rental token pays out more than net operating cash, so coverage is below 1.00 and the payout part falls.
+**Red-flag caps** (owner review 7 Nov). Each one holds the score at 59 or below, so the band is red, and its reason is written into the receipt (`caps: [{code, reason}]`) and shown in the UI word for word:
+
+| Code | When | Reason shown |
+| --- | --- | --- |
+| `self_reported_only` | no tier-3 source that is fresh (freshness above 0 and not carried forward) | "red because no fresh bank-sourced evidence was available: self-reported only" |
+| `yield_gap` | credit, yield_gap_bps of 300 or more | "red because the reported yield is at least 3.00 percentage points above the cash yield" |
+| `payout_exceeds_net_cash` | rental, coverage below 1.00 | "red because payouts exceed net cash from rent" |
+| `distribution_funded_by_sponsor` | any count above 0 | "red because part of a payout was funded by a sponsor transfer, not by income" |
+| `claimed_not_settled` | above 2% of claimed cash | "red because more than 2% of the cash the manager reports was never settled by the bank" |
+
+The receipt keeps the uncapped score next to the capped one. Bands: green 85 and up, yellow 60 to 84, red below 60. A payment for a query never changes any input or output of a run.
+
+Fixture results: demo credit fund 59 red (uncapped 65; caps `yield_gap`, `claimed_not_settled`); demo rental token 59 red (uncapped 78; caps `payout_exceeds_net_cash`, `distribution_funded_by_sponsor`); honest credit fund 96 green; honest rental token 98 green; honest credit fund without bank evidence, or with a carried-forward bank source, 59 red (`self_reported_only`).
 
 ## 7. Evidence passport
 
@@ -176,22 +199,24 @@ One entry per source in every run:
 
 Canonical JSON: UTF-8, keys sorted, no floats, integers above 2^53 as decimal strings, no whitespace. Fields:
 
-`receipt_version` ("2"), `method` (`cashflow-v2.0.0`), `token_id`, `run_nonce` (from the request), `period`, `as_of_ms`, `score`, `band`, `raw_x100`, `parts_x100` {cash_match, gap, late, freshness}, `capped` (bool), `metrics` (section 5 aggregates; cohorts under 5 units suppressed), `checks_run` [check ids], `exceptions` [{code, count}], `missing_evidence` [codes], `passport` [section 7], `evidence_hashes` [{source, sha256}], `code_hash` (the wasm hash the contract requested).
+`receipt_version` ("2"), `method` (`cashflow-v2.0.0`), `token_id`, `run_nonce` (from the request), `period`, `as_of_ms`, `score`, `band`, `raw_x100`, `parts_x100` {cash_match, gap, late, freshness}, `uncapped_score`, `caps` [{code, reason}], `metrics` (section 5 aggregates; cohorts under 5 units suppressed), `checks_run` [check ids], `exceptions` [{code, count}], `missing_evidence` [codes], `passport` [section 7], `evidence_hashes` [{source, sha256}], `code_hash` (the wasm hash the contract requested).
 
 `receipt_hash` = sha256 of the canonical JSON.
 
 ### 8.2 How the receipt is produced and bound (owner decision 7 Nov, option b)
 
-1. The receipt contract calls `outlayer.testnet` `request_execution` with a pinned `code_source` (project version or wasm hash), `input_data` = `{"token_id", "run_nonce"}` only, and a `secrets_ref` to the sealed read-only bank credentials.
+1. The receipt contract calls `outlayer.testnet` `request_execution` with argument `source` pinned to one build: `{"WasmHash": {"hash": <sha256>}}`, or a project with a fixed `version_key` (never null or latest). `input_data` = `{"token_id", "run_nonce"}` only. `secrets_ref` points at the sealed read-only bank credentials, stored with `--build <sha256>` so only that build can read them and with the receipt contract as the only reader (`--via`).
 2. Inside the TEE the wasm fetches the mock bank-data API and the manager export itself, runs the match and score, and prints the receipt. Private records never appear in `input_data`, the receipt or any log.
-3. OutLayer resolves the request on chain; the contract's private callback receives the output, checks `run_nonce`, `token_id`, `method` and that `code_hash` equals the pinned hash, then stores the receipt with a per-token sequence number and emits an event.
+3. OutLayer resolves the request on chain; the contract's private callback receives the output, checks `run_nonce`, `token_id` and `method` against its own pending request, then stores the receipt with a per-token sequence number, the hash it pinned in the request, and emits an event.
 4. Anyone can fetch the run's public attestation (TDX quote over wasm hash, input hash, output hash) and check that the stored receipt hash matches the attested output.
 
-What this binds: the receipt arrived through OutLayer's on-chain resolve for a request our contract made, for code our contract pinned. What it trusts: OutLayer's resolve path (its operator posts results; the TDX quote is checked off chain, not by our contract). Disclosed in TRUST_MODEL.
+What this binds: the receipt arrived through OutLayer's on-chain resolve for a request our contract made, for the build our contract pinned in that request. Which code ran is enforced by the request pin and by the secrets build lock (another build cannot read the bank credentials), not by the callback: OutLayer's resolve payload carries `success`, `output`, `error` and `resources_used`, no wasm hash (OutLayer contract docs, read 7 Nov), and a `code_hash` written by the wasm itself proves nothing. So the receipt's `code_hash` field is **informational**; the pinned hash the contract stores is the one that counts, and anyone can check it against the run's public attestation (TDX quote over wasm hash, input hash, output hash). What it trusts: OutLayer's resolve path (its operator posts results; the TDX quote is checked off chain, not by our contract). Disclosed in TRUST_MODEL.
 
 ### 8.3 Short receipt (Base Sepolia mirror)
 
 `token_id_hash` (sha256 of token_id), `seq`, `receipt_hash`, `score`, `band`, `method_id_hash`, `as_of_ms`. The NEAR contract builds the EIP-1559 transaction for the fixed mirror address and the single update selector on chain 84532, with a nonce it serializes itself, from a receipt it already stored, and asks `v1.signer-prod.testnet` to sign it. It cannot sign anything else. The mirror contract rejects a `seq` that is not greater than the last one for that token.
+
+Re-sign path: the NEAR contract keeps each mirror request as (nonce, seq, unsigned payload). If a signed transaction never lands on Base Sepolia (dropped, underpriced), `resign_mirror(nonce)` asks the MPC to sign the same payload again for the same nonce, allowing only a higher fee up to a fixed cap; nothing else in the payload can change. Because both versions share the nonce, at most one can land. A new nonce is never issued while an earlier one is unconfirmed, so a stuck nonce is fixed by re-signing it, never skipped. The MPC-derived address pays Base Sepolia gas, so it must hold Base Sepolia ETH (faucet; checked before each mirror run).
 
 ## 9. Privacy gates (code-enforced)
 
@@ -229,8 +254,8 @@ What this binds: the receipt arrived through OutLayer's on-chain resolve for a r
 
 ## 12. Demo data (synthetic)
 
-- **Credit fund** (fictional, modeled on specialty-credit vaults where attesters vouch for off-chain payments and share value includes accrued and added-on interest): its dashboard reports 11.00% yield; bank settlements support cash yield near 6%; 60+ day cohorts rise across three monthly runs; score drops.
-- **Rental token** (fictional, modeled on monthly-payout tokenized property): distributions exceed rent collected minus expenses and reserves; a sponsor transfer funds part of a payout; occupancy is high while collection is lower.
+- **Credit fund** (fictional; off-chain payments are vouched for by appointed attesters, and share value includes accrued and capitalized interest): its dashboard reports 11.00% yield; bank settlements support cash yield near 6%; 60+ day cohorts rise across three monthly runs; score drops.
+- **Rental token** (fictional; a tokenized property that pays holders monthly): distributions exceed rent collected minus expenses and reserves; a sponsor transfer funds part of a payout; occupancy is high while collection is lower.
 - Every edge case of section 4 appears in at least one fixture: partial, batched, reversed, duplicate, deposit not rent, owner top-up, unapplied credit, missing source, carried-forward source.
 - Mock bank-data API: synthetic, labeled synthetic everywhere, frozen snapshots for reproducibility. Reproducibility is claimed only against a frozen mock-bank snapshot (owner decision 7 Nov).
 

@@ -21,7 +21,7 @@ const sha = (s) => createHash("sha256").update(Buffer.from(s, "utf8")).digest("h
 /**
  * A document id must already be canonical (uppercase letters, digits and hyphens): the module hashes it as given,
  * so "INV-1" and " inv-1" would give two fingerprints for one loan and a double pledge would not collide (7 Nov
- * audit). The client refuses anything else rather than rewriting it; normalizing inside the module is an owner call.
+ * audit). The client and the module (outlayer/fingerprint/src/lib.rs) both refuse anything else; nothing is rewritten.
  */
 export const isCanonicalId = (id) => typeof id === "string" && /^[A-Z0-9][A-Z0-9-]{0,127}$/.test(id);
 

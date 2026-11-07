@@ -7,6 +7,7 @@
 use serde::Deserialize;
 use serde_json::json;
 use std::io::{self, Read, Write};
+use truenav_fingerprint::{is_canonical_id, tag_hex};
 
 mod host {
     wit_bindgen::generate!({ world: "guest", path: "wit", generate_all });
@@ -44,11 +45,14 @@ fn run() -> Result<serde_json::Value, String> {
     if input.asset_type != "real_estate" && input.asset_type != "invoices" {
         return Err("asset_type must be real_estate or invoices".into());
     }
-    if input.document_id.is_empty() || input.document_id.len() > 128 || input.document_id.contains('|') {
-        return Err("document_id must be 1 to 128 characters without '|'".into());
+    // Canonical ids only (uppercase A to Z, digits, hyphen, 1 to 128 characters): refused, never rewritten, so two
+    // spellings of one loan can never get two fingerprints (AUDIT_FINDINGS 25). This also rules out '|'.
+    if !is_canonical_id(&input.document_id) {
+        return Err("document_id must be canonical: uppercase A to Z, digits and hyphens, 1 to 128 characters".into());
     }
     let tag = keys::mac(KEY, None, format!("{DOMAIN}|{}|{}", input.asset_type, input.document_id).as_bytes())?;
-    Ok(json!({ "loan_hash": hex::encode(tag), "domain": DOMAIN }))
+    // Exactly 32 bytes of HMAC-SHA256, or the run fails (AUDIT_FINDINGS 26).
+    Ok(json!({ "loan_hash": tag_hex(&tag)?, "domain": DOMAIN }))
 }
 
 fn main() {

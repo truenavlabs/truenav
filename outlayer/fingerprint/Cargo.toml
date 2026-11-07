@@ -5,6 +5,9 @@ edition = "2021"
 publish = false
 description = "TrueNav loan fingerprint: HMAC of the asset type and document id under a key that exists only inside an OutLayer TEE run."
 
+[lib]
+path = "src/lib.rs"
+
 [[bin]]
 name = "truenav-fingerprint"
 path = "src/main.rs"

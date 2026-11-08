@@ -47,6 +47,33 @@ jobs:
         working-directory: contract
         run: cargo audit
 
+  engine-v2:
+    # outlayer/engine-v2 (the cashflow-v2.0.0 OutLayer module): native tests (raw-data parity on the 4 funds, edge
+    # cases, TEE flow), clippy native and wasm32-wasip2, then the wasm32-wasip2 build in the pinned image, whose
+    # sha256 must equal the one recorded in outlayer/engine-v2/BUILD.md.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Rust 1.99.0 with clippy and wasm32-wasip2
+        run: rustup toolchain install 1.99.0 --profile minimal --component clippy --target wasm32-wasip2
+      - name: cargo test (native)
+        working-directory: outlayer/engine-v2
+        run: cargo +1.99.0 test --locked
+      - name: Clippy (native and wasm32-wasip2)
+        working-directory: outlayer/engine-v2
+        run: cargo +1.99.0 clippy --locked --all-targets -- -D warnings && cargo +1.99.0 clippy --locked --target wasm32-wasip2 -- -D warnings
+      - name: wasm32-wasip2 build in the pinned image, sha256 must match BUILD.md
+        run: |
+          docker run --rm -u 0 -v "$PWD:/code" -w /code/outlayer/engine-v2 -e RUSTUP_TOOLCHAIN=1.99.0 \
+            sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
+            bash -c 'rustup target add wasm32-wasip2 && cargo build --release --locked --target wasm32-wasip2'
+          got=$(sha256sum outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm | cut -d' ' -f1)
+          want=$(grep -oE '^\| wasm sha256 \| `[0-9a-f]{64}`' outlayer/engine-v2/BUILD.md | grep -oE '[0-9a-f]{64}')
+          echo "built $got, BUILD.md $want"
+          test -n "$want" && test "$got" = "$want"
+
   sandbox:
     # Full flow on a local NEAR sandbox node: deploy the wasm, signers, funds, 16 pledges, 16 TEE-signed
     # verdicts verified by the contract, score from chain, certificates, double-pledge refusal.

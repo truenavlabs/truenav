@@ -1,10 +1,10 @@
 {
-  "note": "sha256 of the contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked) from source commit 4d472e1, same on two fresh clones at different paths and users. receipts/deploy-testnet.mjs refuses any other bytes.",
-  "receipts": "be2fed682a809cdfce4bc07b9176fcc36e0c501608e8bfbc8694ac8064401c35",
+  "note": "sha256 of the contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked) from source commit 684b2e3, same on two fresh clones at different paths and users. receipts/deploy-testnet.mjs refuses any other bytes.",
+  "receipts": "f32949b38eef2547d1bbe4441d0d2c5db215846db1a57a95f4f46dbcf7b29c9d",
   "query": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156",
   "dist": {
-    "note": "receipts/dist/ holds these pinned-image builds (from 4d472e1) so a machine without Docker can deploy: TRUENAV_WASM_DIR=receipts/dist. The deploy script checks their sha256 against the pins above.",
-    "receipts/dist/truenav_receipts.wasm": "be2fed682a809cdfce4bc07b9176fcc36e0c501608e8bfbc8694ac8064401c35",
+    "note": "receipts/dist/ holds these pinned-image builds (from 684b2e3) so a machine without Docker can deploy: TRUENAV_WASM_DIR=receipts/dist. The deploy script checks their sha256 against the pins above.",
+    "receipts/dist/truenav_receipts.wasm": "f32949b38eef2547d1bbe4441d0d2c5db215846db1a57a95f4f46dbcf7b29c9d",
     "receipts/dist/truenav_query.wasm": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
   }
 }

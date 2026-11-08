@@ -78,15 +78,15 @@ On testnet, `--execute` signs `buy_query` with the agent's own account (`TRUENAV
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-two fresh clones at different paths (as root and as the image user), source commit 4d472e1:
+two fresh clones at different paths (as root and as the image user), source commit 684b2e3:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `be2fed682a809cdfce4bc07b9176fcc36e0c501608e8bfbc8694ac8064401c35` | 266556 |
+| receipts | `f32949b38eef2547d1bbe4441d0d2c5db215846db1a57a95f4f46dbcf7b29c9d` | 266556 |
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
-build differs. Previous receipts pins: `e321077f...` (dc0b6c6, the build deployed on testnet 8 Nov, before the late-callback
+build differs. Previous receipts pins: `be2fed68...` (4d472e1, callback gas floor 20 Tgas), `e321077f...` (dc0b6c6, the build deployed on testnet 8 Nov, before the late-callback
 refund), `1a04e120...` (591db60, rental late share capped at 10000), `57ae8fa8...`
 (0c49d30, before the review fixes).
 

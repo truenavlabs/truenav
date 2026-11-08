@@ -167,6 +167,19 @@ Scores are computed as of the demo valuation time in `spec/nav/fixtures.json`; c
 - With chain data, a loan counts only for the fund whose on-chain pledge holds it. Offline mode (no chain data, used by `npm test`) falls back to "verified in neither" for an nft_id two funds list; offline mode is for tests and the chain path is the real score.
 - PD tables are demo, not calibrated; TrueRange assumes independent defaults.
 
+## Known limitations
+
+- Rental late share has no 100% ceiling, by design. `late_share_bps` for a rental fund compares all rent that is 60
+  or more days late, across every month, with the rent due for one month, so a tenant who has paid nothing for four
+  months shows 40,000 bps. The receipt contract accepts values up to 1,000,000 bps (100 months of rent). The score
+  only counts late share up to 2,000 bps (20%), so a higher value never changes a score.
+- If OutLayer accepts a run and its own callback then fails, the receipt contract cannot tell that apart from a run
+  that was refused at the start. It refunds the requester's 0.01 NEAR from its own balance in both cases. It can
+  therefore pay back money it did not get back, at most 0.01 NEAR per run, but it never pays back less than the
+  requester is owed. This should not happen in practice, because OutLayer's callback returns a value on every path.
+- Everything is synthetic: every fund, tenant, borrower, servicer, manager and bank account, and all bank data. No
+  real party, account or record is used anywhere.
+
 ## Next steps
 
 keyword rules such as the duplicate phrases run as attested code inside a TEE (OutLayer) before the reply is signed, instead of being asked of the model; certificate signer running in a TEE; on-chain quote verification; a multisig or DAO admin; storage deposits; the Chain Signatures certificate mirror to EVM chains and NEAR Intents settlement (not built, to keep the surface small).

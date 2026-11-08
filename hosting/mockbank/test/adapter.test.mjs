@@ -4,6 +4,10 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createHash } from "node:crypto";
+import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { makeHandler, restorePath, isPlainPath, MIN_TOKEN_LENGTH } from "../api/mockbank.mjs";
 import vercelHandler from "../api/mockbank.mjs";
 import { FUNDS, fundDocs } from "../../../cashflow/mockbank/funds.mjs";
@@ -19,6 +23,49 @@ async function serve(h) {
 }
 after(() => servers.forEach((s) => s.close()));
 const DOCS = ["bank-feed", "manager-export", "issuer-claims"];
+
+test("committed runtime copies match their canonical sources byte for byte", async () => {
+  for (const file of ["mockbank/server.mjs", "mockbank/funds.mjs", "demo/data.mjs"]) {
+    assert.deepEqual(
+      await readFile(new URL(`../runtime/${file}`, import.meta.url)),
+      await readFile(new URL(`../../../cashflow/${file}`, import.meta.url)),
+      `${file}: refresh with node hosting/mockbank/stage.mjs`,
+    );
+  }
+});
+
+test("the host works with only hosting/mockbank copied outside the repository", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "truenav-host-"));
+  const saved = process.env.TRUENAV_DATA_TOKEN;
+  // Public synthetic fixture, never a deployed credential.
+  const token = "a".repeat(64);
+  let server;
+  try {
+    await cp(new URL("../", import.meta.url), dir, { recursive: true });
+    process.env.TRUENAV_DATA_TOKEN = token;
+    const { default: adapter } = await import(pathToFileURL(join(dir, "api/mockbank.mjs")).href);
+    server = createServer(adapter);
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const health = await fetch(`${base}/health`);
+    assert.equal(health.status, 200);
+    assert.equal((await health.json()).synthetic, true);
+    const url = `${base}/v1/tokens/DEMO-CREDIT/bank-feed`;
+    const denied = await fetch(url);
+    assert.equal(denied.status, 401);
+    await denied.arrayBuffer();
+    const allowed = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    assert.equal(allowed.status, 200);
+    assert.equal(allowed.headers.get("x-synthetic-data"), "true");
+    assert.equal(allowed.headers.get("x-content-type-options"), "nosniff");
+    await allowed.arrayBuffer();
+  } finally {
+    if (saved === undefined) delete process.env.TRUENAV_DATA_TOKEN;
+    else process.env.TRUENAV_DATA_TOKEN = saved;
+    if (server) await new Promise((resolve, reject) => server.close((err) => err ? reject(err) : resolve()));
+    await rm(dir, { recursive: true, force: true });
+  }
+});
 
 test("the all-funds token reads all 3 documents of all 4 funds, exact bytes, sha256 and synthetic headers", async () => {
   const get = await serve(makeHandler({ TRUENAV_DATA_TOKEN: TOKEN }));

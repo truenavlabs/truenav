@@ -4,8 +4,8 @@
 //
 // Fails closed: with TRUENAV_DATA_TOKEN unset or shorter than 32 characters, every data route answers 503 and serves
 // nothing. /health stays public. The token is never logged, echoed or written anywhere.
-import { handler, BASE_HEADERS } from "../../../cashflow/mockbank/server.mjs";
-import { fundDocs } from "../../../cashflow/mockbank/funds.mjs";
+import { handler, BASE_HEADERS } from "../runtime/mockbank/server.mjs";
+import { fundDocs } from "../runtime/mockbank/funds.mjs";
 
 export const MIN_TOKEN_LENGTH = 32;
 export const SNAPSHOT_ID = "synthetic-2026-11-08";

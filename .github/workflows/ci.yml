@@ -165,11 +165,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: gitleaks 8.30.1 (checksum pinned) over the full history
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.24.11"
+          cache: false
+      - name: gitleaks 8.30.1 (Go module proxy, checksum-verified) over the full history
         run: |
-          # retries cover transient 5xx from the release download (504s on 8 Nov); the pinned sha256 is the one in
-          # the release's gitleaks_8.30.1_checksums.txt, and sha256sum -c fails the job on any mismatch
-          curl -sSfL --retry 5 --retry-delay 10 --retry-all-errors -o gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
-          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz" | sha256sum -c -
-          tar xzf gitleaks.tgz gitleaks
-          ./gitleaks git --redact --no-banner .
+          # the release download 504'd on the runners (runs 52 to 60, 8 Nov); go install fetches the v8.30.1 module
+          # from the Go module proxy and verifies it and every dependency against the checksum database
+          # (sum.golang.org; v8.30.1 h1:PmEvCfVI7ti9dV3s5aMZUY7sS2GxRvG3yzih7E+cS3w=), failing on any mismatch
+          go install github.com/zricethezav/gitleaks/v8@v8.30.1
+          "$(go env GOPATH)/bin/gitleaks" git --redact --no-banner .

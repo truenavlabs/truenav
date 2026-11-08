@@ -51,11 +51,11 @@ npm run e2e:receipts                     # 56 checks on a local sandbox, engine 
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-two fresh clones at different paths (as root and as the image user), source commit 93b18a4:
+two fresh clones at different paths (as root and as the image user), source commit 0c49d30:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `a9005763dc482be4ea70f243f726896a529868e72bc8e4a3546b2a734623c5d3` | 252507 |
+| receipts | `57ae8fa8d3af720aab15c397a60baca0aa3aeaf965d42e8017b8a06cd0d87948` | 257067 |
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes.

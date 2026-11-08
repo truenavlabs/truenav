@@ -51,14 +51,15 @@ npm run e2e:receipts                     # 63 checks on a local sandbox, engine 
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-two fresh clones at different paths (as root and as the image user), source commit 0c49d30:
+two fresh clones at different paths (as root and as the image user), source commit 591db60:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `57ae8fa8d3af720aab15c397a60baca0aa3aeaf965d42e8017b8a06cd0d87948` | 257067 |
+| receipts | `1a04e120b4ae5b34564e7becae73f271ebd915fa321538e50fa6a2e75bf2f9db` | 264384 |
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
-`receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes.
+`receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
+build differs. Previous receipts pin: `57ae8fa8...` (0c49d30, before the review fixes), never deployed.
 
 ## Who can use the data credentials
 

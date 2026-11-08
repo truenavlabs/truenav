@@ -1,5 +1,5 @@
 {
-  "note": "sha256 of the contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked) from source commit 0c49d30, same on two fresh clones at different paths and users. receipts/deploy-testnet.mjs refuses any other bytes.",
-  "receipts": "57ae8fa8d3af720aab15c397a60baca0aa3aeaf965d42e8017b8a06cd0d87948",
+  "note": "sha256 of the contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked) from source commit 591db60, same on two fresh clones at different paths and users. receipts/deploy-testnet.mjs refuses any other bytes.",
+  "receipts": "1a04e120b4ae5b34564e7becae73f271ebd915fa321538e50fa6a2e75bf2f9db",
   "query": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
 }

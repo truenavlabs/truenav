@@ -27,6 +27,7 @@ affects downloads, not the output.
 | wasm sha256 | `360cd47346db7060ffb213288e25a6d5e39050133bd4e20ad2f6f9280b1daa57` |
 | size | 579642 bytes |
 | check | two fresh clones, mounted at different absolute paths (`/src/a` as root, `/work/b-other` as the image user), same sha256; CI rebuilds it and fails if the hash differs from this table |
+| rechecked | 8 Nov at 591db60 (lab/receipts; same engine source as lab/engine-v2 74a53eb): the same two-clone check, same sha256. Only tests, fixtures and `examples/` changed since 9138f10, none of them build inputs |
 | previous | `6d1eac8911d751c4baf877d14c4357862c09b38aaa52d2245aec6815f4e59601` (f74661a, before the field validation and the TEE-derived new_period), `fce34e79...` (7ef4423, cashflow-v2.0.0), `a74d6976...` (214dae9); none uploaded |
 
 The only absolute paths in the binary are the image's own registry paths (`/home/near/.cargo/registry/...`), which the

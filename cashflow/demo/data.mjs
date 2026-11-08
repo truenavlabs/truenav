@@ -2,10 +2,16 @@
 // fictional; there is no real platform or provider data. Deterministic: the same call gives the same bytes.
 // Each dataset holds what each source would deliver: the servicer or property-manager export, the mock bank-data
 // feed (bank-aggregator sign convention: positive = money out), and the issuer's public claims.
-export const AS_OF = "2026-11-01";
+// Real timestamps of 8 Nov 2026 (no future time): the exports were taken at 06:00 UTC, the bank feed fetched at
+// 08:30 and the run made at 09:00, so every source covers through 7 Nov, October's collection cutoff (spec 5.7).
+// The reporting period is October; the exports also hold the November dues and the payments made so far.
+export const RUN_AS_OF = "2026-11-08T09:00:00Z";
+export const BANK_FETCHED_AT = "2026-11-08T08:30:00Z";
+export const EXPORT_AS_OF = "2026-11-08T06:00:00Z";
+export const AS_OF = RUN_AS_OF.slice(0, 10);
 export const PERIOD = "2026-10";
 export const DAYS_IN_PERIOD = 31;
-const MONTHS = ["2026-08", "2026-09", "2026-10"];
+const MONTHS = ["2026-08", "2026-09", "2026-10", "2026-11"];
 const pad = (n) => String(n).padStart(2, "0");
 const addDays = (iso, d) => new Date(Date.parse(`${iso}T00:00:00Z`) + d * 86400000).toISOString().slice(0, 10);
 
@@ -41,9 +47,9 @@ function creditFund({ id, name, n, principal, rate_bps, pik = [], missed = {}, f
     name,
     kind: "credit",
     synthetic: true,
-    servicer_tape: { as_of: "2026-10-31", loans, schedule, payments },
+    servicer_tape: { as_of: EXPORT_AS_OF, loans, schedule, payments },
     bank_feed: { synthetic: true, account_id: `${id}-operating`, transactions },
-    issuer: { token_id: id, as_of: "2026-10-31", period: PERIOD, reported_yield_bps, principal_outstanding_cents: total + pikInterest, accrued_interest_cents: n * interest, capitalized_interest_cents: pikInterest },
+    issuer: { token_id: id, as_of: EXPORT_AS_OF, period: PERIOD, reported_yield_bps, principal_outstanding_cents: total + pikInterest, accrued_interest_cents: n * interest, capitalized_interest_cents: pikInterest },
   };
 }
 
@@ -92,9 +98,9 @@ function rentalToken({ id, name, units, rent, vacant = [], unpaid = {}, batch = 
     name,
     kind: "rental",
     synthetic: true,
-    manager_export: { as_of: "2026-10-31", units: unitsOut, charges, ledger },
+    manager_export: { as_of: EXPORT_AS_OF, units: unitsOut, charges, ledger },
     bank_feed: { synthetic: true, account_id: `${id}-operating`, transactions },
-    issuer: { token_id: id, as_of: "2026-10-31", period: PERIOD, occupancy_bps: Math.round((10000 * occupied) / units), expenses_cents: expenses, reserves_cents: reserves, distributions_paid_cents: distribution },
+    issuer: { token_id: id, as_of: EXPORT_AS_OF, period: PERIOD, occupancy_bps: Math.round((10000 * occupied) / units), expenses_cents: expenses, reserves_cents: reserves, distributions_paid_cents: distribution },
   };
 }
 
@@ -107,7 +113,7 @@ export function datasets() {
       principal: 50_000_000,
       rate_bps: 1100,
       pik: [11, 12, 13, 14, 15, 16],
-      missed: { 17: ["2026-09", "2026-10"], 18: ["2026-09", "2026-10"], 19: ["2026-09", "2026-10"] },
+      missed: { 17: ["2026-09", "2026-10", "2026-11"], 18: ["2026-09", "2026-10", "2026-11"], 19: ["2026-09", "2026-10", "2026-11"] },
       falseClaims: { 17: ["2026-10"], 18: ["2026-10"] },
       reported_yield_bps: 1100,
     }),
@@ -117,7 +123,7 @@ export function datasets() {
       units: 24,
       rent: 200_000,
       vacant: [23],
-      unpaid: { 19: ["2026-09", "2026-10"], 20: ["2026-10"], 21: ["2026-08", "2026-09", "2026-10"], 22: ["2026-10"] },
+      unpaid: { 19: ["2026-09", "2026-10", "2026-11"], 20: ["2026-10", "2026-11"], 21: ["2026-08", "2026-09", "2026-10", "2026-11"], 22: ["2026-10", "2026-11"] },
       batch: [0, 1, 2, 3, 4],
       bounced: [18],
       duplicate: [5],

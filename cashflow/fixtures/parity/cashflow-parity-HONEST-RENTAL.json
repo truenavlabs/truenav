@@ -9,7 +9,7 @@
    "kind": "rental",
    "synthetic": true,
    "manager_export": {
-    "as_of": "2026-10-31",
+    "as_of": "2026-11-08T06:00:00Z",
     "units": [
      {
       "unit_id": "HONEST-RENTAL-U00",
@@ -173,6 +173,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U00",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U01",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -185,6 +190,11 @@
      {
       "unit_id": "HONEST-RENTAL-U01",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U01",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -203,6 +213,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U02",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U03",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -215,6 +230,11 @@
      {
       "unit_id": "HONEST-RENTAL-U03",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U03",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -233,6 +253,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U04",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U05",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -245,6 +270,11 @@
      {
       "unit_id": "HONEST-RENTAL-U05",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U05",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -263,6 +293,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U06",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U07",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -275,6 +310,11 @@
      {
       "unit_id": "HONEST-RENTAL-U07",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U07",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -293,6 +333,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U08",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U09",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -305,6 +350,11 @@
      {
       "unit_id": "HONEST-RENTAL-U09",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U09",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -323,6 +373,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U10",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U11",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -335,6 +390,11 @@
      {
       "unit_id": "HONEST-RENTAL-U11",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U11",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -353,6 +413,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U12",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U13",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -365,6 +430,11 @@
      {
       "unit_id": "HONEST-RENTAL-U13",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U13",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -383,6 +453,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U14",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U15",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -395,6 +470,11 @@
      {
       "unit_id": "HONEST-RENTAL-U15",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U15",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -413,6 +493,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U16",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U17",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -425,6 +510,11 @@
      {
       "unit_id": "HONEST-RENTAL-U17",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U17",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -443,6 +533,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U18",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U19",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -455,6 +550,11 @@
      {
       "unit_id": "HONEST-RENTAL-U19",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U19",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      },
      {
@@ -473,6 +573,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U20",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U21",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -488,6 +593,11 @@
       "amount_cents": 200000
      },
      {
+      "unit_id": "HONEST-RENTAL-U21",
+      "due_date": "2026-11-01",
+      "amount_cents": 200000
+     },
+     {
       "unit_id": "HONEST-RENTAL-U22",
       "due_date": "2026-08-01",
       "amount_cents": 200000
@@ -500,6 +610,11 @@
      {
       "unit_id": "HONEST-RENTAL-U22",
       "due_date": "2026-10-01",
+      "amount_cents": 200000
+     },
+     {
+      "unit_id": "HONEST-RENTAL-U22",
+      "due_date": "2026-11-01",
       "amount_cents": 200000
      }
     ],
@@ -529,6 +644,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U00-2026-11",
+      "unit_id": "HONEST-RENTAL-U00",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U01-2026-08",
       "unit_id": "HONEST-RENTAL-U01",
       "paid_date": "2026-08-03",
@@ -548,6 +671,14 @@
       "entry_id": "HONEST-RENTAL-U01-2026-10",
       "unit_id": "HONEST-RENTAL-U01",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U01-2026-11",
+      "unit_id": "HONEST-RENTAL-U01",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -577,6 +708,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U02-2026-11",
+      "unit_id": "HONEST-RENTAL-U02",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U03-2026-08",
       "unit_id": "HONEST-RENTAL-U03",
       "paid_date": "2026-08-03",
@@ -596,6 +735,14 @@
       "entry_id": "HONEST-RENTAL-U03-2026-10",
       "unit_id": "HONEST-RENTAL-U03",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U03-2026-11",
+      "unit_id": "HONEST-RENTAL-U03",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -625,6 +772,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U04-2026-11",
+      "unit_id": "HONEST-RENTAL-U04",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U05-2026-08",
       "unit_id": "HONEST-RENTAL-U05",
       "paid_date": "2026-08-03",
@@ -644,6 +799,14 @@
       "entry_id": "HONEST-RENTAL-U05-2026-10",
       "unit_id": "HONEST-RENTAL-U05",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U05-2026-11",
+      "unit_id": "HONEST-RENTAL-U05",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -673,6 +836,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U06-2026-11",
+      "unit_id": "HONEST-RENTAL-U06",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U07-2026-08",
       "unit_id": "HONEST-RENTAL-U07",
       "paid_date": "2026-08-03",
@@ -692,6 +863,14 @@
       "entry_id": "HONEST-RENTAL-U07-2026-10",
       "unit_id": "HONEST-RENTAL-U07",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U07-2026-11",
+      "unit_id": "HONEST-RENTAL-U07",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -721,6 +900,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U08-2026-11",
+      "unit_id": "HONEST-RENTAL-U08",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U09-2026-08",
       "unit_id": "HONEST-RENTAL-U09",
       "paid_date": "2026-08-03",
@@ -740,6 +927,14 @@
       "entry_id": "HONEST-RENTAL-U09-2026-10",
       "unit_id": "HONEST-RENTAL-U09",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U09-2026-11",
+      "unit_id": "HONEST-RENTAL-U09",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -769,6 +964,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U10-2026-11",
+      "unit_id": "HONEST-RENTAL-U10",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U11-2026-08",
       "unit_id": "HONEST-RENTAL-U11",
       "paid_date": "2026-08-03",
@@ -788,6 +991,14 @@
       "entry_id": "HONEST-RENTAL-U11-2026-10",
       "unit_id": "HONEST-RENTAL-U11",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U11-2026-11",
+      "unit_id": "HONEST-RENTAL-U11",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -817,6 +1028,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U12-2026-11",
+      "unit_id": "HONEST-RENTAL-U12",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U13-2026-08",
       "unit_id": "HONEST-RENTAL-U13",
       "paid_date": "2026-08-03",
@@ -836,6 +1055,14 @@
       "entry_id": "HONEST-RENTAL-U13-2026-10",
       "unit_id": "HONEST-RENTAL-U13",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U13-2026-11",
+      "unit_id": "HONEST-RENTAL-U13",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -865,6 +1092,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U14-2026-11",
+      "unit_id": "HONEST-RENTAL-U14",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U15-2026-08",
       "unit_id": "HONEST-RENTAL-U15",
       "paid_date": "2026-08-03",
@@ -884,6 +1119,14 @@
       "entry_id": "HONEST-RENTAL-U15-2026-10",
       "unit_id": "HONEST-RENTAL-U15",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U15-2026-11",
+      "unit_id": "HONEST-RENTAL-U15",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -913,6 +1156,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U16-2026-11",
+      "unit_id": "HONEST-RENTAL-U16",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U17-2026-08",
       "unit_id": "HONEST-RENTAL-U17",
       "paid_date": "2026-08-03",
@@ -932,6 +1183,14 @@
       "entry_id": "HONEST-RENTAL-U17-2026-10",
       "unit_id": "HONEST-RENTAL-U17",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U17-2026-11",
+      "unit_id": "HONEST-RENTAL-U17",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -961,6 +1220,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U18-2026-11",
+      "unit_id": "HONEST-RENTAL-U18",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U19-2026-08",
       "unit_id": "HONEST-RENTAL-U19",
       "paid_date": "2026-08-03",
@@ -980,6 +1247,14 @@
       "entry_id": "HONEST-RENTAL-U19-2026-10",
       "unit_id": "HONEST-RENTAL-U19",
       "paid_date": "2026-10-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U19-2026-11",
+      "unit_id": "HONEST-RENTAL-U19",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -1009,6 +1284,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U20-2026-11",
+      "unit_id": "HONEST-RENTAL-U20",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U21-2026-08",
       "unit_id": "HONEST-RENTAL-U21",
       "paid_date": "2026-08-03",
@@ -1033,6 +1316,14 @@
       "batch_ref": null
      },
      {
+      "entry_id": "HONEST-RENTAL-U21-2026-11",
+      "unit_id": "HONEST-RENTAL-U21",
+      "paid_date": "2026-11-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
       "entry_id": "HONEST-RENTAL-U22-2026-08",
       "unit_id": "HONEST-RENTAL-U22",
       "paid_date": "2026-08-03",
@@ -1044,6 +1335,14 @@
       "entry_id": "HONEST-RENTAL-U22-2026-09",
       "unit_id": "HONEST-RENTAL-U22",
       "paid_date": "2026-09-03",
+      "amount_cents": 200000,
+      "status": "paid",
+      "batch_ref": null
+     },
+     {
+      "entry_id": "HONEST-RENTAL-U22-2026-11",
+      "unit_id": "HONEST-RENTAL-U22",
+      "paid_date": "2026-11-03",
       "amount_cents": 200000,
       "status": "paid",
       "batch_ref": null
@@ -1079,6 +1378,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U00-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 00",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U01-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1097,6 +1404,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U01-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 01",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U01-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 01",
       "category": "RENT",
@@ -1127,6 +1442,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U02-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 02",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U03-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1145,6 +1468,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U03-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 03",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U03-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 03",
       "category": "RENT",
@@ -1175,6 +1506,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U04-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 04",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U05-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1193,6 +1532,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U05-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 05",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U05-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 05",
       "category": "RENT",
@@ -1223,6 +1570,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U06-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 06",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U07-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1241,6 +1596,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U07-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 07",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U07-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 07",
       "category": "RENT",
@@ -1271,6 +1634,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U08-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 08",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U09-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1289,6 +1660,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U09-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 09",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U09-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 09",
       "category": "RENT",
@@ -1319,6 +1698,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U10-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 10",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U11-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1337,6 +1724,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U11-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 11",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U11-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 11",
       "category": "RENT",
@@ -1367,6 +1762,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U12-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 12",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U13-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1385,6 +1788,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U13-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 13",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U13-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 13",
       "category": "RENT",
@@ -1415,6 +1826,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U14-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 14",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U15-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1433,6 +1852,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U15-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 15",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U15-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 15",
       "category": "RENT",
@@ -1463,6 +1890,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U16-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 16",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U17-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1481,6 +1916,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U17-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 17",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U17-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 17",
       "category": "RENT",
@@ -1511,6 +1954,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U18-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 18",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U19-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1529,6 +1980,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U19-2026-10",
       "date": "2026-10-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 19",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U19-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 19",
       "category": "RENT",
@@ -1559,6 +2018,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U20-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 20",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U21-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1583,6 +2050,14 @@
       "pending": false
      },
      {
+      "transaction_id": "bk-HONEST-RENTAL-U21-2026-11",
+      "date": "2026-11-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 21",
+      "category": "RENT",
+      "pending": false
+     },
+     {
       "transaction_id": "bk-HONEST-RENTAL-U22-2026-08",
       "date": "2026-08-04",
       "amount_cents": -200000,
@@ -1593,6 +2068,14 @@
      {
       "transaction_id": "bk-HONEST-RENTAL-U22-2026-09",
       "date": "2026-09-04",
+      "amount_cents": -200000,
+      "counterparty": "Tenant HONEST-RENTAL 22",
+      "category": "RENT",
+      "pending": false
+     },
+     {
+      "transaction_id": "bk-HONEST-RENTAL-U22-2026-11",
+      "date": "2026-11-04",
       "amount_cents": -200000,
       "counterparty": "Tenant HONEST-RENTAL 22",
       "category": "RENT",
@@ -1626,7 +2109,7 @@
    },
    "issuer": {
     "token_id": "HONEST-RENTAL",
-    "as_of": "2026-10-31",
+    "as_of": "2026-11-08T06:00:00Z",
     "period": "2026-10",
     "occupancy_bps": 9583,
     "expenses_cents": 1000000,
@@ -1635,12 +2118,12 @@
    }
   },
   "options": {
-   "asOf": "2026-11-01T00:00:00Z",
+   "asOf": "2026-11-08T09:00:00Z",
    "period": "2026-10",
    "daysInPeriod": 31,
-   "bankFetchedAt": "2026-10-31T22:00:00Z"
+   "bankFetchedAt": "2026-11-08T08:30:00Z"
   },
   "pseudonym_seed": "parity-fixture-pseudonym-seed-0001"
  },
- "expected_output": "{\"kind\":\"rental\",\"match\":{\"amounts\":{\"claimed_not_settled_cents\":0,\"unapplied_credit_cents\":0},\"bank\":[{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U22-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U22-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-10\",\"used_cents\":200000},{\"amount_cents\":-1000000,\"kind_hint\":\"expense\",\"outcome\":\"expense\",\"posted_date\":\"2026-10-15\",\"txn_id\":\"bk-HONEST-RENTAL-expenses-oct\",\"used_cents\":0},{\"amount_cents\":-2500000,\"funded_by_sponsor\":false,\"kind_hint\":\"distribution\",\"outcome\":\"distribution\",\"posted_date\":\"2026-10-30\",\"txn_id\":\"bk-HONEST-RENTAL-payout-oct\",\"used_cents\":0}],\"claimed_cash_cents\":13600000,\"claims\":[{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-08\",\"linked_due\":\"rent-0\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-08\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-08\",\"linked_due\":\"rent-3\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-08\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-08\",\"linked_due\":\"rent-6\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-08\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-08\",\"linked_due\":\"rent-9\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-08\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-08\",\"linked_due\":\"rent-12\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-08\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-08\",\"linked_due\":\"rent-15\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-08\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-08\",\"linked_due\":\"rent-18\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-08\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-08\",\"linked_due\":\"rent-21\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-08\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-08\",\"linked_due\":\"rent-24\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-08\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-08\",\"linked_due\":\"rent-27\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-08\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-08\",\"linked_due\":\"rent-30\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-08\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-08\",\"linked_due\":\"rent-33\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-08\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-08\",\"linked_due\":\"rent-36\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-08\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-08\",\"linked_due\":\"rent-39\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-08\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-08\",\"linked_due\":\"rent-42\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-08\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-08\",\"linked_due\":\"rent-45\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-08\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-08\",\"linked_due\":\"rent-48\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-08\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-08\",\"linked_due\":\"rent-51\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-08\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-08\",\"linked_due\":\"rent-54\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-08\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-08\",\"linked_due\":\"rent-57\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-08\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-08\",\"linked_due\":\"rent-60\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-08\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-08\",\"linked_due\":\"rent-63\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-08\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U22-2026-08\",\"linked_due\":\"rent-66\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U22-2026-08\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-09\",\"linked_due\":\"rent-1\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-09\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-09\",\"linked_due\":\"rent-4\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-09\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-09\",\"linked_due\":\"rent-7\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-09\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-09\",\"linked_due\":\"rent-10\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-09\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-09\",\"linked_due\":\"rent-13\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-09\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-09\",\"linked_due\":\"rent-16\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-09\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-09\",\"linked_due\":\"rent-19\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-09\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-09\",\"linked_due\":\"rent-22\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-09\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-09\",\"linked_due\":\"rent-25\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-09\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-09\",\"linked_due\":\"rent-28\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-09\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-09\",\"linked_due\":\"rent-31\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-09\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-09\",\"linked_due\":\"rent-34\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-09\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-09\",\"linked_due\":\"rent-37\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-09\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-09\",\"linked_due\":\"rent-40\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-09\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-09\",\"linked_due\":\"rent-43\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-09\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-09\",\"linked_due\":\"rent-46\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-09\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-09\",\"linked_due\":\"rent-49\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-09\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-09\",\"linked_due\":\"rent-52\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-09\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-09\",\"linked_due\":\"rent-55\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-09\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-09\",\"linked_due\":\"rent-58\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-09\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-09\",\"linked_due\":\"rent-61\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-09\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-09\",\"linked_due\":\"rent-64\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-09\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U22-2026-09\",\"linked_due\":\"rent-67\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U22-2026-09\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-10\",\"linked_due\":\"rent-2\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-10\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-10\",\"linked_due\":\"rent-5\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-10\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-10\",\"linked_due\":\"rent-8\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-10\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-10\",\"linked_due\":\"rent-11\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-10\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-10\",\"linked_due\":\"rent-14\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-10\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-10\",\"linked_due\":\"rent-17\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-10\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-10\",\"linked_due\":\"rent-20\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-10\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-10\",\"linked_due\":\"rent-23\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-10\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-10\",\"linked_due\":\"rent-26\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-10\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-10\",\"linked_due\":\"rent-29\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-10\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-10\",\"linked_due\":\"rent-32\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-10\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-10\",\"linked_due\":\"rent-35\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-10\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-10\",\"linked_due\":\"rent-38\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-10\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-10\",\"linked_due\":\"rent-41\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-10\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-10\",\"linked_due\":\"rent-44\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-10\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-10\",\"linked_due\":\"rent-47\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-10\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-10\",\"linked_due\":\"rent-50\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-10\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-10\",\"linked_due\":\"rent-53\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-10\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-10\",\"linked_due\":\"rent-56\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-10\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-10\",\"linked_due\":\"rent-59\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-10\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-10\",\"linked_due\":\"rent-62\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-10\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-10\",\"linked_due\":\"rent-65\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-10\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"}],\"due\":[{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-0\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-12\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-15\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-18\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-21\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-24\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-27\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-3\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-30\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-33\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-36\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-39\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-42\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-45\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-48\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-51\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-54\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-57\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-6\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-60\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-63\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-66\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-9\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-1\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-10\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-13\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-16\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-19\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-22\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-25\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-28\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-31\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-34\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-37\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-4\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-40\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-43\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-46\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-49\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-52\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-55\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-58\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-61\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-64\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-67\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-7\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-11\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-14\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-17\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-2\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-20\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-23\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-26\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-29\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-32\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-35\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-38\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-41\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-44\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-47\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-5\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-50\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-53\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-56\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-59\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-62\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-65\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-68\",\"period\":\"2026-10\",\"settled_cents\":0,\"status\":\"unpaid\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-8\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"}],\"exceptions\":{\"batch_mismatch\":0,\"claim_without_due\":0,\"claimed_not_settled\":0,\"distribution_funded_by_sponsor\":0,\"duplicate_bank_txn\":0,\"duplicate_claim\":0,\"probable_reversal\":0,\"settled_not_claimed\":0,\"unapplied_credit\":0}},\"method\":\"cashflow-v2.1.0\",\"metrics\":{\"as_of\":\"2026-11-01\",\"cash_match_bps\":10000,\"cash_received_cents\":4400000,\"claimed_cash_cents\":4400000,\"cohorts\":{\"30\":{\"outstanding_cents\":200000,\"units\":1},\"60\":{\"outstanding_cents\":0,\"units\":0},\"90+\":{\"outstanding_cents\":0,\"units\":0},\"current\":{\"outstanding_cents\":0,\"units\":22}},\"collection\":{\"cutoff\":\"2026-10-07\",\"dues_cents\":4600000,\"period\":\"2026-09\",\"rate_bps\":10000,\"shortfall\":false,\"status\":\"verified\",\"verified_cents\":4600000},\"collection_rate_bps\":9565,\"distributions_cents\":2500000,\"exceptions\":{\"batch_mismatch\":0,\"claim_without_due\":0,\"claimed_not_settled\":0,\"claimed_not_settled_cents\":0,\"distribution_funded_by_sponsor\":0,\"duplicate_bank_txn\":0,\"duplicate_claim\":0,\"probable_reversal\":0,\"settled_not_claimed\":0,\"unapplied_credit\":0},\"expenses_cents\":1000000,\"flags\":[],\"kind\":\"rental\",\"late_share_bps\":0,\"net_operating_cash_cents\":3100000,\"occupancy_bps\":9583,\"period\":\"2026-10\",\"rent_collected_cents\":4400000,\"rent_due_cents\":4600000,\"rental_coverage_bps\":12400,\"reserves_cents\":300000},\"passport\":[{\"age_hours\":2,\"as_of\":\"2026-10-31T22:00:00Z\",\"cadence\":\"daily\",\"carried_forward\":false,\"freshness_bps\":10000,\"independence\":\"third_party_bank\",\"method_version\":\"cashflow-v2.1.0\",\"snapshot_sha256\":\"42b4b98845f077bb9d1741d5cb2bd95063fd55d7b3d1bde1a3af4d8387ffde10\",\"source\":\"bank_settlements\",\"synthetic\":true,\"tier\":3},{\"age_hours\":24,\"as_of\":\"2026-10-31T00:00:00Z\",\"cadence\":\"monthly\",\"carried_forward\":false,\"freshness_bps\":10000,\"independence\":\"issuer_appointed_manager\",\"method_version\":\"cashflow-v2.1.0\",\"snapshot_sha256\":\"fa343d19e7c6041dec0e0cb313818b763af4e386e2cf1d8251acd34f7c94ebd0\",\"source\":\"property_manager_records\",\"synthetic\":true,\"tier\":2},{\"age_hours\":24,\"as_of\":\"2026-10-31T00:00:00Z\",\"cadence\":\"monthly\",\"carried_forward\":false,\"freshness_bps\":10000,\"independence\":\"issuer\",\"method_version\":\"cashflow-v2.1.0\",\"snapshot_sha256\":\"638fcd92a507859bcf7e5a41440197aaf154a2b0640726969fcedafef2e18c3d\",\"source\":\"issuer_claims\",\"synthetic\":true,\"tier\":1}],\"public_metrics\":{\"as_of\":\"2026-11-01\",\"cash_match_bps\":10000,\"cash_received_cents\":4400000,\"claimed_cash_cents\":4400000,\"cohorts\":{\"30\":{\"suppressed\":\"fewer than 5\"},\"60\":{\"outstanding_cents\":0,\"units\":0},\"90+\":{\"outstanding_cents\":0,\"units\":0},\"current\":{\"outstanding_cents\":0,\"units\":22}},\"collection\":{\"cutoff\":\"2026-10-07\",\"dues_cents\":4600000,\"period\":\"2026-09\",\"rate_bps\":10000,\"shortfall\":false,\"status\":\"verified\",\"verified_cents\":4600000},\"collection_rate_bps\":9565,\"distributions_cents\":2500000,\"exceptions\":{\"batch_mismatch\":0,\"claim_without_due\":0,\"claimed_not_settled\":0,\"claimed_not_settled_cents\":0,\"distribution_funded_by_sponsor\":0,\"duplicate_bank_txn\":0,\"duplicate_claim\":0,\"probable_reversal\":0,\"settled_not_claimed\":0,\"unapplied_credit\":0},\"expenses_cents\":1000000,\"flags\":[],\"kind\":\"rental\",\"late_share_bps\":0,\"net_operating_cash_cents\":3100000,\"occupancy_bps\":9583,\"period\":\"2026-10\",\"rent_collected_cents\":4400000,\"rent_due_cents\":4600000,\"rental_coverage_bps\":12400,\"reserves_cents\":300000},\"score\":{\"band\":\"green\",\"caps\":[],\"holds\":[],\"method\":\"cashflow-v2.1.0\",\"parts_x100\":{\"cash_match\":4000,\"freshness\":2000,\"gap\":2500,\"late\":1500},\"raw_x100\":10000,\"run_freshness_bps\":10000,\"score\":100,\"uncapped_score\":100},\"token_id\":\"HONEST-RENTAL\"}"
+ "expected_output": "{\"kind\":\"rental\",\"match\":{\"amounts\":{\"claimed_not_settled_cents\":0,\"unapplied_credit_cents\":0},\"bank\":[{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-08-04\",\"txn_id\":\"bk-HONEST-RENTAL-U22-2026-08\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-09-04\",\"txn_id\":\"bk-HONEST-RENTAL-U22-2026-09\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-10\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-10-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-10\",\"used_cents\":200000},{\"amount_cents\":-1000000,\"kind_hint\":\"expense\",\"outcome\":\"expense\",\"posted_date\":\"2026-10-15\",\"txn_id\":\"bk-HONEST-RENTAL-expenses-oct\",\"used_cents\":0},{\"amount_cents\":-2500000,\"funded_by_sponsor\":false,\"kind_hint\":\"distribution\",\"outcome\":\"distribution\",\"posted_date\":\"2026-10-30\",\"txn_id\":\"bk-HONEST-RENTAL-payout-oct\",\"used_cents\":0},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U00-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U01-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U02-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U03-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U04-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U05-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U06-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U07-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U08-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U09-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U10-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U11-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U12-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U13-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U14-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U15-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U16-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U17-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U18-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U19-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U20-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U21-2026-11\",\"used_cents\":200000},{\"amount_cents\":200000,\"kind_hint\":\"rent\",\"outcome\":\"settles_claim\",\"posted_date\":\"2026-11-04\",\"txn_id\":\"bk-HONEST-RENTAL-U22-2026-11\",\"used_cents\":200000}],\"claimed_cash_cents\":18200000,\"claims\":[{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-08\",\"linked_due\":\"rent-0\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-08\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-08\",\"linked_due\":\"rent-4\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-08\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-08\",\"linked_due\":\"rent-8\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-08\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-08\",\"linked_due\":\"rent-12\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-08\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-08\",\"linked_due\":\"rent-16\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-08\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-08\",\"linked_due\":\"rent-20\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-08\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-08\",\"linked_due\":\"rent-24\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-08\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-08\",\"linked_due\":\"rent-28\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-08\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-08\",\"linked_due\":\"rent-32\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-08\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-08\",\"linked_due\":\"rent-36\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-08\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-08\",\"linked_due\":\"rent-40\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-08\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-08\",\"linked_due\":\"rent-44\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-08\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-08\",\"linked_due\":\"rent-48\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-08\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-08\",\"linked_due\":\"rent-52\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-08\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-08\",\"linked_due\":\"rent-56\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-08\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-08\",\"linked_due\":\"rent-60\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-08\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-08\",\"linked_due\":\"rent-64\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-08\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-08\",\"linked_due\":\"rent-68\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-08\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-08\",\"linked_due\":\"rent-72\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-08\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-08\",\"linked_due\":\"rent-76\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-08\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-08\",\"linked_due\":\"rent-80\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-08\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-08\",\"linked_due\":\"rent-84\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-08\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U22-2026-08\",\"linked_due\":\"rent-88\",\"outcome\":\"settled\",\"paid_date\":\"2026-08-03\",\"settled_by\":\"bk-HONEST-RENTAL-U22-2026-08\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-09\",\"linked_due\":\"rent-1\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-09\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-09\",\"linked_due\":\"rent-5\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-09\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-09\",\"linked_due\":\"rent-9\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-09\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-09\",\"linked_due\":\"rent-13\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-09\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-09\",\"linked_due\":\"rent-17\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-09\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-09\",\"linked_due\":\"rent-21\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-09\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-09\",\"linked_due\":\"rent-25\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-09\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-09\",\"linked_due\":\"rent-29\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-09\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-09\",\"linked_due\":\"rent-33\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-09\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-09\",\"linked_due\":\"rent-37\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-09\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-09\",\"linked_due\":\"rent-41\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-09\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-09\",\"linked_due\":\"rent-45\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-09\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-09\",\"linked_due\":\"rent-49\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-09\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-09\",\"linked_due\":\"rent-53\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-09\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-09\",\"linked_due\":\"rent-57\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-09\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-09\",\"linked_due\":\"rent-61\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-09\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-09\",\"linked_due\":\"rent-65\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-09\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-09\",\"linked_due\":\"rent-69\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-09\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-09\",\"linked_due\":\"rent-73\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-09\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-09\",\"linked_due\":\"rent-77\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-09\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-09\",\"linked_due\":\"rent-81\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-09\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-09\",\"linked_due\":\"rent-85\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-09\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U22-2026-09\",\"linked_due\":\"rent-89\",\"outcome\":\"settled\",\"paid_date\":\"2026-09-03\",\"settled_by\":\"bk-HONEST-RENTAL-U22-2026-09\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-10\",\"linked_due\":\"rent-2\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-10\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-10\",\"linked_due\":\"rent-6\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-10\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-10\",\"linked_due\":\"rent-10\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-10\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-10\",\"linked_due\":\"rent-14\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-10\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-10\",\"linked_due\":\"rent-18\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-10\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-10\",\"linked_due\":\"rent-22\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-10\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-10\",\"linked_due\":\"rent-26\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-10\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-10\",\"linked_due\":\"rent-30\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-10\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-10\",\"linked_due\":\"rent-34\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-10\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-10\",\"linked_due\":\"rent-38\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-10\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-10\",\"linked_due\":\"rent-42\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-10\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-10\",\"linked_due\":\"rent-46\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-10\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-10\",\"linked_due\":\"rent-50\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-10\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-10\",\"linked_due\":\"rent-54\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-10\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-10\",\"linked_due\":\"rent-58\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-10\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-10\",\"linked_due\":\"rent-62\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-10\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-10\",\"linked_due\":\"rent-66\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-10\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-10\",\"linked_due\":\"rent-70\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-10\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-10\",\"linked_due\":\"rent-74\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-10\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-10\",\"linked_due\":\"rent-78\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-10\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-10\",\"linked_due\":\"rent-82\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-10\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-10\",\"linked_due\":\"rent-86\",\"outcome\":\"settled\",\"paid_date\":\"2026-10-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-10\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U00-2026-11\",\"linked_due\":\"rent-3\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U00-2026-11\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U01-2026-11\",\"linked_due\":\"rent-7\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U01-2026-11\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U02-2026-11\",\"linked_due\":\"rent-11\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U02-2026-11\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U03-2026-11\",\"linked_due\":\"rent-15\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U03-2026-11\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U04-2026-11\",\"linked_due\":\"rent-19\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U04-2026-11\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U05-2026-11\",\"linked_due\":\"rent-23\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U05-2026-11\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U06-2026-11\",\"linked_due\":\"rent-27\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U06-2026-11\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U07-2026-11\",\"linked_due\":\"rent-31\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U07-2026-11\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U08-2026-11\",\"linked_due\":\"rent-35\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U08-2026-11\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U09-2026-11\",\"linked_due\":\"rent-39\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U09-2026-11\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U10-2026-11\",\"linked_due\":\"rent-43\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U10-2026-11\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U11-2026-11\",\"linked_due\":\"rent-47\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U11-2026-11\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U12-2026-11\",\"linked_due\":\"rent-51\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U12-2026-11\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U13-2026-11\",\"linked_due\":\"rent-55\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U13-2026-11\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U14-2026-11\",\"linked_due\":\"rent-59\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U14-2026-11\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U15-2026-11\",\"linked_due\":\"rent-63\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U15-2026-11\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U16-2026-11\",\"linked_due\":\"rent-67\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U16-2026-11\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U17-2026-11\",\"linked_due\":\"rent-71\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U17-2026-11\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U18-2026-11\",\"linked_due\":\"rent-75\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U18-2026-11\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U19-2026-11\",\"linked_due\":\"rent-79\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U19-2026-11\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U20-2026-11\",\"linked_due\":\"rent-83\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U20-2026-11\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U21-2026-11\",\"linked_due\":\"rent-87\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U21-2026-11\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_cents\":200000,\"claim_id\":\"HONEST-RENTAL-U22-2026-11\",\"linked_due\":\"rent-90\",\"outcome\":\"settled\",\"paid_date\":\"2026-11-03\",\"settled_by\":\"bk-HONEST-RENTAL-U22-2026-11\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"}],\"due\":[{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-0\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-12\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-16\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-20\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-24\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-28\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-32\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-36\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-4\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-40\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-44\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-48\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-52\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-56\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-60\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-64\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-68\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-72\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-76\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-8\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-80\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-84\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-08-01\",\"due_id\":\"rent-88\",\"period\":\"2026-08\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-1\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-13\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-17\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-21\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-25\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-29\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-33\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-37\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-41\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-45\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-49\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-5\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-53\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-57\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-61\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-65\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-69\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-73\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-77\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-81\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-85\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-89\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-09-01\",\"due_id\":\"rent-9\",\"period\":\"2026-09\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-10\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-14\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-18\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-2\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-22\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-26\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-30\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-34\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-38\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-42\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-46\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-50\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-54\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-58\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-6\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-62\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-66\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-70\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-74\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-78\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-82\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-86\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-10-01\",\"due_id\":\"rent-90\",\"period\":\"2026-10\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-11\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"6a6a38b1aa2bda6d318d6c7777af99db\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-15\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f62395cfeadd8eb4ff9b8d8e137bdd49\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-19\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1af60b86bfb34fe6f655c13147a5237e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-23\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e6877c8f2fe531d24e1dcbb1f4763068\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-27\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"86e93efeb1f1e1e9989851e2f86a317b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-3\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"155aa1e5e0182546fc4b2767faff2e8d\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-31\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"575eb5db185c584647366947ee2c54fc\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-35\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"99df4d44f1f2b052874f3644b50a0d3b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-39\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"3a07c33180ae7a8bcf8700da0c5eb038\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-43\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"48142a0694b6dc49bf1ff34dd50b6e92\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-47\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"5c202ae0d8ca28c278daa38c514a9849\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-51\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"1fc3c49f10b1846a39950923c4219bc5\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-55\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"38bfcd735552ec5d4c2c1ec67ab169ee\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-59\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"960ccbc0beba14d9ef5a5d0da4af091c\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-63\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"7da8edec1bcff9d5fd7d6bbcdba92e36\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-67\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"481e82eee9f071065a1b5439f6156c95\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-7\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"9b1d7da54cfa6c439566d662bfc8793e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-71\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"eca263fa1b3e7170a7d0b15154b1d00e\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-75\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"e87d4868d9593f75fd891267b321abc8\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-79\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"f0a7facb6821153595480befaca3bcb4\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-83\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"541dd5428bff478eca766984d4227791\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-87\",\"period\":\"2026-11\",\"settled_cents\":200000,\"status\":\"paid_full\",\"unit_ref\":\"af56699950f16e211f80e84b1f5c947b\"},{\"amount_due_cents\":200000,\"component\":\"rent\",\"due_date\":\"2026-11-01\",\"due_id\":\"rent-91\",\"period\":\"2026-11\",\"settled_cents\":0,\"status\":\"unpaid\",\"unit_ref\":\"1f9584ccc413aade5d855468f38de20a\"}],\"exceptions\":{\"batch_mismatch\":0,\"claim_without_due\":0,\"claimed_not_settled\":0,\"distribution_funded_by_sponsor\":0,\"duplicate_bank_txn\":0,\"duplicate_claim\":0,\"probable_reversal\":0,\"settled_not_claimed\":0,\"unapplied_credit\":0}},\"method\":\"cashflow-v2.1.0\",\"metrics\":{\"as_of\":\"2026-11-08\",\"cash_match_bps\":10000,\"cash_received_cents\":4600000,\"claimed_cash_cents\":4400000,\"cohorts\":{\"30\":{\"outstanding_cents\":0,\"units\":0},\"60\":{\"outstanding_cents\":0,\"units\":0},\"90+\":{\"outstanding_cents\":0,\"units\":0},\"current\":{\"outstanding_cents\":200000,\"units\":23}},\"collection\":{\"cutoff\":\"2026-11-07\",\"dues_cents\":4600000,\"period\":\"2026-10\",\"rate_bps\":10000,\"shortfall\":false,\"status\":\"verified\",\"verified_cents\":4600000},\"collection_rate_bps\":10000,\"distributions_cents\":2500000,\"exceptions\":{\"batch_mismatch\":0,\"claim_without_due\":0,\"claimed_not_settled\":0,\"claimed_not_settled_cents\":0,\"distribution_funded_by_sponsor\":0,\"duplicate_bank_txn\":0,\"duplicate_claim\":0,\"probable_reversal\":0,\"settled_not_claimed\":0,\"unapplied_credit\":0},\"expenses_cents\":1000000,\"flags\":[],\"kind\":\"rental\",\"late_share_bps\":0,\"net_operating_cash_cents\":3300000,\"occupancy_bps\":9583,\"period\":\"2026-10\",\"rent_collected_cents\":4600000,\"rent_due_cents\":4600000,\"rental_coverage_bps\":13200,\"reserves_cents\":300000},\"passport\":[{\"age_hours\":1,\"as_of\":\"2026-11-08T08:30:00Z\",\"cadence\":\"daily\",\"carried_forward\":false,\"freshness_bps\":10000,\"independence\":\"third_party_bank\",\"method_version\":\"cashflow-v2.1.0\",\"snapshot_sha256\":\"295c6aa5cad329ec84f8a2ea989056f1008207104e4a81b814b44c910808d731\",\"source\":\"bank_settlements\",\"synthetic\":true,\"tier\":3},{\"age_hours\":3,\"as_of\":\"2026-11-08T06:00:00Z\",\"cadence\":\"monthly\",\"carried_forward\":false,\"freshness_bps\":10000,\"independence\":\"issuer_appointed_manager\",\"method_version\":\"cashflow-v2.1.0\",\"snapshot_sha256\":\"40135a10ab406df300cd0c85bf20f31a57f0f4eec72010024e43170806154f1c\",\"source\":\"property_manager_records\",\"synthetic\":true,\"tier\":2},{\"age_hours\":3,\"as_of\":\"2026-11-08T06:00:00Z\",\"cadence\":\"monthly\",\"carried_forward\":false,\"freshness_bps\":10000,\"independence\":\"issuer\",\"method_version\":\"cashflow-v2.1.0\",\"snapshot_sha256\":\"3444b12f41a931d6e754e3d983bf0c533e8e891bd88e0e0051b9e8e576eaf91c\",\"source\":\"issuer_claims\",\"synthetic\":true,\"tier\":1}],\"public_metrics\":{\"as_of\":\"2026-11-08\",\"cash_match_bps\":10000,\"cash_received_cents\":4600000,\"claimed_cash_cents\":4400000,\"cohorts\":{\"30\":{\"outstanding_cents\":0,\"units\":0},\"60\":{\"outstanding_cents\":0,\"units\":0},\"90+\":{\"outstanding_cents\":0,\"units\":0},\"current\":{\"outstanding_cents\":200000,\"units\":23}},\"collection\":{\"cutoff\":\"2026-11-07\",\"dues_cents\":4600000,\"period\":\"2026-10\",\"rate_bps\":10000,\"shortfall\":false,\"status\":\"verified\",\"verified_cents\":4600000},\"collection_rate_bps\":10000,\"distributions_cents\":2500000,\"exceptions\":{\"batch_mismatch\":0,\"claim_without_due\":0,\"claimed_not_settled\":0,\"claimed_not_settled_cents\":0,\"distribution_funded_by_sponsor\":0,\"duplicate_bank_txn\":0,\"duplicate_claim\":0,\"probable_reversal\":0,\"settled_not_claimed\":0,\"unapplied_credit\":0},\"expenses_cents\":1000000,\"flags\":[],\"kind\":\"rental\",\"late_share_bps\":0,\"net_operating_cash_cents\":3300000,\"occupancy_bps\":9583,\"period\":\"2026-10\",\"rent_collected_cents\":4600000,\"rent_due_cents\":4600000,\"rental_coverage_bps\":13200,\"reserves_cents\":300000},\"score\":{\"band\":\"green\",\"caps\":[],\"holds\":[],\"method\":\"cashflow-v2.1.0\",\"parts_x100\":{\"cash_match\":4000,\"freshness\":2000,\"gap\":2500,\"late\":1500},\"raw_x100\":10000,\"run_freshness_bps\":10000,\"score\":100,\"uncapped_score\":100},\"token_id\":\"HONEST-RENTAL\"}"
 }

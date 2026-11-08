@@ -2,14 +2,14 @@
 // section 12): both demo funds land red with stated reasons, both honest funds green; every edge case shows up.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { datasets, AS_OF, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
+import { datasets, RUN_AS_OF, BANK_FETCHED_AT, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
 import { runFund, RunError, toUtc } from "../run.mjs";
 import { settledFromFeed } from "../adapters/bank.mjs";
 import { publicMetrics } from "../metrics.mjs";
 import { ref } from "../pseudo.mjs";
 
 const KEY = "test-pseudonym-key-0123456789"; // gitleaks:allow (fixed test pseudonym key, not a secret)
-const opts = { key: KEY, asOf: `${AS_OF}T00:00:00Z`, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: "2026-10-31T22:00:00Z" };
+const opts = { key: KEY, asOf: RUN_AS_OF, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: BANK_FETCHED_AT };
 const runs = Object.fromEntries(datasets().map((ds) => [ds.id, runFund(ds, opts)]));
 const codes = (r) => r.score.caps.map((c) => c.code);
 
@@ -77,7 +77,7 @@ test("the evidence passport marks every demo source synthetic and the bank sourc
   for (const r of Object.values(runs)) {
     assert.ok(r.passport.every((p) => p.synthetic === true));
     const bank = r.passport.find((p) => p.source === "bank_settlements");
-    assert.deepEqual([bank.tier, bank.cadence, bank.age_hours], [3, "daily", 2]);
+    assert.deepEqual([bank.tier, bank.cadence, bank.age_hours], [3, "daily", 1]); // fetched 08:30, run 09:00: half an hour, rounded half up
   }
 });
 
@@ -96,7 +96,7 @@ test("carried forward when the bytes changed but the source's as_of did not adva
   const first = runFund(ds, opts);
   const changed = structuredClone(ds);
   changed.manager_export.ledger[0].batch_ref = "edited-later"; // different bytes, same export as_of
-  const next = runFund(changed, { ...opts, bankFetchedAt: "2026-11-01T00:00:00Z", previous: passportPrev(first), newPeriod: true });
+  const next = runFund(changed, { ...opts, bankFetchedAt: "2026-11-08T08:45:00Z", previous: passportPrev(first), newPeriod: true });
   const mgr = next.passport.find((p) => p.source === "property_manager_records");
   assert.notEqual(mgr.snapshot_sha256, first.passport.find((p) => p.source === "property_manager_records").snapshot_sha256);
   assert.equal(mgr.carried_forward, true);
@@ -119,7 +119,7 @@ test("issuer claims use the issuer's own as_of: a January issuer is stale", () =
 test("carried_forward is computed for the issuer too, never hardcoded", () => {
   const ds = datasets().find((d) => d.id === "HONEST-CREDIT");
   const prev = passportPrev(runFund(ds, opts));
-  const r = runFund(ds, { ...opts, bankFetchedAt: "2026-11-01T00:00:00Z", previous: prev, newPeriod: true });
+  const r = runFund(ds, { ...opts, bankFetchedAt: "2026-11-08T08:45:00Z", previous: prev, newPeriod: true });
   assert.equal(r.passport.find((p) => p.source === "issuer_claims").carried_forward, true);
 });
 
@@ -166,16 +166,16 @@ test("timestamps are normalized to UTC: the same instant as Z and as +07:00 give
   const ds = () => datasets().find((d) => d.id === "DEMO-CREDIT");
   const z = runFund(ds(), opts);
   // run time and fetch time are parameters: the whole result is identical
-  const plus7 = runFund(ds(), { ...opts, asOf: "2026-11-01T07:00:00+07:00", bankFetchedAt: "2026-11-01T05:00:00+07:00" });
+  const plus7 = runFund(ds(), { ...opts, asOf: "2026-11-08T16:00:00+07:00", bankFetchedAt: "2026-11-08T15:30:00+07:00" });
   assert.deepEqual(plus7, z);
   // as_of inside the documents: everything but the snapshot hashes of the edited documents is identical
   const d = ds();
-  d.issuer.as_of = "2026-10-31T07:00:00+07:00";
-  d.servicer_tape.as_of = "2026-10-30T19:00:00-05:00"; // 2026-10-31T00:00:00Z
+  d.issuer.as_of = "2026-11-08T13:00:00+07:00"; // 2026-11-08T06:00:00Z, the export time
+  d.servicer_tape.as_of = "2026-11-08T01:00:00-05:00"; // the same instant
   const docs = runFund(d, opts);
   const strip = (r) => ({ ...r, passport: r.passport.map(({ snapshot_sha256, ...x }) => x) });
   assert.deepEqual(strip(docs), strip(z));
-  assert.equal(docs.passport[2].as_of, "2026-10-31T00:00:00Z");
+  assert.equal(docs.passport[2].as_of, "2026-11-08T06:00:00Z");
   // a date is taken only after normalizing: 05:00+07:00 on 1 Nov is still 31 Oct in UTC
   assert.equal(toUtc("2026-11-01T05:00:00+07:00"), "2026-10-31T22:00:00Z");
   assert.equal(toUtc("2026-10-31T17:00:00-05:00"), "2026-10-31T22:00:00Z");

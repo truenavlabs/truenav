@@ -1,16 +1,16 @@
 // Prints the cashflow-v2.1.0 result for each synthetic demo fund: score, band, the reason for every red-flag cap,
 // and the public aggregates only (no names, no unit ids, cohorts under 5 suppressed). All data is synthetic.
 //   npm run cashflow:demo
-import { datasets, AS_OF, PERIOD, DAYS_IN_PERIOD } from "./data.mjs";
+import { datasets, RUN_AS_OF, BANK_FETCHED_AT, PERIOD, DAYS_IN_PERIOD } from "./data.mjs";
 import { runFund } from "../run.mjs";
 import { COHORTS } from "../metrics.mjs";
 import { METHOD } from "../../spec/v2/score.mjs";
 
 const pct = (bps) => `${(bps / 100).toFixed(2)}%`;
 const usd = (c) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-console.log(`TrueNav ${METHOD}, period ${PERIOD}, as of ${AS_OF}. SYNTHETIC DATA: every fund, borrower, tenant and bank record is fictional.\n`);
+console.log(`TrueNav ${METHOD}, period ${PERIOD}, as of ${RUN_AS_OF}. SYNTHETIC DATA: every fund, borrower, tenant and bank record is fictional.\n`);
 for (const ds of datasets()) {
-  const r = runFund(ds, { key: "demo-pseudonym-key-not-secret", asOf: `${AS_OF}T00:00:00Z`, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: "2026-10-31T22:00:00Z" });
+  const r = runFund(ds, { key: "demo-pseudonym-key-not-secret", asOf: RUN_AS_OF, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: BANK_FETCHED_AT });
   const m = r.public_metrics;
   console.log(`${ds.name} (${ds.id}, ${ds.kind}): TrueNav score ${r.score.score} ${r.score.band}${r.score.caps.length ? ` (uncapped ${r.score.uncapped_score})` : ""}`);
   for (const c of r.score.caps) console.log(`  ${c.reason}`);

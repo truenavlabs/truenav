@@ -3,11 +3,11 @@
 // value (owner review 8 Nov: a string occupancy_bps used to pass straight into public_metrics). Synthetic data.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { datasets, AS_OF, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
+import { datasets, RUN_AS_OF, BANK_FETCHED_AT, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
 import { runFund, RunError, ISSUER_FIELDS } from "../run.mjs";
 
 const KEY = "fields-test-pseudonym-key-0001"; // gitleaks:allow (fixed test pseudonym key, not a secret)
-const opts = { key: KEY, asOf: `${AS_OF}T00:00:00Z`, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: "2026-10-31T22:00:00Z" };
+const opts = { key: KEY, asOf: RUN_AS_OF, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: BANK_FETCHED_AT };
 const SENTINEL = "SENTINEL-not-a-number-7731";
 const fund = (kind) => datasets().find((d) => d.id === (kind === "credit" ? "HONEST-CREDIT" : "HONEST-RENTAL"));
 const failsWith = (ds, code) => {

@@ -209,7 +209,7 @@ Reference implementation: `spec/v2/score.mjs` (integer math, section 10); fixtur
 
 The receipt keeps the uncapped score next to the capped one. Bands: green 85 and up, yellow 60 to 84, red below 60. A payment for a query never changes any input or output of a run.
 
-Raw-data parity fixtures under v2.1.0 (run as of 2026-11-01, so collection is checked for 2026-09, cutoff 2026-10-07): demo credit fund 58 red (caps `yield_gap`, `claimed_not_settled`, `collection_shortfall` at 78.57%); demo rental token 58 red (collection 91.30% passes); honest credit fund 97 green and honest rental token 100 green (collection 100.00%).
+Raw-data parity fixtures under v2.1.0 (synthetic data with real timestamps of 8 Nov 2026: exports 06:00 UTC, bank fetch 08:30, run 09:00, so every source covers through October's cutoff 2026-11-07 and October is the checked period): demo credit fund 58 red (caps `yield_gap`, `claimed_not_settled`, `collection_shortfall` at 78.57%); demo rental token 58 red (caps `payout_exceeds_net_cash`, `distribution_funded_by_sponsor`, `claimed_not_settled`, `collection_shortfall` at 78.26%); honest credit fund 100 green (raw 99.95) and honest rental token 100 green, collection 100.00% each, no holds.
 
 Frozen v2.0.0 score-case results: demo credit fund 59 red (uncapped 65; caps `yield_gap`, `claimed_not_settled`); demo rental token 59 red (uncapped 78; caps `payout_exceeds_net_cash`, `distribution_funded_by_sponsor`); honest credit fund 96 green; honest rental token 98 green; honest credit fund without bank evidence, or with a carried-forward bank source, 59 red (`self_reported_only`).
 

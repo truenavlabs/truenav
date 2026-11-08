@@ -3,12 +3,12 @@
 // spec score cases (spec/v2/fixtures/score-cases.json) are separate and are not touched here. Regenerate only on a
 // method change, never to chase a headline number:   node cashflow/fixtures/make-parity.mjs
 import { writeFileSync, mkdirSync } from "node:fs";
-import { datasets, AS_OF, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
+import { datasets, RUN_AS_OF, BANK_FETCHED_AT, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
 import { runFund } from "../run.mjs";
 import { METHOD } from "../../spec/v2/score.mjs";
 import { canonical } from "./canonical.mjs";
 
-export const PARITY_OPTIONS = { asOf: `${AS_OF}T00:00:00Z`, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: "2026-10-31T22:00:00Z" };
+export const PARITY_OPTIONS = { asOf: RUN_AS_OF, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: BANK_FETCHED_AT };
 // A fixed, public test seed for the pseudonyms (inside the TEE the key is OutLayer's derived key and never known).
 export const PARITY_PSEUDONYM_SEED = "parity-fixture-pseudonym-seed-0001";
 

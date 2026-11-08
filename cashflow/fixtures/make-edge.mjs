@@ -3,7 +3,7 @@
 // canonical JSON bytes or the named fail-closed code. Regenerate only on a method change:
 //   node cashflow/fixtures/make-edge.mjs
 import { writeFileSync, mkdirSync } from "node:fs";
-import { datasets } from "../demo/data.mjs";
+import { datasets, EXPORT_AS_OF } from "../demo/data.mjs";
 import { runFund, RunError } from "../run.mjs";
 import { METHOD } from "../../spec/v2/score.mjs";
 import { canonical } from "./canonical.mjs";
@@ -16,11 +16,12 @@ const edit = (id, f) => {
   return d;
 };
 // M5: one rent due of 100 cents in October, no manager claim, one rent credit from the unit's own (mapped) tenant.
-// September is paid and bank-settled, so the v2.1.0 collection check (September, as of 2026-11-01) is verified.
+// September is paid and bank-settled. As of the parity run (8 Nov) October is the checked period, and its only due
+// is unpaid, so collection_shortfall applies too.
 const m5 = {
   id: "EDGE-M5", name: "Edge case M5 (synthetic)", kind: "rental", synthetic: true,
   manager_export: {
-    as_of: "2026-10-31",
+    as_of: EXPORT_AS_OF,
     units: [{ unit_id: "EDGE-M5-U00", occupied: true, tenant_payer: "Tenant EDGE-M5 00", rent_cents: 100 }],
     charges: [{ unit_id: "EDGE-M5-U00", due_date: "2026-09-01", amount_cents: 100 }, { unit_id: "EDGE-M5-U00", due_date: "2026-10-01", amount_cents: 100 }],
     ledger: [{ entry_id: "EDGE-M5-U00-2026-09", unit_id: "EDGE-M5-U00", paid_date: "2026-09-02", amount_cents: 100, status: "paid", batch_ref: null }],
@@ -29,7 +30,7 @@ const m5 = {
     { transaction_id: "bk-EDGE-M5-0", date: "2026-09-03", amount_cents: -100, counterparty: "Tenant EDGE-M5 00", category: "RENT", pending: false },
     { transaction_id: "bk-EDGE-M5-1", date: "2026-10-02", amount_cents: -100, counterparty: "Tenant EDGE-M5 00", category: "RENT", pending: false },
   ] },
-  issuer: { token_id: "EDGE-M5", as_of: "2026-10-31", period: "2026-10", occupancy_bps: 10000, expenses_cents: 0, reserves_cents: 0, distributions_paid_cents: 0 },
+  issuer: { token_id: "EDGE-M5", as_of: EXPORT_AS_OF, period: "2026-10", occupancy_bps: 10000, expenses_cents: 0, reserves_cents: 0, distributions_paid_cents: 0 },
 };
 // cashflow-v2.1.0 collection (spec 5.7): one-fund rental datasets checked for October, as of 2026-11-08.
 const AFTER = "2026-11-08T00:00:00Z";
@@ -58,12 +59,12 @@ const mut = ([d, o], f) => {
 };
 const paid = (amt) => [["2026-10-02", amt, "2026-10-03"]];
 
-const plus7 = { ...PARITY_OPTIONS, asOf: "2026-11-01T07:00:00+07:00", bankFetchedAt: "2026-11-01T05:00:00+07:00" };
+const plus7 = { ...PARITY_OPTIONS, asOf: "2026-11-08T16:00:00+07:00", bankFetchedAt: "2026-11-08T15:30:00+07:00" };
 
 export const CASES = [
   ["m5_mapped_payer_credit_without_claim", m5, PARITY_OPTIONS],
   ["utc_run_and_fetch_time_given_as_plus_0700", fund("DEMO-CREDIT"), plus7],
-  ["utc_document_as_of_with_offsets", edit("DEMO-RENTAL", (d) => { d.issuer.as_of = "2026-10-31T07:00:00+07:00"; d.manager_export.as_of = "2026-10-30T19:00:00-05:00"; }), PARITY_OPTIONS],
+  ["utc_document_as_of_with_offsets", edit("DEMO-RENTAL", (d) => { d.issuer.as_of = "2026-11-08T13:00:00+07:00"; d.manager_export.as_of = "2026-11-08T01:00:00-05:00"; }), PARITY_OPTIONS],
   ["issuer_as_of_null", edit("DEMO-RENTAL", (d) => { d.issuer.as_of = null; }), PARITY_OPTIONS],
   ["issuer_as_of_missing", edit("DEMO-RENTAL", (d) => { delete d.issuer.as_of; }), PARITY_OPTIONS],
   ["issuer_as_of_not_a_timestamp", edit("DEMO-RENTAL", (d) => { d.issuer.as_of = "31/10/2026"; }), PARITY_OPTIONS],

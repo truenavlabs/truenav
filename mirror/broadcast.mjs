@@ -2,6 +2,7 @@ import { decodeFunctionData, keccak256, parseTransaction, recoverTransactionAddr
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { abi, CHAIN_ID } from "./abi.mjs";
+import { guardClient, runMain } from "./safe.mjs";
 
 export function signedEvent(logs) {
   const events = logs.filter((s) => s.startsWith("EVENT_JSON:")).map((s) => JSON.parse(s.slice(11)))
@@ -26,17 +27,26 @@ export async function validateSigned(event, { mirrorAddress, mpcAddress }) {
 }
 export async function broadcast(event, options) {
   const checked = await validateSigned(event, options);
-  if (await options.client.getChainId() !== CHAIN_ID) throw Error("Base Sepolia only");
-  const balance = await options.client.getBalance({ address: options.mpcAddress });
+  // every Base RPC call is guarded: an error names only its class, never the RPC URL
+  const client = guardClient(options.client);
+  if (await client.getChainId() !== CHAIN_ID) throw Error("Base Sepolia only");
+  const balance = await client.getBalance({ address: options.mpcAddress });
   if (balance < checked.tx.gas * checked.tx.maxFeePerGas) throw Error("insufficient testnet gas balance");
-  const hash = await options.client.sendRawTransaction({ serializedTransaction: checked.raw });
+  const hash = await client.sendRawTransaction({ serializedTransaction: checked.raw });
   if (hash.toLowerCase() !== checked.hash.toLowerCase()) throw Error("broadcast hash mismatch");
   return hash;
 }
+// node mirror/broadcast.mjs <logs.json> [--mirror 0x..] [--mpc 0x..] [--execute]
+// env: TRUENAV_RECEIPTS_ACCOUNT, TRUENAV_RPC (NEAR, optional), BASE_RPC_URL (needed for --execute)
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [file, mirrorAddress, mpcAddress, rpc, execute] = process.argv.slice(2);
-  const event = signedEvent(JSON.parse(await readFile(file, "utf8")));
-  const checked = await validateSigned(event, {mirrorAddress,mpcAddress});
-  if (execute !== "--execute") console.log(JSON.stringify({ dry_run: true, tx_hash: checked.hash }));
-  else console.log(await broadcast(event,{mirrorAddress,mpcAddress,client:createPublicClient({transport:http(rpc)})}));
+  runMain(async () => {
+    const { parseArgs, nearView, mirrorAddresses, baseRpcUrl, baseTimeoutMs } = await import("./config.mjs");
+    const args = parseArgs(process.argv.slice(2));
+    const event = signedEvent(JSON.parse(await readFile(args.file, "utf8")));
+    const { view } = await nearView(process.env.TRUENAV_RPC || "https://test.rpc.fastnear.com");
+    const { mirrorAddress, mpcAddress } = await mirrorAddresses({ view, receipts: process.env.TRUENAV_RECEIPTS_ACCOUNT, mirror: args.mirror, mpc: args.mpc });
+    const checked = await validateSigned(event, { mirrorAddress, mpcAddress });
+    if (!args.execute) console.log(JSON.stringify({ dry_run: true, tx_hash: checked.hash, mirror_address: mirrorAddress, mpc_address: mpcAddress }));
+    else console.log(await broadcast(event, { mirrorAddress, mpcAddress, client: createPublicClient({ transport: http(baseRpcUrl(), { timeout: baseTimeoutMs() }) }) }));
+  });
 }

@@ -44,6 +44,14 @@ bytes, not an independently canonicalized report, signed PDF or attestation proo
 hash, sequence, receipt hash, score, band, method hash and timestamp; caps, holds and full evidence remain referenced
 by the NEAR receipt. All data is synthetic.
 
+The mirror address and the derived key are admin configuration. `set_mirror_config` (admin only, one yoctoNEAR,
+unpaused; `receipts/src/mirror.rs:198-224`) sets the mirror address and can later repoint it to any non-zero
+address whenever no nonce is pending; every update signed after that goes to the new address. The derived
+`public_key` in that config is taken on the admin's word: the contract checks only its length, not that it is the
+MPC network's derivation for this account. The operator scripts (`mirror/broadcast.mjs`, `mirror/confirm.mjs`) read
+both from `get_mirror_config`, check the key against the signer's own derivation (`mirror/derive.mjs`), and stop if
+an address given on the command line differs.
+
 Base trusts the MPC network's derived signing key and the NEAR contract that requests its signatures. It does not
 verify NEAR consensus, OutLayer attestation or bank evidence. The Solidity contract's MPC address is immutable, and
 only it may update state, with a strictly increasing sequence per token. Anyone can relay the already-signed bytes;
@@ -53,7 +61,9 @@ NEAR trusts the admin for Base finality. The dev-admin confirmer waits for succe
 `finalized` block tag and a matching canonical receipt block before calling `confirm_mirror(nonce, tx_hash)`.
 The NEAR method requires the admin, one yoctoNEAR, an unpaused contract, the pending nonce and the exact Keccak-256
 hash of a stored signed transaction for it. Only then is the next nonce released. This is an admin assertion backed
-by the configured RPC, not an on-chain verification of Base finality. A false confirmation can only stall or skip a
+by the configured RPC, not an on-chain verification of Base finality. The confirmer reads every finality fact
+(receipt, finalized block, canonical block hash) from that one Base RPC, `BASE_RPC_URL`; a second, independent RPC
+check is future hardening, not built. A false confirmation can only stall or skip a
 mirror update, never forge one, since the mirror contract accepts only MPC-signed updates with strictly increasing
 sequence. That guarantee assumes the deployed NEAR signing restrictions remain intact: its upgrade authority and
 admin configuration are trusted. A compromised upgrade authority can replace those restrictions.
@@ -62,7 +72,11 @@ An unconfirmed nonce blocks the lane. Signer or relayer outages, insufficient Ba
 the fee cap or the bounded 16-attempt signing history can stall it. Re-signing keeps the nonce and immutable payload
 and raises only fees; any stored replacement can be confirmed if it is the one finalized.
 An admin-only, one-yocto, unpaused `clear_mirror_signing` call can clear a stuck signing flag, but cannot alter the
-nonce or payload, confirm finality, or bypass retry limits. Late callbacks cannot overwrite a newer attempt. The derived account pays
+nonce or payload, confirm finality, or bypass retry limits. Late callbacks cannot overwrite a newer attempt.
+There is no skip or cancel for a pending nonce: `set_mirror_config` refuses while one is pending, and
+`confirm_mirror` needs the hash of a stored signed attempt. Once all 16 attempts (`MAX_ATTEMPTS`) are used and none
+lands, `clear_mirror_signing` does not help (it clears only the signing flag and keeps the attempt limit), so only a
+contract upgrade unblocks the lane. The derived account pays
 only testnet ETH gas. The NEAR contract's balance pays mirror storage and the signer deposit, under admin control.
 The mirror neither controls investment funds nor changes any score when someone pays for access.
 

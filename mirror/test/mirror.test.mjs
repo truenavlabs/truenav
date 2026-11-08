@@ -30,7 +30,9 @@ test('confirmer waits for finalized canonical success and never calls NEAR early
  assert.equal(await waitForFinality(e,{...options,client,near},{attempts:2,delay:async()=>{final=10n;}}),true);
  assert.deepEqual(calls,[{nonce:0,tx_hash:e.tx_hash}]);
  await assert.rejects(confirmFinalized(e,{...options,client:{...client,getTransactionReceipt:async()=>({status:'reverted'})},near}));
- await assert.rejects(confirmFinalized(e,{...options,client:{...client,getBlock:async(args)=>args.blockTag?{number:10n}:{hash:'wrong'}},near}));
+ // a reorged receipt block is "not final yet" (retry), never a confirm
+ assert.equal(await confirmFinalized(e,{...options,client:{...client,getBlock:async(args)=>args.blockTag?{number:10n}:{hash:'wrong'}},near}),false);
+ assert.equal(calls.length,1,'no confirm for a noncanonical receipt');
  await assert.rejects(confirmFinalized(e,{...options,client:{...client,getChainId:async()=>1},near}));
 });
 

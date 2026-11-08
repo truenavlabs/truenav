@@ -115,14 +115,20 @@ the hard nofile limit is 16384. `e2e:receipts` is also skipped here for that lim
 Save `mirror_signed` log strings from the correct receipts account's finalized NEAR transaction as a JSON array.
 Both scripts validate the signature, chain, recipient, zero value, gas limit, fees and update selector. Defaults are
 dry-run. Neither script owns an EVM key; the derived account's signature is already in the NEAR event.
+The mirror and derived addresses come from the receipts contract's `get_mirror_config`, with the derived key checked
+against the signer's own derivation; `--mirror` and `--mpc` are optional assertions, and a differing one stops the
+script. The Base RPC is read from `BASE_RPC_URL` only (never the command line), and every RPC error prints a fixed
+line such as `base rpc error: HttpRequestError`, never a URL, host, path or query. The confirmer treats a transaction
+not yet mined, or a receipt from a block that is no longer canonical, as not final and checks again.
 
 ```bash
-node mirror/broadcast.mjs <logs.json> <mirror-address> <derived-address> <Base-Sepolia-RPC>
-node mirror/confirm.mjs <logs.json> <mirror-address> <derived-address> <Base-Sepolia-RPC>
+TRUENAV_RECEIPTS_ACCOUNT=<receipts-account.testnet> node mirror/broadcast.mjs <logs.json> [--mirror 0x..] [--mpc 0x..]
+TRUENAV_RECEIPTS_ACCOUNT=<receipts-account.testnet> node mirror/confirm.mjs <logs.json> [--mirror 0x..] [--mpc 0x..]
 ```
 
-Only after separate approval, `--execute` broadcasts or confirms. The confirmer requires `TRUENAV_ADMIN_ACCOUNT`,
-`TRUENAV_RECEIPTS_ACCOUNT` and `TRUENAV_SIGNER_KEYFILE` (a matching testnet admin credential outside the repo).
+Only after separate approval, `--execute` broadcasts or confirms; both then need `BASE_RPC_URL`
+(`BASE_RPC_TIMEOUT_MS` optional, default 10000). The confirmer also requires `TRUENAV_ADMIN_ACCOUNT` and
+`TRUENAV_SIGNER_KEYFILE` (a matching testnet admin credential outside the repo).
 Never print or commit that file. The broadcaster checks sufficient ETH for the maximum transaction gas cost.
 
 ## Later approvals, one at a time

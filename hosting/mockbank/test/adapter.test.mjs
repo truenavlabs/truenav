@@ -4,7 +4,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { createHash } from "node:crypto";
-import { makeHandler, restorePath, MIN_TOKEN_LENGTH } from "../api/mockbank.mjs";
+import { makeHandler, restorePath, isPlainPath, MIN_TOKEN_LENGTH } from "../api/mockbank.mjs";
 import vercelHandler from "../api/mockbank.mjs";
 import { FUNDS, fundDocs } from "../../../cashflow/mockbank/funds.mjs";
 
@@ -102,5 +102,76 @@ test("the adapter never logs: no console call in its source or the server it wra
   const { readFileSync } = await import("node:fs");
   for (const f of ["../api/mockbank.mjs", "../../../cashflow/mockbank/server.mjs", "../../../cashflow/mockbank/funds.mjs"]) {
     assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), "utf8"), /console\.|process\.stdout|process\.stderr/, f);
+  }
+});
+
+test("X-Content-Type-Options: nosniff on every answer: 200, 401, 404, 405, 503 and /health, configured or not", async () => {
+  const get = await serve(makeHandler({ TRUENAV_DATA_TOKEN: TOKEN }));
+  const off = await serve(makeHandler({}));
+  const port = servers.at(-2).address().port;
+  const answers = [
+    await get("/v1/tokens/DEMO-CREDIT/bank-feed", TOKEN), // 200
+    await get("/v1/tokens/DEMO-CREDIT/bank-feed"), // 401
+    await get("/v1/tokens/NO-SUCH/bank-feed", TOKEN), // 404
+    await get("/health"),
+    await fetch(`http://127.0.0.1:${port}/v1/tokens/DEMO-CREDIT/bank-feed`, { method: "POST" }), // 405
+    await off("/v1/tokens/DEMO-CREDIT/bank-feed", TOKEN), // 503
+    await off("/health"),
+  ];
+  assert.deepEqual(answers.map((r) => r.status), [200, 401, 404, 200, 405, 503, 200]);
+  for (const r of answers) {
+    assert.equal(r.headers.get("x-content-type-options"), "nosniff", String(r.status));
+    assert.equal(r.headers.get("x-synthetic-data"), "true", String(r.status));
+  }
+  // and on the adapter's own 404 for a rejected __path
+  const saved = process.env.TRUENAV_DATA_TOKEN;
+  process.env.TRUENAV_DATA_TOKEN = TOKEN;
+  try {
+    const v = await serve(vercelHandler);
+    const r = await v("/api/mockbank?__path=//evil.example/x", TOKEN);
+    assert.equal(r.status, 404);
+    assert.equal(r.headers.get("x-content-type-options"), "nosniff");
+  } finally {
+    if (saved === undefined) delete process.env.TRUENAV_DATA_TOKEN;
+    else process.env.TRUENAV_DATA_TOKEN = saved;
+  }
+});
+
+test("a __path that is not a plain local path is 404 and serves nothing, even with the right token", async () => {
+  const bad = [
+    "//evil.example/v1/tokens/DEMO-CREDIT/bank-feed", // protocol-relative
+    "http://evil.example/v1/tokens/DEMO-CREDIT/bank-feed", // scheme
+    "https:/v1/tokens/DEMO-CREDIT/bank-feed",
+    "v1/tokens/DEMO-CREDIT/bank-feed", // no leading slash
+    "/v1/tokens/DEMO-CREDIT/bank-feed\u0000", // NUL, as %00 decodes
+    "/v1/tokens/DEMO-CREDIT/bank-feed%00", // a literal %00 (double-encoded on the wire)
+    "/v1//tokens/DEMO-CREDIT/bank-feed",
+    "/v1/tokens/../tokens/DEMO-CREDIT/bank-feed",
+    "/v1/tokens/./DEMO-CREDIT/bank-feed",
+    "/\\evil.example/x",
+    "/v1/tokens/DEMO-CREDIT/bank-feed?x=1",
+    "/v1/tokens/DEMO-CREDIT/bank-feed#x",
+    "",
+  ];
+  for (const p of bad) assert.equal(isPlainPath(p), false, JSON.stringify(p));
+  for (const p of ["/health", "/v1/tokens/DEMO-CREDIT/bank-feed", "/"]) assert.equal(isPlainPath(p), true, p);
+  assert.equal(restorePath("/api/mockbank?__path=/health&__path=/v1/tokens/DEMO-CREDIT/bank-feed"), null, "two __path values");
+  assert.equal(restorePath("//evil.example/x"), null, "the request's own path is checked too");
+  const saved = process.env.TRUENAV_DATA_TOKEN;
+  process.env.TRUENAV_DATA_TOKEN = TOKEN;
+  try {
+    const get = await serve(vercelHandler);
+    for (const p of bad) {
+      const r = await get(`/api/mockbank?__path=${encodeURIComponent(p)}`, TOKEN);
+      const body = await r.text();
+      assert.equal(r.status, 404, JSON.stringify(p));
+      assert.deepEqual(JSON.parse(body), { error: "not found" });
+      assert.equal(r.headers.get("x-snapshot-sha256"), null);
+    }
+    // the plain form still works through the same handler
+    assert.equal((await get(`/api/mockbank?__path=${encodeURIComponent("/v1/tokens/DEMO-CREDIT/bank-feed")}`, TOKEN)).status, 200);
+  } finally {
+    if (saved === undefined) delete process.env.TRUENAV_DATA_TOKEN;
+    else process.env.TRUENAV_DATA_TOKEN = saved;
   }
 });

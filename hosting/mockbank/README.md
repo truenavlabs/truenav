@@ -10,7 +10,9 @@ read only and holds no real data.
 | `GET /health` | none | `{ ok, synthetic }` |
 | `GET /v1/tokens/<fund>/bank-feed`, `/manager-export`, `/issuer-claims` | `Authorization: Bearer <TRUENAV_DATA_TOKEN>` | the frozen document bytes, `X-Snapshot-Sha256` |
 
-No or a wrong token is 401, an unknown fund or route is 404, any method other than GET is 405. The token is compared
+No or a wrong token is 401, an unknown fund or route is 404, any method other than GET is 405. Every response
+carries `X-Content-Type-Options: nosniff`; a rewritten path that is not a plain local path (a second leading slash,
+a scheme, `%00` or another control character, `.` or `..` segments) is 404. The token is compared
 in constant time and is never logged. If `TRUENAV_DATA_TOKEN` is unset or shorter than 32 characters, every data
 route answers 503 and serves nothing (fail closed); `/health` stays up and says `configured: false`.
 

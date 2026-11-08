@@ -17,9 +17,11 @@
 import { createServer as httpServer } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 
+// on every response: JSON only, never cached, never content-sniffed, labeled synthetic
+export const BASE_HEADERS = Object.freeze({ "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-Synthetic-Data": "true" });
 const json = (res, status, body, headers = {}) => {
   const bytes = Buffer.from(JSON.stringify(body));
-  res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Synthetic-Data": "true", ...headers });
+  res.writeHead(status, { ...BASE_HEADERS, ...headers });
   res.end(bytes);
 };
 const sameToken = (a, b) => {
@@ -53,7 +55,7 @@ export function handler({ feeds = {}, docs = {}, tokens = {}, allFundsTokens = [
     }
   }
   const send = (res, b) => {
-    res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Synthetic-Data": "true", "X-Snapshot-Id": snapshotId, "X-Snapshot-Sha256": b.sha });
+    res.writeHead(200, { ...BASE_HEADERS, "X-Snapshot-Id": snapshotId, "X-Snapshot-Sha256": b.sha });
     res.end(b.bytes);
   };
   return (req, res) => {

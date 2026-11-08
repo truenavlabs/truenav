@@ -4,7 +4,7 @@
 //
 // Fails closed: with TRUENAV_DATA_TOKEN unset or shorter than 32 characters, every data route answers 503 and serves
 // nothing. /health stays public. The token is never logged, echoed or written anywhere.
-import { handler } from "../../../cashflow/mockbank/server.mjs";
+import { handler, BASE_HEADERS } from "../../../cashflow/mockbank/server.mjs";
 import { fundDocs } from "../../../cashflow/mockbank/funds.mjs";
 
 export const MIN_TOKEN_LENGTH = 32;
@@ -13,7 +13,7 @@ export const SNAPSHOT_ID = "synthetic-2026-11-08";
 function failClosed(req, res) {
   const path = new URL(req.url, "http://localhost").pathname;
   const ok = path === "/health";
-  res.writeHead(ok ? 200 : 503, { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Synthetic-Data": "true" });
+  res.writeHead(ok ? 200 : 503, BASE_HEADERS);
   res.end(JSON.stringify(ok ? { ok: true, synthetic: true, configured: false } : { error: "data token not configured" }));
 }
 
@@ -24,19 +24,40 @@ export function makeHandler(env = process.env) {
   return handler({ docs: fundDocs(), allFundsTokens: [token], snapshotId: SNAPSHOT_ID });
 }
 
-/** Put the original path back when the rewrite passed it as ?__path=. */
+/**
+ * A plain local path: one leading "/", then only letters, digits and - . _ ~ / with no "//" and no "." or ".."
+ * segment. Anything else (a second leading slash, a scheme, %00 or any control character, a backslash, %, ?, #) is
+ * not one.
+ */
+export const isPlainPath = (p) => typeof p === "string" && /^\/[A-Za-z0-9._~\-\/]*$/.test(p) && !p.includes("//") && !p.split("/").some((s) => s === "." || s === "..");
+
+/**
+ * Put the original path back when the rewrite passed it as ?__path=. Returns null when the path (the __path value,
+ * or the request's own path) is not a plain local path; the caller answers 404.
+ */
 export function restorePath(rawUrl) {
-  const u = new URL(rawUrl, "http://localhost");
-  const p = u.searchParams.get("__path");
-  if (p === null) return rawUrl;
-  u.searchParams.delete("__path");
-  const rest = u.searchParams.toString();
-  return `${p.startsWith("/") ? p : `/${p}`}${rest ? `?${rest}` : ""}`;
+  if (typeof rawUrl !== "string" || !rawUrl.startsWith("/")) return null;
+  const q = rawUrl.indexOf("?");
+  const ownPath = q < 0 ? rawUrl : rawUrl.slice(0, q);
+  const params = new URLSearchParams(q < 0 ? "" : rawUrl.slice(q + 1));
+  if (!params.has("__path")) return isPlainPath(ownPath) ? rawUrl : null;
+  const all = params.getAll("__path");
+  if (all.length !== 1 || !isPlainPath(all[0])) return null;
+  params.delete("__path");
+  const rest = params.toString();
+  return `${all[0]}${rest ? `?${rest}` : ""}`;
+}
+
+function notFound(res) {
+  res.writeHead(404, BASE_HEADERS);
+  res.end(JSON.stringify({ error: "not found" }));
 }
 
 let cached;
 export default function vercelHandler(req, res) {
   cached ??= makeHandler(process.env);
-  req.url = restorePath(req.url);
+  const url = restorePath(req.url);
+  if (url === null) return notFound(res);
+  req.url = url;
   return cached(req, res);
 }

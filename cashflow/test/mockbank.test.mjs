@@ -89,6 +89,9 @@ test("all-funds option: one token reads the 3 documents of all 4 funds; per-toke
     assert.equal((await g("/v1/tokens/DEMO-RENTAL/bank-feed", "tok-tee-rental-0003")).status, 200);
     assert.equal((await g("/v1/tokens/DEMO-CREDIT/bank-feed", "tok-tee-rental-0003")).status, 403);
     assert.equal((await g("/health")).status, 200);
+    for (const [path, t] of [["/health"], ["/v1/tokens/DEMO-CREDIT/bank-feed", ALL], ["/v1/tokens/DEMO-CREDIT/bank-feed"], ["/v1/tokens/NO-SUCH/bank-feed", ALL], ["/nope", ALL]]) {
+      assert.equal((await g(path, t)).headers.get("x-content-type-options"), "nosniff", path);
+    }
   } finally {
     s2.close();
   }

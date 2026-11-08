@@ -34,7 +34,9 @@ impl Fetcher for Fake {
             "issuer-claims" => &self.ds["issuer"],
             _ => panic!("unexpected doc {doc}"),
         };
-        Ok(Fetched { body: js_stringify(v).unwrap().into_bytes(), synthetic: true })
+        // the bytes a server sends; js_stringify refuses floats, so a document that has one goes out as plain JSON
+        let body = js_stringify(v).unwrap_or_else(|_| v.to_string());
+        Ok(Fetched { body: body.into_bytes(), synthetic: true })
     }
 }
 
@@ -169,7 +171,7 @@ fn a_source_without_as_of_fails_closed_with_its_named_stage() {
     let p = SeedPseudonymizer(b"parity-fixture-pseudonym-seed-0001".to_vec());
     let out = execute(&good_input("DEMO-RENTAL").to_string(), &fake, &p, &clock);
     assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.1.0\",\"stage\":\"as_of_missing_issuer_claims\"}");
-    let bad_prev = json!({ "token_id": "DEMO-RENTAL", "run_nonce": NONCE, "previous": [{ "source": "bank_settlements", "snapshot_sha256": "00", "as_of": "yesterday" }] });
+    let bad_prev = json!({ "token_id": "DEMO-RENTAL", "run_nonce": NONCE, "previous": [{ "source": "bank_settlements", "snapshot_sha256": "00", "as_of": "yesterday" }], "previous_period": "2026-09" });
     let (out, _) = run("DEMO-RENTAL", bad_prev, None);
     assert!(out.ends_with("\"stage\":\"as_of_invalid_previous\"}"), "{out}");
 }
@@ -198,4 +200,42 @@ fn the_receipt_carries_collection_and_holds_and_dues_failures_fail_closed() {
     let p = SeedPseudonymizer(b"parity-fixture-pseudonym-seed-0001".to_vec());
     let out = execute(&good_input("DEMO-RENTAL").to_string(), &fake, &p, &clock);
     assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.1.0\",\"stage\":\"dues_missing\"}");
+}
+
+#[test]
+fn a_string_occupancy_fails_closed_and_is_never_echoed() {
+    for bad in [json!("SENTINEL-not-a-number"), json!(9583.5), json!(-1), json!(10001)] {
+        let fx = fixture("HONEST-RENTAL");
+        let mut ds = fx["input"]["dataset"].clone();
+        ds["issuer"]["occupancy_bps"] = bad.clone();
+        let fake = Fake { ds, fail: None, calls: Cell::new(0) };
+        let clock = Clock { now: Box::new(|| "2026-10-31T22:00:00Z".to_string()) };
+        let p = SeedPseudonymizer(b"parity-fixture-pseudonym-seed-0001".to_vec());
+        let out = execute(&good_input("HONEST-RENTAL").to_string(), &fake, &p, &clock);
+        assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.1.0\",\"stage\":\"occupancy_bps_invalid\"}", "{bad}");
+    }
+}
+
+#[test]
+fn new_period_comes_from_the_tee_never_from_input() {
+    // new_period as input is refused; previous needs previous_period (both come from the receipt contract's state)
+    let (out, _) = run("HONEST-CREDIT", json!({ "token_id": "HONEST-CREDIT", "run_nonce": NONCE, "new_period": true }), None);
+    assert!(out.ends_with("\"stage\":\"input_unknown_field\"}"), "{out}");
+    let (first, _) = run("HONEST-CREDIT", good_input("HONEST-CREDIT"), None);
+    let rec: Value = serde_json::from_str(&first).unwrap();
+    let previous: Vec<Value> = rec["passport"].as_array().unwrap().iter().map(|p| json!({ "source": p["source"], "snapshot_sha256": p["snapshot_sha256"], "as_of": p["as_of"] })).collect();
+    let (out, _) = run("HONEST-CREDIT", json!({ "token_id": "HONEST-CREDIT", "run_nonce": NONCE, "as_of": "2026-11-01T00:00:00Z", "previous": previous }), None);
+    assert!(out.ends_with("\"stage\":\"input_previous_period\"}"), "{out}");
+    let (out, _) = run("HONEST-CREDIT", json!({ "token_id": "HONEST-CREDIT", "run_nonce": NONCE, "previous_period": "2026-13" }), None);
+    assert!(out.ends_with("\"stage\":\"input_previous_period\"}"), "{out}");
+    // same period as the issuer's: not a new period, nothing carried forward, receipt as before
+    let same = json!({ "token_id": "HONEST-CREDIT", "run_nonce": NONCE, "as_of": "2026-11-01T00:00:00Z", "previous": previous, "previous_period": "2026-10" });
+    let (out, _) = run("HONEST-CREDIT", same, None);
+    assert_eq!(out, first);
+    // the previous receipt was for an earlier period and the documents did not change: carried forward, so red
+    let older = json!({ "token_id": "HONEST-CREDIT", "run_nonce": NONCE, "as_of": "2026-11-01T00:00:00Z", "previous": previous, "previous_period": "2026-09" });
+    let (out, _) = run("HONEST-CREDIT", older, None);
+    let r: Value = serde_json::from_str(&out).unwrap();
+    assert!(r["passport"].as_array().unwrap().iter().all(|p| p["carried_forward"] == json!(true)), "{out}");
+    assert!(r["caps"].as_array().unwrap().iter().any(|c| c["code"] == "self_reported_only"));
 }

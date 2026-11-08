@@ -108,7 +108,8 @@ pub fn metrics(kind: &str, m: &Matched, issuer: &Value, units: &[(String, i64)],
         o.insert("rent_due_cents".into(), json!(rent_due));
         o.insert("rent_collected_cents".into(), json!(rent_collected));
         o.insert("collection_rate_bps".into(), json!(ratio_bps(rent_collected, rent_due, 10000)?));
-        o.insert("occupancy_bps".into(), issuer.get("occupancy_bps").cloned().ok_or("occupancy_bps missing")?);
+        // validated up front (run.rs validate_fields); written only as that integer, never as the raw value
+        o.insert("occupancy_bps".into(), json!(int(issuer, "occupancy_bps")?));
         o.insert("expenses_cents".into(), json!(expenses));
         o.insert("reserves_cents".into(), json!(reserves));
         o.insert("net_operating_cash_cents".into(), json!(noc));

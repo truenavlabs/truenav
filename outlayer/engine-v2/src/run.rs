@@ -25,9 +25,20 @@ pub struct RunResult {
 }
 
 /// Named fail-closed codes from source validation (the TEE prints them as its stage). Same codes as the reference.
-pub const VALIDATION_CODES: [&str; 16] = [
+pub const VALIDATION_CODES: [&str; 27] = [
     "dues_missing",
     "dues_incomplete",
+    "occupancy_bps_invalid",
+    "reported_yield_bps_invalid",
+    "principal_outstanding_cents_invalid",
+    "accrued_interest_cents_invalid",
+    "capitalized_interest_cents_invalid",
+    "expenses_cents_invalid",
+    "reserves_cents_invalid",
+    "distributions_paid_cents_invalid",
+    "roster_invalid",
+    "claim_invalid",
+    "bank_txn_invalid",
     "dataset_kind",
     "source_missing_bank_settlements",
     "source_missing_servicer_records",
@@ -60,6 +71,62 @@ fn doc_as_of(doc: &Value, src: &str) -> R<Option<String>> {
         Some(_) => Err(format!("as_of_invalid_{src}")),
     }
 }
+const MAX_SAFE: i64 = 9_007_199_254_740_991;
+/// Issuer fields that reach public_metrics, in the reference's check order (cashflow/run.mjs ISSUER_FIELDS):
+/// (field, required for kind, min, max). Optional fields may be absent or null.
+const ISSUER_FIELDS: [(&str, Option<&str>, i64, i64); 8] = [
+    ("occupancy_bps", Some("rental"), 0, 10_000),
+    ("reported_yield_bps", Some("credit"), 0, 10_000),
+    ("principal_outstanding_cents", Some("credit"), 0, MAX_SAFE),
+    ("accrued_interest_cents", None, 0, MAX_SAFE),
+    ("capitalized_interest_cents", None, 0, MAX_SAFE),
+    ("expenses_cents", None, 0, MAX_SAFE),
+    ("reserves_cents", None, 0, MAX_SAFE),
+    ("distributions_paid_cents", None, 0, MAX_SAFE),
+];
+/// A JSON integer (no fraction or exponent) in [lo, hi].
+fn int_in(v: Option<&Value>, lo: i64, hi: i64) -> bool {
+    v.and_then(Value::as_i64).is_some_and(|x| (lo..=hi).contains(&x))
+}
+fn date_ok(v: Option<&Value>) -> bool {
+    v.and_then(Value::as_str).is_some_and(|x| x.len() == 10 && x.as_bytes()[4] == b'-' && x.as_bytes()[7] == b'-' && x.bytes().enumerate().all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit()) && to_utc(x).is_some())
+}
+/// Every issuer- or source-supplied value that reaches public_metrics: fixed type and range, fixed code, the value
+/// never echoed (owner review 8 Nov). Same order and codes as the reference.
+fn validate_fields(issuer: &Value, mgr: &Value, bank_feed: &Value, is_credit: bool) -> R<()> {
+    let kind = if is_credit { "credit" } else { "rental" };
+    for (f, required_for, lo, hi) in ISSUER_FIELDS {
+        match issuer.get(f) {
+            None | Some(Value::Null) => {
+                if required_for == Some(kind) {
+                    return Err(format!("{f}_invalid"));
+                }
+            }
+            v => {
+                if !int_in(v, lo, hi) {
+                    return Err(format!("{f}_invalid"));
+                }
+            }
+        }
+    }
+    let roster = mgr.get(if is_credit { "loans" } else { "units" }).and_then(Value::as_array).ok_or("roster_invalid")?;
+    for r in roster {
+        let ok = r.is_object() && if is_credit { int_in(r.get("principal_cents"), 0, MAX_SAFE) } else { int_in(r.get("rent_cents"), 0, MAX_SAFE) && r.get("occupied").is_some_and(Value::is_boolean) };
+        if !ok {
+            return Err("roster_invalid".into());
+        }
+    }
+    let claims = mgr.get(if is_credit { "payments" } else { "ledger" }).and_then(Value::as_array).ok_or("claim_invalid")?;
+    if !claims.iter().all(|c| c.is_object() && int_in(c.get("amount_cents"), 0, MAX_SAFE) && date_ok(c.get("paid_date"))) {
+        return Err("claim_invalid".into());
+    }
+    let txns = bank_feed.get("transactions").and_then(Value::as_array).ok_or("bank_txn_invalid")?;
+    if !txns.iter().all(|t| t.is_object() && int_in(t.get("amount_cents"), -MAX_SAFE, MAX_SAFE) && date_ok(t.get("date"))) {
+        return Err("bank_txn_invalid".into());
+    }
+    Ok(())
+}
+
 /// The reference's due-row check (cashflow/run.mjs): id, ISO date, non-negative safe integer amount.
 fn due_row_ok(r: &Value, id_key: &str) -> bool {
     let id_ok = r.get(id_key).and_then(Value::as_str).is_some_and(|x| !x.is_empty());
@@ -96,6 +163,7 @@ pub fn run_fund(ds: &Value, p: &dyn Pseudonymizer, o: &RunOptions) -> R<RunResul
     if !rows.iter().all(|r| due_row_ok(r, id_key)) {
         return Err("dues_incomplete".into());
     }
+    validate_fields(issuer, mgr, bank_feed, is_credit)?;
     let mut previous = vec![];
     for (src, sha, pa) in &o.previous {
         previous.push((src.clone(), sha.clone(), utc_or(pa, &format!("as_of_invalid_previous_{src}"))?));

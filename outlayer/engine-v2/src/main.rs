@@ -1,5 +1,5 @@
 //! OutLayer TEE entry point for TrueNav cashflow-v2.1.0 (wasm32-wasip2). Reads the public input from stdin
-//! ({"token_id", "run_nonce"} plus optional "as_of", "previous", "new_period"), fetches the bank feed, the manager
+//! ({"token_id", "run_nonce"} plus, from the receipt contract's own state, optional "previous" and "previous_period"), fetches the bank feed, the manager
 //! export and the issuer claims itself over HTTPS with a sealed read-only token, and prints the aggregate-only
 //! receipt (src/tee.rs). Secrets (OutLayer env, sealed and build-locked):
 //!   TRUENAV_DATA_URL    https base URL of the (mock) bank-data API

@@ -52,7 +52,7 @@ fn execute_inner(input: &str, fetch: &dyn Fetcher, pseudo: &dyn Pseudonymizer, c
     let v: Value = serde_json::from_str(input).map_err(|_| "input_json")?;
     let o = v.as_object().ok_or("input_json")?;
     for k in o.keys() {
-        if !matches!(k.as_str(), "token_id" | "run_nonce" | "as_of" | "previous" | "new_period") {
+        if !matches!(k.as_str(), "token_id" | "run_nonce" | "as_of" | "previous" | "previous_period") {
             return Err("input_unknown_field");
         }
     }
@@ -71,11 +71,17 @@ fn execute_inner(input: &str, fetch: &dyn Fetcher, pseudo: &dyn Pseudonymizer, c
             previous.push((get("source")?, get("snapshot_sha256")?, get("as_of")?));
         }
     }
-    let new_period = match o.get("new_period") {
-        None => false,
-        Some(Value::Bool(b)) => *b,
-        _ => return Err("input_new_period"),
+    // The receipt contract builds this input itself from its own last stored receipt (previous passport and period);
+    // the caller of request_run supplies only token_id. new_period is never taken from input: the TEE derives it by
+    // comparing the previous receipt's period with the issuer's period it fetched.
+    let previous_period = match o.get("previous_period") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(p)) if p.len() == 7 && days(&format!("{p}-01")).is_ok() => Some(p.clone()),
+        _ => return Err("input_previous_period"),
     };
+    if !previous.is_empty() && previous_period.is_none() {
+        return Err("input_previous_period");
+    }
 
     let bank = fetch.get(token_id, "bank-feed").map_err(|_| "fetch_bank_feed")?;
     let bank_fetched_at = (clock.now)();
@@ -93,6 +99,7 @@ fn execute_inner(input: &str, fetch: &dyn Fetcher, pseudo: &dyn Pseudonymizer, c
     let (y, m): (i64, i64) = (period[0..4].parse().map_err(|_| "issuer_period")?, period[5..7].parse().map_err(|_| "issuer_period")?);
     let mgr_key = if kind == "credit" { "servicer_tape" } else { "manager_export" };
     let ds = json!({ "id": token_id, "kind": kind, "synthetic": mgr.synthetic && issuer.synthetic, "bank_feed": bank_v, mgr_key: mgr_v, "issuer": issuer_v });
+    let new_period = previous_period.as_deref().is_some_and(|p| p != period);
     let opts = RunOptions { as_of: &as_of, period: &period, days_in_period: month_len(y, m), bank_fetched_at: &bank_fetched_at, previous, new_period };
     let r = run_fund(&ds, pseudo, &opts).map_err(|e| crate::run::validation_code(&e).unwrap_or("run"))?;
     let mut rec = receipt(&r, nonce, &as_of).map_err(|_| "receipt")?;

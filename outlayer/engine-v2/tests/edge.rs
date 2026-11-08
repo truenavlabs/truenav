@@ -30,7 +30,7 @@ fn run(c: &Value) -> Result<String, String> {
 #[test]
 fn every_edge_case_matches_the_reference_exactly() {
     let cs = cases();
-    assert_eq!(cs.len(), 27);
+    assert_eq!(cs.len(), 42);
     for c in &cs {
         let name = c["name"].as_str().unwrap();
         match (run(c), &c["expected"]) {
@@ -94,4 +94,22 @@ fn collection_cases_read_as_the_spec_says() {
     assert_eq!(early["metrics"]["collection"]["status"], "pending");
     assert_eq!(early["score"]["holds"][0]["code"], "collection_pending");
     assert_ne!(early["score"]["band"], "green");
+}
+
+#[test]
+fn occupancy_bps_string_float_negative_and_above_10000_fail_closed_a_valid_value_passes() {
+    for (name, ok) in [("occupancy_bps_string", false), ("occupancy_bps_float", false), ("occupancy_bps_negative", false), ("occupancy_bps_above_10000", false), ("occupancy_bps_missing", false), ("occupancy_bps_valid_10000", true)] {
+        let c = cases().into_iter().find(|c| c["name"] == name).unwrap();
+        match run(&c) {
+            Ok(out) => {
+                assert!(ok, "{name} should fail");
+                let o: Value = serde_json::from_str(&out).unwrap();
+                assert_eq!(o["public_metrics"]["occupancy_bps"], 10000, "{name}: the validated integer only");
+            }
+            Err(e) => {
+                assert!(!ok, "{name} should pass: {e}");
+                assert_eq!(e, "occupancy_bps_invalid", "{name}");
+            }
+        }
+    }
 }

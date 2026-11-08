@@ -88,6 +88,22 @@ export const CASES = [
   ["collection_dues_row_incomplete", ...mut(coll("COLL-ROW", [{ rent: 100 }]), (d) => delete d.manager_export.charges[0].amount_cents)],
   ["collection_occupied_unit_without_due", ...mut(coll("COLL-NODUE", [{ rent: 100 }]), (d) => (d.manager_export.charges = []))],
   ["collection_credit_loan_schedule_missing", ...mut([fund("HONEST-CREDIT"), PARITY_OPTIONS], (d) => (d.servicer_tape.schedule = null))],
+  // fields that reach public_metrics: fixed type and range, fixed codes (owner review 8 Nov)
+  ["occupancy_bps_string", edit("HONEST-RENTAL", (d) => { d.issuer.occupancy_bps = "SENTINEL-not-a-number"; }), PARITY_OPTIONS],
+  ["occupancy_bps_float", edit("HONEST-RENTAL", (d) => { d.issuer.occupancy_bps = 9583.5; }), PARITY_OPTIONS],
+  ["occupancy_bps_negative", edit("HONEST-RENTAL", (d) => { d.issuer.occupancy_bps = -1; }), PARITY_OPTIONS],
+  ["occupancy_bps_above_10000", edit("HONEST-RENTAL", (d) => { d.issuer.occupancy_bps = 10001; }), PARITY_OPTIONS],
+  ["occupancy_bps_missing", edit("HONEST-RENTAL", (d) => { delete d.issuer.occupancy_bps; }), PARITY_OPTIONS],
+  ["occupancy_bps_valid_10000", edit("HONEST-RENTAL", (d) => { d.issuer.occupancy_bps = 10000; }), PARITY_OPTIONS],
+  ["reported_yield_bps_string", edit("HONEST-CREDIT", (d) => { d.issuer.reported_yield_bps = "11%"; }), PARITY_OPTIONS],
+  ["principal_outstanding_negative", edit("HONEST-CREDIT", (d) => { d.issuer.principal_outstanding_cents = -1; }), PARITY_OPTIONS],
+  ["accrued_interest_float", edit("HONEST-CREDIT", (d) => { d.issuer.accrued_interest_cents = 0.5; }), PARITY_OPTIONS],
+  ["expenses_string", edit("HONEST-RENTAL", (d) => { d.issuer.expenses_cents = "1000"; }), PARITY_OPTIONS],
+  ["distributions_null_allowed", edit("HONEST-RENTAL", (d) => { d.issuer.distributions_paid_cents = null; }), PARITY_OPTIONS],
+  ["roster_rent_string", edit("HONEST-RENTAL", (d) => { d.manager_export.units[0].rent_cents = "200000"; }), PARITY_OPTIONS],
+  ["roster_occupied_string", edit("HONEST-RENTAL", (d) => { d.manager_export.units[0].occupied = "yes"; }), PARITY_OPTIONS],
+  ["claim_amount_negative", edit("HONEST-CREDIT", (d) => { d.servicer_tape.payments[0].amount_cents = -1; }), PARITY_OPTIONS],
+  ["bank_amount_float", edit("DEMO-RENTAL", (d) => { d.bank_feed.transactions[0].amount_cents = 1.25; }), PARITY_OPTIONS],
 ];
 
 export function edgeExpected(ds, options) {

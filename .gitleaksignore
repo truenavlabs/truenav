@@ -1,0 +1,6 @@
+# Reviewed false positives only. Each entry: the finding's fingerprint and why it is not a secret.
+# CI checks out every branch (fetch-depth 0), so each branch carries the full list.
+# The spike wasm's public sha256 used as a version_key in a test (generic-api-key rule), commit f7d6cf8.
+f7d6cf8ce54205d5f21dc787f648b0634c0feb10:outlayer/spike/smoke.mjs:generic-api-key:30
+# A fixed test pseudonym key in a test file (generic-api-key rule), commit 88ffe20.
+88ffe2057bfb20dc7fa8b1ccb3eb974e1035d227:cashflow/test/pipeline.test.mjs:generic-api-key:11

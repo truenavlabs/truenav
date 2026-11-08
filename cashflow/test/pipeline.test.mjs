@@ -8,7 +8,7 @@ import { settledFromFeed } from "../adapters/bank.mjs";
 import { publicMetrics } from "../metrics.mjs";
 import { ref } from "../pseudo.mjs";
 
-const KEY = "test-pseudonym-key-0123456789";
+const KEY = "test-pseudonym-key-0123456789"; // gitleaks:allow (fixed test pseudonym key, not a secret)
 const opts = { key: KEY, asOf: `${AS_OF}T00:00:00Z`, period: PERIOD, daysInPeriod: DAYS_IN_PERIOD, bankFetchedAt: "2026-10-31T22:00:00Z" };
 const runs = Object.fromEntries(datasets().map((ds) => [ds.id, runFund(ds, opts)]));
 const codes = (r) => r.score.caps.map((c) => c.code);

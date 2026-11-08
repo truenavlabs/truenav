@@ -231,7 +231,7 @@ try {
   // its own account and key file; the clock is the synthetic data's run day, like the engine's, so the rule's
   // 45-day freshness check does not depend on when this test runs
   const agentC = agentChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), accountId: id("agent"), keyFile: join(keys, `${id("agent")}.json`) });
-  const agentRun = (token) => runAgent({ chain: agentC, token, receipts: id("receipts"), query: id("query"), requestId: newRequestId(token, createHash("sha256").update(`e2e-${token}`).digest("hex").slice(0, 12)), apiUrl: base, nowMs: Date.parse(RUN_AS_OF) + 3_600_000 });
+  const agentRun = (token) => runAgent({ chain: agentC, token, receipts: id("receipts"), query: id("query"), requestId: newRequestId(token, createHash("sha256").update(`e2e-${token}`).digest("hex").slice(0, 12)), execute: true, apiUrl: base, nowMs: Date.parse(RUN_AS_OF) + 3_600_000 });
   const agentBalance = async () => BigInt((await provider.viewAccount({ accountId: id("agent"), blockQuery: { finality: "final" } })).amount);
   for (const [t, action, why] of [["DEMO-CREDIT", "decline", "red"], ["HONEST-CREDIT", "approve", "green"], ["HONEST-RENTAL", "decline", "red"]]) {
     const b0 = await agentBalance();

@@ -8,6 +8,7 @@
 //   red (score below 60)                decline  (the caps are the reasons)
 //   any hold                            review
 //   yellow (60 to 84)                   review
+//   green with any cap                  review   (the caps are the reasons)
 //   as_of older than 45 days            review   (stale)
 //   green (85 and up), no caps, no hold approve
 import { createHash } from "node:crypto";
@@ -17,7 +18,8 @@ export const DEFAULT_MAX_FEE = 10n ** 22n; // 0.01 NEAR: the agent refuses to pa
 export const queryHash = (kind, token) => createHash("sha256").update(`${kind}|${token}`).digest("hex");
 const sha256 = (s) => createHash("sha256").update(s).digest("hex");
 
-/** Check a stored receipt record against its own bytes; returns null when consistent, else a short code. */
+/** Check a stored receipt record against its own bytes (score, band, method, caps, holds and as_of must all match
+ * the receipt they index); returns null when consistent, else a short code. */
 export function verifyRecord(token, r) {
   if (sha256(r.receipt) !== r.receipt_sha256) return "receipt_sha256_mismatch";
   let rec;
@@ -28,6 +30,10 @@ export function verifyRecord(token, r) {
   }
   if (rec.token_id !== token || r.token_id !== token) return "receipt_token_mismatch";
   if (rec.score !== r.score || rec.band !== r.band || rec.method !== r.method) return "receipt_index_mismatch";
+  const codes = (xs) => (Array.isArray(xs) ? JSON.stringify(xs.map((x) => (x && typeof x === "object" ? x.code : x))) : null);
+  if (!Array.isArray(r.caps) || codes(rec.caps) !== codes(r.caps)) return "receipt_caps_mismatch";
+  if (!Array.isArray(r.holds) || codes(rec.holds) !== codes(r.holds)) return "receipt_holds_mismatch";
+  if (rec.as_of !== r.as_of) return "receipt_as_of_mismatch";
   return null;
 }
 
@@ -38,7 +44,8 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   if (bad) return { action: "decline", reason: "receipt_mismatch", detail: bad };
   if (r.band === "red" || r.score < 60) return { action: "decline", reason: "red", detail: `score ${r.score} red${r.caps.length ? `: ${r.caps.join(", ")}` : ""}` };
   if (r.holds.length) return { action: "review", reason: "hold", detail: `score ${r.score} ${r.band}, held: ${r.holds.join(", ")}` };
-  if (r.band !== "green") return { action: "review", reason: "yellow", detail: `score ${r.score} ${r.band}` };
+  if (r.band !== "green") return { action: "review", reason: "yellow", detail: `score ${r.score} ${r.band}${r.caps.length ? `: ${r.caps.join(", ")}` : ""}` };
+  if (r.caps.length) return { action: "review", reason: "capped", detail: `score ${r.score} green but capped: ${r.caps.join(", ")}` };
   const ageDays = (nowMs - Date.parse(r.as_of)) / 86_400_000;
   if (!(ageDays <= maxAgeDays)) return { action: "review", reason: "stale", detail: `receipt as of ${r.as_of} is ${Math.floor(ageDays)} days old` };
   return { action: "approve", reason: "green", detail: `score ${r.score} green, no caps, no holds` };
@@ -49,10 +56,10 @@ export const newRequestId = (token, rand) => `agent-${token}-${rand}`.slice(0, 6
 /**
  * Run the agent once for a token. `chain` provides: view(contract, method, args), buyQuery({ requestId, queryHash,
  * kind, deposit }) -> entitlement, and optionally nowMs(). With `apiUrl`, the entitlement is spent on GET
- * /fund/<token>/report and the served receipt is checked against the free score's hash. With `execute: false`
- * nothing is bought: the result says what would be paid.
+ * /fund/<token>/report and the served receipt is checked against the free score's hash. Nothing is bought unless
+ * `execute: true` is passed: by default the result only says what would be paid.
  */
-export async function runAgent({ chain, token, receipts, query, requestId, execute = true, apiUrl = null, maxFee = DEFAULT_MAX_FEE, nowMs }) {
+export async function runAgent({ chain, token, receipts, query, requestId, execute = false, apiUrl = null, maxFee = DEFAULT_MAX_FEE, nowMs }) {
   const now = nowMs ?? (chain.nowMs ? await chain.nowMs() : Date.now());
   // 1. the free public score
   const latest = await chain.view(receipts, "get_latest", { token_id: token });

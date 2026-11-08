@@ -45,6 +45,46 @@ const utcOr = (x, code) => {
   return t;
 };
 
+const MAX_SAFE = Number.MAX_SAFE_INTEGER;
+const isInt = (v, lo, hi) => typeof v === "number" && Number.isSafeInteger(v) && v >= lo && v <= hi;
+const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && toUtc(v) !== null;
+/**
+ * Issuer fields that reach public_metrics, in check order: [field, required for kind, min, max]. Optional fields may
+ * be absent or null (read as 0); anything present must be an integer in range. Then the source rows that feed the
+ * aggregates: roster, claims, bank transactions. Integers must be written without a fraction or exponent (the Rust
+ * build reads JSON 100.0 as a float and refuses it).
+ */
+export const ISSUER_FIELDS = [
+  ["occupancy_bps", "rental", 0, 10000],
+  ["reported_yield_bps", "credit", 0, 10000],
+  ["principal_outstanding_cents", "credit", 0, MAX_SAFE],
+  ["accrued_interest_cents", null, 0, MAX_SAFE],
+  ["capitalized_interest_cents", null, 0, MAX_SAFE],
+  ["expenses_cents", null, 0, MAX_SAFE],
+  ["reserves_cents", null, 0, MAX_SAFE],
+  ["distributions_paid_cents", null, 0, MAX_SAFE],
+];
+function validateFields(ds, isCredit, mgr) {
+  const kind = isCredit ? "credit" : "rental";
+  for (const [f, requiredFor, lo, hi] of ISSUER_FIELDS) {
+    const v = ds.issuer[f];
+    if (v === undefined || v === null) {
+      if (requiredFor === kind) throw new RunError(`${f}_invalid`);
+      continue;
+    }
+    if (!isInt(v, lo, hi)) throw new RunError(`${f}_invalid`);
+  }
+  for (const r of isCredit ? mgr.loans : mgr.units) {
+    const ok = r !== null && typeof r === "object" && (isCredit ? isInt(r.principal_cents, 0, MAX_SAFE) : isInt(r.rent_cents, 0, MAX_SAFE) && typeof r.occupied === "boolean");
+    if (!ok) throw new RunError("roster_invalid");
+  }
+  const claims = isCredit ? mgr.payments : mgr.ledger;
+  if (!Array.isArray(claims)) throw new RunError("claim_invalid");
+  for (const c of claims) if (!(c !== null && typeof c === "object" && isInt(c.amount_cents, 0, MAX_SAFE) && isDate(c.paid_date))) throw new RunError("claim_invalid");
+  if (!Array.isArray(ds.bank_feed.transactions)) throw new RunError("bank_txn_invalid");
+  for (const t of ds.bank_feed.transactions) if (!(t !== null && typeof t === "object" && isInt(t.amount_cents, -MAX_SAFE, MAX_SAFE) && isDate(t.date))) throw new RunError("bank_txn_invalid");
+}
+
 const sha = (x) => createHash("sha256").update(typeof x === "string" ? x : JSON.stringify(x)).digest("hex");
 const hoursBetween = (fromIso, toIso) => Math.max(0, Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 3600000));
 
@@ -78,6 +118,9 @@ export function runFund(ds, { key, asOf, period, daysInPeriod, bankFetchedAt = a
     const ok = isObj(r) && typeof r[idKey] === "string" && r[idKey] !== "" && typeof r.due_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.due_date) && toUtc(r.due_date) !== null && Number.isSafeInteger(r.amount_cents) && r.amount_cents >= 0;
     if (!ok) throw new RunError("dues_incomplete");
   }
+  // every issuer- or source-supplied value that reaches public_metrics: fixed type and range, fail closed with a
+  // fixed code and never echo the value (owner review 8 Nov)
+  validateFields(ds, isCreditKind, mgrDoc);
   const prevUtc = {};
   for (const [src, p] of Object.entries(previous)) prevUtc[src] = { snapshot_sha256: p.snapshot_sha256, as_of: utcOr(p.as_of, `as_of_invalid_previous_${src}`) };
 

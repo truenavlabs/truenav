@@ -565,3 +565,22 @@ fn callback_gas_below_the_minimum_is_refused_and_the_deployed_50_is_accepted() {
     c.set_config(floor);
     assert_eq!(config().callback_tgas, 50, "the deployed config (receipts/deploy-testnet.mjs) uses 50");
 }
+
+#[test]
+fn utc_timestamps_reject_impossible_civil_dates_and_unrepresentable_clock_values() {
+    use truenav_receipts::validate::{is_date, is_utc_ts};
+    for value in ["2000-02-29T00:00:00Z", "2004-02-29T23:59:59.999Z", "2100-02-28T12:30:00Z", "1970-01-01T00:00:00Z", "2026-04-30T23:59:59Z"] {
+        assert!(is_utc_ts(value), "{value}");
+    }
+    assert!(is_date("1900-02-28"));
+    for value in ["2026-02-30T00:00:00Z", "2026-04-31T00:00:00Z", "2001-02-29T00:00:00Z", "1900-02-29T00:00:00Z", "2100-02-29T00:00:00Z", "0000-01-01T00:00:00Z", "1969-12-31T23:59:59Z", "2026-11-08T24:00:00Z", "2026-11-08T00:60:00Z", "2026-11-08T00:00:60Z"] {
+        assert!(!is_utc_ts(value), "{value}");
+    }
+    let mut c = setup();
+    for value in ["2026-02-30T09:00:00Z", "2026-04-31T09:00:00Z", "2026-11-08T24:00:00Z"] {
+        let code = run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |v| v["as_of"] = json!(value))));
+        assert_eq!(code, "receipt_rejected:period_or_as_of");
+        assert!(c.get_latest("HONEST-CREDIT".into()).is_none());
+        assert!(c.get_token("HONEST-CREDIT".into()).unwrap()["pending"].is_null());
+    }
+}

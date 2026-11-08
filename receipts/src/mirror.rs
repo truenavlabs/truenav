@@ -257,6 +257,18 @@ impl Receipts {
         self.mirror_sign(nonce, fee)
     }
     #[payable]
+    pub fn clear_mirror_signing(&mut self, nonce: u64) {
+        self.only_admin();
+        require!(!self.paused, "paused");
+        let state: MirrorState = read(STATE_KEY);
+        require!(state.pending == Some(nonce), "not pending nonce");
+        let mut request: MirrorRequest = read(&key(nonce));
+        require!(request.signing, "no signature pending");
+        request.signing = false;
+        write(&key(nonce), &request);
+        emit("mirror_signing_cleared", json!({ "nonce": nonce }));
+    }
+    #[payable]
     pub fn resign_mirror(&mut self, nonce: u64, fee: u64) -> Promise {
         self.only_admin();
         require!(!self.paused, "paused");

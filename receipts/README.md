@@ -42,7 +42,7 @@ informational, as `code_hash` is (spec 8.2).
 ## Tests
 
 ```bash
-(cd receipts && cargo test --locked)     # 33: mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
+(cd receipts && cargo test --locked)     # 36: signing recovery, civil-date validation, mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
 (cd query && cargo test --locked)        # 8: exact fee, 24 h, uses, redeemer, withdraw bound, 1 yocto admin calls
 node --test api/test/api.test.mjs        # 7: free score, 402, one-use report, ask spends nothing, score unchanged
 npm run e2e:receipts                     # 67 checks on a local sandbox, engine run natively as the worker
@@ -78,15 +78,15 @@ On testnet, `--execute` signs `buy_query` with the agent's own account (`TRUENAV
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-receipt mirror source c4f6c85 (includes the gas-cap fix), same bytes in the working checkout and a fresh clone at different paths and users. Query source 4d472e1 is unchanged:
+receipt mirror recovery and civil-date validation fix based on 65c3ce0 (includes the gas-cap fix), built locally in the pinned image. Query source 4d472e1 is unchanged:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `c0be42580304d1f7e4dadd0166ef326c99af30d6d7a5cfaf00edcce8ec4390ec` | 302786 |
+| receipts | `c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1` | 305346 |
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
-build differs. This mirror candidate is not deployed. Previous receipts pins: `f32949b3...` (684b2e3, gas-cap-only candidate), `be2fed68...` (4d472e1, callback gas floor 20 Tgas), `e321077f...` (dc0b6c6, the build deployed on testnet 8 Nov, before the late-callback
+build differs. This mirror candidate is not deployed. Previous receipts pins: `c0be4258...` (c4f6c85, initial mirror candidate), `f32949b3...` (684b2e3, gas-cap-only candidate), `be2fed68...` (4d472e1, callback gas floor 20 Tgas), `e321077f...` (dc0b6c6, the build deployed on testnet 8 Nov, before the late-callback
 refund), `1a04e120...` (591db60, rental late share capped at 10000), `57ae8fa8...`
 (0c49d30, before the review fixes).
 

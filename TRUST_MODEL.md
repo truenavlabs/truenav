@@ -60,7 +60,9 @@ admin configuration are trusted. A compromised upgrade authority can replace tho
 
 An unconfirmed nonce blocks the lane. Signer or relayer outages, insufficient Base gas balance, a stale sequence,
 the fee cap or the bounded 16-attempt signing history can stall it. Re-signing keeps the nonce and immutable payload
-and raises only fees; any stored replacement can be confirmed if it is the one finalized. The derived account pays
+and raises only fees; any stored replacement can be confirmed if it is the one finalized.
+An admin-only, one-yocto, unpaused `clear_mirror_signing` call can clear a stuck signing flag, but cannot alter the
+nonce or payload, confirm finality, or bypass retry limits. Late callbacks cannot overwrite a newer attempt. The derived account pays
 only testnet ETH gas. The NEAR contract's balance pays mirror storage and the signer deposit, under admin control.
 The mirror neither controls investment funds nor changes any score when someone pays for access.
 

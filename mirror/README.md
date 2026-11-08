@@ -18,7 +18,7 @@ must increase the fee (choose a sufficient replacement bump for the Base node). 
 recipient, selector, value, gas limit, nonce, method or timestamp. The signer path is always `truenav-mirror-v1`.
 
 Admin calls require one yoctoNEAR and an unpaused contract: `set_mirror_config`, `request_mirror`, `resign_mirror`,
-`confirm_mirror`. The contract forwards one yoctoNEAR to the signer. Mirror storage is funded by the contract's
+`clear_mirror_signing`, `confirm_mirror`. The contract forwards one yoctoNEAR to the signer. Mirror storage is funded by the contract's
 balance, under admin control; check storage headroom before enabling it. Mirror state uses `mirror:v1:*` raw keys.
 The existing `Receipts` struct, collection prefix order and OutLayer callback are unchanged. A regression test loads
 an independent pre-mirror layout and checks identical root-state bytes after configuring and requesting a mirror.
@@ -30,6 +30,13 @@ nonce, sequence, target, immutable calldata and unsigned transaction. `resign_mi
 except the two fee fields. It requires a higher fee within the cap and waits for the prior signing callback to finish.
 There are at most 16 signing attempts per nonce, bounding storage; reaching this limit or the cap can stall the lane.
 Signer failures preserve the pending nonce. There is deliberately no skip, arbitrary-payload signing or fallback path.
+
+If a signing callback never completes, the admin can call `clear_mirror_signing(nonce)` with one yoctoNEAR while
+unpaused. It clears only the signing flag of the pending nonce, preserving the nonce, immutable calldata and every
+stored unsigned payload. A late callback is ignored after clearing; after a higher-fee retry its old attempt index
+cannot clear or overwrite the new attempt. Clearing does not confirm the nonce or bypass the fee/attempt limits.
+Receipt validation rejects impossible Gregorian dates, pre-epoch timestamps and out-of-range clock values before
+storage, so they cannot reach the mirror's nonnegative Unix-millisecond conversion.
 
 The private callback accepts a bounded signer response, verifies recovery against the configured derived public key,
 normalizes high-S signatures, stores the complete signed transaction, and emits `mirror_signed` with its bytes and

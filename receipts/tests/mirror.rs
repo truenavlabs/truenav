@@ -15,11 +15,14 @@ fn acc(s: &str) -> AccountId {
     s.parse().unwrap()
 }
 fn context(who: &str, results: Vec<PromiseResult>) {
+    context_deposit(who, NearToken::from_yoctonear(1), results);
+}
+fn context_deposit(who: &str, deposit: NearToken, results: Vec<PromiseResult>) {
     let mut b = VMContextBuilder::new();
     b.current_account_id(acc("receipts.truenav.testnet"))
         .predecessor_account_id(acc(who))
         .signer_account_id(acc(who))
-        .attached_deposit(NearToken::from_yoctonear(1))
+        .attached_deposit(deposit)
         .prepaid_gas(Gas::from_tgas(300))
         .account_balance(NearToken::from_near(10));
     testing_env!(
@@ -390,4 +393,74 @@ fn a_mined_earlier_replacement_can_be_confirmed_after_a_newer_signature() {
     context("admin.testnet", vec![]);
     c.confirm_mirror(0, vector(0)["tx_hash"].as_str().unwrap().into());
     assert_eq!(c.get_mirror_config().unwrap().next_nonce, 1);
+}
+
+#[test]
+fn clearing_signing_requires_admin_one_yocto_unpaused_and_the_pending_nonce() {
+    let mut c = start();
+    context("stranger.testnet", vec![]);
+    panics(|| c.clear_mirror_signing(0));
+    for deposit in [0, 2] {
+        context_deposit("admin.testnet", NearToken::from_yoctonear(deposit), vec![]);
+        panics(|| c.clear_mirror_signing(0));
+    }
+    context("admin.testnet", vec![]);
+    panics(|| c.clear_mirror_signing(1));
+    c.pause();
+    panics(|| c.clear_mirror_signing(0));
+    c.unpause();
+    c.clear_mirror_signing(0);
+    panics(|| c.clear_mirror_signing(0));
+    assert_eq!(c.get_mirror_config().unwrap().pending, Some(0));
+}
+
+#[test]
+fn clearing_signing_changes_only_the_flag_and_late_callbacks_cannot_clobber_a_retry() {
+    let mut c = start();
+    let state = borsh::to_vec(&c.get_mirror_config().unwrap()).unwrap();
+    let before = borsh::to_vec(&c.get_mirror_request(0).unwrap()).unwrap();
+    context("admin.testnet", vec![]);
+    c.clear_mirror_signing(0);
+    let mut after = c.get_mirror_request(0).unwrap();
+    assert!(!after.signing);
+    after.signing = true;
+    assert_eq!(borsh::to_vec(&after).unwrap(), before);
+    assert_eq!(
+        borsh::to_vec(&c.get_mirror_config().unwrap()).unwrap(),
+        state
+    );
+    assert!(get_logs()
+        .iter()
+        .any(|s| s.contains("mirror_signing_cleared")));
+    context(
+        "receipts.truenav.testnet",
+        vec![PromiseResult::Successful(
+            serde_json::to_vec(&vector(0)["response"]).unwrap(),
+        )],
+    );
+    assert!(!c.on_mirror_signed(0, 0));
+    context("admin.testnet", vec![]);
+    c.resign_mirror(0, 1200000000).detach();
+    context(
+        "receipts.truenav.testnet",
+        vec![PromiseResult::Successful(
+            serde_json::to_vec(&vector(0)["response"]).unwrap(),
+        )],
+    );
+    assert!(!c.on_mirror_signed(0, 0));
+    assert!(c.get_mirror_request(0).unwrap().signing);
+    context(
+        "receipts.truenav.testnet",
+        vec![PromiseResult::Successful(
+            serde_json::to_vec(&vector(3)["response"]).unwrap(),
+        )],
+    );
+    assert!(c.on_mirror_signed(0, 1));
+    let request = c.get_mirror_request(0).unwrap();
+    assert_eq!(request.nonce, 0);
+    assert_eq!(request.data, after.data);
+    assert_eq!(
+        request.attempts[0].unsigned_payload,
+        after.attempts[0].unsigned_payload
+    );
 }

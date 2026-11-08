@@ -137,7 +137,15 @@ pub fn is_period(s: &str) -> bool {
 /// "YYYY-MM-DD".
 pub fn is_date(s: &str) -> bool {
     let b = s.as_bytes();
-    s.is_ascii() && b.len() == 10 && is_period(&s[0..7]) && b[7] == b'-' && digits(&b[8..10]) && (1..=31).contains(&((b[8] - b'0') * 10 + (b[9] - b'0')))
+    if !s.is_ascii() || b.len() != 10 || !is_period(&s[0..7]) || b[7] != b'-' || !digits(&b[8..10]) {
+        return false;
+    }
+    let year = b[0..4].iter().fold(0u32, |n, digit| n * 10 + u32::from(digit - b'0'));
+    let month = (b[5] - b'0') * 10 + (b[6] - b'0');
+    let day = (b[8] - b'0') * 10 + (b[9] - b'0');
+    let leap = year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400));
+    let days = match month { 2 => if leap { 29 } else { 28 }, 4 | 6 | 9 | 11 => 30, _ => 31 };
+    year != 0 && (1..=days).contains(&day)
 }
 /// "YYYY-MM-DDTHH:MM:SS[.mmm]Z" (the engine normalizes every timestamp to UTC).
 pub fn is_utc_ts(s: &str) -> bool {
@@ -147,7 +155,10 @@ pub fn is_utc_ts(s: &str) -> bool {
     }
     let time = b[10] == b'T' && digits(&b[11..13]) && b[13] == b':' && digits(&b[14..16]) && b[16] == b':' && digits(&b[17..19]);
     let tail = if b.len() == 20 { b[19] == b'Z' } else { b[19] == b'.' && digits(&b[20..23]) && b[23] == b'Z' };
-    time && tail
+    if !time || !tail { return false; }
+    // Mirror timestamps are nonnegative Unix milliseconds. No pre-epoch date or impossible clock is admitted.
+    &s[0..4] >= "1970" && (b[11] - b'0') * 10 + (b[12] - b'0') <= 23
+        && (b[14] - b'0') * 10 + (b[15] - b'0') <= 59 && (b[17] - b'0') * 10 + (b[18] - b'0') <= 59
 }
 pub fn is_token_id(s: &str) -> bool {
     !s.is_empty() && s.len() <= 64 && s.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'-')

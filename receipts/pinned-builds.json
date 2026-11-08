@@ -1,10 +1,10 @@
 {
-  "note": "sha256 of contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked). Receipts source c4f6c85 includes the mirror and gas-cap fix; same bytes in the working checkout (uid 1000) and a fresh clone at another path (uid 0). Query source 4d472e1 is unchanged. Build pins, not deployed-code claims. receipts/deploy-testnet.mjs refuses other bytes.",
-  "receipts": "c0be42580304d1f7e4dadd0166ef326c99af30d6d7a5cfaf00edcce8ec4390ec",
+  "note": "sha256 of contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked). Receipts source is the mirror signing recovery and civil-date validation fix based on 65c3ce0, including the gas-cap fix. Query source 4d472e1 is unchanged. Build pins, not deployed-code claims. receipts/deploy-testnet.mjs refuses other bytes.",
+  "receipts": "c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1",
   "query": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156",
   "dist": {
-    "note": "Pinned-image builds for a machine without Docker: TRUENAV_WASM_DIR=receipts/dist. Receipts c4f6c85 is the undeployed mirror candidate; query 4d472e1 is unchanged. The deploy script checks these sha256 values.",
-    "receipts/dist/truenav_receipts.wasm": "c0be42580304d1f7e4dadd0166ef326c99af30d6d7a5cfaf00edcce8ec4390ec",
+    "note": "Pinned-image builds for a machine without Docker: TRUENAV_WASM_DIR=receipts/dist. Receipts is the undeployed mirror recovery/date-validation candidate based on 65c3ce0; query 4d472e1 is unchanged. The deploy script checks these sha256 values.",
+    "receipts/dist/truenav_receipts.wasm": "c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1",
     "receipts/dist/truenav_query.wasm": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
   }
 }

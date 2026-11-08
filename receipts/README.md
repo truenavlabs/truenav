@@ -78,15 +78,16 @@ On testnet, `--execute` signs `buy_query` with the agent's own account (`TRUENAV
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-two fresh clones at different paths (as root and as the image user), source commit dc0b6c6:
+two fresh clones at different paths (as root and as the image user), source commit 4d472e1:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `e321077fa7f57358c23fc308f335f942db9899c83676d822bcd57e5329c2ab81` | 264542 |
+| receipts | `be2fed682a809cdfce4bc07b9176fcc36e0c501608e8bfbc8694ac8064401c35` | 266556 |
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
-build differs. Previous receipts pins, never deployed: `1a04e120...` (591db60, rental late share capped at 10000), `57ae8fa8...`
+build differs. Previous receipts pins: `e321077f...` (dc0b6c6, the build deployed on testnet 8 Nov, before the late-callback
+refund), `1a04e120...` (591db60, rental late share capped at 10000), `57ae8fa8...`
 (0c49d30, before the review fixes).
 
 ## Who can use the data credentials
@@ -149,7 +150,7 @@ master on chain; the pinned wasm bytes; which accounts exist; the master balance
 | --- | --- | --- |
 | D0 | read-only checks | none |
 | D1 | create `receipts.` (3.2), `query.` (1.7), `runner.` (0.4), `api.tnlab-718ca9.testnet` (0.1) with fresh keys | 5.4 NEAR moved to our own accounts, plus gas; the preflight needs 5.45 |
-| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.66 NEAR storage: 265,957 bytes after D2 and D3 on the sandbox, of the 3.2 NEAR D1 gives `receipts.` (about 0.54 left for gas and refunds; the e2e checks it fits) |
+| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.68 NEAR storage: 267,971 bytes after D2 and D3 on the sandbox, of the 3.2 NEAR D1 gives `receipts.` (about 0.52 left for gas and refunds; the e2e checks it fits) |
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 

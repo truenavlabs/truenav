@@ -1,10 +1,10 @@
-// One run of the cashflow-v2.0.0 method on one fund or token: adapters, three-way match, metrics, score, and the
+// One run of the cashflow-v2.1.0 method on one fund or token: adapters, three-way match, metrics, score, and the
 // evidence passport. This is the JS reference the Rust/WASM build in OutLayer must match (spec section 10). In the
 // TEE, the bank feed is fetched by the module itself from the mock bank-data API with sealed credentials and the
 // pseudonym key is OutLayer's derived key; here both are parameters.
 import { createHash } from "node:crypto";
 import { match } from "./match.mjs";
-import { metrics, scoreInput, publicMetrics } from "./metrics.mjs";
+import { metrics, scoreInput, publicMetrics, collection } from "./metrics.mjs";
 import { settledFromFeed } from "./adapters/bank.mjs";
 import { fromServicerTape } from "./adapters/credit.mjs";
 import { fromManagerExport } from "./adapters/rental.mjs";
@@ -70,6 +70,14 @@ export function runFund(ds, { key, asOf, period, daysInPeriod, bankFetchedAt = a
     issuer_claims: ds.issuer.as_of == null ? null : utcOr(ds.issuer.as_of, "as_of_invalid_issuer_claims"),
   };
   for (const [src, t] of Object.entries(asOfUtc)) if (t === null) throw new RunError(`as_of_missing_${src}`);
+  // dues (spec 5.7): the schedule must be there and every row complete; written-off rows still count
+  const dueRows = isCreditKind ? mgrDoc.schedule : mgrDoc.charges;
+  if (!Array.isArray(dueRows) || !Array.isArray(isCreditKind ? mgrDoc.loans : mgrDoc.units)) throw new RunError("dues_missing");
+  const idKey = isCreditKind ? "loan_id" : "unit_id";
+  for (const r of dueRows) {
+    const ok = isObj(r) && typeof r[idKey] === "string" && r[idKey] !== "" && typeof r.due_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.due_date) && toUtc(r.due_date) !== null && Number.isSafeInteger(r.amount_cents) && r.amount_cents >= 0;
+    if (!ok) throw new RunError("dues_incomplete");
+  }
   const prevUtc = {};
   for (const [src, p] of Object.entries(previous)) prevUtc[src] = { snapshot_sha256: p.snapshot_sha256, as_of: utcOr(p.as_of, `as_of_invalid_previous_${src}`) };
 
@@ -79,6 +87,8 @@ export function runFund(ds, { key, asOf, period, daysInPeriod, bankFetchedAt = a
   const m = match({ due: src.due, claims: src.claims, bank, payers: src.payers });
   const issuer = isCredit ? ds.issuer : { ...ds.issuer, occupancy_bps: ds.issuer.occupancy_bps };
   const mt = metrics({ kind: ds.kind, m, issuer, units: src.units || {}, asOf: runAt.slice(0, 10), period, daysInPeriod });
+  const mgrSrcName = isCredit ? "servicer_records" : "property_manager_records";
+  mt.collection = collection({ m, period, runAt, coverage: { bank_settlements: asOfUtc.bank_settlements, [mgrSrcName]: asOfUtc[mgrSrcName] }, activeUnits: src.active_units, fail: (code) => { throw new RunError(code); } });
 
   // Freshness per source from that source's own as-of (spec 5.6): the TEE's fetch time for the bank feed, the
   // export timestamp for the manager file, the issuer's own as_of for its claims. carried_forward, per source, once

@@ -33,8 +33,8 @@ test("edge-case fixtures are current: the JS reference gives exactly each expect
   assert.deepEqual(file.cases.map((c) => c.name), CASES.map(([n]) => n));
   for (const c of file.cases) assert.deepEqual(edgeExpected(c.input.dataset, c.input.options), c.expected, c.name);
   const m5 = JSON.parse(file.cases.find((c) => c.name === "m5_mapped_payer_credit_without_claim").expected.output);
-  assert.equal(m5.match.due[0].status, "unpaid");
-  assert.equal(m5.match.bank[0].outcome, "settled_not_claimed");
+  assert.equal(m5.match.due.find((d) => d.period === "2026-10").status, "unpaid");
+  assert.equal(m5.match.bank.find((t) => t.posted_date === "2026-10-02").outcome, "settled_not_claimed");
   assert.equal(m5.metrics.cash_received_cents, 0);
   assert.equal(m5.metrics.collection_rate_bps, 0);
   const z = JSON.parse(readFileSync(new URL("cashflow-parity-DEMO-CREDIT.json", dir))).expected_output;

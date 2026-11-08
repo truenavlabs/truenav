@@ -1,10 +1,13 @@
-// TrueNav cashflow-v2.0.0 score (spec/v2/SPEC.md sections 5.6 and 6), JS reference in integer math.
+// TrueNav cashflow-v2.1.0 score (spec/v2/SPEC.md sections 5.6, 5.7 and 6), JS reference in integer math.
+// cashflow-v2.0.0 stays selectable (score(m, "cashflow-v2.0.0")) so its frozen cases keep running as regression.
 // Input: the run's aggregate metrics (the matcher produces them in build step 2). Output: parts in hundredths of
 // a point, raw, score, band, and every red-flag cap with its reason. The Rust/WASM port must match byte for byte.
 // Rounding (section 10): round half up on non-negative integers; ties go up.
 
-export const METHOD = "cashflow-v2.0.0";
+export const METHOD = "cashflow-v2.1.0";
+export const METHODS = ["cashflow-v2.0.0", "cashflow-v2.1.0"];
 export const CAP_SCORE = 59;
+export const HOLD_SCORE = 84; // a hold keeps the band out of green (85+) without a red flag
 
 /** round(a / b) half up, for integers a >= 0, b > 0. */
 export function rhu(a, b) {
@@ -44,9 +47,21 @@ export const CAPS = {
   payout_exceeds_net_cash: "red because payouts exceed net cash from rent",
   distribution_funded_by_sponsor: "red because part of a payout was funded by a sponsor transfer, not by income",
   claimed_not_settled: "red because more than 2% of the cash the manager reports was never settled by the bank",
+  collection_shortfall: "red because of unverified collection: less than 90% of contractual dues were bank-confirmed by the cutoff",
 };
+/** Holds (v2.1.0): not green, no red flag. */
+export const HOLDS = {
+  collection_pending: "not green because collection for the period cannot be verified yet: before the cutoff or without source coverage through it",
+  collection_not_applicable: "not green because no contractual dues fell in the period: inactivity alone is not green",
+};
+const pct = (bps) => `${Math.floor(bps / 100)}.${String(bps % 100).padStart(2, "0")}%`;
+function collectionReason(c) {
+  return `red because of unverified collection: ${pct(c.rate_bps)} of contractual dues for ${c.period} were bank-confirmed by ${c.cutoff} (at least 90.00% needed)`;
+}
 
-export function score(m) {
+export function score(m, method = METHOD) {
+  if (!METHODS.includes(method)) throw new Error(`unknown method ${method}`);
+  const v21 = method === "cashflow-v2.1.0";
   if (m.kind !== "credit" && m.kind !== "rental") throw new Error("kind must be credit or rental");
   const fresh = m.sources.map((s) => ({ ...s, freshness_bps: sourceFreshnessBps(s) }));
   const required = fresh.filter((s) => s.required !== false);
@@ -74,17 +89,28 @@ export function score(m) {
   if ((m.exceptions.distribution_funded_by_sponsor || 0) > 0) caps.push("distribution_funded_by_sponsor");
   // more than 2% of claimed cash: claimed_not_settled / claimed > 200 / 10,000
   if (m.claimed_cash_cents > 0 && (m.exceptions.claimed_not_settled_cents || 0) * 10000 > 200 * m.claimed_cash_cents) caps.push("claimed_not_settled");
+  const holds = [];
+  const c = m.collection;
+  if (v21) {
+    if (!c || !["verified", "pending", "not_applicable"].includes(c.status)) throw new Error("collection status missing");
+    if (c.status === "verified" && c.shortfall) caps.push("collection_shortfall");
+    if (c.status === "pending") holds.push("collection_pending");
+    if (c.status === "not_applicable") holds.push("collection_not_applicable");
+  }
 
-  const value = caps.length ? Math.min(uncapped, CAP_SCORE) : uncapped;
+  let value = caps.length ? Math.min(uncapped, CAP_SCORE) : uncapped;
+  if (holds.length) value = Math.min(value, HOLD_SCORE);
   const band = value >= 85 ? "green" : value >= 60 ? "yellow" : "red";
-  return {
-    method: METHOD,
+  const out = {
+    method,
     parts_x100: parts,
     raw_x100,
     uncapped_score: uncapped,
     score: value,
     band,
-    caps: caps.map((code) => ({ code, reason: CAPS[code] })),
+    caps: caps.map((code) => ({ code, reason: code === "collection_shortfall" ? collectionReason(c) : CAPS[code] })),
     run_freshness_bps: runFresh,
   };
+  if (v21) out.holds = holds.map((code) => ({ code, reason: HOLDS[code] }));
+  return out;
 }

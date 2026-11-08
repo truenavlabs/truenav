@@ -25,5 +25,7 @@ export function fromManagerExport(exp, key) {
   }));
   const payers = Object.fromEntries(exp.units.filter((u) => u.tenant_payer).map((u) => [payerRef(key, u.tenant_payer), unitRef(key, u.unit_id)]));
   const occupied = exp.units.filter((u) => u.occupied).length;
-  return { due, claims, payers, occupancy_bps: exp.units.length ? Math.round((10000 * occupied) / exp.units.length) : 0 };
+  // every occupied unit with a rent must have a charge in a verified collection period
+  const active_units = exp.units.filter((u) => u.occupied && u.rent_cents > 0).map((u) => unitRef(key, u.unit_id));
+  return { due, claims, payers, active_units, occupancy_bps: exp.units.length ? Math.round((10000 * occupied) / exp.units.length) : 0 };
 }

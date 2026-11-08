@@ -1,4 +1,4 @@
-// TrueNav cashflow-v2.0.0 metrics (spec/v2/SPEC.md section 5) from a match result (cashflow/match.mjs).
+// TrueNav cashflow-v2.1.0 metrics (spec/v2/SPEC.md section 5) from a match result (cashflow/match.mjs).
 // Integer cents and bps, round half up (spec section 10). Produces the aggregates the score needs
 // (spec/v2/score.mjs) plus the public metrics block of the receipt. Cohorts under 5 units are suppressed in the
 // public block; the score only ever sees totals.
@@ -107,6 +107,50 @@ export function metrics({ kind, m, issuer, units = {}, asOf, period, daysInPerio
   return out;
 }
 
+// ---- collection (cashflow-v2.1.0, spec 5.7) -------------------------------------------------------------------
+export const COLLECTION_GRACE_DAYS = 7; // cutoff T = last day of the period + 7 calendar days (UTC)
+const DAY_MS = 86400000;
+const isoDay = (n) => new Date(n * DAY_MS).toISOString().slice(0, 10);
+const firstOf = (p) => days(`${p}-01`);
+const nextPeriod = (p) => isoDay(firstOf(p) + 32).slice(0, 7);
+const prevPeriod = (p) => isoDay(firstOf(p) - 1).slice(0, 7);
+/** Cutoff of period p: the last calendar day counted (T) and the instant it ends (start of T + 1 day, UTC). */
+export function cutoff(p) {
+  const tDay = firstOf(nextPeriod(p)) - 1 + COLLECTION_GRACE_DAYS;
+  return { cutoff: isoDay(tDay), ends_ms: (tDay + 1) * DAY_MS };
+}
+
+/**
+ * Collection for the latest completed period: the reporting period if its cutoff has passed at runAt, else the one
+ * before it. D = contractual dues with due dates in that period (schedules; later write-offs never remove them).
+ * V = bank-settled, claim-linked cash allocated to those same dues and posted by the cutoff, capped per due; each
+ * claim and each bank credit counts once (M3); unclaimed bank cash (M5) and non-income credits never count.
+ * Status: verified (with rate), not_applicable (verified zero dues), pending (before the cutoff, or a source that
+ * does not cover through it). activeUnits: units or loans that must have a due in a verified period.
+ */
+export function collection({ m, period, runAt, coverage, activeUnits, fail }) {
+  const now = Date.parse(runAt);
+  let p = period;
+  if (cutoff(p).ends_ms > now) p = prevPeriod(period);
+  const { cutoff: T, ends_ms } = cutoff(p);
+  const base = { period: p, cutoff: T, status: "pending", dues_cents: null, verified_cents: null, rate_bps: null, shortfall: false };
+  if (ends_ms > now) return { ...base, pending_reason: "before_cutoff" };
+  for (const [src, asOf] of Object.entries(coverage)) if (Date.parse(asOf) < ends_ms) return { ...base, pending_reason: `no_coverage_${src}` };
+  const dues = m.due.filter((d) => d.period === p);
+  const withDue = new Set(dues.map((d) => d.unit_ref));
+  if (activeUnits.some((u) => !withDue.has(u))) fail("dues_incomplete");
+  const D = sum(dues, (d) => d.amount_due_cents);
+  if (D === 0) return { ...base, status: "not_applicable", dues_cents: 0, verified_cents: 0 };
+  const posted = new Map(m.bank.map((t) => [t.txn_id, t.posted_date]));
+  const lastDay = days(T);
+  const V = sum(dues, (d) => {
+    const got = sum(m.claims.filter((c) => c.linked_due === d.due_id && c.settled_by && days(posted.get(c.settled_by)) <= lastDay), (c) => c.amount_cents);
+    return Math.min(got, d.amount_due_cents);
+  });
+  // exactly 90% passes: the shortfall test is on integers, before any rounding
+  return { ...base, status: "verified", dues_cents: D, verified_cents: V, rate_bps: rhu(10000 * V, D), shortfall: 10 * V < 9 * D };
+}
+
 /** The input score() takes, from metrics and the evidence passport sources. */
 export function scoreInput(mt, sources) {
   return {
@@ -117,6 +161,7 @@ export function scoreInput(mt, sources) {
     late_share_bps: mt.late_share_bps,
     claimed_cash_cents: mt.claimed_cash_cents,
     exceptions: { claimed_not_settled_cents: mt.exceptions.claimed_not_settled_cents, distribution_funded_by_sponsor: mt.exceptions.distribution_funded_by_sponsor },
+    collection: mt.collection,
     sources,
   };
 }

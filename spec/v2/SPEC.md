@@ -28,7 +28,8 @@ TrueVal and TrueRange are not computed for rental tokens. Rental tokens report r
 | Method id | Use | Status |
 | --- | --- | --- |
 | `legacy-nav-v1` | The 5 Nov NAV engine (`engine/src/score.mjs`). Kept only as regression tests: Harbor raw 99.17 (shown 99, green), Meridian raw 42.84 (shown 43, red), at 2 decimals. Its pledge-attempt, ownership and overclaim rules are not used by any v2 path. | frozen |
-| `cashflow-v2.0.0` | This spec: three-way match, cash yield, rental coverage, cohorts, freshness, passport, score. | draft |
+| `cashflow-v2.0.0` | Three-way match, cash yield, rental coverage, cohorts, freshness, passport, score. Kept as regression: `spec/v2/fixtures/score-cases.json` is scored as v2.0.0 (`score(m, "cashflow-v2.0.0")`) and must keep its expected values. | frozen |
+| `cashflow-v2.1.0` | v2.0.0 plus collection (5.7): red-flag cap `collection_shortfall` and the two not-green holds. Weights 40/25/15/20 unchanged. Owner decision 8 Nov. | current |
 
 Rules: a receipt names its method id. A receipt is never rescored under a newer method; a new run under a new method writes a new receipt. Patch versions (2.0.x) may only fix bugs that do not change any fixture's output; any output change is a minor version (2.x.0) with new fixtures. The Rust/WASM port and the JS reference must give identical outputs on every fixture for the method id they claim (section 10).
 
@@ -161,7 +162,24 @@ f is 10,000 bps inside the full window, linear to 0 at the zero point. A monthly
 
 Every source's age and carried-forward state come from that source's own as-of: the issuer's claims from the issuer's `as_of`, never from the manager export's timestamp. Bank settlements, the manager records and the issuer claims are all required sources, so a stale issuer lowers the run's freshness. A source is `carried_forward` only once a new reporting period has started since the previous run, and then when either its snapshot hash equals the snapshot hash the previous run recorded for that source, or its as-of did not advance past the previous run's as-of for that source. Within the same period an unchanged snapshot is not carried forward (a quiet bank account with no new transactions is normal). A carried-forward source has freshness 0 and raises exception `carried_forward`. The run's freshness is the minimum over required sources.
 
-## 6. TrueNav score (`cashflow-v2.0.0`)
+### 5.7 Collection (`cashflow-v2.1.0`)
+
+For a completed reporting period P, the cutoff T is the last day of P plus 7 calendar days (UTC); a period is completed once T has ended. A run checks its own reporting period once that period's T has ended, otherwise the period before it.
+
+- D = the contractual dues with due dates in P, from the loan or lease schedules (`schedule`, `charges`). A later write-off never removes a due: a written-off row still counts.
+- V = bank-settled, claim-linked income allocated to those same dues and posted on or before T: for each due, the claims linked to it (M2) that a bank credit settled (M3), capped at that due's amount. Each claim and each bank credit counts once. M5 applies: bank cash with no manager claim never counts, and security deposits, sponsor transfers, loan proceeds and refunds never settle anything.
+- C = V / D, shown as a percentage with 2 decimals (round half up in bps).
+
+Outcomes, recorded in the metrics as `collection: { period, cutoff, status, dues_cents, verified_cents, rate_bps, shortfall }`:
+
+- **verified**: if 10 x V < 9 x D (integers, before any rounding) the cap `collection_shortfall` applies with C in its reason. Exactly 90% passes. There is no exemption by number of units or by amount: one unpaid 100-cent due triggers it.
+- **not applicable** (verified zero dues: the schedules are present and complete and nothing fell due in P): no collection rate and no cap, but the hold `collection_not_applicable` keeps the score at 84 or below, because inactivity alone is not green.
+- **pending** (T has not ended at the run's as-of, or the bank feed or the servicer or manager records do not cover through the end of T): the hold `collection_pending` keeps the score at 84 or below. `pending_reason` is `before_cutoff` or `no_coverage_<source>`.
+- **fail closed**: a missing schedule or roster is `dues_missing`; a due row without a valid id, date or non-negative integer amount, or a cash-paying loan or occupied, rent-bearing unit with no due in a verified P, is `dues_incomplete`. Nothing is scored.
+
+Wording: the receipt and UI say "unverified collection", never "default". TrueNav sees only whether cash was bank-confirmed by T, not why it was missing.
+
+## 6. TrueNav score (`cashflow-v2.1.0`)
 
 Reference implementation: `spec/v2/score.mjs` (integer math, section 10); fixtures `spec/v2/fixtures/score-cases.json`; test `spec/v2/score.test.mjs`.
 
@@ -183,10 +201,15 @@ Reference implementation: `spec/v2/score.mjs` (integer math, section 10); fixtur
 | `payout_exceeds_net_cash` | rental, coverage below 1.00 | "red because payouts exceed net cash from rent" |
 | `distribution_funded_by_sponsor` | any count above 0 | "red because part of a payout was funded by a sponsor transfer, not by income" |
 | `claimed_not_settled` | above 2% of claimed cash | "red because more than 2% of the cash the manager reports was never settled by the bank" |
+| `collection_shortfall` | v2.1.0, collection verified and 10 x V < 9 x D (5.7) | "red because of unverified collection: C of contractual dues for P were bank-confirmed by T (at least 90.00% needed)", for example "... 78.57% of contractual dues for 2026-09 were bank-confirmed by 2026-10-07 ..." |
+
+**Holds** (v2.1.0). A hold keeps the score at 84 or below (not green) without a red flag, listed as `holds: [{code, reason}]`: `collection_pending` "not green because collection for the period cannot be verified yet: before the cutoff or without source coverage through it"; `collection_not_applicable` "not green because no contractual dues fell in the period: inactivity alone is not green".
 
 The receipt keeps the uncapped score next to the capped one. Bands: green 85 and up, yellow 60 to 84, red below 60. A payment for a query never changes any input or output of a run.
 
-Fixture results: demo credit fund 59 red (uncapped 65; caps `yield_gap`, `claimed_not_settled`); demo rental token 59 red (uncapped 78; caps `payout_exceeds_net_cash`, `distribution_funded_by_sponsor`); honest credit fund 96 green; honest rental token 98 green; honest credit fund without bank evidence, or with a carried-forward bank source, 59 red (`self_reported_only`).
+Raw-data parity fixtures under v2.1.0 (run as of 2026-11-01, so collection is checked for 2026-09, cutoff 2026-10-07): demo credit fund 58 red (caps `yield_gap`, `claimed_not_settled`, `collection_shortfall` at 78.57%); demo rental token 58 red (collection 91.30% passes); honest credit fund 97 green and honest rental token 100 green (collection 100.00%).
+
+Frozen v2.0.0 score-case results: demo credit fund 59 red (uncapped 65; caps `yield_gap`, `claimed_not_settled`); demo rental token 59 red (uncapped 78; caps `payout_exceeds_net_cash`, `distribution_funded_by_sponsor`); honest credit fund 96 green; honest rental token 98 green; honest credit fund without bank evidence, or with a carried-forward bank source, 59 red (`self_reported_only`).
 
 ## 7. Evidence passport
 

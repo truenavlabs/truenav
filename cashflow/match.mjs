@@ -1,4 +1,4 @@
-// TrueNav cashflow-v2.0.0 three-way match (spec/v2/SPEC.md section 4, rules M1 to M6), JS reference.
+// TrueNav cashflow-v2 three-way match (same rules in v2.0.0 and v2.1.0) (spec/v2/SPEC.md section 4, rules M1 to M6), JS reference.
 // Inputs, all integer cents and ISO dates (UTC), all identifiers pseudonymous:
 //   due      [{ due_id, kind, unit_ref, component, due_date, amount_due_cents, period }]
 //   claims   [{ claim_id, due_id|null, unit_ref, paid_date, amount_cents, status: paid|partial|reversed, batch_ref|null }]

@@ -1,9 +1,13 @@
-// cashflow-v2.0.0 score: the demo funds land red with stated reasons, honest funds land green, and every cap
+// cashflow-v2.0.0 score (frozen regression): the demo funds land red with stated reasons, honest funds land green, and every cap
 // threshold and the freshness windows behave as spec/v2/SPEC.md sections 5.6 and 6 say.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { score, sourceFreshnessBps, isFresh, rhu, CAPS } from "./score.mjs";
+import { score as scoreAny, sourceFreshnessBps, isFresh, rhu, CAPS } from "./score.mjs";
+
+// Frozen regression: these cases and expectations are cashflow-v2.0.0 and are scored as v2.0.0 (no collection
+// rule). cashflow-v2.1.0 is tested in cashflow/test/collection.test.mjs.
+const score = (m) => scoreAny(m, "cashflow-v2.0.0");
 
 const { cases } = JSON.parse(readFileSync(new URL("./fixtures/score-cases.json", import.meta.url), "utf8"));
 const byId = Object.fromEntries(cases.map((c) => [c.id, c]));

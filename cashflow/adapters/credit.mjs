@@ -26,5 +26,7 @@ export function fromServicerTape(tape, key) {
   }));
   const payers = Object.fromEntries(tape.loans.map((l) => [payerRef(key, l.borrower_payer), unitRef(key, l.loan_id)]));
   const units = Object.fromEntries(tape.loans.map((l) => [unitRef(key, l.loan_id), { principal_outstanding_cents: l.principal_cents }]));
-  return { due, claims, payers, units };
+  // every cash-pay loan must have a scheduled due in a verified collection period (PIK loans have no cash due)
+  const active_units = tape.loans.filter((l) => l.pay_type !== "pik").map((l) => unitRef(key, l.loan_id));
+  return { due, claims, payers, units, active_units };
 }

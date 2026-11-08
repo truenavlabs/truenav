@@ -112,7 +112,9 @@ export function match({ due, claims, bank, payers = {} }) {
     const diff = days(posted) - days(paid);
     return diff >= -SETTLE_WINDOW.before && diff <= SETTLE_WINDOW.after;
   };
-  const free = (t) => !t.reversed && t.used === 0;
+  // Only income-type credits can settle a claim or a due item (spec M5): a security deposit, an owner transfer,
+  // loan proceeds or a refund never pays rent or interest, even from a payer the manager mapped to a unit.
+  const free = (t) => !t.reversed && t.used === 0 && !NOT_INCOME.has(t.kind_hint);
   // single settlements: same payer (mapped to the unit), same amount, inside the window
   for (const c of live.filter((x) => x.linked_due)) {
     const t = credits.find((x) => free(x) && payers[x.counterparty_ref] === c.unit_ref && x.amount_cents === c.amount_cents && inWindow(c.paid_date, x.posted_date));
@@ -133,7 +135,7 @@ export function match({ due, claims, bank, payers = {} }) {
   for (const [, g] of [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     const sum = g.reduce((s, c) => s + c.amount_cents, 0);
     const paid = g.map((c) => c.paid_date).sort()[0];
-    const candidates = credits.filter((x) => free(x) && !payers[x.counterparty_ref] && !NOT_INCOME.has(x.kind_hint) && inWindow(paid, x.posted_date));
+    const candidates = credits.filter((x) => free(x) && !payers[x.counterparty_ref] && inWindow(paid, x.posted_date));
     const exact = candidates.find((x) => x.amount_cents === sum);
     if (exact && g.length > 1) {
       exact.used = sum;
@@ -181,20 +183,19 @@ export function match({ due, claims, bank, payers = {} }) {
   for (const t of credits.filter((x) => !x.reversed && x.used === 0 && !x.outcome)) {
     t.outcome = NOT_INCOME.has(t.kind_hint) ? t.kind_hint : "unattributed";
   }
-  const distributions = debits.filter((d) => d.kind_hint === "distribution" && !d.outcome);
-  for (const dist of distributions) {
-    const funded = credits.some((c) => c.outcome === "owner_transfer" && days(dist.posted_date) - days(c.posted_date) >= 0 && days(dist.posted_date) - days(c.posted_date) <= SPONSOR_WINDOW_DAYS);
-    if (funded) exceptions.distribution_funded_by_sponsor++;
+  // A distribution posted within SPONSOR_WINDOW_DAYS after an owner transfer is sponsor-funded. Flagged per row;
+  // the metrics layer counts only rows inside the reporting period.
+  for (const dist of debits.filter((d) => d.kind_hint === "distribution" && !d.outcome)) {
+    dist.funded_by_sponsor = credits.some((c) => c.outcome === "owner_transfer" && days(dist.posted_date) - days(c.posted_date) >= 0 && days(dist.posted_date) - days(c.posted_date) <= SPONSOR_WINDOW_DAYS);
+    if (dist.funded_by_sponsor) exceptions.distribution_funded_by_sponsor++;
   }
 
   return {
     due: dues.map(({ due_id, unit_ref, component, period, due_date, amount_due_cents, settled, status }) => ({ due_id, unit_ref, component, period, due_date, amount_due_cents, settled_cents: settled, status })),
     claims: cl.map(({ claim_id, unit_ref, paid_date, amount_cents, linked_due, settled_by, outcome }) => ({ claim_id, unit_ref, paid_date, amount_cents, linked_due, settled_by, outcome })),
-    bank: txns.map(({ txn_id, amount_cents, kind_hint, used, outcome }) => ({ txn_id, amount_cents, kind_hint, used_cents: used, outcome: outcome || (amount_cents < 0 ? kind_hint : "unattributed") })),
+    bank: txns.map(({ txn_id, posted_date, amount_cents, kind_hint, used, outcome, funded_by_sponsor }) => ({ txn_id, posted_date, amount_cents, kind_hint, used_cents: used, outcome: outcome || (amount_cents < 0 ? kind_hint : "unattributed"), ...(funded_by_sponsor !== undefined ? { funded_by_sponsor } : {}) })),
     exceptions,
     amounts,
     claimed_cash_cents: live.filter((c) => c.outcome !== "claim_without_due").reduce((s, c) => s + c.amount_cents, 0),
-    distributions_cents: -distributions.reduce((s, d) => s + d.amount_cents, 0),
-    expenses_cents: -debits.filter((d) => d.kind_hint === "expense" && !d.outcome).reduce((s, d) => s + d.amount_cents, 0),
   };
 }

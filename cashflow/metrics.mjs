@@ -76,12 +76,16 @@ export function metrics({ kind, m, issuer, units = {}, asOf, period, daysInPerio
     const rentDue = inPeriod.filter((d) => d.component === "rent");
     const rent_due_cents = sum(rentDue, (d) => d.amount_due_cents);
     const rent_collected_cents = sum(rentDue, settledCapped);
-    let distributions_cents = m.distributions_cents;
+    // bank rows inside the reporting period only (by posted_date); reversed rows are already marked
+    const inPeriodRows = m.bank.filter((t) => t.posted_date.slice(0, 7) === period);
+    const debitsOf = (kind) => inPeriodRows.filter((t) => t.amount_cents < 0 && t.kind_hint === kind && t.outcome === kind);
+    let distributions_cents = -sum(debitsOf("distribution"), (t) => t.amount_cents);
     if (distributions_cents === 0 && (issuer.distributions_paid_cents || 0) > 0) {
       distributions_cents = issuer.distributions_paid_cents;
       flags.push("distributions_self_reported");
     }
-    let expenses_cents = m.expenses_cents;
+    out.exceptions.distribution_funded_by_sponsor = debitsOf("distribution").filter((t) => t.funded_by_sponsor).length;
+    let expenses_cents = -sum(debitsOf("expense"), (t) => t.amount_cents);
     if (expenses_cents === 0 && (issuer.expenses_cents || 0) > 0) {
       expenses_cents = issuer.expenses_cents;
       flags.push("expenses_self_reported");

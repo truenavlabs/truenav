@@ -95,3 +95,18 @@ test("runs are deterministic", () => {
   const b = runFund(datasets()[1], opts);
   assert.deepEqual(a, b);
 });
+
+test("period scope: an extra September distribution does not change honest rental's October coverage or score", () => {
+  const ds = datasets().find((d) => d.id === "HONEST-RENTAL");
+  const base = runFund(ds, opts);
+  const extra = structuredClone(ds);
+  extra.bank_feed.transactions.push({ transaction_id: "bk-extra-sep-payout", date: "2026-09-30", amount_cents: 9_000_000, counterparty: "Linden Court token holders", category: "DISTRIBUTION", pending: false });
+  extra.bank_feed.transactions.push({ transaction_id: "bk-extra-sep-sponsor", date: "2026-09-28", amount_cents: -9_000_000, counterparty: "Linden Court Sponsor LP", category: "OWNER_TRANSFER", pending: false });
+  extra.bank_feed.transactions.push({ transaction_id: "bk-extra-sep-expense", date: "2026-09-15", amount_cents: 5_000_000, counterparty: "Linden Court Property Services", category: "EXPENSE", pending: false });
+  const r = runFund(extra, opts);
+  assert.equal(r.metrics.rental_coverage_bps, base.metrics.rental_coverage_bps);
+  assert.equal(r.metrics.distributions_cents, base.metrics.distributions_cents);
+  assert.equal(r.metrics.expenses_cents, base.metrics.expenses_cents);
+  assert.equal(r.metrics.exceptions.distribution_funded_by_sponsor, 0);
+  assert.deepEqual([r.score.score, r.score.band, codes(r)], [base.score.score, base.score.band, codes(base)]);
+});

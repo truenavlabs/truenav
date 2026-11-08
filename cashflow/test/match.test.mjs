@@ -108,7 +108,7 @@ test("a claim with no matching due item is a claim_without_due and is not claime
 test("a distribution within 10 days after an owner transfer counts as sponsor-funded", () => {
   const r = match({ due: [], claims: [], bank: [txn("T1", "2026-10-25", 500000, "cp-sponsor", "owner_transfer"), txn("T2", "2026-10-30", -800000, "cp-holders", "distribution")], payers });
   assert.equal(r.exceptions.distribution_funded_by_sponsor, 1);
-  assert.equal(r.distributions_cents, 800000);
+  assert.equal(r.bank.find((t) => t.txn_id === "T2").funded_by_sponsor, true);
   const apart = match({ due: [], claims: [], bank: [txn("T1", "2026-10-01", 500000, "cp-sponsor", "owner_transfer"), txn("T2", "2026-10-30", -800000, "cp-holders", "distribution")], payers });
   assert.equal(apart.exceptions.distribution_funded_by_sponsor, 0);
 });
@@ -123,10 +123,33 @@ test("the matcher is deterministic: input order does not change the result", () 
   const a = match(input);
   const b = match({ due: [...input.due].reverse(), claims: [...input.claims].reverse(), bank: [...input.bank].reverse(), payers });
   assert.deepEqual(a, b);
-  assert.equal(a.expenses_cents, 50000);
+  assert.equal(a.bank.find((t) => t.txn_id === "T3").outcome, "expense");
 });
 
 test("non-integer cents are refused", () => {
   assert.throws(() => match({ due: [], claims: [claim("C1", "U-A", "2026-10-01", 10.5)], bank: [], payers }), /integer cents/);
   assert.throws(() => match({ due: [], claims: [], bank: [txn("T1", "2026-10-01", 1e17, "cp-A")], payers }), /integer cents/);
+});
+
+test("a security deposit from the tenant's own payer never marks rent paid: with a manager claim", () => {
+  const r = match({ due: [due("D1", "U-A", "2026-10-01", 150000)], claims: [claim("C1", "U-A", "2026-10-01", 150000)], bank: [txn("T1", "2026-10-02", 150000, "cp-A", "security_deposit")], payers });
+  assert.equal(st(r, "D1").status, "unpaid");
+  assert.equal(r.claims[0].outcome, "claimed_not_settled");
+  assert.equal(out(r, "T1"), "security_deposit");
+  assert.equal(r.bank[0].used_cents, 0);
+});
+
+test("a security deposit from the tenant's own payer never marks rent paid: without a manager claim", () => {
+  const r = match({ due: [due("D1", "U-A", "2026-10-01", 150000)], claims: [], bank: [txn("T1", "2026-10-02", 150000, "cp-A", "security_deposit")], payers });
+  assert.equal(st(r, "D1").status, "unpaid");
+  assert.equal(r.exceptions.settled_not_claimed, 0);
+  assert.equal(out(r, "T1"), "security_deposit");
+});
+
+test("owner transfers, loan proceeds and refunds from a mapped payer settle nothing either", () => {
+  for (const kind of ["owner_transfer", "loan_proceeds", "refund"]) {
+    const r = match({ due: [due("D1", "U-A", "2026-10-01", 150000)], claims: [claim("C1", "U-A", "2026-10-01", 150000)], bank: [txn("T1", "2026-10-02", 150000, "cp-A", kind)], payers });
+    assert.equal(st(r, "D1").status, "unpaid", kind);
+    assert.equal(out(r, "T1"), kind, kind);
+  }
 });

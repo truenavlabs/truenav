@@ -98,7 +98,7 @@ fn withdraw_is_admin_only_bounded_and_emits_an_event() {
     let mut q = setup();
     at("someone.testnet", NearToken::from_yoctonear(0), 1_000);
     assert!(panics(|| drop(q.withdraw(U128(1), acc("someone.testnet")))).contains("admin only"));
-    set("admin.testnet", NearToken::from_yoctonear(0), 1_000, NearToken::from_near(1));
+    set("admin.testnet", NearToken::from_yoctonear(1), 1_000, NearToken::from_near(1));
     assert!(panics(|| drop(q.withdraw(U128(NearToken::from_near(1).as_yoctonear()), acc("admin.testnet")))).contains("can be withdrawn"));
     let _ = q.withdraw(U128(NearToken::from_millinear(100).as_yoctonear()), acc("admin.testnet"));
     assert!(get_logs().iter().any(|l| l.contains("\"event\":\"withdraw\"")));
@@ -111,8 +111,19 @@ fn pause_fee_and_redeemer_changes_are_admin_only() {
     assert!(panics(|| q.set_paused(true)).contains("admin only"));
     assert!(panics(|| q.set_fee(U128(1))).contains("admin only"));
     assert!(panics(|| q.set_redeemer(acc("agent.testnet"))).contains("admin only"));
-    at("admin.testnet", NearToken::from_yoctonear(0), 1_000);
+    at("admin.testnet", NearToken::from_yoctonear(1), 1_000);
     q.set_paused(true);
     at("agent.testnet", FEE, 1_000);
     assert!(panics(|| drop(q.buy_query("req-0006-paused".into(), H1.into(), "report".into()))).contains("paused"));
+}
+
+#[test]
+fn admin_calls_need_exactly_one_yocto_and_redeem_needs_none() {
+    let mut q = setup();
+    at("admin.testnet", NearToken::from_yoctonear(0), 1_000);
+    assert!(panics(|| q.set_paused(true)).contains("1 yoctoNEAR"));
+    at("agent.testnet", FEE, 1_000);
+    q.buy_query("req-0007-key".into(), H1.into(), "report".into());
+    at("api.truenav.testnet", NearToken::from_yoctonear(0), 2_000);
+    assert_eq!(q.redeem("req-0007-key".into(), H1.into()), 0);
 }

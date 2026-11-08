@@ -20,7 +20,7 @@ pub mod validate;
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::{self, json, Value};
 use near_sdk::store::{IterableMap, IterableSet, LookupMap};
-use near_sdk::{env, near, require, AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
+use near_sdk::{assert_one_yocto, env, near, require, AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
 use validate::{check, is_stage, is_token_id, Expect, MAX_RECEIPT_BYTES};
 
 pub const EVENT_STANDARD: &str = "truenav-receipts";
@@ -166,24 +166,37 @@ impl Receipts {
     }
 
     // ---- roles -------------------------------------------------------------------------------------------------
+    /// Admin calls carry exactly 1 yoctoNEAR, so they need a full-access key (as in the v1 contract).
     fn only_admin(&self) {
         require!(env::predecessor_account_id() == self.admin, "admin only");
+        assert_one_yocto();
     }
+    fn only_pauser_or_admin(&self) -> AccountId {
+        let me = env::predecessor_account_id();
+        require!(me == self.pauser || me == self.admin, "pauser or admin only");
+        assert_one_yocto();
+        me
+    }
+    #[payable]
     pub fn propose_admin(&mut self, account: AccountId) {
         self.only_admin();
         self.proposed_admin = Some(account);
     }
+    #[payable]
     pub fn accept_admin(&mut self) {
         let me = env::predecessor_account_id();
         require!(self.proposed_admin.as_ref() == Some(&me), "not the proposed admin");
+        assert_one_yocto();
         emit("admin_changed", json!({ "old": self.admin, "new": me }));
         self.admin = me;
         self.proposed_admin = None;
     }
+    #[payable]
     pub fn set_pauser(&mut self, account: AccountId) {
         self.only_admin();
         self.pauser = account;
     }
+    #[payable]
     pub fn set_runner(&mut self, account: AccountId, allowed: bool) {
         self.only_admin();
         if allowed {
@@ -193,25 +206,27 @@ impl Receipts {
         }
         emit("runner_set", json!({ "account": account, "allowed": allowed }));
     }
+    #[payable]
     pub fn pause(&mut self) {
-        let me = env::predecessor_account_id();
-        require!(me == self.pauser || me == self.admin, "pauser or admin only");
+        let me = self.only_pauser_or_admin();
         self.paused = true;
         emit("paused", json!({ "by": me }));
     }
+    #[payable]
     pub fn unpause(&mut self) {
-        let me = env::predecessor_account_id();
-        require!(me == self.pauser || me == self.admin, "pauser or admin only");
+        let me = self.only_pauser_or_admin();
         self.paused = false;
         emit("unpaused", json!({ "by": me }));
     }
     /// Change how runs are requested, including the pinned build. Pending requests keep the build they pinned.
+    #[payable]
     pub fn set_config(&mut self, config: Config) {
         self.only_admin();
         check_config(&config);
         emit("config_changed", json!({ "old_version_key": self.config.version_key, "new_version_key": config.version_key, "method": config.method }));
         self.config = config;
     }
+    #[payable]
     pub fn register_token(&mut self, token_id: String, kind: String) {
         self.only_admin();
         require!(is_token_id(&token_id), "token_id must match [A-Z0-9-]{1,64}");
@@ -222,6 +237,7 @@ impl Receipts {
     }
     /// Drop a pending request whose callback never arrived (OutLayer's yield always resumes or times out, so this
     /// is a last resort). Its storage deposit goes back to the requester.
+    #[payable]
     pub fn clear_pending(&mut self, token_id: String) -> Promise {
         self.only_admin();
         let p = self.pending.remove(&token_id).unwrap_or_else(|| env::panic_str("no pending request"));
@@ -299,6 +315,12 @@ impl Receipts {
                 code
             }
         };
+        // store collections write on flush (normally at the end of the call): flush now so the measured storage
+        // includes this receipt, and the requester, not the contract, pays for it
+        self.pending.flush();
+        self.receipts.flush();
+        self.failures.flush();
+        self.tokens.flush();
         let after = env::storage_usage();
         let used = (after.saturating_sub(before) as u128) * env::storage_byte_cost().as_yoctonear();
         let refund = p.storage_deposit.0.saturating_sub(used);

@@ -74,6 +74,40 @@ jobs:
           echo "built $got, BUILD.md $want"
           test -n "$want" && test "$got" = "$want"
 
+  receipts:
+    # Build step 4: receipt contract and paid query contract unit tests and clippy, their wasm (and the test-only mock
+    # OutLayer) built in the pinned image, then the full flow on a local NEAR sandbox: request_run, the engine run
+    # natively as the OutLayer worker, the callback storing the receipt, an agent buying and spending entitlements
+    # through the API.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Rust 1.99.0 with clippy
+        run: rustup toolchain install 1.99.0 --profile minimal --component clippy
+      - name: Unit tests and clippy (receipts, query)
+        run: |
+          for d in receipts query; do
+            (cd $d && cargo +1.99.0 test --locked && cargo +1.99.0 clippy --locked --all-targets -- -D warnings)
+          done
+      - name: Contract wasm in the pinned image (receipts, query, mock OutLayer)
+        run: |
+          for d in receipts query receipts/mock-outlayer; do
+            docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/$d \
+              sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
+              cargo near build non-reproducible-wasm --locked
+          done
+      - name: Native engine for the worker
+        working-directory: outlayer/engine-v2
+        run: cargo +1.99.0 build --locked --example native
+      - name: End to end on the sandbox
+        run: ulimit -n 65535 && npm run e2e:receipts
+
   sandbox:
     # Full flow on a local NEAR sandbox node: deploy the wasm, signers, funds, 16 pledges, 16 TEE-signed
     # verdicts verified by the contract, score from chain, certificates, double-pledge refusal.

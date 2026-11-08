@@ -41,8 +41,9 @@ fn fixture(id: &str) -> Value {
     serde_json::from_str(f["receipts"][id]["output"].as_str().unwrap()).unwrap()
 }
 fn setup() -> Receipts {
-    set("admin.testnet", NearToken::from_yoctonear(0), vec![]);
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
     let mut c = Receipts::new(acc("admin.testnet"), acc("pauser.testnet"), config());
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
     c.set_runner(acc("runner.testnet"), true);
     for (t, k) in [("DEMO-CREDIT", "credit"), ("DEMO-RENTAL", "rental"), ("HONEST-CREDIT", "credit"), ("HONEST-RENTAL", "rental")] {
         c.register_token(t.into(), k.into());
@@ -216,11 +217,11 @@ fn roles_pause_deposit_and_config_are_enforced() {
     assert!(panics(|| c.pause()).contains("pauser or admin only"));
     assert!(panics(|| c.register_token("X".into(), "credit".into())).contains("admin only"));
     assert!(panics(|| c.set_runner(acc("x.testnet"), true)).contains("admin only"));
-    set("pauser.testnet", NearToken::from_yoctonear(0), vec![]);
+    set("pauser.testnet", NearToken::from_yoctonear(1), vec![]);
     c.pause();
     set("runner.testnet", attach(), vec![]);
     assert!(panics(|| drop(c.request_run("HONEST-CREDIT".into()))).contains("paused"));
-    set("admin.testnet", NearToken::from_yoctonear(0), vec![]);
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
     c.unpause();
     let mut bad = config();
     bad.version_key = "latest".into();
@@ -233,7 +234,7 @@ fn roles_pause_deposit_and_config_are_enforced() {
     c.propose_admin(acc("new-admin.testnet"));
     set("someone.testnet", NearToken::from_yoctonear(0), vec![]);
     assert!(panics(|| c.accept_admin()).contains("not the proposed admin"));
-    set("new-admin.testnet", NearToken::from_yoctonear(0), vec![]);
+    set("new-admin.testnet", NearToken::from_yoctonear(1), vec![]);
     c.accept_admin();
     assert_eq!(c.get_config()["admin"], "new-admin.testnet");
 }
@@ -245,11 +246,20 @@ fn a_new_pinned_build_applies_to_new_requests_only() {
     let _ = c.request_run("HONEST-RENTAL".into());
     let rid = c.get_token("HONEST-RENTAL".into()).unwrap()["pending"]["request_id"].as_u64().unwrap();
     let nonce = c.get_token("HONEST-RENTAL".into()).unwrap()["pending"]["run_nonce"].as_str().unwrap().to_string();
-    set("admin.testnet", NearToken::from_yoctonear(0), vec![]);
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
     let mut next = config();
     next.version_key = "ab".repeat(32);
     c.set_config(next);
     set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Successful(engine_output("HONEST-RENTAL", &nonce, |_| {}))]);
     assert_eq!(c.on_run_result("HONEST-RENTAL".into(), rid), "stored:1");
     assert_eq!(c.get_latest("HONEST-RENTAL".into()).unwrap().version_key, PIN, "the stored build is the one the request pinned");
+}
+
+#[test]
+fn admin_calls_need_exactly_one_yocto() {
+    let mut c = setup();
+    set("admin.testnet", NearToken::from_yoctonear(0), vec![]);
+    assert!(panics(|| c.set_runner(acc("x.testnet"), true)).contains("1 yoctoNEAR"));
+    set("pauser.testnet", NearToken::from_yoctonear(0), vec![]);
+    assert!(panics(|| c.pause()).contains("1 yoctoNEAR"));
 }

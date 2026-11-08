@@ -15,7 +15,7 @@
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde_json::json;
 use near_sdk::store::LookupMap;
-use near_sdk::{env, near, require, AccountId, BorshStorageKey, NearToken, PanicOnDefault, Promise};
+use near_sdk::{assert_one_yocto, env, near, require, AccountId, BorshStorageKey, NearToken, PanicOnDefault, Promise};
 
 pub const EVENT_STANDARD: &str = "truenav-query";
 pub const EVENT_VERSION: &str = "1.0.0";
@@ -75,8 +75,11 @@ impl Query {
         Self { admin, proposed_admin: None, redeemer, fee: NearToken::from_yoctonear(fee.0), ttl_ns: DAY_NS, paused: false, sold: 0, entitlements: LookupMap::new(Key::Entitlements) }
     }
 
+    /// Admin calls carry exactly 1 yoctoNEAR, so they need a full-access key. `redeem` takes none, so the API can
+    /// hold a function-call key limited to it.
     fn only_admin(&self) {
         require!(env::predecessor_account_id() == self.admin, "admin only");
+        assert_one_yocto();
     }
 
     /// Pay exactly the fee for one entitlement. Refused (deposit returned with the failed call) for any other amount,
@@ -116,6 +119,7 @@ impl Query {
     }
 
     /// Admin only. Never below the balance that pays for storage plus a fixed reserve.
+    #[payable]
     pub fn withdraw(&mut self, amount: U128, receiver: AccountId) -> Promise {
         self.only_admin();
         let locked = (env::storage_usage() as u128) * env::storage_byte_cost().as_yoctonear() + RESERVE.as_yoctonear();
@@ -125,29 +129,35 @@ impl Query {
         Promise::new(receiver).transfer(NearToken::from_yoctonear(amount.0))
     }
 
+    #[payable]
     pub fn set_fee(&mut self, fee: U128) {
         self.only_admin();
         require!(fee.0 > 0, "fee must be above 0");
         emit("fee_changed", json!({ "old": U128(self.fee.as_yoctonear()), "new": fee }));
         self.fee = NearToken::from_yoctonear(fee.0);
     }
+    #[payable]
     pub fn set_redeemer(&mut self, account: AccountId) {
         self.only_admin();
         emit("redeemer_changed", json!({ "old": self.redeemer, "new": account }));
         self.redeemer = account;
     }
+    #[payable]
     pub fn set_paused(&mut self, paused: bool) {
         self.only_admin();
         self.paused = paused;
         emit(if paused { "paused" } else { "unpaused" }, json!({ "by": self.admin }));
     }
+    #[payable]
     pub fn propose_admin(&mut self, account: AccountId) {
         self.only_admin();
         self.proposed_admin = Some(account);
     }
+    #[payable]
     pub fn accept_admin(&mut self) {
         let me = env::predecessor_account_id();
         require!(self.proposed_admin.as_ref() == Some(&me), "not the proposed admin");
+        assert_one_yocto();
         emit("admin_changed", json!({ "old": self.admin, "new": me }));
         self.admin = me;
         self.proposed_admin = None;

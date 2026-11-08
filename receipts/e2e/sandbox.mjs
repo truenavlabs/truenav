@@ -20,6 +20,8 @@ import { createServer, queryHash } from "../../api/server.mjs";
 import { nearChain } from "../../api/chain.mjs";
 import { RUN_AS_OF, BANK_FETCHED_AT } from "../../cashflow/demo/data.mjs";
 import { severeArrears } from "../tests/arrears.mjs";
+import { runAgent, summary, newRequestId, queryHash as agentQueryHash } from "../../agent/agent.mjs";
+import { agentChain } from "../../agent/chain.mjs";
 
 const root = new URL("../../", import.meta.url).pathname;
 const wasm = (crate, name) => join(root, crate, `target/near/${name}.wasm`);
@@ -224,6 +226,28 @@ try {
   ok(JSON.stringify(s2) === JSON.stringify(s1), "the purchases did not change the score response");
   const redeemByAgent = await call("agent", "query", "redeem", { request_id: "e2e-ask-00001", query_hash: queryHash("ask", "DEMO-CREDIT") });
   ok(!redeemByAgent.ok, "only the API account can redeem");
+
+  // ---- the demo agent (agent/): free score, one paid report entitlement, a decision with the receipt reference ----
+  // its own account and key file; the clock is the synthetic data's run day, like the engine's, so the rule's
+  // 45-day freshness check does not depend on when this test runs
+  const agentC = agentChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), accountId: id("agent"), keyFile: join(keys, `${id("agent")}.json`) });
+  const agentRun = (token) => runAgent({ chain: agentC, token, receipts: id("receipts"), query: id("query"), requestId: newRequestId(token, createHash("sha256").update(`e2e-${token}`).digest("hex").slice(0, 12)), apiUrl: base, nowMs: Date.parse(RUN_AS_OF) + 3_600_000 });
+  const agentBalance = async () => BigInt((await provider.viewAccount({ accountId: id("agent"), blockQuery: { finality: "final" } })).amount);
+  for (const [t, action, why] of [["DEMO-CREDIT", "decline", "red"], ["HONEST-CREDIT", "approve", "green"], ["HONEST-RENTAL", "decline", "red"]]) {
+    const b0 = await agentBalance();
+    const out = await agentRun(t);
+    const spent = b0 - (await agentBalance());
+    const live = await view("receipts", "get_latest", { token_id: t });
+    console.log(`  agent: ${summary(out)}`);
+    ok(out.decision.action === action && out.decision.reason === why, `agent ${t}: ${out.decision.action} (${out.decision.detail})`);
+    ok(out.receipt.seq === live.seq && out.receipt.receipt_sha256 === live.receipt_sha256, `agent ${t}: decision cites the stored receipt, seq ${live.seq}`);
+    const ent = await view("query", "get_entitlement", { request_id: out.entitlement.request_id });
+    ok(ent && ent.buyer === id("agent") && ent.query_hash === agentQueryHash("report", t) && ent.paid === nearToYocto("0.01").toString() && ent.uses_left === 0 && out.report.receipt_sha256 === live.receipt_sha256, `agent ${t}: bought one report entitlement for 0.01 NEAR and spent it on the API report of that receipt`);
+    ok(spent >= nearToYocto("0.01") && spent < nearToYocto("0.012"), `agent ${t}: spent ${(Number(spent) / 1e24).toFixed(5)} NEAR (the fee plus gas)`);
+  }
+  const b1 = await agentBalance();
+  const none = await agentRun("NO-SUCH-TOKEN");
+  ok(none.decision.reason === "no_receipt" && !none.entitlement.bought && (await agentBalance()) === b1, "agent: a token with no receipt is declined and nothing is bought");
 } catch (e) {
   console.log(`FAIL ${e.stack || e}`);
   failures++;

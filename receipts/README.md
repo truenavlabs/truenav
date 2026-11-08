@@ -48,6 +48,32 @@ node --test api/test/api.test.mjs        # 7: free score, 402, one-use report, a
 npm run e2e:receipts                     # 67 checks on a local sandbox, engine run natively as the worker
 ```
 
+## Demo agent (agents track)
+
+`agent/` is a small script agent for the synthetic tokens. For one token it:
+
+1. reads the free public score from the receipt contract (`get_latest`, `get_token`) and checks the stored receipt
+   against its own `receipt_sha256` and index fields;
+2. buys one `report` entitlement on the query contract with `buy_query` for exactly the fee (0.01 NEAR; it refuses a
+   higher fee or a paused contract), and, given the API's URL, spends it on `GET /fund/<token>/report` and checks the
+   served receipt is the one the score came from;
+3. acts on the score: red (below 60) declines with the caps as reasons, any hold or yellow goes to review, a receipt
+   older than 45 days goes to review, green with no caps and no holds is approved. With no receipt, or a receipt that
+   does not match its hash, it declines and buys nothing.
+
+It prints the decision with the receipt reference (contract, token, seq, `receipt_sha256`, method, pinned build) and
+the entitlement it bought.
+
+```bash
+node --test agent/test/agent.test.mjs      # 5: the rule on the real engine receipts, the flow, nothing bought when it should not be
+npm run e2e:receipts                       # includes the agent on the sandbox: DEMO-CREDIT and HONEST-RENTAL declined, HONEST-CREDIT approved
+node agent/run.mjs DEMO-CREDIT             # testnet, print only: views, the decision, the exact buy_query it would send
+```
+
+On testnet, `--execute` signs `buy_query` with the agent's own account (`TRUENAV_AGENT_ACCOUNT`, key file
+`TRUENAV_AGENT_KEYFILE` whose `account_id` must match); it refuses the master, `receipts.`, `query.`, `runner.` and
+`api.` accounts. It needs about 0.0103 NEAR per token (the 0.01 fee plus gas).
+
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,

@@ -51,15 +51,16 @@ npm run e2e:receipts                     # 67 checks on a local sandbox, engine 
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-two fresh clones at different paths (as root and as the image user), source commit 591db60:
+two fresh clones at different paths (as root and as the image user), source commit dc0b6c6:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `1a04e120b4ae5b34564e7becae73f271ebd915fa321538e50fa6a2e75bf2f9db` | 264384 |
+| receipts | `e321077fa7f57358c23fc308f335f942db9899c83676d822bcd57e5329c2ab81` | 264542 |
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
-build differs. Previous receipts pin: `57ae8fa8...` (0c49d30, before the review fixes), never deployed.
+build differs. Previous receipts pins, never deployed: `1a04e120...` (591db60, rental late share capped at 10000), `57ae8fa8...`
+(0c49d30, before the review fixes).
 
 ## Who can use the data credentials
 
@@ -107,7 +108,7 @@ step only, after read-only checks (testnet chain id, key file present, pinned wa
 | --- | --- | --- |
 | D0 | read-only checks | none |
 | D1 | create `receipts.`, `query.`, `runner.`, `api.tnlab-718ca9.testnet` with fresh keys | 5.0 NEAR moved to our own accounts, plus gas |
-| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.66 NEAR storage: 265,821 bytes after D2 and D3 on the sandbox, of the 2.8 NEAR D1 gives `receipts.` (about 0.14 left for gas; the e2e checks it fits) |
+| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.66 NEAR storage: 265,957 bytes after D2 and D3 on the sandbox, of the 2.8 NEAR D1 gives `receipts.` (about 0.14 left for gas; the e2e checks it fits) |
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 

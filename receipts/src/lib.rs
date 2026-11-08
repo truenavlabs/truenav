@@ -16,6 +16,7 @@
 //! OutLayer, whose unused part OutLayer refunds to the requester) and for receipt storage (the unused part is
 //! refunded to the requester in the callback). Everything stored here is public chain state.
 pub mod validate;
+pub mod mirror;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;

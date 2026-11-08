@@ -1,0 +1,19 @@
+[package]
+name = "truenav-mock-signer"
+version = "0.1.0"
+edition = "2021"
+license = "BUSL-1.1"
+publish = false
+[lib]
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+near-sdk = { version = "=5.30.1" }
+k256 = { version = "=0.13.4", default-features = false, features = ["ecdsa"] }
+[dev-dependencies]
+near-sdk = { version = "=5.30.1", features = ["unit-testing"] }
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+panic = "abort"
+overflow-checks = true

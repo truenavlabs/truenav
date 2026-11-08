@@ -11,7 +11,7 @@ description = "TrueNav receipt contract: requests a pinned OutLayer run per toke
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-near-sdk = { version = "=5.30.1" }
+near-sdk = { version = "=5.30.1", features = ["unstable"] }
 
 [dev-dependencies]
 near-sdk = { version = "=5.30.1", features = ["unit-testing"] }

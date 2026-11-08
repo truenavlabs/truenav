@@ -32,6 +32,38 @@ What TrueNav proves, what it assumes, and who can break what. Testnet demo; all 
 - Blocked attempts and alerts are public state. They never name the other fund, but they are not private.
 - The underwriter request (document plus claim) is sent to NEAR AI Cloud over TLS; NEAR AI Cloud's private-inference guarantees apply. This repo keeps no document server-side; the demo documents are fictional and committed.
 
+## Cashflow receipt mirror (Base Sepolia)
+
+The implementation is not deployed and no live mirror run has been verified. The sections above describe the
+historical registry path; this section concerns the cashflow-v2.1.0 receipts contract and short-receipt mirror.
+
+The NEAR contract constructs the only payload it can sign from a receipt it already stored: chain 84532, the
+configured mirror address, the single update selector, zero value, fixed gas limit, contract-serialized nonce and
+bounded fees. It does not accept arbitrary signing payloads. The stored hash binds the callback-delivered receipt
+bytes, not an independently canonicalized report, signed PDF or attestation proof. The mirror publishes only token
+hash, sequence, receipt hash, score, band, method hash and timestamp; caps, holds and full evidence remain referenced
+by the NEAR receipt. All data is synthetic.
+
+Base trusts the MPC network's derived signing key and the NEAR contract that requests its signatures. It does not
+verify NEAR consensus, OutLayer attestation or bank evidence. The Solidity contract's MPC address is immutable, and
+only it may update state, with a strictly increasing sequence per token. Anyone can relay the already-signed bytes;
+the relayer cannot change their recipient, chain, nonce or contents without invalidating the signature.
+
+NEAR trusts the admin for Base finality. The dev-admin confirmer waits for successful execution, the Base
+`finalized` block tag and a matching canonical receipt block before calling `confirm_mirror(nonce, tx_hash)`.
+The NEAR method requires the admin, one yoctoNEAR, an unpaused contract, the pending nonce and the exact Keccak-256
+hash of a stored signed transaction for it. Only then is the next nonce released. This is an admin assertion backed
+by the configured RPC, not an on-chain verification of Base finality. A false confirmation can only stall or skip a
+mirror update, never forge one, since the mirror contract accepts only MPC-signed updates with strictly increasing
+sequence. That guarantee assumes the deployed NEAR signing restrictions remain intact: its upgrade authority and
+admin configuration are trusted. A compromised upgrade authority can replace those restrictions.
+
+An unconfirmed nonce blocks the lane. Signer or relayer outages, insufficient Base gas balance, a stale sequence,
+the fee cap or the bounded 16-attempt signing history can stall it. Re-signing keeps the nonce and immutable payload
+and raises only fees; any stored replacement can be confirmed if it is the one finalized. The derived account pays
+only testnet ETH gas. The NEAR contract's balance pays mirror storage and the signer deposit, under admin control.
+The mirror neither controls investment funds nor changes any score when someone pays for access.
+
 ## Not claimed
 
 Not zero-knowledge. Not fair value: TrueVal is a model estimate. Not a credit rating: the TrueNav score is trust in the reported NAV. PD tables are "demo, not calibrated"; LGD is "inference from a corporate stress table; KBRA methodology does not address CRE CLOs".

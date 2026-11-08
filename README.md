@@ -167,6 +167,16 @@ Scores are computed as of the demo valuation time in `spec/nav/fixtures.json`; c
 - With chain data, a loan counts only for the fund whose on-chain pledge holds it. Offline mode (no chain data, used by `npm test`) falls back to "verified in neither" for an nft_id two funds list; offline mode is for tests and the chain path is the real score.
 - PD tables are demo, not calibrated; TrueRange assumes independent defaults.
 
+## Base Sepolia mirror
+
+The cashflow receipt mirror implementation is in `mirror/` and `receipts/src/mirror.rs`, following spec 8.3.
+It is not deployed. The NEAR contract builds a constrained EIP-1559 update from an already-stored receipt and asks
+the MPC signer for a signature. The Base contract accepts only that derived address and strictly increasing
+sequence per token. It copies the receipt reference, score, band, method hash and timestamp; it does not independently
+verify private data or recompute a score. NEAR trusts an admin confirmation for Base finality. See
+[`mirror/README.md`](mirror/README.md) for the verified signer interface, local checks, unverified live steps and
+separate approvals required before any deployment or transaction, and [`TRUST_MODEL.md`](TRUST_MODEL.md) for trust.
+
 ## Known limitations
 
 - Rental late share has no 100% ceiling, by design. `late_share_bps` for a rental fund compares all rent that is 60

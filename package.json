@@ -7,7 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs engine/test/cash6b.test.mjs engine/test/ownership6a.test.mjs certify/certify.test.mjs certify/chain.test.mjs tee/test/reply.test.mjs tee/test/ground.test.mjs certify/chain-replies.test.mjs tee/test/fingerprint.test.mjs spec/v2/score.test.mjs cashflow/test/match.test.mjs cashflow/test/pipeline.test.mjs cashflow/test/mockbank.test.mjs cashflow/test/metrics.test.mjs cashflow/test/collection.test.mjs cashflow/test/fields.test.mjs cashflow/test/parity.test.mjs api/test/api.test.mjs agent/test/agent.test.mjs hosting/mockbank/test/adapter.test.mjs && node spec/nav/check.mjs",
+    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs engine/test/cash6b.test.mjs engine/test/ownership6a.test.mjs certify/certify.test.mjs certify/chain.test.mjs tee/test/reply.test.mjs tee/test/ground.test.mjs certify/chain-replies.test.mjs tee/test/fingerprint.test.mjs spec/v2/score.test.mjs cashflow/test/match.test.mjs cashflow/test/pipeline.test.mjs cashflow/test/mockbank.test.mjs cashflow/test/metrics.test.mjs cashflow/test/collection.test.mjs cashflow/test/fields.test.mjs cashflow/test/parity.test.mjs api/test/api.test.mjs agent/test/agent.test.mjs hosting/mockbank/test/adapter.test.mjs mirror/test/mirror.test.mjs && node spec/nav/check.mjs",
     "certify": "node certify/run.mjs --out out/certificates.json",
     "e2e": "node certify/run.mjs --fixture && cd contract && cargo test",
     "e2e:testnet": "node certify/testnet.mjs",
@@ -28,7 +28,8 @@
     "check:chain-replies": "node certify/check-chain-replies.mjs",
     "verify:fingerprints": "node tee/verify-fingerprints.mjs",
     "vault:testnet": "node certify/vault-demo.mjs",
-    "cashflow:demo": "node cashflow/demo/print.mjs"
+    "cashflow:demo": "node cashflow/demo/print.mjs",
+    "e2e:mirror": "node mirror/sandbox.mjs"
   },
   "dependencies": {
     "@noble/curves": "2.4.0",
@@ -37,7 +38,10 @@
     "near-api-js": "7.3.1"
   },
   "devDependencies": {
-    "near-sandbox": "0.3.4"
+    "ganache": "7.9.2",
+    "near-sandbox": "0.3.4",
+    "solc": "0.8.30",
+    "viem": "2.38.5"
   },
   "overrides": {
     "tar": "7.5.22"

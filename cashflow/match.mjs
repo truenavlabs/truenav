@@ -27,7 +27,9 @@ const cents = (x, what) => {
   if (!Number.isSafeInteger(x)) throw new Error(`${what} must be integer cents`);
   return x;
 };
-const byDateThenId = (dateKey, idKey) => (a, b) => days(a[dateKey]) - days(b[dateKey]) || String(a[idKey]).localeCompare(String(b[idKey]));
+// Ids compare by UTF-16 code unit (byte order for ASCII), never by locale: the Rust port must sort identically.
+export const cmpStr = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+const byDateThenId = (dateKey, idKey) => (a, b) => days(a[dateKey]) - days(b[dateKey]) || cmpStr(String(a[idKey]), String(b[idKey]));
 
 export function match({ due, claims, bank, payers = {} }) {
   const exceptions = Object.fromEntries(EXCEPTIONS.map((e) => [e, 0]));
@@ -132,7 +134,7 @@ export function match({ due, claims, bank, payers = {} }) {
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(c);
   }
-  for (const [, g] of [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+  for (const [, g] of [...groups.entries()].sort(([a], [b]) => cmpStr(a, b))) {
     const sum = g.reduce((s, c) => s + c.amount_cents, 0);
     const paid = g.map((c) => c.paid_date).sort()[0];
     const candidates = credits.filter((x) => free(x) && !payers[x.counterparty_ref] && inWindow(paid, x.posted_date));

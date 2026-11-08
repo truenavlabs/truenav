@@ -269,7 +269,11 @@ impl Receipts {
             token_id.clone(),
             Pending { request_id, token_id: token_id.clone(), run_nonce: run_nonce.clone(), requester: requester.clone(), version_key: c.version_key.clone(), storage_deposit: c.storage_deposit, requested_ns: env::block_timestamp() },
         );
-        let input = json!({ "token_id": token_id, "run_nonce": run_nonce }).to_string();
+        // The whole input is built here, never taken from the caller: token_id (checked as registered above), this
+        // contract's nonce, and, from this contract's own last stored receipt for the token, the previous passport
+        // and period (the TEE compares that period with the issuer's to decide whether a new period started, for the
+        // carried-forward check). No as_of: the receipt's as_of is the TEE clock.
+        let input = self.run_input(&token_id, &run_nonce).to_string();
         let args = json!({
             "source": { "Project": { "project_id": c.project_id, "version_key": c.version_key } },
             "resource_limits": { "max_instructions": c.max_instructions, "max_memory_mb": c.max_memory_mb, "max_execution_seconds": c.max_execution_seconds },
@@ -291,6 +295,20 @@ impl Receipts {
                 NearToken::from_yoctonear(0),
                 Gas::from_tgas(c.callback_tgas),
             ))
+    }
+
+    fn run_input(&self, token_id: &str, run_nonce: &str) -> Value {
+        let mut input = json!({ "token_id": token_id, "run_nonce": run_nonce });
+        if let Some(last) = self.get_latest(token_id.to_string()) {
+            // stored receipts passed validate.rs, so the passport entries have these fields
+            let rec: Value = serde_json::from_str(&last.receipt).unwrap_or(Value::Null);
+            let previous: Vec<Value> = rec["passport"].as_array().map(|ps| ps.iter().map(|p| json!({ "source": p["source"], "snapshot_sha256": p["snapshot_sha256"], "as_of": p["as_of"] })).collect()).unwrap_or_default();
+            if !previous.is_empty() {
+                input["previous"] = json!(previous);
+                input["previous_period"] = json!(last.period);
+            }
+        }
+        input
     }
 
     #[private]
@@ -379,6 +397,11 @@ impl Receipts {
     // ---- views -------------------------------------------------------------------------------------------------
     pub fn get_config(&self) -> Value {
         json!({ "admin": self.admin, "pauser": self.pauser, "paused": self.paused, "config": self.config, "next_request": self.next_request })
+    }
+    /// What the next request for this token would send as input_data (with a placeholder nonce): every field is
+    /// built by this contract, none comes from the caller.
+    pub fn get_run_input(&self, token_id: String) -> Value {
+        self.run_input(&token_id, "<made at request time>")
     }
     pub fn is_runner(&self, account: AccountId) -> bool {
         self.runners.contains(&account)

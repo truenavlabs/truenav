@@ -138,6 +138,14 @@ try {
   ok(f.result.value === "outlayer_failed", `failed execution stores outlayer_failed (${f.result.value})`);
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), tenants: ["Tenant DEMO-RENTAL 01"] }) });
   ok(f.result.value === "receipt_rejected:top_unknown_field_tenants", `a receipt with a private field is rejected (${f.result.value})`);
+  const strOcc = structuredClone(datasets["DEMO-RENTAL"]);
+  strOcc.issuer.occupancy_bps = "SENTINEL-not-a-number";
+  f = await run("DEMO-RENTAL", { ds: strOcc });
+  ok(f.result.value === "module_failed:occupancy_bps_invalid", `a string occupancy_bps fails closed in the engine (${f.result.value})`);
+  for (const bad of ["N/A", 9583.5, "9583"]) {
+    f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.metrics.occupancy_bps = bad; return JSON.stringify(v); } });
+    ok(f.result.value === "receipt_rejected:metrics_value", `the callback rejects a non-integer metric occupancy_bps=${JSON.stringify(bad)} (${f.result.value})`);
+  }
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), run_nonce: "ab".repeat(32) }) });
   ok(f.result.value === "receipt_rejected:run_nonce", `a receipt for another request is rejected (${f.result.value})`);
   ok((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).seq === 1, "DEMO-RENTAL still has only its one good receipt");
@@ -145,6 +153,13 @@ try {
   ok(!latest.receipt.includes("Tenant"), "no tenant name in the stored receipt");
   f = await run("DEMO-RENTAL");
   ok(f.result.value === "stored:2", `a later good run is seq 2 (${f.result.value})`);
+  // the input of that run was built by the contract from seq 1: previous passport and period, no as_of, no new_period
+  const in2 = JSON.parse(f.req.input_data);
+  const seq1 = JSON.parse((await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: 1 })).receipt);
+  ok(Object.keys(in2).sort().join(",") === "previous,previous_period,run_nonce,token_id", `the second run's input is token_id, run_nonce, previous, previous_period (${Object.keys(in2).sort().join(",")})`);
+  ok(in2.previous_period === seq1.period && in2.previous.every((p, i) => p.snapshot_sha256 === seq1.passport[i].snapshot_sha256 && p.as_of === seq1.passport[i].as_of), "previous and previous_period are seq 1's passport and period");
+  const seq2 = JSON.parse((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt);
+  ok(seq2.passport.every((p) => p.carried_forward === false) && seq2.score === seq1.score, "same period, so nothing is carried forward and the score is unchanged");
 
   // ---- query contract and API --------------------------------------------------------------------------------
   const wrong = await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "DEMO-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.02") });

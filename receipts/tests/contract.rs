@@ -9,7 +9,7 @@ use truenav_receipts::{Config, Receipts};
 fn acc(s: &str) -> AccountId {
     s.parse().unwrap()
 }
-const PIN: &str = "6d1eac8911d751c4baf877d14c4357862c09b38aaa52d2245aec6815f4e59601";
+const PIN: &str = "360cd47346db7060ffb213288e25a6d5e39050133bd4e20ad2f6f9280b1daa57";
 
 fn config() -> Config {
     Config {
@@ -161,6 +161,9 @@ fn only_aggregates_reasons_metrics_and_document_hashes_get_on_chain() {
         ("receipt_rejected:band", Box::new(|v| v["band"] = json!("red"))),
         ("receipt_rejected:missing_holds", Box::new(|v| { v.as_object_mut().unwrap().remove("holds"); })),
         ("receipt_rejected:metrics_collection", Box::new(|v| v["metrics"]["collection"]["status"] = json!("defaulted"))),
+        ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["occupancy_bps"] = json!("SENTINEL-not-a-number"))),
+        ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["occupancy_bps"] = json!(9583.5))),
+        ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["reported_yield_bps"] = json!("1100"))),
     ];
     for (want, edit) in cases {
         assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, &edit))), want);
@@ -262,4 +265,25 @@ fn admin_calls_need_exactly_one_yocto() {
     assert!(panics(|| c.set_runner(acc("x.testnet"), true)).contains("1 yoctoNEAR"));
     set("pauser.testnet", NearToken::from_yoctonear(0), vec![]);
     assert!(panics(|| c.pause()).contains("1 yoctoNEAR"));
+}
+
+#[test]
+fn the_run_input_is_built_by_the_contract_from_its_own_last_receipt() {
+    let mut c = setup();
+    let first = c.get_run_input("HONEST-CREDIT".into());
+    let mut keys: Vec<&String> = first.as_object().unwrap().keys().collect();
+    keys.sort();
+    assert_eq!(keys, vec!["run_nonce", "token_id"], "no previous receipt: token and nonce only, never as_of");
+    assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |_| {}))), "stored:1");
+    let next = c.get_run_input("HONEST-CREDIT".into());
+    let stored: Value = serde_json::from_str(&c.get_latest("HONEST-CREDIT".into()).unwrap().receipt).unwrap();
+    assert_eq!(next["previous_period"], "2026-10");
+    let prev = next["previous"].as_array().unwrap();
+    assert_eq!(prev.len(), 3);
+    for (p, s) in prev.iter().zip(stored["passport"].as_array().unwrap()) {
+        assert_eq!(p["snapshot_sha256"], s["snapshot_sha256"]);
+        assert_eq!(p["as_of"], s["as_of"]);
+        assert_eq!(p.as_object().unwrap().len(), 3);
+    }
+    assert!(next.get("as_of").is_none() && next.get("new_period").is_none());
 }

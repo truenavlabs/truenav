@@ -102,9 +102,12 @@ Inputs: due (3.1), claimed (3.2), settled (3.3). Output per due item, plus excep
 
 All money is integer cents, all rates integer basis points, rounding per section 10.
 
-### 5.1 Cash received
+### 5.1 Cash received and cash match
 
-`cash_received` for a period = settled amounts linked to due items of that period (M3, M4), net of reversals (M1). Unlinked credits (M5) are excluded. `claimed_cash` = sum of non-reversed claims the manager reports as paid in the period (by `paid_date`), linked to a due item. `cash_match_bps` = the part of claimed_cash the bank settled (M3) / claimed_cash, clamped to at most 10,000 (10,000 when nothing is claimed). Cash the bank shows but the manager did not record is reported (`settled_not_claimed`), not rewarded. A claim counts in the period it says it was paid, even when M2 applies it to an older open due item.
+Two separately labelled views (owner decision 8 Nov), as in servicer remittance reporting, where collections are reported by the period they were received and delinquency by aging from the due date:
+
+- **Cash match (by period of receipt).** The claim cohort is every non-reversed claim the manager reports as paid in the period (by `paid_date`) that is linked to a due item. `claimed_cash` = sum of that cohort; `cash_match_bps` = the part of the same cohort the bank settled (M3) / claimed_cash, so numerator and denominator come from the same claims. Clamped to at most 10,000 (10,000 when nothing is claimed). `claimed_not_settled` is measured on the same cohort. Cash the bank shows but the manager did not record is reported (`settled_not_claimed`), not rewarded.
+- **Collection and arrears (by due period).** `cash_received` for a period = bank-settled amounts linked to due items of that period (M3, M4), net of reversals (M1). Unlinked credits (M5) and non-income credits (security deposits, owner transfers, loan proceeds, refunds) never count. Late-payment cohorts (5.4) age from the due date.
 
 ### 5.2 Credit: reported yield vs cash yield
 
@@ -152,7 +155,7 @@ Per source, age = run as-of minus the source's own as-of: the export timestamp f
 
 f is 10,000 bps inside the full window, linear to 0 at the zero point. A monthly export does not lose freshness during its own month.
 
-A source is `carried_forward` only once a new reporting period has started since the previous run, and then when either its snapshot hash equals the snapshot hash the previous run recorded for that source, or its as-of did not advance past the previous run's as-of for that source. Within the same period an unchanged snapshot is not carried forward (a quiet bank account with no new transactions is normal). A carried-forward source has freshness 0 and raises exception `carried_forward`. The run's freshness is the minimum over required sources.
+Every source's age and carried-forward state come from that source's own as-of: the issuer's claims from the issuer's `as_of`, never from the manager export's timestamp. Bank settlements, the manager records and the issuer claims are all required sources, so a stale issuer lowers the run's freshness. A source is `carried_forward` only once a new reporting period has started since the previous run, and then when either its snapshot hash equals the snapshot hash the previous run recorded for that source, or its as-of did not advance past the previous run's as-of for that source. Within the same period an unchanged snapshot is not carried forward (a quiet bank account with no new transactions is normal). A carried-forward source has freshness 0 and raises exception `carried_forward`. The run's freshness is the minimum over required sources.
 
 ## 6. TrueNav score (`cashflow-v2.0.0`)
 

@@ -43,7 +43,7 @@ function creditFund({ id, name, n, principal, rate_bps, pik = [], missed = {}, f
     synthetic: true,
     servicer_tape: { as_of: "2026-10-31", loans, schedule, payments },
     bank_feed: { synthetic: true, account_id: `${id}-operating`, transactions },
-    issuer: { token_id: id, period: PERIOD, reported_yield_bps, principal_outstanding_cents: total + pikInterest, accrued_interest_cents: n * interest, capitalized_interest_cents: pikInterest },
+    issuer: { token_id: id, as_of: "2026-10-31", period: PERIOD, reported_yield_bps, principal_outstanding_cents: total + pikInterest, accrued_interest_cents: n * interest, capitalized_interest_cents: pikInterest },
   };
 }
 
@@ -94,7 +94,7 @@ function rentalToken({ id, name, units, rent, vacant = [], unpaid = {}, batch = 
     synthetic: true,
     manager_export: { as_of: "2026-10-31", units: unitsOut, charges, ledger },
     bank_feed: { synthetic: true, account_id: `${id}-operating`, transactions },
-    issuer: { token_id: id, period: PERIOD, occupancy_bps: Math.round((10000 * occupied) / units), expenses_cents: expenses, reserves_cents: reserves, distributions_paid_cents: distribution },
+    issuer: { token_id: id, as_of: "2026-10-31", period: PERIOD, occupancy_bps: Math.round((10000 * occupied) / units), expenses_cents: expenses, reserves_cents: reserves, distributions_paid_cents: distribution },
   };
 }
 

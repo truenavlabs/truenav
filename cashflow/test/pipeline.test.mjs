@@ -81,13 +81,46 @@ test("the evidence passport marks every demo source synthetic and the bank sourc
   }
 });
 
+const passportPrev = (r) => Object.fromEntries(r.passport.map((p) => [p.source, { snapshot_sha256: p.snapshot_sha256, as_of: p.as_of }]));
+
 test("a carried-forward bank snapshot in a new period drops the fund to self-reported only", () => {
   const ds = datasets().find((d) => d.id === "HONEST-CREDIT");
-  const first = runFund(ds, opts);
-  const prev = Object.fromEntries(first.passport.map((p) => [p.source, p.snapshot_sha256]));
+  const prev = passportPrev(runFund(ds, opts));
   assert.equal(runFund(ds, { ...opts, previous: prev, newPeriod: false }).score.band, "green", "same period, unchanged snapshot is fine");
   const again = runFund(ds, { ...opts, previous: prev, newPeriod: true });
   assert.ok(codes(again).includes("self_reported_only"));
+});
+
+test("carried forward when the bytes changed but the source's as_of did not advance", () => {
+  const ds = datasets().find((d) => d.id === "HONEST-RENTAL");
+  const first = runFund(ds, opts);
+  const changed = structuredClone(ds);
+  changed.manager_export.ledger[0].batch_ref = "edited-later"; // different bytes, same export as_of
+  const next = runFund(changed, { ...opts, bankFetchedAt: "2026-11-01T00:00:00Z", previous: passportPrev(first), newPeriod: true });
+  const mgr = next.passport.find((p) => p.source === "property_manager_records");
+  assert.notEqual(mgr.snapshot_sha256, first.passport.find((p) => p.source === "property_manager_records").snapshot_sha256);
+  assert.equal(mgr.carried_forward, true);
+  assert.equal(mgr.freshness_bps, 0);
+  // the bank fetch time advanced but its bytes are identical: carried forward by the same-hash rule
+  assert.equal(next.passport.find((p) => p.source === "bank_settlements").carried_forward, true);
+});
+
+test("issuer claims use the issuer's own as_of: a January issuer is stale", () => {
+  const ds = structuredClone(datasets().find((d) => d.id === "HONEST-CREDIT"));
+  ds.issuer.as_of = "2026-01-31";
+  const r = runFund(ds, opts);
+  const iss = r.passport.find((p) => p.source === "issuer_claims");
+  assert.equal(iss.as_of, "2026-01-31T00:00:00Z");
+  assert.equal(iss.freshness_bps, 0);
+  assert.equal(r.score.parts_x100.freshness, 0, "issuer claims are a required source");
+  assert.ok(r.score.score < runFund(datasets().find((d) => d.id === "HONEST-CREDIT"), opts).score.score);
+});
+
+test("carried_forward is computed for the issuer too, never hardcoded", () => {
+  const ds = datasets().find((d) => d.id === "HONEST-CREDIT");
+  const prev = passportPrev(runFund(ds, opts));
+  const r = runFund(ds, { ...opts, bankFetchedAt: "2026-11-01T00:00:00Z", previous: prev, newPeriod: true });
+  assert.equal(r.passport.find((p) => p.source === "issuer_claims").carried_forward, true);
 });
 
 test("runs are deterministic", () => {

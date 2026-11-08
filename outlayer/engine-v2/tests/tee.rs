@@ -158,3 +158,26 @@ fn receipt_sizes_stay_small_enough_for_on_chain_delivery() {
         assert!(out.len() < 8 * 1024, "{name}: receipt {} bytes", out.len());
     }
 }
+
+#[test]
+fn a_source_without_as_of_fails_closed_with_its_named_stage() {
+    let fx = fixture("DEMO-RENTAL");
+    let mut ds = fx["input"]["dataset"].clone();
+    ds["issuer"]["as_of"] = Value::Null;
+    let fake = Fake { ds, fail: None, calls: Cell::new(0) };
+    let clock = Clock { now: Box::new(|| "2026-10-31T22:00:00Z".to_string()) };
+    let p = SeedPseudonymizer(b"parity-fixture-pseudonym-seed-0001".to_vec());
+    let out = execute(&good_input("DEMO-RENTAL").to_string(), &fake, &p, &clock);
+    assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.0.0\",\"stage\":\"as_of_missing_issuer_claims\"}");
+    let bad_prev = json!({ "token_id": "DEMO-RENTAL", "run_nonce": NONCE, "previous": [{ "source": "bank_settlements", "snapshot_sha256": "00", "as_of": "yesterday" }] });
+    let (out, _) = run("DEMO-RENTAL", bad_prev, None);
+    assert!(out.ends_with("\"stage\":\"as_of_invalid_previous\"}"), "{out}");
+}
+
+#[test]
+fn an_input_as_of_with_an_offset_gives_the_same_receipt_as_z() {
+    let (z, _) = run("DEMO-CREDIT", good_input("DEMO-CREDIT"), None);
+    let (plus7, _) = run("DEMO-CREDIT", json!({ "token_id": "DEMO-CREDIT", "run_nonce": NONCE, "as_of": "2026-11-01T07:00:00+07:00" }), None);
+    assert_eq!(plus7, z);
+    assert!(z.contains("\"as_of\":\"2026-11-01T00:00:00Z\""));
+}

@@ -78,6 +78,55 @@ pub fn civil_from_days(z: i64) -> (i64, i64, i64) {
     (if m <= 2 { y + 1 } else { y }, m, d)
 }
 
+/// The reference toUtc (cashflow/run.mjs): "YYYY-MM-DD" (midnight UTC) or "YYYY-MM-DDTHH:MM:SS[.mmm]" with "Z" or a
+/// "+HH:MM" / "-HH:MM" offset, normalized to "YYYY-MM-DDTHH:MM:SS[.mmm]Z" (milliseconds only when not zero), years
+/// 1970 to 9999 after normalizing. Anything else is None.
+pub fn to_utc(x: &str) -> Option<String> {
+    let full;
+    let s = if x.len() == 10 {
+        full = format!("{x}T00:00:00Z");
+        full.as_str()
+    } else {
+        x
+    };
+    let b = s.as_bytes();
+    let digits = |a: usize, n: usize| -> Option<i64> {
+        let t = s.get(a..a + n)?;
+        if t.bytes().all(|c| c.is_ascii_digit()) {
+            t.parse().ok()
+        } else {
+            None
+        }
+    };
+    if b.len() < 20 || b[4] != b'-' || b[7] != b'-' || b[10] != b'T' || b[13] != b':' || b[16] != b':' {
+        return None;
+    }
+    let (y, mo, d, h, mi, se) = (digits(0, 4)?, digits(5, 2)?, digits(8, 2)?, digits(11, 2)?, digits(14, 2)?, digits(17, 2)?);
+    let (ms, rest) = if b[19] == b'.' { (digits(20, 3)?, &s[23..]) } else { (0, &s[19..]) };
+    let off = match rest.as_bytes() {
+        [b'Z'] => 0,
+        [sign @ (b'+' | b'-'), _, _, b':', _, _] => {
+            let (oh, om) = (digits(s.len() - 5, 2)?, digits(s.len() - 2, 2)?);
+            if oh > 23 || om > 59 {
+                return None;
+            }
+            (if *sign == b'-' { -1 } else { 1 }) * (oh * 60 + om)
+        }
+        _ => return None,
+    };
+    if !(1..=12).contains(&mo) || d < 1 || d > month_len(y, mo) || h > 23 || mi > 59 || se > 59 {
+        return None;
+    }
+    let utc = days_from_civil(y, mo, d) * 86_400_000 + h * 3_600_000 + mi * 60_000 + se * 1000 + ms - off * 60_000;
+    if utc < 0 || utc >= days_from_civil(10000, 1, 1) * 86_400_000 {
+        return None;
+    }
+    let (yy, mm, dd) = civil_from_days(utc.div_euclid(86_400_000));
+    let t = utc.rem_euclid(86_400_000);
+    let (th, tm, ts, tms) = (t / 3_600_000, (t / 60_000) % 60, (t / 1000) % 60, t % 1000);
+    Some(if tms == 0 { format!("{yy:04}-{mm:02}-{dd:02}T{th:02}:{tm:02}:{ts:02}Z") } else { format!("{yy:04}-{mm:02}-{dd:02}T{th:02}:{tm:02}:{ts:02}.{tms:03}Z") })
+}
+
 /// Milliseconds since the epoch for "YYYY-MM-DDTHH:MM:SSZ" or "YYYY-MM-DDTHH:MM:SS.sssZ" (what the reference uses).
 pub fn parse_ts(s: &str) -> R<i64> {
     let bad = || format!("bad timestamp {s}");

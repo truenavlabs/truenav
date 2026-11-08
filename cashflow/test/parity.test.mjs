@@ -26,3 +26,17 @@ test("canonical JSON sorts keys, drops undefined, refuses floats", () => {
   assert.equal(canonical({ b: 1, a: [true, null, "x"], c: undefined }), '{"a":[true,null,"x"],"b":1}');
   assert.throws(() => canonical({ x: 1.5 }));
 });
+
+test("edge-case fixtures are current: the JS reference gives exactly each expected output or error code", async () => {
+  const { CASES, edgeExpected } = await import("../fixtures/make-edge.mjs");
+  const file = JSON.parse(readFileSync(new URL("../fixtures/edge/cashflow-edge-cases.json", import.meta.url)));
+  assert.deepEqual(file.cases.map((c) => c.name), CASES.map(([n]) => n));
+  for (const c of file.cases) assert.deepEqual(edgeExpected(c.input.dataset, c.input.options), c.expected, c.name);
+  const m5 = JSON.parse(file.cases.find((c) => c.name === "m5_mapped_payer_credit_without_claim").expected.output);
+  assert.equal(m5.match.due[0].status, "unpaid");
+  assert.equal(m5.match.bank[0].outcome, "settled_not_claimed");
+  assert.equal(m5.metrics.cash_received_cents, 0);
+  assert.equal(m5.metrics.collection_rate_bps, 0);
+  const z = JSON.parse(readFileSync(new URL("cashflow-parity-DEMO-CREDIT.json", dir))).expected_output;
+  assert.equal(file.cases.find((c) => c.name === "utc_run_and_fetch_time_given_as_plus_0700").expected.output, z, "+07:00 run and fetch times give the Z output byte for byte");
+});

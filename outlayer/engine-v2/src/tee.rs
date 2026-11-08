@@ -60,7 +60,7 @@ fn execute_inner(input: &str, fetch: &dyn Fetcher, pseudo: &dyn Pseudonymizer, c
     let nonce = o.get("run_nonce").and_then(Value::as_str).filter(|n| is_nonce(n)).ok_or("input_run_nonce")?;
     let as_of = match o.get("as_of") {
         None | Some(Value::Null) => (clock.now)(),
-        Some(Value::String(t)) if parse_ts(t).is_ok() => t.clone(),
+        Some(Value::String(t)) => to_utc(t).ok_or("input_as_of")?,
         _ => return Err("input_as_of"),
     };
     // previous run's passport (public): [{ source, snapshot_sha256, as_of }]
@@ -94,7 +94,7 @@ fn execute_inner(input: &str, fetch: &dyn Fetcher, pseudo: &dyn Pseudonymizer, c
     let mgr_key = if kind == "credit" { "servicer_tape" } else { "manager_export" };
     let ds = json!({ "id": token_id, "kind": kind, "synthetic": mgr.synthetic && issuer.synthetic, "bank_feed": bank_v, mgr_key: mgr_v, "issuer": issuer_v });
     let opts = RunOptions { as_of: &as_of, period: &period, days_in_period: month_len(y, m), bank_fetched_at: &bank_fetched_at, previous, new_period };
-    let r = run_fund(&ds, pseudo, &opts).map_err(|_| "run")?;
+    let r = run_fund(&ds, pseudo, &opts).map_err(|e| crate::run::validation_code(&e).unwrap_or("run"))?;
     let mut rec = receipt(&r, nonce, &as_of).map_err(|_| "receipt")?;
     // the bank's own synthetic label comes from the response, not from the document
     if !bank.synthetic && rec["synthetic"] == json!(true) {

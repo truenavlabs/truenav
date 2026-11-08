@@ -196,7 +196,7 @@ pub fn three_way(src: Source, bank_in: Vec<Txn>) -> R<Matched> {
     let payers = src.payers;
     let mut ex: Vec<(&'static str, i64)> = EXCEPTIONS.iter().map(|e| (*e, 0)).collect();
     let mut cns_cents = 0i64;
-    let mut unapplied_cents = 0i64;
+    let unapplied_cents = 0i64; // M5: no path adds to it any more; kept in the output schema
 
     // M1
     let mut bank = bank_in;
@@ -378,28 +378,12 @@ pub fn three_way(src: Source, bank_in: Vec<Txn>) -> R<Matched> {
             cns_cents += cl[ci].amount;
         }
     }
+    // M5: a credit from a unit's own (mapped) payer that settles no claim is reported as settled_not_claimed and
+    // never settles a due item or counts as cash received or collected.
     let payer_credits: Vec<usize> = credits.iter().copied().filter(|&x| free(&txns[x]) && payers.contains_key(&txns[x].counterparty_ref)).collect();
     for x in payer_credits {
-        let unit = payers[&txns[x].counterparty_ref].clone();
-        let mut left = txns[x].amount;
-        for d in dues.iter_mut().filter(|d| d.unit_ref == unit) {
-            let open = d.amount_due - d.settled;
-            if open <= 0 || left <= 0 {
-                continue;
-            }
-            let take = open.min(left);
-            d.settled += take;
-            left -= take;
-        }
-        txns[x].used = txns[x].amount - left;
-        txns[x].outcome = Some(if txns[x].used > 0 { "settled_not_claimed" } else { "unapplied_credit" }.into());
-        if txns[x].used > 0 {
-            bump(&mut ex, "settled_not_claimed");
-        }
-        if left > 0 {
-            bump(&mut ex, "unapplied_credit");
-            unapplied_cents += left;
-        }
+        txns[x].outcome = Some("settled_not_claimed".into());
+        bump(&mut ex, "settled_not_claimed");
     }
     for d in dues.iter_mut() {
         d.status = if d.settled >= d.amount_due { "paid_full" } else if d.settled > 0 { "paid_partial" } else { "unpaid" };

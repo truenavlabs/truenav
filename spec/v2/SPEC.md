@@ -104,7 +104,7 @@ All money is integer cents, all rates integer basis points, rounding per section
 
 ### 5.1 Cash received
 
-`cash_received` for a period = settled amounts linked to due items of that period (M3, M4), net of reversals (M1). Unlinked credits (M5) are excluded. `claimed_cash` = sum of non-reversed claims for the period. `cash_match_bps` = cash_received / claimed_cash, clamped to at most 10,000 (10,000 when both are 0; cash received beyond the claims is reported, not rewarded).
+`cash_received` for a period = settled amounts linked to due items of that period (M3, M4), net of reversals (M1). Unlinked credits (M5) are excluded. `claimed_cash` = sum of non-reversed claims the manager reports as paid in the period (by `paid_date`), linked to a due item. `cash_match_bps` = the part of claimed_cash the bank settled (M3) / claimed_cash, clamped to at most 10,000 (10,000 when nothing is claimed). Cash the bank shows but the manager did not record is reported (`settled_not_claimed`), not rewarded. A claim counts in the period it says it was paid, even when M2 applies it to an older open due item.
 
 ### 5.2 Credit: reported yield vs cash yield
 

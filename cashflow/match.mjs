@@ -189,7 +189,7 @@ export function match({ due, claims, bank, payers = {} }) {
 
   return {
     due: dues.map(({ due_id, unit_ref, component, period, due_date, amount_due_cents, settled, status }) => ({ due_id, unit_ref, component, period, due_date, amount_due_cents, settled_cents: settled, status })),
-    claims: cl.map(({ claim_id, unit_ref, amount_cents, linked_due, settled_by, outcome }) => ({ claim_id, unit_ref, amount_cents, linked_due, settled_by, outcome })),
+    claims: cl.map(({ claim_id, unit_ref, paid_date, amount_cents, linked_due, settled_by, outcome }) => ({ claim_id, unit_ref, paid_date, amount_cents, linked_due, settled_by, outcome })),
     bank: txns.map(({ txn_id, amount_cents, kind_hint, used, outcome }) => ({ txn_id, amount_cents, kind_hint, used_cents: used, outcome: outcome || (amount_cents < 0 ? kind_hint : "unattributed") })),
     exceptions,
     amounts,

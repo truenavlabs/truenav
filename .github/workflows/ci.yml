@@ -90,14 +90,14 @@ jobs:
       - run: npm ci
       - name: Rust 1.99.0 with clippy
         run: rustup toolchain install 1.99.0 --profile minimal --component clippy
-      - name: Unit tests and clippy (receipts, query)
+      - name: Unit tests and clippy (receipts, query, mock signer)
         run: |
-          for d in receipts query; do
+          for d in receipts query mirror/mock-signer; do
             (cd $d && cargo +1.99.0 test --locked && cargo +1.99.0 clippy --locked --all-targets -- -D warnings)
           done
-      - name: Contract wasm in the pinned image (receipts, query, mock OutLayer)
+      - name: Contract wasm in the pinned image (receipts, query, mock OutLayer, mock signer)
         run: |
-          for d in receipts query receipts/mock-outlayer; do
+          for d in receipts query receipts/mock-outlayer mirror/mock-signer; do
             docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/$d \
               sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
               cargo near build non-reproducible-wasm --locked
@@ -115,6 +115,8 @@ jobs:
         run: cargo +1.99.0 build --locked --example native
       - name: End to end on the sandbox
         run: ulimit -n 65535 && npm run e2e:receipts
+      - name: Mirror with a mocked signer on the local sandbox
+        run: ulimit -n 65535 && npm run e2e:mirror
 
   sandbox:
     # Full flow on a local NEAR sandbox node: deploy the wasm, signers, funds, 16 pledges, 16 TEE-signed

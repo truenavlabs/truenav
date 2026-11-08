@@ -53,6 +53,9 @@ test('Solidity compiles and a local EVM checks only-MPC, increasing per-token se
  const hash=await broadcast(ev,{client,mirrorAddress:address,mpcAddress:account.address});
  const receipt=await client.waitForTransactionReceipt({hash});assert.equal(receipt.status,'success');
  const events=parseEventLogs({abi,logs:receipt.logs});assert.equal(events.length,1);assert.equal(events[0].args.seq,1n);assert.equal(events[0].args.tokenIdHash,args[0]);
+ let confirmation;
+ assert.equal(await confirmFinalized(ev,{client,mirrorAddress:address,mpcAddress:account.address,near:{confirm:async(args)=>{confirmation=args;}}}),true);
+ assert.deepEqual(confirmation,{nonce:tx.nonce,tx_hash:ev.tx_hash});
  const latest=await client.readContract({address,abi,functionName:'latest',args:[args[0]]});assert.equal(latest[0],1n);assert.equal(latest[2],58);
  await assert.rejects(client.simulateContract({address,abi,functionName:'update',args,account:account.address}));
  await assert.rejects(client.simulateContract({address,abi,functionName:'update',args:[args[0],2n,...args.slice(2)],account:'0x'+'22'.repeat(20)}));

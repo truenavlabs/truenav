@@ -1,6 +1,6 @@
 # engine-v2: pinned, reproducible build
 
-The TrueNav cashflow-v2.0.0 scorer as an OutLayer WASI P2 component. It is the same method as the JS reference
+The TrueNav cashflow-v2.1.0 scorer as an OutLayer WASI P2 component. It is the same method as the JS reference
 (`cashflow/`, `spec/v2/score.mjs`). The four raw-data parity fixtures (`cashflow/fixtures/parity/`) come out byte for
 byte identical on canonical JSON (`cargo test --test parity`).
 
@@ -20,14 +20,14 @@ Behind a TLS-intercepting proxy, also mount its CA and pass the proxy variables
 (`-v <ca>:/ca.crt:ro -e SSL_CERT_FILE=/ca.crt -e CARGO_HTTP_CAINFO=/ca.crt -e HTTPS_PROXY --network host`). That only
 affects downloads, not the output.
 
-## Recorded result (source commit 7ef4423; BUILD.md is not a build input)
+## Recorded result (source commit f74661a, method cashflow-v2.1.0; BUILD.md is not a build input)
 
 | | |
 |---|---|
-| wasm sha256 | `fce34e796ce815558e2c460f4ae47702dbada160286fb8a7213bed1b0b08b0dd` |
-| size | 563308 bytes |
+| wasm sha256 | `6d1eac8911d751c4baf877d14c4357862c09b38aaa52d2245aec6815f4e59601` |
+| size | 577074 bytes |
 | check | two fresh clones, mounted at different absolute paths (`/src/a` as root, `/work/b-other` as the image user), same sha256; CI rebuilds it and fails if the hash differs from this table |
-| previous | `a74d6976eebb6fe3653648f80e5999e7f8b36c0d4cc6418b26da767a930cecee` (214dae9, before the M5, source validation and UTC fixes); never uploaded |
+| previous | `fce34e796ce815558e2c460f4ae47702dbada160286fb8a7213bed1b0b08b0dd` (7ef4423, cashflow-v2.0.0) and `a74d6976eebb6fe3653648f80e5999e7f8b36c0d4cc6418b26da767a930cecee` (214dae9); neither uploaded |
 
 The only absolute paths in the binary are the image's own registry paths (`/home/near/.cargo/registry/...`), which the
 pinned image fixes. A change to a build input under `outlayer/engine-v2/` (`src/`, `Cargo.toml`, `Cargo.lock`, `wit/`) changes the hash, so
@@ -56,10 +56,10 @@ Public input (JSON on stdin), unknown fields refused:
 
 Output (stdout), one canonical JSON object, at most about 3.3 KB for the demo funds:
 
-- on success, the receipt only: method, token id, run nonce, period, score, band, parts, caps, public metrics (cohorts
-  under 5 suppressed), evidence passport (source snapshot hashes and freshness), checks run, exception and missing
+- on success, the receipt only: method, token id, run nonce, period, score, band, parts, caps, holds, public metrics
+  (cohorts under 5 suppressed; collection status, period, cutoff, dues and verified cents, rate), evidence passport (source snapshot hashes and freshness), checks run, exception and missing
   evidence counts, synthetic flag, `receipt_sha256`;
-- on failure, `{"error":"run_failed","method":"cashflow-v2.0.0","stage":"<code>"}` and nothing else. Source checks run before any matching and give named codes: `source_missing_<source>`, `as_of_missing_<source>`, `as_of_invalid_<source>`, `as_of_invalid_run`, `as_of_invalid_previous` (sources: `bank_settlements`, `servicer_records`, `property_manager_records`, `issuer_claims`).
+- on failure, `{"error":"run_failed","method":"cashflow-v2.1.0","stage":"<code>"}` and nothing else. Source checks run before any matching and give named codes: `source_missing_<source>`, `as_of_missing_<source>`, `as_of_invalid_<source>`, `as_of_invalid_run`, `as_of_invalid_previous`, `dues_missing`, `dues_incomplete` (sources: `bank_settlements`, `servicer_records`, `property_manager_records`, `issuer_claims`).
 
 In on-chain mode the whole output is public transaction data. So the output never holds row-level data, ids, payer
 names, pseudonyms, the bearer token, the data URL, or any value or hash derived from a secret (`tests/tee.rs`).
@@ -75,7 +75,7 @@ binary.
 
 ```bash
 cd outlayer/engine-v2
-cargo test --locked                                   # parity 4 funds, 14 edge cases, TEE flow 9 cases
+cargo test --locked                                   # parity 4 funds, 27 edge cases, TEE flow 10 cases
 cargo clippy --locked --all-targets -- -D warnings
 cargo clippy --locked --target wasm32-wasip2 -- -D warnings
 ```

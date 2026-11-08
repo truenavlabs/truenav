@@ -77,7 +77,8 @@ async function ensureSub(id, near) {
   if (await exists(id)) return { id, created: false };
   const kp = KeyPair.fromRandom("ed25519");
   mkdirSync(credDir, { recursive: true });
-  writeFileSync(`${credDir}/${id}.json`, JSON.stringify({ account_id: id, public_key: kp.getPublicKey().toString(), private_key: kp.toString() }), { mode: 0o600 });
+  // "wx": created exclusively, so an existing key file is never overwritten (the write fails instead)
+  writeFileSync(`${credDir}/${id}.json`, JSON.stringify({ account_id: id, public_key: kp.getPublicKey().toString(), private_key: kp.toString() }), { mode: 0o600, flag: "wx" });
   const tx = await admin.signAndSendTransaction({
     receiverId: id,
     actions: [actions.createAccount(), actions.transfer(nearToYocto(near)), actions.addFullAccessKey(kp.getPublicKey())],
@@ -175,7 +176,7 @@ if (existsSync(keyFile)) secretKey = Uint8Array.from(Buffer.from(JSON.parse(read
 else {
   secretKey = newSecretKey();
   mkdirSync(new URL(".keys/", root), { recursive: true });
-  writeFileSync(keyFile, JSON.stringify({ note: "test key, not TEE; throwaway testnet certificate signer; never commit", secret_hex: Buffer.from(secretKey).toString("hex") }), { mode: 0o600 });
+  writeFileSync(keyFile, JSON.stringify({ note: "test key, not TEE; throwaway testnet certificate signer; never commit", secret_hex: Buffer.from(secretKey).toString("hex") }), { mode: 0o600, flag: "wx" });
 }
 const signerAddress = addressOf(secretKey);
 if (!(await view("get_signers")).includes(signerAddress)) await call(admin, "add_signer (test key, not TEE)", "add_signer", { address: signerAddress });

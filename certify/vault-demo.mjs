@@ -52,7 +52,8 @@ async function ensureSub(id, near) {
   if (await exists(id)) return false;
   const kp = KeyPair.fromRandom("ed25519");
   mkdirSync(credDir, { recursive: true });
-  writeFileSync(`${credDir}/${id}.json`, JSON.stringify({ account_id: id, public_key: kp.getPublicKey().toString(), private_key: kp.toString() }), { mode: 0o600 });
+  // "wx": created exclusively, so an existing key file is never overwritten (the write fails instead)
+  writeFileSync(`${credDir}/${id}.json`, JSON.stringify({ account_id: id, public_key: kp.getPublicKey().toString(), private_key: kp.toString() }), { mode: 0o600, flag: "wx" });
   record(`create ${id}`, await admin.signAndSendTransaction({ receiverId: id, actions: [actions.createAccount(), actions.transfer(nearToYocto(near)), actions.addFullAccessKey(kp.getPublicKey())], waitUntil: "FINAL" }));
   return true;
 }

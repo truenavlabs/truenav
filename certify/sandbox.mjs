@@ -10,6 +10,8 @@ import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+// DEFAULT_PRIVATE_KEY is the development key published in the near-sandbox package: public, and it controls only the
+// throwaway local sandbox chain. It is never used on testnet or mainnet.
 import { Sandbox, DEFAULT_ACCOUNT_ID, DEFAULT_PRIVATE_KEY, DEFAULT_PUBLIC_KEY } from "near-sandbox";
 
 const sandbox = await Sandbox.start({});

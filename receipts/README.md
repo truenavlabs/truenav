@@ -91,7 +91,7 @@ Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlaye
   contract cannot tell it from an admission failure: both reach it as a FAILED promise. It then stores
   `outlayer_admission_failed` and refunds 0.01 NEAR the contract did not get back (OutLayer kept the deposit), paid
   from its own balance. The loss is at most 0.01 NEAR per run, only listed runners can request runs, and the admin
-  can pause; the `receipts.` balance (about 0.14 NEAR above storage) covers a few.
+  can pause; the `receipts.` balance (about 0.54 NEAR above storage) covers a few.
 - The requester pays for all the storage a run uses: the pending record (measured when it is written) and whatever
   the callback stores.
 - A rejected receipt stores a fixed code (`receipt_rejected:<check>`); the code never echoes the input.
@@ -102,13 +102,22 @@ Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlaye
 ## Deploy plan (each step needs its own yes)
 
 `node receipts/deploy-testnet.mjs <step>` prints exactly what it would send and sends nothing; `--execute` sends that
-step only, after read-only checks (testnet chain id, key file present, pinned wasm bytes, accounts free, balance).
+step only, after read-only checks: testnet chain id; the signer key file's public key is a full-access key of the
+master on chain; the pinned wasm bytes; which accounts exist; the master balance against what D1 still has to fund.
+
+- Signer: `TRUENAV_SIGNER_KEYFILE=<path>` (its `account_id` must equal the master, else the script stops); default
+  `~/.near-credentials/testnet/<master>.json`. Only `private_key` is used; no key is ever printed.
+- D1 is resumable: an account that already exists is skipped only if its local key file's public key is a
+  full-access key on chain; otherwise D1 stops. New key files are created exclusively (mode 600), never overwritten.
+  The preflight checks the funding of the accounts not created yet plus 0.05 NEAR for gas, before every account.
+- Wasm: `target/near` of each crate, or `TRUENAV_WASM_DIR=receipts/dist`, the pinned-image builds committed there
+  (same sha256 as above), so a machine without Docker can deploy. Any other bytes are refused.
 
 | Step | What | Cost |
 | --- | --- | --- |
 | D0 | read-only checks | none |
-| D1 | create `receipts.`, `query.`, `runner.`, `api.tnlab-718ca9.testnet` with fresh keys | 5.0 NEAR moved to our own accounts, plus gas |
-| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.66 NEAR storage: 265,957 bytes after D2 and D3 on the sandbox, of the 2.8 NEAR D1 gives `receipts.` (about 0.14 left for gas; the e2e checks it fits) |
+| D1 | create `receipts.` (3.2), `query.` (1.7), `runner.` (0.4), `api.tnlab-718ca9.testnet` (0.1) with fresh keys | 5.4 NEAR moved to our own accounts, plus gas; the preflight needs 5.45 |
+| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.66 NEAR storage: 265,957 bytes after D2 and D3 on the sandbox, of the 3.2 NEAR D1 gives `receipts.` (about 0.54 left for gas and refunds; the e2e checks it fits) |
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 

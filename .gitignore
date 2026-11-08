@@ -9,3 +9,4 @@ neardev/
 skills/
 .DS_Store
 out/
+.near-credentials/

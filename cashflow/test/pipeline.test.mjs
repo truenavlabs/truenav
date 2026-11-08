@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { datasets, AS_OF, PERIOD, DAYS_IN_PERIOD } from "../demo/data.mjs";
-import { runFund } from "../run.mjs";
+import { runFund, RunError, toUtc } from "../run.mjs";
 import { settledFromFeed } from "../adapters/bank.mjs";
 import { publicMetrics } from "../metrics.mjs";
 import { ref } from "../pseudo.mjs";
@@ -142,4 +142,42 @@ test("period scope: an extra September distribution does not change honest renta
   assert.equal(r.metrics.expenses_cents, base.metrics.expenses_cents);
   assert.equal(r.metrics.exceptions.distribution_funded_by_sponsor, 0);
   assert.deepEqual([r.score.score, r.score.band, codes(r)], [base.score.score, base.score.band, codes(base)]);
+});
+
+test("sources are validated up front: a missing source or a missing or null as_of fails closed with a named code", () => {
+  const base = () => datasets().find((d) => d.id === "DEMO-RENTAL");
+  const fails = (ds, code, o = opts) => assert.throws(() => runFund(ds, o), (e) => e instanceof RunError && e.code === code, code);
+  fails({ ...base(), issuer: { ...base().issuer, as_of: null } }, "as_of_missing_issuer_claims");
+  const noAsOf = { ...base().issuer };
+  delete noAsOf.as_of;
+  fails({ ...base(), issuer: noAsOf }, "as_of_missing_issuer_claims");
+  fails({ ...base(), manager_export: { ...base().manager_export, as_of: null } }, "as_of_missing_property_manager_records");
+  const credit = datasets().find((d) => d.id === "DEMO-CREDIT");
+  fails({ ...credit, servicer_tape: { ...credit.servicer_tape, as_of: undefined } }, "as_of_missing_servicer_records");
+  fails(base(), "as_of_missing_bank_settlements", { ...opts, bankFetchedAt: null });
+  fails({ ...base(), issuer: { ...base().issuer, as_of: "31/10/2026" } }, "as_of_invalid_issuer_claims");
+  fails(base(), "as_of_invalid_run", { ...opts, asOf: "2026-11-01T00:00:00" });
+  fails({ ...base(), bank_feed: null }, "source_missing_bank_settlements");
+  fails({ ...base(), manager_export: undefined }, "source_missing_property_manager_records");
+  fails({ ...base(), issuer: null }, "source_missing_issuer_claims");
+});
+
+test("timestamps are normalized to UTC: the same instant as Z and as +07:00 gives identical results", () => {
+  const ds = () => datasets().find((d) => d.id === "DEMO-CREDIT");
+  const z = runFund(ds(), opts);
+  // run time and fetch time are parameters: the whole result is identical
+  const plus7 = runFund(ds(), { ...opts, asOf: "2026-11-01T07:00:00+07:00", bankFetchedAt: "2026-11-01T05:00:00+07:00" });
+  assert.deepEqual(plus7, z);
+  // as_of inside the documents: everything but the snapshot hashes of the edited documents is identical
+  const d = ds();
+  d.issuer.as_of = "2026-10-31T07:00:00+07:00";
+  d.servicer_tape.as_of = "2026-10-30T19:00:00-05:00"; // 2026-10-31T00:00:00Z
+  const docs = runFund(d, opts);
+  const strip = (r) => ({ ...r, passport: r.passport.map(({ snapshot_sha256, ...x }) => x) });
+  assert.deepEqual(strip(docs), strip(z));
+  assert.equal(docs.passport[2].as_of, "2026-10-31T00:00:00Z");
+  // a date is taken only after normalizing: 05:00+07:00 on 1 Nov is still 31 Oct in UTC
+  assert.equal(toUtc("2026-11-01T05:00:00+07:00"), "2026-10-31T22:00:00Z");
+  assert.equal(toUtc("2026-10-31T17:00:00-05:00"), "2026-10-31T22:00:00Z");
+  for (const bad of ["2026-02-30", "2026-10-31T24:00:00Z", "2026-10-31T22:00:00", "2026-10-31T22:00Z", "2026-10-31T22:00:00+0700", "1969-12-31T23:59:59Z", "", null, 5]) assert.equal(toUtc(bad), null, String(bad));
 });

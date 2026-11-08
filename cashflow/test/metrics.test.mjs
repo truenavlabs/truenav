@@ -92,3 +92,14 @@ test("cash match uses one claim cohort (paid in the period): a September claim i
   const mt = metrics({ kind: "rental", m, issuer: { occupancy_bps: 10000 }, asOf: AS_OF, period: "2026-10", daysInPeriod: 31 });
   assert.deepEqual([mt.claimed_cash_cents, mt.exceptions.claimed_not_settled_cents, mt.cash_match_bps], [2000, 1000, 5000]);
 });
+
+test("M5: one rent due of 100 cents, no claim, one mapped-payer rent credit: unpaid, settled_not_claimed, cash 0, collection 0%", () => {
+  const m = match({ due: [due("D1", "U1", "2026-10-01", 100, "rent")], claims: [], bank: [txn("T1", "2026-10-02", 100, "cp-U1", "rent")], payers: { "cp-U1": "U1" } });
+  assert.equal(m.due[0].status, "unpaid");
+  assert.equal(m.bank[0].outcome, "settled_not_claimed");
+  assert.equal(m.exceptions.settled_not_claimed, 1);
+  const mt = metrics({ kind: "rental", m, issuer: { occupancy_bps: 10000, reserves_cents: 0 }, asOf: AS_OF, period: "2026-10", daysInPeriod: 31 });
+  assert.equal(mt.cash_received_cents, 0);
+  assert.equal(mt.rent_collected_cents, 0);
+  assert.equal(mt.collection_rate_bps, 0);
+});

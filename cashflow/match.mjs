@@ -159,25 +159,12 @@ export function match({ due, claims, bank, payers = {} }) {
       amounts.claimed_not_settled_cents += c.amount_cents;
     }
   }
-  // a credit from a unit's own payer that settles no claim: the bank shows cash the manager did not record. It is
-  // applied to that unit's oldest open due items; anything beyond them is an unapplied credit, never income for
-  // another unit.
+  // M5: a credit from a unit's own (mapped) payer that settles no claim is cash the manager did not record. It is
+  // reported as settled_not_claimed and never settles a due item or counts as cash received or collected: only a
+  // manager claim the bank confirms (M3) does.
   for (const t of credits.filter((x) => free(x) && payers[x.counterparty_ref])) {
-    let left = t.amount_cents;
-    for (const d of dues.filter((x) => x.unit_ref === payers[t.counterparty_ref])) {
-      const open = d.amount_due_cents - d.settled;
-      if (open <= 0 || left <= 0) continue;
-      const take = Math.min(open, left);
-      d.settled += take;
-      left -= take;
-    }
-    t.used = t.amount_cents - left;
-    t.outcome = t.used > 0 ? "settled_not_claimed" : "unapplied_credit";
-    if (t.used > 0) exceptions.settled_not_claimed++;
-    if (left > 0) {
-      exceptions.unapplied_credit++;
-      amounts.unapplied_credit_cents += left;
-    }
+    t.outcome = "settled_not_claimed";
+    exceptions.settled_not_claimed++;
   }
   for (const d of dues) d.status = d.settled >= d.amount_due_cents ? "paid_full" : d.settled > 0 ? "paid_partial" : "unpaid";
 

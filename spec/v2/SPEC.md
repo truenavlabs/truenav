@@ -94,7 +94,7 @@ Inputs: due (3.1), claimed (3.2), settled (3.3). Output per due item, plus excep
 
 **M4 Partials.** A due item is `paid_full` when settled amounts linked to it reach `amount_due_cents`, `paid_partial` when some but not all of it is settled, `unpaid` when none is. Overpayments above the due amount stay as `unapplied_credit`, never as income for another unit.
 
-**M5 Classify unlinked bank credits.** A credit that settles no claim is not rent or interest. It is classified from `kind_hint` as `security_deposit`, `owner_transfer` (issuer or sponsor top-up), `loan_proceeds`, `refund` or `unattributed`, and none of these count as cash received. An owner transfer that funds a distribution is exception `distribution_funded_by_sponsor`.
+**M5 Classify unlinked bank credits.** A credit that settles no claim is not rent or interest. It is classified from `kind_hint` as `security_deposit`, `owner_transfer` (issuer or sponsor top-up), `loan_proceeds`, `refund` or `unattributed`, and none of these count as cash received. A credit from a payer mapped to a unit that settles no claim is `settled_not_claimed`: it settles no due item and counts neither as cash received nor as collected rent. An owner transfer that funds a distribution is exception `distribution_funded_by_sponsor`.
 
 **M6 Exceptions** (counted, never individually identified in public output): `claimed_not_settled` (the manager says paid, the bank shows no cash), `settled_not_claimed`, `duplicate_claim`, `duplicate_bank_txn`, `probable_reversal`, `batch_mismatch`, `claim_without_due`, `unapplied_credit`, `distribution_funded_by_sponsor`, `stale_source`, `carried_forward`, `missing_source`.
 
@@ -146,7 +146,11 @@ LGD: real-estate-secured 31%, unsecured 67% (v1 inference, labeled as such). Tru
 
 ### 5.6 Freshness
 
-Per source, age = run as-of minus the source's own as-of: the export timestamp for an upload or manager export, the fetch time for a bank fetch made by the TEE. Never the latest record date inside it (a monthly statement's last transaction can be weeks old while the statement is current). Each source has a cadence and a window:
+Per source, age = run as-of minus the source's own as-of: the export timestamp for an upload or manager export, the fetch time for a bank fetch made by the TEE. Never the latest record date inside it (a monthly statement's last transaction can be weeks old while the statement is current).
+
+Before anything is matched, every source is checked: the bank feed, the servicer or manager records and the issuer claims must all be present, each with an `as_of`. A missing source, a missing or null `as_of`, or one that is not a valid timestamp fails the run closed with a named code (`source_missing_<source>`, `as_of_missing_<source>`, `as_of_invalid_<source>`); nothing is scored. Every timestamp (run as-of, fetch time, source as-of, previous as-of) is normalized to UTC before a date is taken from it or two are compared. Accepted forms: `YYYY-MM-DD` (midnight UTC) or `YYYY-MM-DDTHH:MM:SS[.mmm]` with `Z` or a `+HH:MM` / `-HH:MM` offset, years 1970 to 9999; the same instant written with `Z` or with an offset gives the same result.
+
+Each source has a cadence and a window:
 
 | Cadence | Full freshness until | Zero at |
 | --- | --- | --- |

@@ -21,8 +21,10 @@ test("settlement window is -2 to +5 days: day +6 does not settle", () => {
   const r = match({ due: [due("D1", "U-A", "2026-10-01", 150000)], claims: [claim("C1", "U-A", "2026-10-01", 150000)], bank: [txn("T1", "2026-10-07", 150000, "cp-A")], payers });
   assert.equal(r.claims[0].outcome, "claimed_not_settled");
   assert.equal(r.amounts.claimed_not_settled_cents, 150000);
-  // the bank cash still exists: it is applied as cash the manager recorded but the bank shows late
+  // the bank cash still exists but settles no claim: it is reported, never applied to the due item (M5)
   assert.equal(out(r, "T1"), "settled_not_claimed");
+  assert.equal(st(r, "D1").status, "unpaid");
+  assert.equal(st(r, "D1").settled_cents, 0);
 });
 
 test("partial payment: due is paid_partial with the settled amount", () => {
@@ -91,12 +93,16 @@ test("an unknown credit stays unattributed and is not matched to anyone's rent",
   assert.equal(st(r, "D1").status, "unpaid");
 });
 
-test("overpayment by a payer covers that unit's own open items; the rest is an unapplied credit", () => {
+test("M5: an unclaimed credit from a mapped payer covers no open item, its own unit's or another's", () => {
   const r = match({ due: [due("D1", "U-A", "2026-10-01", 100000), due("D2", "U-B", "2026-10-01", 100000)], claims: [], bank: [txn("T1", "2026-10-02", 130000, "cp-A")], payers });
-  assert.equal(st(r, "D1").status, "paid_full");
+  assert.equal(st(r, "D1").status, "unpaid");
+  assert.equal(st(r, "D1").settled_cents, 0);
   assert.equal(st(r, "D2").status, "unpaid");
-  assert.equal(r.amounts.unapplied_credit_cents, 30000);
-  assert.equal(r.exceptions.unapplied_credit, 1);
+  assert.equal(out(r, "T1"), "settled_not_claimed");
+  assert.equal(r.bank[0].used_cents, 0);
+  assert.equal(r.exceptions.settled_not_claimed, 1);
+  assert.equal(r.exceptions.unapplied_credit, 0);
+  assert.equal(r.amounts.unapplied_credit_cents, 0);
 });
 
 test("a claim with no matching due item is a claim_without_due and is not claimed cash", () => {

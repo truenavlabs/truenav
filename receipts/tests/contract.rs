@@ -399,3 +399,36 @@ fn the_pending_request_snapshots_the_method_as_well_as_the_build() {
     let r = c.get_latest("HONEST-RENTAL".into()).unwrap();
     assert_eq!((r.method.as_str(), r.version_key.as_str()), ("cashflow-v2.1.0", PIN));
 }
+
+#[test]
+fn a_rental_in_severe_arrears_is_stored_red_and_replaces_the_green_receipt() {
+    // HONEST-RENTAL with every rent payment removed (tests/arrears.mjs): 4 months unpaid, late_share_bps 40000
+    let arrears = |n: &str| {
+        let mut v = fixture("HONEST-RENTAL-ARREARS");
+        v["run_nonce"] = json!(n);
+        Some(v.to_string().into_bytes())
+    };
+    assert_eq!(fixture("HONEST-RENTAL-ARREARS")["metrics"]["late_share_bps"], 40000);
+    let mut c = setup();
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", |n| Some(engine_output("HONEST-RENTAL", n, |_| {}))), "stored:1");
+    assert_eq!(c.get_latest("HONEST-RENTAL".into()).unwrap().band, "green");
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", arrears), "stored:2");
+    let r = c.get_latest("HONEST-RENTAL".into()).unwrap();
+    assert_eq!((r.seq, r.score, r.band.as_str()), (2, 59, "red"));
+    assert_eq!(r.caps, vec!["payout_exceeds_net_cash".to_string(), "collection_shortfall".to_string()]);
+    // still an integer, and still bounded: 100 periods of rent
+    let tweak = |val: Value| {
+        move |n: &str| {
+            let mut v = fixture("HONEST-RENTAL-ARREARS");
+            v["run_nonce"] = json!(n);
+            v["metrics"]["late_share_bps"] = val.clone();
+            Some(v.to_string().into_bytes())
+        }
+    };
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", tweak(json!(1_000_001))), "receipt_rejected:metrics_value");
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", tweak(json!(40000.5))), "receipt_rejected:metrics_value");
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", tweak(json!("40000"))), "receipt_rejected:metrics_value");
+    // credit late share is a share of principal, so it stays at most 10000
+    assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |v| v["metrics"]["late_share_bps"] = json!(10_001)))), "receipt_rejected:metrics_value");
+    assert_eq!(c.get_latest("HONEST-RENTAL".into()).unwrap().seq, 2);
+}

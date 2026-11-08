@@ -19,6 +19,7 @@ import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, nearToYocto, te
 import { createServer, queryHash } from "../../api/server.mjs";
 import { nearChain } from "../../api/chain.mjs";
 import { RUN_AS_OF, BANK_FETCHED_AT } from "../../cashflow/demo/data.mjs";
+import { severeArrears } from "../tests/arrears.mjs";
 
 const root = new URL("../../", import.meta.url).pathname;
 const wasm = (crate, name) => join(root, crate, `target/near/${name}.wasm`);
@@ -66,6 +67,12 @@ try {
   const funds = { "DEMO-CREDIT": "credit", "DEMO-RENTAL": "rental", "HONEST-CREDIT": "credit", "HONEST-RENTAL": "rental" };
   for (const [t, k] of Object.entries(funds)) await call("admin", "receipts", "register_token", { token_id: t, kind: k }, { deposit: 1n });
   ok((await call("admin", "receipts", "set_runner", { account: id("agent"), allowed: true })).ok === false, "an admin call without 1 yocto is refused");
+  // D1 funds receipts. with FUND.receipts (receipts/deploy-testnet.mjs); after deploy, init and the 4 tokens (D2, D3)
+  // the locked storage must leave at least 0.1 NEAR for gas and for refunds paid from the contract's own balance
+  const fundReceipts = nearToYocto(readFileSync(join(root, "receipts/deploy-testnet.mjs"), "utf8").match(/receipts: "([0-9.]+)"/)[1]);
+  const rAcct = await provider.viewAccount({ accountId: id("receipts"), blockQuery: { finality: "final" } });
+  const locked = BigInt(rAcct.storage_usage) * 10n ** 19n;
+  ok(locked + nearToYocto("0.1") <= fundReceipts, `receipts storage after D2 and D3: ${rAcct.storage_usage} bytes, ${(Number(locked) / 1e24).toFixed(4)} NEAR locked of the ${(Number(fundReceipts) / 1e24).toFixed(1)} NEAR D1 funds it`);
 
   const datasets = Object.fromEntries(Object.keys(funds).map((t) => [t, JSON.parse(readFileSync(join(root, `cashflow/fixtures/parity/cashflow-parity-${t}.json`))).input.dataset]));
   const dsFile = (t, ds) => {
@@ -181,6 +188,15 @@ try {
   ok(in2.previous_period === seq1.period && in2.previous.every((p, i) => p.snapshot_sha256 === seq1.passport[i].snapshot_sha256 && p.as_of === seq1.passport[i].as_of), "previous and previous_period are seq 1's passport and period");
   const seq2 = JSON.parse((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt);
   ok(seq2.passport.every((p) => p.carried_forward === false) && seq2.score === seq1.score, "same period, so nothing is carried forward and the score is unchanged");
+
+  // severe arrears: HONEST-RENTAL with every rent payment removed; rental late_share_bps is arrears over one period's
+  // rent, so 4 months unpaid is 40000 and must be stored (red), not rejected, or the old green receipt would stand
+  f = await run("HONEST-RENTAL", { ds: severeArrears(datasets["HONEST-RENTAL"]) });
+  ok(f.result.value === "stored:2", `HONEST-RENTAL in severe arrears is stored as seq 2 (${f.result.value})`);
+  const sev = await view("receipts", "get_latest", { token_id: "HONEST-RENTAL" });
+  const sevR = JSON.parse(sev.receipt);
+  ok(sev.seq === 2 && sev.score === 59 && sev.band === "red" && sevR.metrics.late_share_bps === 40000, `the latest HONEST-RENTAL receipt is now ${sev.score} ${sev.band}, late_share_bps ${sevR.metrics.late_share_bps}`);
+  ok(sev.caps.join(",") === "payout_exceeds_net_cash,collection_shortfall", `with caps ${sev.caps.join(", ")}`);
 
   // ---- query contract and API --------------------------------------------------------------------------------
   const wrong = await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "DEMO-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.02") });

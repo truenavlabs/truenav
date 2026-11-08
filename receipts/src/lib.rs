@@ -346,7 +346,10 @@ impl Receipts {
     /// and OutLayer itself refunds the unused deposit to `payer_account_id`. A FAILED promise therefore means
     /// request_execution panicked at admission: NEAR returned the attached deposit to this contract, so it is passed
     /// on to the requester here. A `null` result refunds nothing more (OutLayer already did), so nothing is refunded
-    /// twice. This callback must not panic: a panic would roll back the pending removal.
+    /// twice. A FAILED promise can in principle also come from OutLayer's own callback panicking after admission; it
+    /// returns a value on every path, so this should not happen, and it cannot be told apart here: it would be
+    /// treated as an admission failure, refunding 0.01 NEAR from this contract's balance (README, failures and
+    /// refunds). This callback must not panic: a panic would roll back the pending removal.
     #[private]
     pub fn on_run_result(&mut self, token_id: String, request_id: u64) -> String {
         let Some(p) = self.pending.get(&token_id).cloned() else { return "no_pending".into() };

@@ -50,8 +50,15 @@ const MAX_SAFE: i64 = 9_007_199_254_740_991;
 /// Metric fields shared by both fund types: (name, min, max) for the integers; kind, period, as_of, cohorts,
 /// exceptions, flags and collection are checked on their own.
 const METRIC_STRUCT: [&str; 7] = ["as_of", "cohorts", "collection", "exceptions", "flags", "kind", "period"];
-const METRIC_INTS_BOTH: [(&str, i64, i64); 4] = [("cash_received_cents", 0, MAX_SAFE), ("claimed_cash_cents", 0, MAX_SAFE), ("cash_match_bps", 0, 10_000), ("late_share_bps", 0, 10_000)];
-const METRIC_INTS_CREDIT: [(&str, i64, i64); 6] = [
+/// Ratio bounds follow outlayer/engine-v2/src/metrics.rs: cash_match_bps is clamped to 10000; collection_rate_bps
+/// caps each due's settled amount at the due; credit late_share_bps is principal 60+ days late over total principal
+/// (a subset, so at most 10000); yield_gap_bps is at most reported_yield_bps; occupancy and reported yield are
+/// validated in the engine. Rental late_share_bps is all arrears 60+ days late over ONE period's rent due, so months
+/// of arrears legitimately exceed 10000 (4 months unpaid: 40000); it is allowed up to 100 periods of rent.
+pub const RENTAL_LATE_SHARE_MAX_BPS: i64 = 1_000_000;
+const METRIC_INTS_BOTH: [(&str, i64, i64); 3] = [("cash_received_cents", 0, MAX_SAFE), ("claimed_cash_cents", 0, MAX_SAFE), ("cash_match_bps", 0, 10_000)];
+const METRIC_INTS_CREDIT: [(&str, i64, i64); 7] = [
+    ("late_share_bps", 0, 10_000),
     ("cash_interest_cents", 0, MAX_SAFE),
     ("accrued_interest_cents", 0, MAX_SAFE),
     ("capitalized_interest_cents", 0, MAX_SAFE),
@@ -59,7 +66,8 @@ const METRIC_INTS_CREDIT: [(&str, i64, i64); 6] = [
     ("cash_yield_bps", 0, MAX_SAFE),
     ("yield_gap_bps", 0, 10_000),
 ];
-const METRIC_INTS_RENTAL: [(&str, i64, i64); 9] = [
+const METRIC_INTS_RENTAL: [(&str, i64, i64); 10] = [
+    ("late_share_bps", 0, RENTAL_LATE_SHARE_MAX_BPS),
     ("rent_due_cents", 0, MAX_SAFE),
     ("rent_collected_cents", 0, MAX_SAFE),
     ("collection_rate_bps", 0, 10_000),

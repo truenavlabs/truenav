@@ -22,7 +22,8 @@ const RPC = "https://rpc.testnet.near.org";
 const KEYS = join(homedir(), ".near-credentials/testnet");
 const root = new URL("../", import.meta.url).pathname;
 const ids = { receipts: `receipts.${MASTER}`, query: `query.${MASTER}`, runner: `runner.${MASTER}`, api: `api.${MASTER}` };
-// receipts and query hold their code storage (about 1 NEAR per 100 KB: 252,507 and 155,543 bytes); a run's receipt
+// receipts and query hold their code storage (about 1 NEAR per 100 KB: 264,406 and 155,543 bytes; receipts measures
+// 265,821 bytes after init and the 4 tokens on the sandbox, 2.66 NEAR of its 2.8, checked by the e2e); a run's receipt
 // storage is paid by the runner's deposit; the runner needs one run's deposit (0.26 NEAR, mostly refunded)
 const FUND = { receipts: "2.8", query: "1.7", runner: "0.4", api: "0.1" };
 const NEED = Object.values(FUND).reduce((a, b) => a + nearToYocto(b), 0n) + nearToYocto("0.05");
@@ -96,7 +97,7 @@ if (step === "D1") {
 }
 if (step === "D2") {
   const args = { admin: MASTER, pauser: MASTER, config: CONFIG };
-  console.log(`D2: deploy the receipt contract (wasm ${PINNED.receipts}, ${readFileSync(WASM.receipts).length} bytes) to ${ids.receipts} and initialise it. Cost: about 2.55 NEAR locked for code and state storage on ${ids.receipts} (its own balance), plus gas.`);
+  console.log(`D2: deploy the receipt contract (wasm ${PINNED.receipts}, ${readFileSync(WASM.receipts).length} bytes) to ${ids.receipts} and initialise it. Cost: about 2.66 NEAR locked for code and state storage on ${ids.receipts} (265,821 bytes after D3, measured on the sandbox; its own balance, funded 2.8 in D1, about 0.14 left for gas), plus gas.`);
   show(ids.receipts, [`DeployContract sha256 ${PINNED.receipts}`, `FunctionCall new ${JSON.stringify(args)} gas 50 Tgas deposit 0`]);
   if (execute) await send(ids.receipts, ids.receipts, [actions.deployContract(new Uint8Array(readFileSync(WASM.receipts))), actions.functionCall("new", args, teraToGas("50"), 0n)]);
 }

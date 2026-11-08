@@ -42,10 +42,10 @@ informational, as `code_hash` is (spec 8.2).
 ## Tests
 
 ```bash
-(cd receipts && cargo test --locked)     # 16: the 4 real engine receipts, closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
+(cd receipts && cargo test --locked)     # 17: the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
 (cd query && cargo test --locked)        # 8: exact fee, 24 h, uses, redeemer, withdraw bound, 1 yocto admin calls
 node --test api/test/api.test.mjs        # 7: free score, 402, one-use report, ask spends nothing, score unchanged
-npm run e2e:receipts                     # 63 checks on a local sandbox, engine run natively as the worker
+npm run e2e:receipts                     # 67 checks on a local sandbox, engine run natively as the worker
 ```
 
 ## Pinned builds
@@ -84,9 +84,19 @@ Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlaye
 - Admitted, then failed or timed out: OutLayer resolves `null` and refunds the unused deposit to `payer_account_id`
   (the requester) itself; the contract refunds only the unused storage. Code `outlayer_run_failed`. Nothing is
   refunded twice.
+- A failed promise that is not an admission failure: OutLayer's own callback (`on_execution_response`) panicking
+  or running out of gas after it admitted the request. Its contract returns a value on every path, including
+  `null` for failed and timed-out runs and for an unknown request, so this should not happen, but the receipt
+  contract cannot tell it from an admission failure: both reach it as a FAILED promise. It then stores
+  `outlayer_admission_failed` and refunds 0.01 NEAR the contract did not get back (OutLayer kept the deposit), paid
+  from its own balance. The loss is at most 0.01 NEAR per run, only listed runners can request runs, and the admin
+  can pause; the `receipts.` balance (about 0.14 NEAR above storage) covers a few.
 - The requester pays for all the storage a run uses: the pending record (measured when it is written) and whatever
   the callback stores.
 - A rejected receipt stores a fixed code (`receipt_rejected:<check>`); the code never echoes the input.
+- Metric bounds follow `outlayer/engine-v2/src/metrics.rs` (`receipts/src/validate.rs` lists why each holds). Rental
+  `late_share_bps` is all arrears 60+ days late over one period's rent due, so months of arrears exceed 10000
+  (HONEST-RENTAL with no rent since August: 40000, stored red at 59); it is allowed up to 1,000,000 (100 periods).
 
 ## Deploy plan (each step needs its own yes)
 
@@ -97,7 +107,7 @@ step only, after read-only checks (testnet chain id, key file present, pinned wa
 | --- | --- | --- |
 | D0 | read-only checks | none |
 | D1 | create `receipts.`, `query.`, `runner.`, `api.tnlab-718ca9.testnet` with fresh keys | 5.0 NEAR moved to our own accounts, plus gas |
-| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.55 NEAR code storage (from D1 funds) |
+| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.66 NEAR storage: 265,821 bytes after D2 and D3 on the sandbox, of the 2.8 NEAR D1 gives `receipts.` (about 0.14 left for gas; the e2e checks it fits) |
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 

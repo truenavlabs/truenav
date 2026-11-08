@@ -18,6 +18,7 @@ import { Sandbox, DEFAULT_ACCOUNT_ID, DEFAULT_PRIVATE_KEY } from "near-sandbox";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, nearToYocto, teraToGas } from "near-api-js";
 import { createServer, queryHash } from "../../api/server.mjs";
 import { nearChain } from "../../api/chain.mjs";
+import { RUN_AS_OF, BANK_FETCHED_AT } from "../../cashflow/demo/data.mjs";
 
 const root = new URL("../../", import.meta.url).pathname;
 const wasm = (crate, name) => join(root, crate, `target/near/${name}.wasm`);
@@ -73,12 +74,13 @@ try {
     return f;
   };
   // the worker: wait for the open request, run the engine on its public input, resolve the yield
+  // the clock and as_of are the synthetic data's real run time (8 Nov 2026), as in the parity fixtures
   async function serve(token, { ds = datasets[token], tamper, fail } = {}) {
     for (let i = 0; i < 60; i++) {
       const open = (await view("outlayer", "get_requests")).filter((r) => JSON.parse(r.input_data).token_id === token);
       if (open.length) {
         const r = open[0];
-        let out = fail ? "" : execFileSync(engine, [dsFile(token, ds), "2026-10-31T22:00:00Z"], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: "2026-11-01T00:00:00Z" }) }).toString();
+        let out = fail ? "" : execFileSync(engine, [dsFile(token, ds), BANK_FETCHED_AT], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: RUN_AS_OF }) }).toString();
         if (tamper) out = tamper(out);
         const res = await call("worker", "outlayer", "resolve", { request_id: r.request_id, success: !fail, output: out });
         if (process.env.E2E_DEBUG) console.log("  resolve", r.request_id, res.ok ? "ok" : res.failure.slice(0, 300), `after ${i * 0.5}s`);
@@ -94,7 +96,8 @@ try {
     const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.26"))] });
     const hash = baseEncode(createHash("sha256").update(signed.transaction.encode()).digest());
     await provider.sendTransactionAsync(signed);
-    const req = await serve(token, opts);
+    // refused at admission: there is no open request to serve
+    const req = opts && opts.refused ? null : await serve(token, opts);
     for (let i = 0; i < 60; i++) {
       try {
         const t = await provider.viewTransactionStatusWithReceipts({ txHash: hash, accountId: id("runner"), waitUntil: "FINAL" });
@@ -111,7 +114,7 @@ try {
   }
 
   // ---- runs --------------------------------------------------------------------------------------------------
-  const expect = { "DEMO-CREDIT": [58, "red"], "DEMO-RENTAL": [58, "red"], "HONEST-CREDIT": [97, "green"], "HONEST-RENTAL": [100, "green"] };
+  const expect = { "DEMO-CREDIT": [58, "red"], "DEMO-RENTAL": [58, "red"], "HONEST-CREDIT": [100, "green"], "HONEST-RENTAL": [100, "green"] };
   for (const [t, [score, band]] of Object.entries(expect)) {
     const before = BigInt((await provider.viewAccount({ accountId: id("runner"), blockQuery: { finality: "final" } })).amount);
     const { req, result } = await run(t);
@@ -134,10 +137,28 @@ try {
   delete noDues.manager_export.charges;
   let f = await run("DEMO-RENTAL", { ds: noDues });
   ok(f.result.value === "module_failed:dues_missing", `module error stores only its code (${f.result.value})`);
+  // an admitted run that fails: OutLayer resolves null and refunds the payer (the runner) itself; the receipt contract
+  // refunds only the unused storage deposit. Refused at admission: NEAR returns the deposit to the receipt contract,
+  // which passes it on. Either way the runner ends up paying less than the OutLayer deposit, and more than nothing
+  // (gas and the stored failure code), so no deposit is lost and none is refunded twice.
+  const runnerBalance = async () => BigInt((await provider.viewAccount({ accountId: id("runner"), blockQuery: { finality: "final" } })).amount);
+  let b0 = await runnerBalance();
   f = await run("DEMO-RENTAL", { fail: true });
-  ok(f.result.value === "outlayer_failed", `failed execution stores outlayer_failed (${f.result.value})`);
+  let paid = b0 - (await runnerBalance());
+  ok(f.result.value === "outlayer_run_failed", `an admitted run that failed stores outlayer_run_failed (${f.result.value})`);
+  ok(paid > 0n && paid < nearToYocto("0.01"), `after an admitted failure the runner paid ${Number(paid) / 1e24} NEAR: gas and storage only, deposit refunded once`);
+  ok((await call("worker", "outlayer", "set_refuse", { refuse: true })).ok, "mock OutLayer refuses requests at admission");
+  b0 = await runnerBalance();
+  f = await run("DEMO-RENTAL", { refused: true });
+  paid = b0 - (await runnerBalance());
+  ok(f.result.value === "outlayer_admission_failed", `a request refused at admission stores outlayer_admission_failed (${f.result.value})`);
+  ok(paid > 0n && paid < nearToYocto("0.01"), `after an admission failure the runner paid ${Number(paid) / 1e24} NEAR: the deposit came back through the receipt contract`);
+  ok((await view("receipts", "get_token", { token_id: "DEMO-RENTAL" })).pending === null, "nothing left pending after the admission failure");
+  ok((await call("worker", "outlayer", "set_refuse", { refuse: false })).ok, "mock OutLayer admits again");
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), tenants: ["Tenant DEMO-RENTAL 01"] }) });
-  ok(f.result.value === "receipt_rejected:top_unknown_field_tenants", `a receipt with a private field is rejected (${f.result.value})`);
+  ok(f.result.value === "receipt_rejected:top_fields", `a receipt with a private field is rejected with a fixed code (${f.result.value})`);
+  f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify(o) });
+  ok(f.result.value === "receipt_not_object", `a receipt delivered as a JSON string is refused (${f.result.value})`);
   const strOcc = structuredClone(datasets["DEMO-RENTAL"]);
   strOcc.issuer.occupancy_bps = "SENTINEL-not-a-number";
   f = await run("DEMO-RENTAL", { ds: strOcc });

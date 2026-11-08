@@ -102,6 +102,14 @@ jobs:
               sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
               cargo near build non-reproducible-wasm --locked
           done
+      - name: Built contract wasm matches receipts/pinned-builds.json
+        run: |
+          for c in receipts query; do
+            want=$(node -e "process.stdout.write(require('./receipts/pinned-builds.json')['$c'])")
+            got=$(sha256sum "$c/target/near/truenav_$c.wasm" | cut -d' ' -f1)
+            echo "$c built $got pinned $want"
+            [ "$got" = "$want" ] || { echo "::error::$c wasm $got does not match the pinned $want"; exit 1; }
+          done
       - name: Native engine for the worker
         working-directory: outlayer/engine-v2
         run: cargo +1.99.0 build --locked --example native

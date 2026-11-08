@@ -75,7 +75,13 @@ pub struct Pending {
     pub run_nonce: String,
     pub requester: AccountId,
     pub version_key: String,
+    /// the method in force when the request was made; the receipt must claim exactly this one
+    pub method: String,
     pub storage_deposit: U128,
+    /// what was forwarded to OutLayer with this request
+    pub outlayer_deposit: U128,
+    /// storage bytes this pending record took, measured when it was written; charged to the requester
+    pub pending_bytes: u64,
     pub requested_ns: u64,
 }
 
@@ -140,8 +146,9 @@ fn check_config(c: &Config) {
     require!(!c.secrets_profile.is_empty() && c.secrets_profile.len() <= 64, "bad secrets_profile");
     require!(c.outlayer_tgas + c.callback_tgas <= 290, "gas above 290 Tgas");
     require!(c.callback_tgas >= 20 && c.outlayer_tgas >= 50, "gas too low");
-    // a receipt is at most MAX_RECEIPT_BYTES; the stored record roughly doubles it with its index fields
-    let worst = (2 * MAX_RECEIPT_BYTES as u128 + 1_000) * env::storage_byte_cost().as_yoctonear();
+    // a receipt is at most MAX_RECEIPT_BYTES; the stored record roughly doubles it with its index fields, and the
+    // pending record and a failure record come on top
+    let worst = (2 * MAX_RECEIPT_BYTES as u128 + 2_000) * env::storage_byte_cost().as_yoctonear();
     require!(c.storage_deposit.0 >= worst, "storage_deposit too low for the largest receipt");
 }
 
@@ -265,10 +272,26 @@ impl Receipts {
         seed.extend_from_slice(&request_id.to_le_bytes());
         seed.extend_from_slice(token_id.as_bytes());
         let run_nonce = hex(&env::sha256(&seed));
-        self.pending.insert(
-            token_id.clone(),
-            Pending { request_id, token_id: token_id.clone(), run_nonce: run_nonce.clone(), requester: requester.clone(), version_key: c.version_key.clone(), storage_deposit: c.storage_deposit, requested_ns: env::block_timestamp() },
-        );
+        // measure what the pending record costs (store collections write on flush): it is charged to the requester
+        // only the pending map is flushed in this call, so only its own writes move storage_usage here
+        self.pending.flush();
+        let s0 = env::storage_usage();
+        let mut pending = Pending {
+            request_id,
+            token_id: token_id.clone(),
+            run_nonce: run_nonce.clone(),
+            requester: requester.clone(),
+            version_key: c.version_key.clone(),
+            method: c.method.clone(),
+            outlayer_deposit: c.outlayer_deposit,
+            storage_deposit: c.storage_deposit,
+            pending_bytes: 0,
+            requested_ns: env::block_timestamp(),
+        };
+        self.pending.insert(token_id.clone(), pending.clone());
+        self.pending.flush();
+        pending.pending_bytes = env::storage_usage().saturating_sub(s0);
+        self.pending.insert(token_id.clone(), pending);
         // The whole input is built here, never taken from the caller: token_id (checked as registered above), this
         // contract's nonce, and, from this contract's own last stored receipt for the token, the previous passport
         // and period (the TEE compares that period with the issuer's to decide whether a new period started, for the
@@ -311,19 +334,39 @@ impl Receipts {
         input
     }
 
+    fn flush_all(&mut self) {
+        self.pending.flush();
+        self.receipts.flush();
+        self.failures.flush();
+        self.tokens.flush();
+    }
+
+    /// OutLayer's outcomes (outlayer.testnet contract/src/execution.rs, read 8 Nov): once a request is admitted,
+    /// on_execution_response always returns a value: the guest's JSON, or `null` when the run failed or timed out,
+    /// and OutLayer itself refunds the unused deposit to `payer_account_id`. A FAILED promise therefore means
+    /// request_execution panicked at admission: NEAR returned the attached deposit to this contract, so it is passed
+    /// on to the requester here. A `null` result refunds nothing more (OutLayer already did), so nothing is refunded
+    /// twice. This callback must not panic: a panic would roll back the pending removal.
     #[private]
     pub fn on_run_result(&mut self, token_id: String, request_id: u64) -> String {
         let Some(p) = self.pending.get(&token_id).cloned() else { return "no_pending".into() };
         if p.request_id != request_id {
             return "stale_callback".into();
         }
+        self.flush_all();
         self.pending.remove(&token_id);
+        self.pending.flush();
+        // from here on everything this run stores is charged, on top of the pending record's own bytes
         let before = env::storage_usage();
+        let mut deposit_back = 0u128;
         // read at most MAX_RECEIPT_BYTES, so an oversized result cannot run the callback out of gas
         let outcome = match env::promise_result_checked(0, MAX_RECEIPT_BYTES) {
             Ok(bytes) => self.accept(&p, &bytes),
             Err(PromiseError::TooLong(_)) => Err("receipt_too_large".to_string()),
-            Err(_) => Err("outlayer_failed".to_string()),
+            Err(_) => {
+                deposit_back = self.config_outlayer_deposit_for(&p);
+                Err("outlayer_admission_failed".to_string())
+            }
         };
         let code = match outcome {
             Ok(seq) => format!("stored:{seq}"),
@@ -333,46 +376,51 @@ impl Receipts {
                 code
             }
         };
-        // store collections write on flush (normally at the end of the call): flush now so the measured storage
-        // includes this receipt, and the requester, not the contract, pays for it
-        self.pending.flush();
-        self.receipts.flush();
-        self.failures.flush();
-        self.tokens.flush();
-        let after = env::storage_usage();
-        let used = (after.saturating_sub(before) as u128) * env::storage_byte_cost().as_yoctonear();
-        let refund = p.storage_deposit.0.saturating_sub(used);
+        // store collections write on flush: flush now so the measured storage includes what this run stored
+        self.flush_all();
+        let added = env::storage_usage().saturating_sub(before);
+        let charged = ((p.pending_bytes + added) as u128) * env::storage_byte_cost().as_yoctonear();
+        let refund = p.storage_deposit.0.saturating_sub(charged) + deposit_back;
         if refund > 0 {
             Promise::new(p.requester).transfer(NearToken::from_yoctonear(refund)).detach();
         }
         code
     }
 
+    /// The OutLayer deposit this request forwarded (snapshotted: the config may have changed since).
+    fn config_outlayer_deposit_for(&self, p: &Pending) -> u128 {
+        p.outlayer_deposit.0
+    }
+
     fn accept(&mut self, p: &Pending, bytes: &[u8]) -> Result<u64, String> {
         if bytes.len() > MAX_RECEIPT_BYTES {
             return Err("receipt_too_large".into());
         }
-        let mut v: Value = serde_json::from_slice(bytes).map_err(|_| "receipt_not_json".to_string())?;
-        // tolerate an output delivered as a JSON string holding the JSON
-        if let Value::String(s) = &v {
-            v = serde_json::from_str(s).map_err(|_| "receipt_not_json".to_string())?;
+        let v: Value = serde_json::from_slice(bytes).map_err(|_| "receipt_not_json".to_string())?;
+        match &v {
+            // OutLayer's answer for an admitted run that failed or timed out; it already refunded the payer
+            Value::Null => return Err("outlayer_run_failed".into()),
+            // response_format Json delivers the guest's JSON object; anything else (a JSON string holding JSON, an
+            // array, a number) is refused rather than reinterpreted, so a stored receipt is always the object
+            Value::Object(_) => {}
+            _ => return Err("receipt_not_object".into()),
         }
         if let Some(stage) = v.get("error").and(v.get("stage")).and_then(Value::as_str) {
             return Err(if is_stage(stage) { format!("module_failed:{stage}") } else { "module_failed".into() });
         }
         let token = self.tokens.get(&p.token_id).cloned().ok_or("unknown_token")?;
-        let s = check(&v, &Expect { method: &self.config.method, token_id: &p.token_id, kind: &token.kind, run_nonce: &p.run_nonce })?;
+        let s = check(&v, &Expect { method: &p.method, token_id: &p.token_id, kind: &token.kind, run_nonce: &p.run_nonce })?;
         let seq = token.receipts + 1;
         let receipt = String::from_utf8(bytes.to_vec()).map_err(|_| "receipt_not_utf8".to_string())?;
         let sha = hex(&env::sha256(bytes));
-        emit("receipt_stored", json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": self.config.method, "version_key": p.version_key, "receipt_sha256": sha }));
+        emit("receipt_stored", json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": p.method, "version_key": p.version_key, "receipt_sha256": sha }));
         self.receipts.insert(
             (p.token_id.clone(), seq),
             StoredReceipt {
                 token_id: p.token_id.clone(),
                 seq,
                 request_id: p.request_id,
-                method: self.config.method.clone(),
+                method: p.method.clone(),
                 version_key: p.version_key.clone(),
                 score: s.score,
                 band: s.band,

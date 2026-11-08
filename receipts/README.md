@@ -42,10 +42,10 @@ informational, as `code_hash` is (spec 8.2).
 ## Tests
 
 ```bash
-(cd receipts && cargo test --locked)     # 11: the 4 real engine receipts, whitelist rejections (incl. non-integer metrics), failures, roles, contract-built input
+(cd receipts && cargo test --locked)     # 16: the 4 real engine receipts, closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
 (cd query && cargo test --locked)        # 8: exact fee, 24 h, uses, redeemer, withdraw bound, 1 yocto admin calls
 node --test api/test/api.test.mjs        # 7: free score, 402, one-use report, ask spends nothing, score unchanged
-npm run e2e:receipts                     # 56 checks on a local sandbox, engine run natively as the worker
+npm run e2e:receipts                     # 63 checks on a local sandbox, engine run natively as the worker
 ```
 
 ## Pinned builds
@@ -59,6 +59,33 @@ two fresh clones at different paths (as root and as the image user), source comm
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes.
+
+## Who can use the data credentials
+
+Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlayer-cli` 0.2.1 (`commands/secrets.rs`),
+8 Nov:
+
+- An `--access whitelist:` leaf is judged on the transaction signer. A run starts with `runner.` signing
+  `request_run`, so the signer OutLayer sees is `runner.tnlab-718ca9.testnet`, not the receipt contract. Whitelisting
+  `receipts.` alone would admit no run.
+- `--via receipts.tnlab-718ca9.testnet` adds a `Predecessor` rule: the account that called `request_execution` must
+  be the receipt contract. The stored condition is
+  `And[Whitelist[runner.], Predecessor{Whitelist[receipts.]}]`, so `runner.` calling OutLayer directly, or through any
+  other contract, is refused, and nobody else's signature is accepted through the receipt contract.
+- `--build <engine sha>` locks the row to the pinned engine build, so another build in the project cannot read it.
+- The receipt contract only lets runners it lists call `request_run` (`set_runner`, admin only), and it builds the
+  whole input itself.
+
+## Failures and refunds
+
+- Refused at admission (`request_execution` panicked): NEAR returns the 0.01 deposit to the receipt contract, which
+  sends it to the requester with the unused storage deposit. Code `outlayer_admission_failed`.
+- Admitted, then failed or timed out: OutLayer resolves `null` and refunds the unused deposit to `payer_account_id`
+  (the requester) itself; the contract refunds only the unused storage. Code `outlayer_run_failed`. Nothing is
+  refunded twice.
+- The requester pays for all the storage a run uses: the pending record (measured when it is written) and whatever
+  the callback stores.
+- A rejected receipt stores a fixed code (`receipt_rejected:<check>`); the code never echoes the input.
 
 ## Deploy plan (each step needs its own yes)
 
@@ -80,5 +107,5 @@ Later, separately (OutLayer and the data host):
 | H1 | host the mock bank-data API (synthetic data) where the TEE can reach it: the one approved Vercel free-tier project, name and commands to be confirmed |
 | O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.tnlab-718ca9.testnet`), then check FastFS serves sha256 `360cd473...` |
 | O2 | `OUTLAYER_NETWORK=testnet outlayer deploy truenav-engine <fastfs url> --hash 360cd473... --target wasm32-wasip2` |
-| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.tnlab-718ca9.testnet/truenav-engine --profile engine --access whitelist:receipts.tnlab-718ca9.testnet --build 360cd473...` (token read from a file, never shown) |
+| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.tnlab-718ca9.testnet/truenav-engine --profile engine --access whitelist:runner.tnlab-718ca9.testnet --via receipts.tnlab-718ca9.testnet --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
 | R1 | first live run: `request_run` for one synthetic token from `runner.`, 0.26 NEAR attached, 300 Tgas |

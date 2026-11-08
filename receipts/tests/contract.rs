@@ -2,7 +2,8 @@
 // the 4 synthetic funds (tests/fixtures/engine-receipts.json); each test patches in the nonce this contract chose.
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::{self, json, Value};
-use near_sdk::test_utils::{get_logs, VMContextBuilder};
+use near_sdk::mock::MockAction;
+use near_sdk::test_utils::{get_created_receipts, get_logs, VMContextBuilder};
 use near_sdk::{testing_env, AccountId, Gas, NearToken, PromiseResult, RuntimeFeesConfig};
 use truenav_receipts::{Config, Receipts};
 
@@ -79,7 +80,7 @@ fn engine_output(token: &str, nonce: &str, edit: impl Fn(&mut Value)) -> Vec<u8>
 #[test]
 fn all_four_engine_receipts_are_accepted_and_indexed() {
     let mut c = setup();
-    for (t, score, band) in [("DEMO-CREDIT", 58, "red"), ("DEMO-RENTAL", 58, "red"), ("HONEST-CREDIT", 97, "green"), ("HONEST-RENTAL", 100, "green")] {
+    for (t, score, band) in [("DEMO-CREDIT", 58, "red"), ("DEMO-RENTAL", 58, "red"), ("HONEST-CREDIT", 100, "green"), ("HONEST-RENTAL", 100, "green")] {
         assert_eq!(run_with(&mut c, t, |n| Some(engine_output(t, n, |_| {}))), "stored:1", "{t}");
         let r = c.get_latest(t.into()).unwrap();
         assert_eq!((r.seq, r.score, r.band.as_str(), r.version_key.as_str(), r.method.as_str()), (1, score, band, PIN, "cashflow-v2.1.0"));
@@ -147,23 +148,35 @@ fn a_receipt_for_another_request_token_method_or_kind_is_rejected() {
 fn only_aggregates_reasons_metrics_and_document_hashes_get_on_chain() {
     let mut c = setup();
     let cases: Vec<Case> = vec![
-        ("receipt_rejected:top_unknown_field_borrowers", Box::new(|v| v["borrowers"] = json!(["Borrower 1"]))),
-        ("receipt_rejected:metrics_unknown_field_unit_refs", Box::new(|v| v["metrics"]["unit_refs"] = json!(["3f2a"]))),
+        ("receipt_rejected:top_fields", Box::new(|v| v["borrowers"] = json!(["Borrower 1"]))),
+        ("receipt_rejected:top_fields", Box::new(|v| v["Jane_Doe_SSN_123"] = json!(1))),
+        ("receipt_rejected:metrics_fields", Box::new(|v| v["metrics"]["unit_refs"] = json!(["3f2a"]))),
+        ("receipt_rejected:metrics_fields", Box::new(|v| v["metrics"] = json!({}))),
+        ("receipt_rejected:metrics_fields", Box::new(|v| { v["metrics"].as_object_mut().unwrap().remove("reported_yield_bps"); })),
+        ("receipt_rejected:metrics_fields", Box::new(|v| v["metrics"]["occupancy_bps"] = json!(9583))),
         ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["cash_received_cents"] = json!("Tenant DEMO 01 paid"))),
         ("receipt_rejected:metrics_exceptions", Box::new(|v| v["metrics"]["exceptions"]["payer"] = json!(1))),
         ("receipt_rejected:cohort_not_suppressed", Box::new(|v| v["metrics"]["cohorts"]["60"] = json!({ "units": 2, "outstanding_cents": 5 }))),
         ("receipt_rejected:passport_hash", Box::new(|v| v["passport"][0]["snapshot_sha256"] = json!("not-a-hash"))),
-        ("receipt_rejected:passport_unknown_field_rows", Box::new(|v| v["passport"][0]["rows"] = json!(12))),
+        ("receipt_rejected:passport", Box::new(|v| v["passport"][0]["rows"] = json!(12))),
         ("receipt_rejected:evidence_hashes", Box::new(|v| v["evidence_hashes"][0]["sha256"] = json!("0".repeat(64)))),
-        ("receipt_rejected:cap_code", Box::new(|v| v["caps"] = json!([{ "code": "made_up", "reason": "red because x" }]))),
-        ("receipt_rejected:cap_reason", Box::new(|v| v["caps"] = json!([{ "code": "yield_gap", "reason": "the borrower Jane defaulted" }]))),
-        ("receipt_rejected:cap_not_applied", Box::new(|v| v["caps"] = json!([{ "code": "yield_gap", "reason": "red because the gap" }]))),
+        ("receipt_rejected:caps", Box::new(|v| v["caps"] = json!([{ "code": "made_up", "reason": "red because x" }]))),
+        ("receipt_rejected:caps", Box::new(|v| v["caps"] = json!([{ "code": "yield_gap", "reason": "the borrower Jane defaulted" }]))),
+        // free text after "red because" used to pass; the reason must now be the code's exact template
+        ("receipt_rejected:caps", Box::new(|v| v["caps"] = json!([{ "code": "yield_gap", "reason": "red because the reported yield is at least 3.00 percentage points above the cash yield; borrower Jane Doe, loan 1173" }]))),
+        ("receipt_rejected:cap_not_applied", Box::new(|v| v["caps"] = json!([{ "code": "yield_gap", "reason": "red because the reported yield is at least 3.00 percentage points above the cash yield" }]))),
+        ("receipt_rejected:collection_outcome", Box::new(|v| v["holds"] = json!([{ "code": "collection_pending", "reason": "not green because collection for the period cannot be verified yet: before the cutoff or without source coverage through it" }]))),
         ("receipt_rejected:band", Box::new(|v| v["band"] = json!("red"))),
-        ("receipt_rejected:missing_holds", Box::new(|v| { v.as_object_mut().unwrap().remove("holds"); })),
+        ("receipt_rejected:score", Box::new(|v| v["score"] = json!(101))),
+        ("receipt_rejected:uncapped_score", Box::new(|v| v["uncapped_score"] = json!(99))),
+        ("receipt_rejected:top_fields", Box::new(|v| { v.as_object_mut().unwrap().remove("holds"); })),
         ("receipt_rejected:metrics_collection", Box::new(|v| v["metrics"]["collection"]["status"] = json!("defaulted"))),
-        ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["occupancy_bps"] = json!("SENTINEL-not-a-number"))),
-        ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["occupancy_bps"] = json!(9583.5))),
+        ("receipt_rejected:metrics_collection", Box::new(|v| v["metrics"]["collection"]["rate_bps"] = json!(9999))),
         ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["reported_yield_bps"] = json!("1100"))),
+        ("receipt_rejected:metrics_value", Box::new(|v| v["metrics"]["cash_match_bps"] = json!(9583.5))),
+        ("receipt_rejected:exceptions", Box::new(|v| v["exceptions"] = json!([{ "code": "duplicate_claim", "count": 3 }]))),
+        ("receipt_rejected:missing_evidence", Box::new(|v| v["missing_evidence"] = json!(["bank_settlements_stale_or_carried_forward"]))),
+        ("receipt_rejected:checks_run", Box::new(|v| v["checks_run"] = json!(["three_way_match"]))),
     ];
     for (want, edit) in cases {
         assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, &edit))), want);
@@ -176,7 +189,8 @@ fn module_errors_outlayer_failures_and_junk_store_a_failure_code_only() {
     let mut c = setup();
     let err = br#"{"error":"run_failed","method":"cashflow-v2.1.0","stage":"dues_missing"}"#.to_vec();
     assert_eq!(run_with(&mut c, "DEMO-RENTAL", |_| Some(err.clone())), "module_failed:dues_missing");
-    assert_eq!(run_with(&mut c, "DEMO-RENTAL", |_| None), "outlayer_failed");
+    assert_eq!(run_with(&mut c, "DEMO-RENTAL", |_| None), "outlayer_admission_failed");
+    assert_eq!(run_with(&mut c, "DEMO-RENTAL", |_| Some(b"null".to_vec())), "outlayer_run_failed");
     assert_eq!(run_with(&mut c, "DEMO-RENTAL", |_| Some(b"not json".to_vec())), "receipt_not_json");
     let weird = br#"{"error":"run_failed","stage":"Name: Jane Doe"}"#.to_vec();
     assert_eq!(run_with(&mut c, "DEMO-RENTAL", |_| Some(weird.clone())), "module_failed", "a stage that is not a code is not stored");
@@ -286,4 +300,102 @@ fn the_run_input_is_built_by_the_contract_from_its_own_last_receipt() {
         assert_eq!(p.as_object().unwrap().len(), 3);
     }
     assert!(next.get("as_of").is_none() && next.get("new_period").is_none());
+}
+
+/// Transfers the last call created, as (receiver, yoctoNEAR).
+fn transfers() -> Vec<(String, u128)> {
+    get_created_receipts()
+        .iter()
+        .flat_map(|r| r.actions.iter().filter_map(move |a| if let MockAction::Transfer { deposit, .. } = a { Some((r.receiver_id.to_string(), deposit.as_yoctonear())) } else { None }))
+        .collect()
+}
+const BYTE: u128 = 10_000_000_000_000_000_000; // yoctoNEAR per byte of storage
+
+#[test]
+fn malformed_utf8_periods_and_dates_are_rejected_not_panicked_and_the_pending_run_is_cleared() {
+    let mut c = setup();
+    let cases: Vec<Case> = vec![
+        ("receipt_rejected:period_or_as_of", Box::new(|v| v["period"] = json!("2026-1\u{e9}"))),
+        ("receipt_rejected:period_or_as_of", Box::new(|v| v["period"] = json!("\u{ff12}\u{ff10}26-10"))),
+        ("receipt_rejected:period_or_as_of", Box::new(|v| v["as_of"] = json!("2026-11-0\u{e9}T09:00:00Z"))),
+        // a multi-byte character across byte 7 of a 10-byte date used to panic in the slice
+        ("receipt_rejected:metrics_as_of", Box::new(|v| v["metrics"]["as_of"] = json!("2026-1\u{e9}-1"))),
+        ("receipt_rejected:metrics_collection", Box::new(|v| v["metrics"]["collection"]["cutoff"] = json!("2026-1\u{e9}-1"))),
+        ("receipt_rejected:passport", Box::new(|v| v["passport"][1]["as_of"] = json!("2026-11-0\u{e9}T06:00:00Z"))),
+    ];
+    for (want, edit) in cases {
+        assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, &edit))), want);
+        assert!(c.get_token("HONEST-CREDIT".into()).unwrap()["pending"].is_null(), "{want}: the pending run is cleared");
+    }
+}
+
+#[test]
+fn json_string_receipts_and_non_objects_are_refused() {
+    let mut c = setup();
+    let wrapped = |n: &str| Some(json!(String::from_utf8(engine_output("HONEST-RENTAL", n, |_| {})).unwrap()).to_string().into_bytes());
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", wrapped), "receipt_not_object");
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", |_| Some(b"[1,2]".to_vec())), "receipt_not_object");
+    assert!(c.get_latest("HONEST-RENTAL".into()).is_none());
+    // a stored receipt is always the object, so the next run's input carries its passport
+    assert_eq!(run_with(&mut c, "HONEST-RENTAL", |n| Some(engine_output("HONEST-RENTAL", n, |_| {}))), "stored:1");
+    assert_eq!(c.get_run_input("HONEST-RENTAL".into())["previous"].as_array().unwrap().len(), 3);
+}
+
+#[test]
+fn admission_failure_refunds_the_outlayer_deposit_an_admitted_failure_does_not() {
+    let deposit = NearToken::from_millinear(10).as_yoctonear();
+    let storage = NearToken::from_millinear(250).as_yoctonear();
+    let mut c = setup();
+    // refused at admission: NEAR returned the deposit to this contract, which passes it on with the storage refund
+    assert_eq!(run_with(&mut c, "DEMO-CREDIT", |_| None), "outlayer_admission_failed");
+    let t = transfers();
+    assert_eq!(t.len(), 1);
+    assert_eq!(t[0].0, "runner.testnet");
+    assert!(t[0].1 > deposit && t[0].1 <= deposit + storage, "deposit back plus the unused storage: {}", t[0].1);
+    // admitted, then failed (OutLayer resolves null and refunds the payer itself): only the storage refund
+    assert_eq!(run_with(&mut c, "DEMO-CREDIT", |_| Some(b"null".to_vec())), "outlayer_run_failed");
+    let t = transfers();
+    assert_eq!(t.len(), 1);
+    assert!(t[0].1 < storage, "no OutLayer deposit refunded twice: {}", t[0].1);
+    // a module error is an admitted run too
+    assert_eq!(run_with(&mut c, "DEMO-CREDIT", |_| Some(br#"{"error":"run_failed","method":"cashflow-v2.1.0","stage":"dues_missing"}"#.to_vec())), "module_failed:dues_missing");
+    assert!(transfers().iter().all(|(_, a)| *a < storage));
+}
+
+#[test]
+fn the_requester_pays_for_the_pending_record_and_everything_the_run_stores() {
+    let storage = NearToken::from_millinear(250).as_yoctonear();
+    let mut c = setup();
+    set("runner.testnet", attach(), vec![]);
+    let _ = c.request_run("DEMO-RENTAL".into());
+    let p = c.get_token("DEMO-RENTAL".into()).unwrap()["pending"].clone();
+    let pending_bytes = p["pending_bytes"].as_u64().unwrap() as u128;
+    assert!(pending_bytes > 100, "the pending record's storage is measured: {pending_bytes}");
+    let out = engine_output("DEMO-RENTAL", p["run_nonce"].as_str().unwrap(), |_| {});
+    set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Successful(out.clone())]);
+    assert_eq!(c.on_run_result("DEMO-RENTAL".into(), p["request_id"].as_u64().unwrap()), "stored:1");
+    let refund = transfers()[0].1;
+    let charged = storage - refund;
+    // at least the pending record plus the receipt bytes; the record also stores its index fields
+    assert!(charged >= (pending_bytes + out.len() as u128) * BYTE, "charged {charged}");
+    assert!(charged < (pending_bytes + 2 * out.len() as u128 + 1_000) * BYTE, "charged {charged}");
+}
+
+#[test]
+fn the_pending_request_snapshots_the_method_as_well_as_the_build() {
+    let mut c = setup();
+    set("runner.testnet", attach(), vec![]);
+    let _ = c.request_run("HONEST-RENTAL".into());
+    let p = c.get_token("HONEST-RENTAL".into()).unwrap()["pending"].clone();
+    assert_eq!(p["method"], "cashflow-v2.1.0");
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
+    let mut next = config();
+    next.method = "cashflow-v2.2.0".into();
+    next.version_key = "ab".repeat(32);
+    c.set_config(next);
+    let out = engine_output("HONEST-RENTAL", p["run_nonce"].as_str().unwrap(), |_| {});
+    set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Successful(out)]);
+    assert_eq!(c.on_run_result("HONEST-RENTAL".into(), p["request_id"].as_u64().unwrap()), "stored:1");
+    let r = c.get_latest("HONEST-RENTAL".into()).unwrap();
+    assert_eq!((r.method.as_str(), r.version_key.as_str()), ("cashflow-v2.1.0", PIN));
 }

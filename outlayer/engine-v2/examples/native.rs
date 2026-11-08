@@ -28,7 +28,7 @@ impl Fetcher for FileFetcher {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let ds: Value = serde_json::from_str(&std::fs::read_to_string(&args[1]).expect("dataset file")).expect("dataset json");
-    let now = args.get(2).cloned().unwrap_or_else(|| "2026-10-31T22:00:00Z".into());
+    let now = args.get(2).cloned().unwrap_or_else(|| "2026-11-08T08:30:00Z".into());
     let mut input = String::new();
     std::io::stdin().read_to_string(&mut input).expect("stdin");
     let clock = Clock { now: Box::new(move || now.clone()) };

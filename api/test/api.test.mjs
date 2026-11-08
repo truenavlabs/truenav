@@ -54,7 +54,7 @@ test("GET /score is free and reads only the receipt contract", async () => {
   assert.equal(b.band, "red");
   assert.deepEqual(b.caps.map((c) => c.code), ["yield_gap", "claimed_not_settled", "collection_shortfall"]);
   assert.match(b.caps[2].reason, /unverified collection: 78\.57%/);
-  assert.deepEqual(b.collection, { period: "2026-09", cutoff: "2026-10-07", status: "verified", rate_bps: 7857 });
+  assert.deepEqual(b.collection, { period: "2026-10", cutoff: "2026-11-07", status: "verified", rate_bps: 7857 });
   assert.deepEqual(b.holds, []);
   assert.equal(b.version_key, PIN);
 });

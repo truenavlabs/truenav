@@ -234,7 +234,7 @@ One entry per source in every run:
 
 Canonical JSON: UTF-8, keys sorted, no floats, integers above 2^53 as decimal strings, no whitespace. Fields:
 
-`receipt_version` ("2"), `method` (`cashflow-v2.0.0`), `token_id`, `run_nonce` (from the request), `period`, `as_of_ms`, `score`, `band`, `raw_x100`, `parts_x100` {cash_match, gap, late, freshness}, `uncapped_score`, `caps` [{code, reason}], `metrics` (section 5 aggregates; cohorts under 5 units suppressed), `checks_run` [check ids], `exceptions` [{code, count}], `missing_evidence` [codes], `passport` [section 7], `evidence_hashes` [{source, sha256}], `code_hash` (the wasm hash the contract requested).
+`receipt_version` ("2"), `method` (`cashflow-v2.1.0`), `token_id`, `kind`, `run_nonce` (from the request), `period`, `as_of` (UTC), `score`, `band`, `raw_x100`, `parts_x100` {cash_match, gap, late, freshness}, `uncapped_score`, `caps` [{code, reason}], `holds` [{code, reason}], `metrics` (section 5 aggregates; cohorts under 5 units suppressed), `checks_run` [check ids], `exceptions` [{code, count}], `missing_evidence` [codes], `passport` [section 7], `evidence_hashes` [{source, sha256}], `code_hash` (the wasm hash the contract requested).
 
 `receipt_hash` = sha256 of the canonical JSON.
 
@@ -296,9 +296,9 @@ Re-sign path: the NEAR contract keeps each mirror request as (nonce, seq, unsign
 
 ## 13. Interfaces (outline, detailed in their build steps)
 
-- Receipt contract (NEAR testnet, fresh account): roles and pause from the v1 contract; `request_run(token_id)`; private OutLayer callback; `get_latest(token_id)`, `get_history(token_id, from, limit)`; mirror request (8.3).
-- Query contract (separate account): `buy_query(request_id, query_hash)` payable 0.01 NEAR, one-use entitlement valid 24 h; refunds wrong amounts; admin-only `withdraw` with an event.
-- API: `GET /fund/{token}/score` free; `GET /fund/{token}/report` and `POST /ask` require an unused entitlement; payment never changes a score.
+- Receipt contract (NEAR testnet, fresh account; built in step 4, `receipts/`): admin (1 yocto calls, two-step hand-over), pauser, runners; `register_token`, `set_config` (pinned build, never latest); `request_run(token_id)` payable; private callback `on_run_result` with the receipt whitelist (`receipts/src/validate.rs`); views `get_latest`, `get_receipt`, `get_history(token_id, from_seq, limit)`, `get_token`, `list_tokens`, `get_config`; mirror request (8.3) in step 5.
+- Query contract (separate account; `query/`): `buy_query(request_id, query_hash, kind)` payable exactly 0.01 NEAR (any other amount fails and the deposit returns with the failed call), entitlement bound to the query hash, valid 24 h, `report` 1 use, `ask` 20 uses; `redeem` by the API account only; admin-only `withdraw` (never below storage plus a reserve) with an event.
+- API (`api/`): `GET /fund/{token}/score` free; `GET /fund/{token}/report` needs an unused `report` entitlement for `sha256("report|" + token)` and spends it; `POST /ask` needs an `ask` entitlement for `sha256("ask|" + token)` (Q&A in step 6); 402 names exactly what to buy; payment never changes a score (the score path never reads the query contract).
 - Base Sepolia mirror contract: `update(token_id_hash, seq, receipt_hash, score, band, method_id_hash, as_of_ms)`, callable only by the MPC-derived address, strictly increasing `seq` per token.
 
 ## 14. Not claimed

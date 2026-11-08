@@ -56,7 +56,7 @@ impl Mock {
         let payer: AccountId = payer_account_id.parse().unwrap_or_else(|_| env::panic_str("bad payer_account_id"));
         let id = self.next;
         self.next += 1;
-        let idx = env::promise_yield_create("on_resolved", serde_json::json!({ "request_id": id }).to_string(), Gas::from_tgas(20), GasWeight(1), 0);
+        let idx = env::promise_yield_create("on_resolved", serde_json::json!({ "request_id": id }).to_string(), Gas::from_tgas(200), GasWeight(1), 0);
         let data_id = env::read_register(0).expect("yield data id");
         self.refunds.insert(id, (payer, env::attached_deposit().as_yoctonear()));
         self.open.insert(id, Request { request_id: id, sender: env::predecessor_account_id(), payer: payer_account_id, source: source.to_string(), input_data, secrets_ref: secrets_ref.to_string(), deposit: env::attached_deposit().as_yoctonear().to_string(), data_id });
@@ -95,6 +95,11 @@ impl Mock {
         let ok = matches!(env::promise_result_checked(0, 16), Ok(b) if b == b"OK");
         let refund = self.refunds.remove(&request_id);
         match self.outputs.remove(&request_id) {
+            // test only: "BIG:<n>" returns n filler bytes built here (nothing stored), for oversized-result tests
+            Some(out) if ok && out.starts_with("BIG:") => {
+                let n: usize = out[4..].parse().unwrap_or_else(|_| env::panic_str("BIG:<n>"));
+                env::value_return(&vec![b'x'; n]);
+            }
             Some(out) if ok => env::value_return(out.as_bytes()),
             _ => {
                 // failed or timed out: refund the payer, return null (OutLayer keeps a base fee; the mock keeps none)

@@ -5,7 +5,7 @@ use near_sdk::serde_json::{self, json, Value};
 use near_sdk::mock::MockAction;
 use near_sdk::test_utils::{get_created_receipts, get_logs, VMContextBuilder};
 use near_sdk::{testing_env, AccountId, Gas, NearToken, PromiseResult, RuntimeFeesConfig};
-use truenav_receipts::{Config, Receipts};
+use truenav_receipts::{Config, Receipts, MIN_CALLBACK_TGAS};
 
 fn acc(s: &str) -> AccountId {
     s.parse().unwrap()
@@ -506,4 +506,62 @@ fn a_late_callback_for_a_cleared_request_does_not_touch_the_newer_pending_reques
     set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Failed]);
     assert_eq!(c.on_run_result("DEMO-RENTAL".into(), 999), "stale_callback");
     assert!(transfers().is_empty());
+}
+
+/// The callback's context with exactly `tgas` of gas (the gas a request attaches to on_run_result).
+fn set_callback(results: Vec<PromiseResult>, tgas: u64) {
+    let mut b = ctx("receipts.truenav.testnet", NearToken::from_yoctonear(0));
+    b.prepaid_gas(Gas::from_tgas(tgas));
+    testing_env!(b.build(), near_sdk::test_vm_config(), RuntimeFeesConfig::test(), Default::default(), results);
+}
+/// The largest result any receipt can return (max_length_returned_data).
+const MAX_RESULT: usize = 4_194_304;
+
+#[test]
+fn an_oversized_late_success_fits_the_minimum_callback_gas_clears_the_record_and_refunds_held() {
+    let deposit = NearToken::from_millinear(10).as_yoctonear();
+    let storage = NearToken::from_millinear(250).as_yoctonear();
+    let mut c = setup();
+    let (rid, _, at_clear) = request_then_clear(&mut c, "DEMO-CREDIT");
+    let held = storage - at_clear;
+    set_callback(vec![PromiseResult::Successful(vec![b'x'; MAX_RESULT])], MIN_CALLBACK_TGAS);
+    assert_eq!(c.on_run_result("DEMO-CREDIT".into(), rid), "late_ignored");
+    assert_eq!(transfers(), vec![("runner.testnet".to_string(), held)], "only the held bytes, no OutLayer deposit");
+    assert!(held < deposit);
+    assert!(near_sdk::env::used_gas() < Gas::from_tgas(MIN_CALLBACK_TGAS), "used {} of {MIN_CALLBACK_TGAS} Tgas", near_sdk::env::used_gas());
+    // the record is gone: the same callback again refunds nothing
+    set_callback(vec![PromiseResult::Successful(vec![b'x'; MAX_RESULT])], MIN_CALLBACK_TGAS);
+    assert_eq!(c.on_run_result("DEMO-CREDIT".into(), rid), "no_pending");
+    assert!(transfers().is_empty());
+    assert!(c.get_latest("DEMO-CREDIT".into()).is_none());
+}
+
+#[test]
+fn an_oversized_result_in_flight_fits_the_minimum_callback_gas_and_is_refused_as_too_large() {
+    let storage = NearToken::from_millinear(250).as_yoctonear();
+    let mut c = setup();
+    set("runner.testnet", attach(), vec![]);
+    let _ = c.request_run("HONEST-RENTAL".into());
+    let rid = c.get_token("HONEST-RENTAL".into()).unwrap()["pending"]["request_id"].as_u64().unwrap();
+    set_callback(vec![PromiseResult::Successful(vec![b'x'; MAX_RESULT])], MIN_CALLBACK_TGAS);
+    assert_eq!(c.on_run_result("HONEST-RENTAL".into(), rid), "receipt_too_large");
+    let t = transfers();
+    assert_eq!(t.len(), 1);
+    assert!(t[0].1 > 0 && t[0].1 < storage, "the unused storage deposit comes back");
+    assert!(near_sdk::env::used_gas() < Gas::from_tgas(MIN_CALLBACK_TGAS), "used {}", near_sdk::env::used_gas());
+    assert!(c.get_token("HONEST-RENTAL".into()).unwrap()["pending"].is_null());
+}
+
+#[test]
+fn callback_gas_below_the_minimum_is_refused_and_the_deployed_50_is_accepted() {
+    let mut c = setup();
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
+    let mut low = config();
+    low.callback_tgas = MIN_CALLBACK_TGAS - 1;
+    assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.set_config(low))).is_err());
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
+    let mut floor = config();
+    floor.callback_tgas = MIN_CALLBACK_TGAS;
+    c.set_config(floor);
+    assert_eq!(config().callback_tgas, 50, "the deployed config (receipts/deploy-testnet.mjs) uses 50");
 }

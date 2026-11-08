@@ -167,7 +167,7 @@ try {
 
   // the admin cleared a stuck request, and its OutLayer callback arrives later: a FAILED promise (OutLayer's own
   // callback failing after admission) refunds the OutLayer deposit once; a successful late result refunds none
-  async function clearedThen(token, { panic }) {
+  async function clearedThen(token, { panic, output }) {
     const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.26"))] });
     const hash = baseEncode(createHash("sha256").update(signed.transaction.encode()).digest());
     const b0 = await runnerBalance();
@@ -179,7 +179,7 @@ try {
     }
     const cleared = await call("admin", "receipts", "clear_pending", { token_id: token }, { deposit: 1n });
     if (panic) await call("worker", "outlayer", "set_panic_on_resolve", { panic: true });
-    const out = execFileSync(engine, [dsFile(token, datasets[token]), BANK_FETCHED_AT], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: RUN_AS_OF }) }).toString();
+    const out = output ?? execFileSync(engine, [dsFile(token, datasets[token]), BANK_FETCHED_AT], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: RUN_AS_OF }) }).toString();
     await call("worker", "outlayer", "resolve", { request_id: r.request_id, success: true, output: out });
     if (panic) await call("worker", "outlayer", "set_panic_on_resolve", { panic: false });
     let t;
@@ -191,7 +191,10 @@ try {
       }
     }
     const lateLogs = t.receipts_outcome.flatMap((ro) => ro.outcome.logs).filter((l) => l.includes("late_callback"));
-    return { cleared, result: status(t), paid: b0 - (await runnerBalance()), lateLogs };
+    // gas burnt by this contract's on_run_result receipt (the callback)
+    const cb = t.receipts_outcome.filter((ro) => ro.outcome.executor_id === id("receipts")).at(-1);
+    const fails = t.receipts_outcome.filter((ro) => ro.outcome.status.Failure).map((ro) => `${ro.outcome.executor_id}: ${JSON.stringify(ro.outcome.status.Failure).slice(0, 160)}`);
+    return { cleared, result: status(t), paid: b0 - (await runnerBalance()), lateLogs, callbackGas: cb ? BigInt(cb.outcome.gas_burnt) : null, fails };
   }
   let lc = await clearedThen("DEMO-CREDIT", { panic: true });
   ok(lc.cleared.ok, "the admin cleared the stuck DEMO-CREDIT request (1 yocto)");
@@ -203,6 +206,29 @@ try {
   ok(lc.result.ok && lc.result.value === "late_ignored", `a successful result after clear_pending is ignored (${lc.result.value || lc.result.failure})`);
   ok(lc.paid >= nearToYocto("0.01") && lc.paid < nearToYocto("0.012"), `and refunds no OutLayer deposit: paid ${Number(lc.paid) / 1e24} NEAR (the deposit OutLayer used, plus gas)`);
   ok((await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" })).seq === 1, "the late receipt is not stored");
+  // an oversized late success (2 MiB, 209 times the receipt limit; the mock OutLayer burns about 73 Tgas per MiB
+  // to return it, so this is near the most it can send) at exactly the minimum callback gas: the late record is
+  // cleared, held comes back, no OutLayer deposit is refunded, nothing is stored; and in flight it is refused as
+  // too large. Callback gas below the minimum is refused.
+  const config0 = (await view("receipts", "get_config")).config;
+  ok(!(await call("admin", "receipts", "set_config", { config: { ...config0, callback_tgas: 39 } }, { deposit: 1n })).ok, "callback gas below the 40 Tgas minimum is refused");
+  ok((await call("admin", "receipts", "set_config", { config: { ...config0, callback_tgas: 40 } }, { deposit: 1n })).ok, "callback gas set to the 40 Tgas minimum");
+  const big = `BIG:${2 * 1024 * 1024}`;
+  const storage0 = BigInt((await provider.viewAccount({ accountId: id("receipts"), blockQuery: { finality: "final" } })).storage_usage);
+  lc = await clearedThen("DEMO-CREDIT", { panic: false, output: big });
+  ok(lc.result.ok && lc.result.value === "late_ignored" && lc.lateLogs.length === 1 && lc.fails.length === 0, `a 2 MiB late success at 40 Tgas is handled (${lc.result.value || lc.result.failure}, failures ${lc.fails.length})`);
+  ok(lc.callbackGas !== null && lc.callbackGas < 10n ** 13n, `its callback burnt ${Number(lc.callbackGas) / 1e12} Tgas of 40`);
+  // the late_callback event names the refund: the held record bytes only (well under the 0.01 OutLayer deposit); the
+  // runner also paid the gas of the mock sending 2 MiB, so its balance alone does not show it
+  const lateEv = JSON.parse(lc.lateLogs[0].slice("EVENT_JSON:".length)).data[0];
+  ok(lateEv.code === "late_ignored" && BigInt(lateEv.refund) > 0n && BigInt(lateEv.refund) < nearToYocto("0.002") && lc.paid >= nearToYocto("0.01"), `held came back (${Number(BigInt(lateEv.refund)) / 1e24} NEAR) and no OutLayer deposit was refunded (the runner paid ${Number(lc.paid) / 1e24} NEAR with the mock's gas)`);
+  const storage1 = BigInt((await provider.viewAccount({ accountId: id("receipts"), blockQuery: { finality: "final" } })).storage_usage);
+  ok(storage1 === storage0, `the late record is cleared: receipts storage back to ${storage1} bytes (was ${storage0})`);
+  ok((await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" })).seq === 1 && (await view("receipts", "get_token", { token_id: "DEMO-CREDIT" })).pending === null, "nothing stored, nothing pending");
+  f = await run("DEMO-CREDIT", { tamper: () => big });
+  ok(f.result.value === "receipt_too_large", `a 2 MiB result in flight at 40 Tgas is refused as too large (${f.result.value || f.result.failure})`);
+  ok((await view("receipts", "get_token", { token_id: "DEMO-CREDIT" })).pending === null, "and nothing stays pending");
+  ok((await call("admin", "receipts", "set_config", { config: config0 }, { deposit: 1n })).ok, "callback gas back to 50");
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), tenants: ["Tenant DEMO-RENTAL 01"] }) });
   ok(f.result.value === "receipt_rejected:top_fields", `a receipt with a private field is rejected with a fixed code (${f.result.value})`);
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify(o) });

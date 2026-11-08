@@ -47,6 +47,17 @@ struct Late {
     outlayer_deposit: U128,
     held: U128,
 }
+/// The least gas on_run_result is given (Config.callback_tgas). A large OutLayer result does not cost this callback
+/// per byte today: near-vm-runner 0.38 puts a successful promise result into the register by reference
+/// (set_rc_data, no write_register_byte charge; the sender already paid for the bytes), and near-sdk's
+/// promise_result_checked compares the register length with the limit before copying anything into wasm memory.
+/// Measured: the same gas for a 0 byte and a 4 MiB result in the unit-test VM, and for 1 and 2 MiB on the sandbox.
+/// The floor is a guard in case a protocol ever charges those bytes: max_length_returned_data 4,194,304 bytes x
+/// wasm_write_register_byte 3,801,564 gas = 15.95 Tgas, plus the callback's own work (about 2 Tgas for a late
+/// callback, more for storing a 10 KB receipt), with room to spare, so a huge result can never exhaust the gas and
+/// roll back the removal of the pending or late record. The deployed config uses 50.
+pub const MIN_CALLBACK_TGAS: u64 = 40;
+
 fn late_key(request_id: u64) -> Vec<u8> {
     [b"late:".as_slice(), &request_id.to_le_bytes()].concat()
 }
@@ -159,7 +170,7 @@ fn check_config(c: &Config) {
     require!(c.method.starts_with("cashflow-v2."), "unknown method");
     require!(!c.secrets_profile.is_empty() && c.secrets_profile.len() <= 64, "bad secrets_profile");
     require!(c.outlayer_tgas + c.callback_tgas <= 290, "gas above 290 Tgas");
-    require!(c.callback_tgas >= 20 && c.outlayer_tgas >= 50, "gas too low");
+    require!(c.callback_tgas >= MIN_CALLBACK_TGAS && c.outlayer_tgas >= 50, "gas too low");
     // a receipt is at most MAX_RECEIPT_BYTES; the stored record roughly doubles it with its index fields, and the
     // pending record and a failure record come on top
     let worst = (2 * MAX_RECEIPT_BYTES as u128 + 2_000) * env::storage_byte_cost().as_yoctonear();

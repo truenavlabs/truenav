@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/mockbank?__path=/$1" }],
+  "functions": { "api/mockbank.mjs": { "maxDuration": 10 } }
+}

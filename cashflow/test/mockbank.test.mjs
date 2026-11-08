@@ -3,6 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createServer } from "../mockbank/server.mjs";
+import { FUNDS, fundDocs } from "../mockbank/funds.mjs";
 import { datasets } from "../demo/data.mjs";
 import { settledFromFeed } from "../adapters/bank.mjs";
 
@@ -63,4 +64,35 @@ test("TEE document routes: bytes are exactly JSON.stringify of each source docum
   assert.equal((await get("/v1/tokens/DEMO-CREDIT/bank-feed", "tok-tee-rental-0003")).status, 403);
   assert.equal((await get("/v1/tokens/DEMO-RENTAL/ledger-dump", "tok-tee-rental-0003")).status, 404);
   assert.equal((await get("/v1/tokens/DEMO-RENTAL/bank-feed", "tok-tee-rental-0003", "PUT")).status, 405);
+});
+
+test("all-funds option: one token reads the 3 documents of all 4 funds; per-token map stays the default", async () => {
+  const ALL = "tok-all-funds-test-0004";
+  const s2 = createServer({ feeds, docs: fundDocs(), tokens, allFundsTokens: [ALL] });
+  await new Promise((r) => s2.listen(0, "127.0.0.1", r));
+  const b2 = `http://127.0.0.1:${s2.address().port}`;
+  const g = (path, token) => fetch(b2 + path, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  try {
+    for (const f of FUNDS) {
+      for (const d of ["bank-feed", "manager-export", "issuer-claims"]) {
+        const r = await g(`/v1/tokens/${f}/${d}`, ALL);
+        assert.equal(r.status, 200, `${f} ${d}`);
+        assert.equal(r.headers.get("x-synthetic-data"), "true");
+        assert.equal(Buffer.from(await r.arrayBuffer()).toString(), JSON.stringify(fundDocs()[f][d]));
+      }
+    }
+    assert.equal((await g("/v1/tokens/DEMO-CREDIT/bank-feed")).status, 401);
+    assert.equal((await g("/v1/tokens/DEMO-CREDIT/bank-feed", "tok-all-funds-test-0005")).status, 401);
+    assert.equal((await g("/v1/tokens/NO-SUCH/bank-feed", ALL)).status, 404);
+    assert.equal((await g("/v1/accounts/DEMO-CREDIT-operating/transactions", ALL)).status, 403, "fund documents only, not account feeds");
+    // the per-token tokens keep their single scope next to an all-funds token
+    assert.equal((await g("/v1/tokens/DEMO-RENTAL/bank-feed", "tok-tee-rental-0003")).status, 200);
+    assert.equal((await g("/v1/tokens/DEMO-CREDIT/bank-feed", "tok-tee-rental-0003")).status, 403);
+    assert.equal((await g("/health")).status, 200);
+  } finally {
+    s2.close();
+  }
+  // and without the option nothing reads all funds
+  assert.equal((await get("/v1/tokens/DEMO-CREDIT/bank-feed", ALL)).status, 401);
+  assert.throws(() => createServer({ docs: fundDocs(), allFundsTokens: [""] }), /non-empty/);
 });

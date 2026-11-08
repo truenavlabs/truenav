@@ -152,7 +152,7 @@ Later, separately (OutLayer and the data host):
 
 | Step | What |
 | --- | --- |
-| H1 | host the mock bank-data API (synthetic data) where the TEE can reach it: the one approved Vercel free-tier project, name and commands to be confirmed |
+| H1 | host the mock bank-data API (synthetic data) where the TEE can reach it: the one approved Vercel free-tier project, root directory `hosting/mockbank` (one all-funds token from env `TRUENAV_DATA_TOKEN`, fail closed without it; steps in `hosting/mockbank/README.md`) |
 | O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.tnlab-718ca9.testnet`), then check FastFS serves sha256 `360cd473...` |
 | O2 | `OUTLAYER_NETWORK=testnet outlayer deploy truenav-engine <fastfs url> --hash 360cd473... --target wasm32-wasip2` |
 | O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.tnlab-718ca9.testnet/truenav-engine --profile engine --access whitelist:runner.tnlab-718ca9.testnet --via receipts.tnlab-718ca9.testnet --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |

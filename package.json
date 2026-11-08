@@ -7,7 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs engine/test/cash6b.test.mjs engine/test/ownership6a.test.mjs certify/certify.test.mjs certify/chain.test.mjs tee/test/reply.test.mjs tee/test/ground.test.mjs certify/chain-replies.test.mjs tee/test/fingerprint.test.mjs spec/v2/score.test.mjs cashflow/test/match.test.mjs cashflow/test/pipeline.test.mjs cashflow/test/mockbank.test.mjs cashflow/test/metrics.test.mjs cashflow/test/collection.test.mjs cashflow/test/fields.test.mjs cashflow/test/parity.test.mjs api/test/api.test.mjs agent/test/agent.test.mjs && node spec/nav/check.mjs",
+    "test": "node --test engine/test/score.test.mjs engine/test/fixes.test.mjs engine/test/fixes2.test.mjs engine/test/fixes3.test.mjs engine/test/tee.test.mjs engine/test/cash6b.test.mjs engine/test/ownership6a.test.mjs certify/certify.test.mjs certify/chain.test.mjs tee/test/reply.test.mjs tee/test/ground.test.mjs certify/chain-replies.test.mjs tee/test/fingerprint.test.mjs spec/v2/score.test.mjs cashflow/test/match.test.mjs cashflow/test/pipeline.test.mjs cashflow/test/mockbank.test.mjs cashflow/test/metrics.test.mjs cashflow/test/collection.test.mjs cashflow/test/fields.test.mjs cashflow/test/parity.test.mjs api/test/api.test.mjs agent/test/agent.test.mjs hosting/mockbank/test/adapter.test.mjs && node spec/nav/check.mjs",
     "certify": "node certify/run.mjs --out out/certificates.json",
     "e2e": "node certify/run.mjs --fixture && cd contract && cargo test",
     "e2e:testnet": "node certify/testnet.mjs",

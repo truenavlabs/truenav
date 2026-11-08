@@ -1,0 +1,8 @@
+{
+  "name": "truenav-mockbank-host",
+  "private": true,
+  "description": "Vercel project root for the TrueNav mock bank-data API (synthetic data only)",
+  "type": "module",
+  "engines": { "node": "22.x" },
+  "license": "SEE LICENSE IN ../../LICENSE"
+}

@@ -36,13 +36,16 @@ pub struct Mock {
     /// who to refund, and how much, when a run fails
     refunds: IterableMap<u64, (AccountId, u128)>,
     refuse: bool,
+    /// test only: make on_resolved panic, so the caller's callback sees a FAILED promise after admission (the
+    /// non-admission failure: OutLayer's own callback failing, the deposit kept)
+    panic_on_resolve: bool,
 }
 
 #[near]
 impl Mock {
     #[init]
     pub fn new(worker: AccountId) -> Self {
-        Self { worker, next: 1, open: IterableMap::new(b"o"), outputs: IterableMap::new(b"x"), refunds: IterableMap::new(b"r"), refuse: false }
+        Self { worker, next: 1, open: IterableMap::new(b"o"), outputs: IterableMap::new(b"x"), refunds: IterableMap::new(b"r"), refuse: false, panic_on_resolve: false }
     }
 
     #[payable]
@@ -66,6 +69,12 @@ impl Mock {
         self.refuse = refuse;
     }
 
+    /// Worker only: make on_resolved panic from now on (a FAILED promise after admission), or stop.
+    pub fn set_panic_on_resolve(&mut self, panic: bool) {
+        require!(env::predecessor_account_id() == self.worker, "worker only");
+        self.panic_on_resolve = panic;
+    }
+
     /// Worker only: deliver the module output (or a failure) for one open request.
     pub fn resolve(&mut self, request_id: u64, success: bool, output: String) {
         require!(env::predecessor_account_id() == self.worker, "worker only");
@@ -80,6 +89,9 @@ impl Mock {
 
     #[private]
     pub fn on_resolved(&mut self, request_id: u64) {
+        if self.panic_on_resolve {
+            env::panic_str("mock: callback failed after admission");
+        }
         let ok = matches!(env::promise_result_checked(0, 16), Ok(b) if b == b"OK");
         let refund = self.refunds.remove(&request_id);
         match self.outputs.remove(&request_id) {

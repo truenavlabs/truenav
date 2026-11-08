@@ -432,3 +432,78 @@ fn a_rental_in_severe_arrears_is_stored_red_and_replaces_the_green_receipt() {
     assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |v| v["metrics"]["late_share_bps"] = json!(10_001)))), "receipt_rejected:metrics_value");
     assert_eq!(c.get_latest("HONEST-RENTAL".into()).unwrap().seq, 2);
 }
+
+/// Request a run for a token, then the admin clears it; returns (request_id, nonce, storage refund at clear).
+fn request_then_clear(c: &mut Receipts, token: &str) -> (u64, String, u128) {
+    set("runner.testnet", attach(), vec![]);
+    let _ = c.request_run(token.into());
+    let p = c.get_token(token.into()).unwrap()["pending"].clone();
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
+    let _ = c.clear_pending(token.into());
+    let t = transfers();
+    assert_eq!(t.len(), 1, "clear_pending refunds the storage deposit once");
+    assert_eq!(t[0].0, "runner.testnet");
+    assert!(c.get_token(token.into()).unwrap()["pending"].is_null());
+    (p["request_id"].as_u64().unwrap(), p["run_nonce"].as_str().unwrap().to_string(), t[0].1)
+}
+
+#[test]
+fn a_failed_promise_arriving_after_clear_pending_refunds_the_outlayer_deposit_exactly_once() {
+    let deposit = NearToken::from_millinear(10).as_yoctonear();
+    let storage = NearToken::from_millinear(250).as_yoctonear();
+    let mut c = setup();
+    let (rid, _, at_clear) = request_then_clear(&mut c, "DEMO-CREDIT");
+    let held = storage - at_clear;
+    assert!(held > 0 && held < NearToken::from_millinear(2).as_yoctonear(), "the late record's bytes are held back: {held}");
+    // the late FAILED callback: refunded the OutLayer deposit and the held bytes, to the requester
+    set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Failed]);
+    assert_eq!(c.on_run_result("DEMO-CREDIT".into(), rid), "late_refunded");
+    let t = transfers();
+    assert_eq!(t, vec![("runner.testnet".to_string(), deposit + held)]);
+    assert!(get_logs().iter().any(|l| l.contains("late_callback") && l.contains("late_refunded")));
+    // the same callback again: nothing more (no double refund)
+    set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Failed]);
+    assert_eq!(c.on_run_result("DEMO-CREDIT".into(), rid), "no_pending");
+    assert!(transfers().is_empty());
+    // storage over the whole lifecycle: the record is gone again
+    assert!(c.get_latest("DEMO-CREDIT".into()).is_none());
+}
+
+#[test]
+fn a_late_successful_or_null_callback_after_clear_pending_refunds_no_outlayer_deposit_and_stores_nothing() {
+    let deposit = NearToken::from_millinear(10).as_yoctonear();
+    let mut c = setup();
+    for (i, result) in [Some(true), None].into_iter().enumerate() {
+        let (rid, nonce, _) = request_then_clear(&mut c, "HONEST-CREDIT");
+        let bytes = match result {
+            Some(_) => engine_output("HONEST-CREDIT", &nonce, |_| {}),
+            None => b"null".to_vec(),
+        };
+        set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Successful(bytes)]);
+        assert_eq!(c.on_run_result("HONEST-CREDIT".into(), rid), "late_ignored", "case {i}");
+        let t = transfers();
+        assert_eq!(t.len(), 1);
+        assert!(t[0].1 < deposit, "only the held record bytes come back, not the OutLayer deposit: {}", t[0].1);
+        assert!(c.get_latest("HONEST-CREDIT".into()).is_none(), "a late receipt is not stored");
+    }
+}
+
+#[test]
+fn a_late_callback_for_a_cleared_request_does_not_touch_the_newer_pending_request() {
+    let deposit = NearToken::from_millinear(10).as_yoctonear();
+    let mut c = setup();
+    let (old, _, _) = request_then_clear(&mut c, "DEMO-RENTAL");
+    // a new request for the same token is pending when the old FAILED callback arrives
+    set("runner.testnet", attach(), vec![]);
+    let _ = c.request_run("DEMO-RENTAL".into());
+    let new = c.get_token("DEMO-RENTAL".into()).unwrap()["pending"]["request_id"].as_u64().unwrap();
+    assert_ne!(old, new);
+    set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Failed]);
+    assert_eq!(c.on_run_result("DEMO-RENTAL".into(), old), "late_refunded");
+    assert!(transfers()[0].1 > deposit);
+    assert_eq!(c.get_token("DEMO-RENTAL".into()).unwrap()["pending"]["request_id"].as_u64(), Some(new), "the newer request stays pending");
+    // a stale callback with no late record refunds nothing
+    set("receipts.truenav.testnet", NearToken::from_yoctonear(0), vec![PromiseResult::Failed]);
+    assert_eq!(c.on_run_result("DEMO-RENTAL".into(), 999), "stale_callback");
+    assert!(transfers().is_empty());
+}

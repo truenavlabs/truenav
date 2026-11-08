@@ -164,6 +164,45 @@ try {
   ok(paid > 0n && paid < nearToYocto("0.01"), `after an admission failure the runner paid ${Number(paid) / 1e24} NEAR: the deposit came back through the receipt contract`);
   ok((await view("receipts", "get_token", { token_id: "DEMO-RENTAL" })).pending === null, "nothing left pending after the admission failure");
   ok((await call("worker", "outlayer", "set_refuse", { refuse: false })).ok, "mock OutLayer admits again");
+
+  // the admin cleared a stuck request, and its OutLayer callback arrives later: a FAILED promise (OutLayer's own
+  // callback failing after admission) refunds the OutLayer deposit once; a successful late result refunds none
+  async function clearedThen(token, { panic }) {
+    const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.26"))] });
+    const hash = baseEncode(createHash("sha256").update(signed.transaction.encode()).digest());
+    const b0 = await runnerBalance();
+    await provider.sendTransactionAsync(signed);
+    let r;
+    for (let i = 0; i < 60 && !r; i++) {
+      r = (await view("outlayer", "get_requests")).find((x) => JSON.parse(x.input_data).token_id === token);
+      if (!r) await new Promise((res) => setTimeout(res, 500));
+    }
+    const cleared = await call("admin", "receipts", "clear_pending", { token_id: token }, { deposit: 1n });
+    if (panic) await call("worker", "outlayer", "set_panic_on_resolve", { panic: true });
+    const out = execFileSync(engine, [dsFile(token, datasets[token]), BANK_FETCHED_AT], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: RUN_AS_OF }) }).toString();
+    await call("worker", "outlayer", "resolve", { request_id: r.request_id, success: true, output: out });
+    if (panic) await call("worker", "outlayer", "set_panic_on_resolve", { panic: false });
+    let t;
+    for (let i = 0; i < 60 && !t; i++) {
+      try {
+        t = await provider.viewTransactionStatusWithReceipts({ txHash: hash, accountId: id("runner"), waitUntil: "FINAL" });
+      } catch {
+        await new Promise((res) => setTimeout(res, 500));
+      }
+    }
+    const lateLogs = t.receipts_outcome.flatMap((ro) => ro.outcome.logs).filter((l) => l.includes("late_callback"));
+    return { cleared, result: status(t), paid: b0 - (await runnerBalance()), lateLogs };
+  }
+  let lc = await clearedThen("DEMO-CREDIT", { panic: true });
+  ok(lc.cleared.ok, "the admin cleared the stuck DEMO-CREDIT request (1 yocto)");
+  ok(lc.result.ok && lc.result.value === "late_refunded", `a FAILED promise after clear_pending is refunded late (${lc.result.value || lc.result.failure})`);
+  ok(lc.lateLogs.length === 1, `exactly one late_callback event (${lc.lateLogs.length})`);
+  ok(lc.paid > 0n && lc.paid < nearToYocto("0.01"), `the runner got the OutLayer deposit back once: paid ${Number(lc.paid) / 1e24} NEAR in all (gas only, no double refund)`);
+  ok((await view("receipts", "get_token", { token_id: "DEMO-CREDIT" })).pending === null && (await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" })).seq === 1, "nothing pending, nothing stored, DEMO-CREDIT still on its seq 1");
+  lc = await clearedThen("DEMO-CREDIT", { panic: false });
+  ok(lc.result.ok && lc.result.value === "late_ignored", `a successful result after clear_pending is ignored (${lc.result.value || lc.result.failure})`);
+  ok(lc.paid >= nearToYocto("0.01") && lc.paid < nearToYocto("0.012"), `and refunds no OutLayer deposit: paid ${Number(lc.paid) / 1e24} NEAR (the deposit OutLayer used, plus gas)`);
+  ok((await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" })).seq === 1, "the late receipt is not stored");
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), tenants: ["Tenant DEMO-RENTAL 01"] }) });
   ok(f.result.value === "receipt_rejected:top_fields", `a receipt with a private field is rejected with a fixed code (${f.result.value})`);
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify(o) });

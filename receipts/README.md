@@ -119,6 +119,11 @@ Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlaye
   `outlayer_admission_failed` and refunds 0.01 NEAR the contract did not get back (OutLayer kept the deposit), paid
   from its own balance. The loss is at most 0.01 NEAR per run, only listed runners can request runs, and the admin
   can pause; the `receipts.` balance (about 0.54 NEAR above storage) covers a few.
+- Cleared, then the callback arrives late: `clear_pending` (admin) refunds the storage deposit less a small
+  late-callback record (requester, OutLayer deposit, about 0.001 NEAR of storage). If OutLayer's promise then FAILED,
+  the requester gets the OutLayer deposit back with those bytes (`late_refunded`); any other late result refunds only
+  the bytes and stores nothing (`late_ignored`). The record is deleted on the first callback, so nothing is refunded
+  twice; a callback with no record refunds nothing. Before this, a FAILED promise after a clear refunded nothing.
 - The requester pays for all the storage a run uses: the pending record (measured when it is written) and whatever
   the callback stores.
 - A rejected receipt stores a fixed code (`receipt_rejected:<check>`); the code never echoes the input.

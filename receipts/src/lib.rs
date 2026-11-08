@@ -17,6 +17,7 @@
 //! refunded to the requester in the callback). Everything stored here is public chain state.
 pub mod validate;
 
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::{self, json, Value};
 use near_sdk::store::{IterableMap, IterableSet, LookupMap};
@@ -35,6 +36,19 @@ enum Key {
     Pending,
     Receipts,
     Failures,
+}
+
+/// A cleared request whose OutLayer callback may still arrive: who to refund, the OutLayer deposit it forwarded,
+/// and this record's own storage cost. Stored under late_key(request_id), outside the contract struct.
+#[derive(BorshSerialize, BorshDeserialize)]
+#[borsh(crate = "near_sdk::borsh")]
+struct Late {
+    requester: AccountId,
+    outlayer_deposit: U128,
+    held: U128,
+}
+fn late_key(request_id: u64) -> Vec<u8> {
+    [b"late:".as_slice(), &request_id.to_le_bytes()].concat()
 }
 
 /// How runs are requested. The pinned build is `project_id` at the fixed `version_key` (never "latest").
@@ -243,13 +257,23 @@ impl Receipts {
         emit("token_registered", json!({ "token_id": token_id, "kind": kind }));
     }
     /// Drop a pending request whose callback never arrived (OutLayer's yield always resumes or times out, so this
-    /// is a last resort). Its storage deposit goes back to the requester.
+    /// is a last resort). Its storage deposit goes back to the requester, less the few bytes of a late-callback
+    /// record (requester, OutLayer deposit): if the callback does arrive later and the OutLayer promise FAILED, the
+    /// requester is refunded the OutLayer deposit then, exactly once, with those bytes (on_run_result). The record
+    /// lives under its own raw key, outside the contract struct, so the state layout is unchanged.
     #[payable]
     pub fn clear_pending(&mut self, token_id: String) -> Promise {
         self.only_admin();
         let p = self.pending.remove(&token_id).unwrap_or_else(|| env::panic_str("no pending request"));
+        self.pending.flush();
+        let s0 = env::storage_usage();
+        let mut late = Late { requester: p.requester.clone(), outlayer_deposit: p.outlayer_deposit, held: U128(0) };
+        env::storage_write(&late_key(p.request_id), &borsh::to_vec(&late).unwrap_or_default());
+        // the record's own bytes (a u128 field keeps the same size when `held` is filled in)
+        late.held = U128((env::storage_usage().saturating_sub(s0) as u128) * env::storage_byte_cost().as_yoctonear());
+        env::storage_write(&late_key(p.request_id), &borsh::to_vec(&late).unwrap_or_default());
         emit("pending_cleared", json!({ "token_id": token_id, "request_id": p.request_id }));
-        Promise::new(p.requester).transfer(NearToken::from_yoctonear(p.storage_deposit.0))
+        Promise::new(p.requester).transfer(NearToken::from_yoctonear(p.storage_deposit.0.saturating_sub(late.held.0)))
     }
 
     // ---- runs --------------------------------------------------------------------------------------------------
@@ -350,11 +374,30 @@ impl Receipts {
     /// returns a value on every path, so this should not happen, and it cannot be told apart here: it would be
     /// treated as an admission failure, refunding 0.01 NEAR from this contract's balance (README, failures and
     /// refunds). This callback must not panic: a panic would roll back the pending removal.
+    /// A callback for a request the admin already cleared: refund its requester once, from the late-callback record
+    /// clear_pending left. A FAILED OutLayer promise refunds the OutLayer deposit (the same rule as in flight); any
+    /// other outcome refunds only the record's bytes, and the late receipt is not stored. No record (never cleared,
+    /// or already refunded): nothing is refunded.
+    fn late_callback(&mut self, token_id: &str, request_id: u64, none: &str) -> String {
+        let key = late_key(request_id);
+        let Some(raw) = env::storage_read(&key) else { return none.into() };
+        env::storage_remove(&key);
+        let Ok(late) = borsh::from_slice::<Late>(&raw) else { return none.into() };
+        let failed = matches!(env::promise_result_checked(0, 0), Err(PromiseError::Failed));
+        let refund = late.held.0 + if failed { late.outlayer_deposit.0 } else { 0 };
+        if refund > 0 {
+            Promise::new(late.requester).transfer(NearToken::from_yoctonear(refund)).detach();
+        }
+        let code = if failed { "late_refunded" } else { "late_ignored" };
+        emit("late_callback", json!({ "token_id": token_id, "request_id": request_id, "code": code, "refund": U128(refund) }));
+        code.into()
+    }
+
     #[private]
     pub fn on_run_result(&mut self, token_id: String, request_id: u64) -> String {
-        let Some(p) = self.pending.get(&token_id).cloned() else { return "no_pending".into() };
+        let Some(p) = self.pending.get(&token_id).cloned() else { return self.late_callback(&token_id, request_id, "no_pending") };
         if p.request_id != request_id {
-            return "stale_callback".into();
+            return self.late_callback(&token_id, request_id, "stale_callback");
         }
         self.flush_all();
         self.pending.remove(&token_id);

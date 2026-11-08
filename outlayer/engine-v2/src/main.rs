@@ -1,4 +1,4 @@
-//! OutLayer TEE entry point for TrueNav cashflow-v2.0.0 (wasm32-wasip2). Reads the public input from stdin
+//! OutLayer TEE entry point for TrueNav cashflow-v2.1.0 (wasm32-wasip2). Reads the public input from stdin
 //! ({"token_id", "run_nonce"} plus optional "as_of", "previous", "new_period"), fetches the bank feed, the manager
 //! export and the issuer claims itself over HTTPS with a sealed read-only token, and prints the aggregate-only
 //! receipt (src/tee.rs). Secrets (OutLayer env, sealed and build-locked):

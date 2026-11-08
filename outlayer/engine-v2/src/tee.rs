@@ -1,6 +1,6 @@
 //! The TEE entry flow, kept free of I/O so it is tested natively: validate the public input (token id and nonce
 //! only), fetch the three source documents through `Fetcher` (inside OutLayer: HTTPS with a sealed read-only token),
-//! run cashflow-v2.0.0, and return the receipt as canonical JSON. The output carries aggregates, the score, the
+//! run cashflow-v2.1.0, and return the receipt as canonical JSON. The output carries aggregates, the score, the
 //! passport and evidence hashes only: never a pseudonymous ref, an id, a name, a token or a value derived from a
 //! secret. Errors are reduced to a fixed stage code, because in on-chain mode the output is public.
 use crate::base::*;

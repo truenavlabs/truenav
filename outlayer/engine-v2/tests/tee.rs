@@ -118,7 +118,7 @@ fn bad_input_fails_closed_with_a_stage_code_only() {
     ];
     for (input, stage) in cases {
         let (out, _) = run("DEMO-CREDIT", input, None);
-        assert_eq!(out, format!("{{\"error\":\"run_failed\",\"method\":\"cashflow-v2.0.0\",\"stage\":\"{stage}\"}}"));
+        assert_eq!(out, format!("{{\"error\":\"run_failed\",\"method\":\"cashflow-v2.1.0\",\"stage\":\"{stage}\"}}"));
     }
 }
 
@@ -168,7 +168,7 @@ fn a_source_without_as_of_fails_closed_with_its_named_stage() {
     let clock = Clock { now: Box::new(|| "2026-10-31T22:00:00Z".to_string()) };
     let p = SeedPseudonymizer(b"parity-fixture-pseudonym-seed-0001".to_vec());
     let out = execute(&good_input("DEMO-RENTAL").to_string(), &fake, &p, &clock);
-    assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.0.0\",\"stage\":\"as_of_missing_issuer_claims\"}");
+    assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.1.0\",\"stage\":\"as_of_missing_issuer_claims\"}");
     let bad_prev = json!({ "token_id": "DEMO-RENTAL", "run_nonce": NONCE, "previous": [{ "source": "bank_settlements", "snapshot_sha256": "00", "as_of": "yesterday" }] });
     let (out, _) = run("DEMO-RENTAL", bad_prev, None);
     assert!(out.ends_with("\"stage\":\"as_of_invalid_previous\"}"), "{out}");
@@ -180,4 +180,22 @@ fn an_input_as_of_with_an_offset_gives_the_same_receipt_as_z() {
     let (plus7, _) = run("DEMO-CREDIT", json!({ "token_id": "DEMO-CREDIT", "run_nonce": NONCE, "as_of": "2026-11-01T07:00:00+07:00" }), None);
     assert_eq!(plus7, z);
     assert!(z.contains("\"as_of\":\"2026-11-01T00:00:00Z\""));
+}
+
+#[test]
+fn the_receipt_carries_collection_and_holds_and_dues_failures_fail_closed() {
+    let (out, _) = run("DEMO-CREDIT", good_input("DEMO-CREDIT"), None);
+    let rec: Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(rec["metrics"]["collection"]["status"], "verified");
+    assert_eq!(rec["metrics"]["collection"]["rate_bps"], 7857);
+    assert!(rec["caps"].as_array().unwrap().iter().any(|c| c["code"] == "collection_shortfall"));
+    assert_eq!(rec["holds"], json!([]));
+    let fx = fixture("DEMO-RENTAL");
+    let mut ds = fx["input"]["dataset"].clone();
+    ds["manager_export"]["charges"] = Value::Null;
+    let fake = Fake { ds, fail: None, calls: Cell::new(0) };
+    let clock = Clock { now: Box::new(|| "2026-10-31T22:00:00Z".to_string()) };
+    let p = SeedPseudonymizer(b"parity-fixture-pseudonym-seed-0001".to_vec());
+    let out = execute(&good_input("DEMO-RENTAL").to_string(), &fake, &p, &clock);
+    assert_eq!(out, "{\"error\":\"run_failed\",\"method\":\"cashflow-v2.1.0\",\"stage\":\"dues_missing\"}");
 }

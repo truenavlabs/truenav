@@ -60,6 +60,8 @@ pub struct Source {
     pub claims: Vec<Claim>,
     pub payers: HashMap<String, String>,
     pub units: Vec<(String, i64)>,
+    /// loans or units that must have a due in a verified collection period (cash-pay loans, occupied rented units)
+    pub active_units: Vec<String>,
 }
 
 // ---- adapters --------------------------------------------------------------------------------------------------
@@ -133,13 +135,17 @@ pub fn from_servicer_tape(tape: &Value, p: &dyn Pseudonymizer) -> R<Source> {
     let claims = claims_from(arr(tape, "payments")?, "payment_id", "loan_id", p)?;
     let mut payers = HashMap::new();
     let mut units = vec![];
+    let mut active_units = vec![];
     for l in arr(tape, "loans")? {
         let u = p.unit_ref(&s(l, "loan_id")?)?;
+        if l.get("pay_type").and_then(Value::as_str) != Some("pik") {
+            active_units.push(u.clone());
+        }
         payers.insert(p.payer_ref(&s(l, "borrower_payer")?)?, u.clone());
         units.retain(|(k, _): &(String, i64)| *k != u);
         units.push((u, int(l, "principal_cents")?));
     }
-    Ok(Source { due, claims, payers, units })
+    Ok(Source { due, claims, payers, units, active_units })
 }
 
 /// cashflow/adapters/rental.mjs fromManagerExport
@@ -150,12 +156,16 @@ pub fn from_manager_export(exp: &Value, p: &dyn Pseudonymizer) -> R<Source> {
     }
     let claims = claims_from(arr(exp, "ledger")?, "entry_id", "unit_id", p)?;
     let mut payers = HashMap::new();
+    let mut active_units = vec![];
     for u in arr(exp, "units")? {
+        if truthy(u, "occupied") && u.get("rent_cents").and_then(Value::as_f64).unwrap_or(0.0) > 0.0 {
+            active_units.push(p.unit_ref(&s(u, "unit_id")?)?);
+        }
         if let Some(t) = opt_s(u, "tenant_payer") {
             payers.insert(p.payer_ref(&t)?, p.unit_ref(&s(u, "unit_id")?)?);
         }
     }
-    Ok(Source { due, claims, payers, units: vec![] })
+    Ok(Source { due, claims, payers, units: vec![], active_units })
 }
 
 // ---- the match -------------------------------------------------------------------------------------------------

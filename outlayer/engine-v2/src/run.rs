@@ -25,7 +25,9 @@ pub struct RunResult {
 }
 
 /// Named fail-closed codes from source validation (the TEE prints them as its stage). Same codes as the reference.
-pub const VALIDATION_CODES: [&str; 14] = [
+pub const VALIDATION_CODES: [&str; 16] = [
+    "dues_missing",
+    "dues_incomplete",
     "dataset_kind",
     "source_missing_bank_settlements",
     "source_missing_servicer_records",
@@ -49,13 +51,21 @@ pub fn validation_code(e: &str) -> Option<&'static str> {
 fn utc_or(x: &str, code: &str) -> R<String> {
     to_utc(x).ok_or_else(|| code.to_string())
 }
-/// A document's own as_of: missing or null is as_of_missing, anything but a valid timestamp string as_of_invalid.
-fn doc_as_of(doc: &Value, src: &str) -> R<String> {
+/// A document's own as_of: Ok(None) when missing or null, as_of_invalid when present but not a valid timestamp
+/// string. The reference checks every invalid value first, then every missing one (same codes in the same order).
+fn doc_as_of(doc: &Value, src: &str) -> R<Option<String>> {
     match doc.get("as_of") {
-        None | Some(Value::Null) => Err(format!("as_of_missing_{src}")),
-        Some(Value::String(t)) => utc_or(t, &format!("as_of_invalid_{src}")),
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(t)) => utc_or(t, &format!("as_of_invalid_{src}")).map(Some),
         Some(_) => Err(format!("as_of_invalid_{src}")),
     }
+}
+/// The reference's due-row check (cashflow/run.mjs): id, ISO date, non-negative safe integer amount.
+fn due_row_ok(r: &Value, id_key: &str) -> bool {
+    let id_ok = r.get(id_key).and_then(Value::as_str).is_some_and(|x| !x.is_empty());
+    let date_ok = r.get("due_date").and_then(Value::as_str).is_some_and(|x| x.len() == 10 && x.as_bytes()[4] == b'-' && x.as_bytes()[7] == b'-' && x.bytes().enumerate().all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit()) && to_utc(x).is_some());
+    let amt_ok = r.get("amount_cents").and_then(Value::as_i64).is_some_and(|a| (0..=9_007_199_254_740_991).contains(&a));
+    r.is_object() && id_ok && date_ok && amt_ok
 }
 
 /// `ds` has the dataset shape of cashflow/demo/data.mjs: id, kind, synthetic, bank_feed, servicer_tape or
@@ -77,6 +87,15 @@ pub fn run_fund(ds: &Value, p: &dyn Pseudonymizer, o: &RunOptions) -> R<RunResul
     let bank_as_of = utc_or(o.bank_fetched_at, "as_of_invalid_bank_settlements")?;
     let mgr_as_of = doc_as_of(mgr, mgr_name)?;
     let issuer_as_of = doc_as_of(issuer, "issuer_claims")?;
+    let mgr_as_of = mgr_as_of.ok_or_else(|| format!("as_of_missing_{mgr_name}"))?;
+    let issuer_as_of = issuer_as_of.ok_or("as_of_missing_issuer_claims")?;
+    let (rows_key, roster_key, id_key) = if is_credit { ("schedule", "loans", "loan_id") } else { ("charges", "units", "unit_id") };
+    let (Some(rows), true) = (mgr.get(rows_key).and_then(Value::as_array), mgr.get(roster_key).is_some_and(Value::is_array)) else {
+        return Err("dues_missing".into());
+    };
+    if !rows.iter().all(|r| due_row_ok(r, id_key)) {
+        return Err("dues_incomplete".into());
+    }
     let mut previous = vec![];
     for (src, sha, pa) in &o.previous {
         previous.push((src.clone(), sha.clone(), utc_or(pa, &format!("as_of_invalid_previous_{src}"))?));
@@ -85,9 +104,12 @@ pub fn run_fund(ds: &Value, p: &dyn Pseudonymizer, o: &RunOptions) -> R<RunResul
     let bank = settled_from_feed(bank_feed, p)?;
     let src = if is_credit { from_servicer_tape(mgr, p)? } else { from_manager_export(mgr, p)? };
     let units = src.units.clone();
+    let active_units = src.active_units.clone();
     let m = three_way(src, bank)?;
     let as_of_date: String = run_at.chars().take(10).collect();
-    let mt = metrics(&kind, &m, issuer, &units, &as_of_date, o.period, o.days_in_period)?;
+    let mut mt = metrics(&kind, &m, issuer, &units, &as_of_date, o.period, o.days_in_period)?;
+    let matched = matched_json(&m);
+    mt["collection"] = collection(&matched, o.period, &run_at, &[("bank_settlements", bank_as_of.as_str()), (mgr_name, mgr_as_of.as_str())], &active_units)?;
 
     let ds_synth = truthy(ds, "synthetic");
     let raw: Vec<(&str, i64, &str, &str, String, &Value, bool)> = vec![
@@ -107,7 +129,7 @@ pub fn run_fund(ds: &Value, p: &dyn Pseudonymizer, o: &RunOptions) -> R<RunResul
         score_sources.push(ss);
     }
     let sc = score(&mt, &score_sources)?;
-    Ok(RunResult { token_id: s(ds, "id")?, kind, matched: matched_json(&m), public_metrics: public_metrics(&mt), metrics: mt, passport, score: sc })
+    Ok(RunResult { token_id: s(ds, "id")?, kind, matched, public_metrics: public_metrics(&mt), metrics: mt, passport, score: sc })
 }
 
 /// The parity fixture output (cashflow/fixtures/make-parity.mjs parityOutput), canonical JSON.
@@ -121,7 +143,7 @@ pub fn receipt(r: &RunResult, run_nonce: &str, as_of: &str) -> R<Value> {
     let sc = &r.score;
     let evidence: Vec<Value> = r.passport.iter().map(|p| json!({ "source": p["source"], "sha256": p["snapshot_sha256"] })).collect();
     let synthetic = r.passport.iter().any(|p| p["synthetic"] == json!(true));
-    let checks = ["three_way_match", "reversals_and_duplicates", "non_income_credits", "cash_yield_vs_reported", "rental_coverage", "late_payment_cohorts", "freshness_and_carry_forward", "red_flag_caps"];
+    let checks = ["three_way_match", "reversals_and_duplicates", "non_income_credits", "cash_yield_vs_reported", "rental_coverage", "late_payment_cohorts", "freshness_and_carry_forward", "collection_by_cutoff", "red_flag_caps"];
     let ex = r.metrics.get("exceptions").and_then(Value::as_object).ok_or("exceptions missing")?;
     let exceptions: Vec<Value> = ex.iter().filter(|(k, v)| !k.ends_with("_cents") && v.as_i64().unwrap_or(0) > 0).map(|(k, v)| json!({ "code": k, "count": v })).collect();
     let missing: Vec<Value> = r.passport.iter().filter(|p| p["carried_forward"] == json!(true) || p["freshness_bps"] == json!(0)).map(|p| json!(format!("{}_stale_or_carried_forward", p["source"].as_str().unwrap_or("")))).collect();
@@ -139,6 +161,7 @@ pub fn receipt(r: &RunResult, run_nonce: &str, as_of: &str) -> R<Value> {
         "raw_x100": sc["raw_x100"],
         "parts_x100": sc["parts_x100"],
         "caps": sc["caps"],
+        "holds": sc["holds"],
         "metrics": r.public_metrics,
         "passport": r.passport,
         "evidence_hashes": evidence,

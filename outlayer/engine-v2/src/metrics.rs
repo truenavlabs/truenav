@@ -4,7 +4,7 @@ use crate::matcher::Matched;
 use serde_json::{json, Map, Value};
 use std::collections::{HashMap, HashSet};
 
-pub const METHOD: &str = "cashflow-v2.0.0";
+pub const METHOD: &str = "cashflow-v2.1.0";
 pub const MIN_COHORT: i64 = 5;
 pub const COHORTS: [(&str, i64, i64); 4] = [("current", 0, 29), ("30", 30, 59), ("60", 60, 89), ("90+", 90, i64::MAX)];
 fn cohort_of(dpd: i64) -> &'static str {
@@ -135,14 +135,117 @@ pub fn public_metrics(mt: &Value) -> Value {
     p
 }
 
+// ---- collection (cashflow/metrics.mjs collection, spec 5.7) ----------------------------------------------------
+
+pub const COLLECTION_GRACE_DAYS: i64 = 7;
+const DAY_MS: i64 = 86_400_000;
+fn iso_day(n: i64) -> String {
+    let (y, m, d) = civil_from_days(n);
+    format!("{y:04}-{m:02}-{d:02}")
+}
+fn first_of(p: &str) -> R<i64> {
+    days(&format!("{p}-01"))
+}
+fn next_period(p: &str) -> R<String> {
+    Ok(iso_day(first_of(p)? + 32)[..7].to_string())
+}
+fn prev_period(p: &str) -> R<String> {
+    Ok(iso_day(first_of(p)? - 1)[..7].to_string())
+}
+/// Cutoff of period p: (last calendar day counted, the instant it ends in ms).
+pub fn cutoff(p: &str) -> R<(String, i64)> {
+    let t_day = first_of(&next_period(p)?)? - 1 + COLLECTION_GRACE_DAYS;
+    Ok((iso_day(t_day), (t_day + 1) * DAY_MS))
+}
+
+/// Collection for the latest completed period, from the matched rows (matched_json). Err("dues_incomplete") when an
+/// active unit has no due in a verified period.
+pub fn collection(m: &Value, period: &str, run_at: &str, coverage: &[(&str, &str)], active_units: &[String]) -> R<Value> {
+    let now = parse_ts(run_at)?;
+    let mut p = period.to_string();
+    if cutoff(&p)?.1 > now {
+        p = prev_period(period)?;
+    }
+    let (t, ends) = cutoff(&p)?;
+    let base = |status: &str| -> Map<String, Value> {
+        let v = json!({ "period": p, "cutoff": t, "status": status, "dues_cents": null, "verified_cents": null, "rate_bps": null, "shortfall": false });
+        v.as_object().unwrap().clone()
+    };
+    if ends > now {
+        let mut b = base("pending");
+        b.insert("pending_reason".into(), json!("before_cutoff"));
+        return Ok(Value::Object(b));
+    }
+    for (src, as_of) in coverage {
+        if parse_ts(as_of)? < ends {
+            let mut b = base("pending");
+            b.insert("pending_reason".into(), json!(format!("no_coverage_{src}")));
+            return Ok(Value::Object(b));
+        }
+    }
+    let dues: Vec<&Value> = m["due"].as_array().ok_or("due missing")?.iter().filter(|d| d["period"].as_str() == Some(p.as_str())).collect();
+    let with_due: HashSet<&str> = dues.iter().filter_map(|d| d["unit_ref"].as_str()).collect();
+    if active_units.iter().any(|u| !with_due.contains(u.as_str())) {
+        return Err("dues_incomplete".into());
+    }
+    let mut total = 0i64;
+    for d in &dues {
+        total += int(d, "amount_due_cents")?;
+    }
+    if total == 0 {
+        let mut b = base("not_applicable");
+        b.insert("dues_cents".into(), json!(0));
+        b.insert("verified_cents".into(), json!(0));
+        return Ok(Value::Object(b));
+    }
+    let mut posted: HashMap<&str, &str> = HashMap::new();
+    for x in m["bank"].as_array().ok_or("bank missing")? {
+        if let (Some(id), Some(pd)) = (x["txn_id"].as_str(), x["posted_date"].as_str()) {
+            posted.insert(id, pd);
+        }
+    }
+    let last_day = days(&t)?;
+    let claims = m["claims"].as_array().ok_or("claims missing")?;
+    let mut verified = 0i64;
+    for d in &dues {
+        let id = d["due_id"].as_str().ok_or("due_id missing")?;
+        let mut got = 0i64;
+        for c in claims {
+            if c["linked_due"].as_str() != Some(id) {
+                continue;
+            }
+            let Some(by) = c["settled_by"].as_str() else { continue };
+            if days(posted.get(by).ok_or("settling txn missing")?)? <= last_day {
+                got += int(c, "amount_cents")?;
+            }
+        }
+        verified += got.min(int(d, "amount_due_cents")?);
+    }
+    let mut b = base("verified");
+    b.insert("dues_cents".into(), json!(total));
+    b.insert("verified_cents".into(), json!(verified));
+    b.insert("rate_bps".into(), json!(rhu(10000 * verified, total)?));
+    b.insert("shortfall".into(), json!(10 * verified < 9 * total));
+    Ok(Value::Object(b))
+}
+
 // ---- score (spec/v2/score.mjs) -------------------------------------------------------------------------------
 
-pub const CAPS: [(&str, &str); 5] = [
+pub const HOLD_SCORE: i64 = 84;
+pub const HOLDS: [(&str, &str); 2] = [
+    ("collection_pending", "not green because collection for the period cannot be verified yet: before the cutoff or without source coverage through it"),
+    ("collection_not_applicable", "not green because no contractual dues fell in the period: inactivity alone is not green"),
+];
+fn pct(bps: i64) -> String {
+    format!("{}.{:02}%", bps / 100, bps % 100)
+}
+pub const CAPS: [(&str, &str); 6] = [
     ("self_reported_only", "red because no fresh bank-sourced evidence was available: self-reported only"),
     ("yield_gap", "red because the reported yield is at least 3.00 percentage points above the cash yield"),
     ("payout_exceeds_net_cash", "red because payouts exceed net cash from rent"),
     ("distribution_funded_by_sponsor", "red because part of a payout was funded by a sponsor transfer, not by income"),
     ("claimed_not_settled", "red because more than 2% of the cash the manager reports was never settled by the bank"),
+    ("collection_shortfall", "red because of unverified collection: less than 90% of contractual dues were bank-confirmed by the cutoff"),
 ];
 fn window(cadence: &str) -> R<(i64, i64)> {
     match cadence {
@@ -221,8 +324,32 @@ pub fn score(mt: &Value, sources: &[ScoreSource]) -> R<Value> {
     if claimed > 0 && int_or0(ex, "claimed_not_settled_cents")? * 10000 > 200 * claimed {
         caps.push("claimed_not_settled");
     }
-    let value = if caps.is_empty() { uncapped } else { uncapped.min(59) };
+    let c = mt.get("collection").ok_or("collection status missing")?;
+    let mut holds = vec![];
+    match c.get("status").and_then(Value::as_str) {
+        Some("verified") => {
+            if c["shortfall"] == json!(true) {
+                caps.push("collection_shortfall");
+            }
+        }
+        Some("pending") => holds.push("collection_pending"),
+        Some("not_applicable") => holds.push("collection_not_applicable"),
+        _ => return Err("collection status missing".into()),
+    }
+    let mut value = if caps.is_empty() { uncapped } else { uncapped.min(59) };
+    if !holds.is_empty() {
+        value = value.min(HOLD_SCORE);
+    }
     let band = if value >= 85 { "green" } else if value >= 60 { "yellow" } else { "red" };
-    let caps_json: Vec<Value> = caps.iter().map(|c| json!({ "code": c, "reason": CAPS.iter().find(|x| x.0 == *c).unwrap().1 })).collect();
-    Ok(json!({ "method": METHOD, "parts_x100": { "cash_match": parts.0, "gap": parts.1, "late": parts.2, "freshness": parts.3 }, "raw_x100": raw, "uncapped_score": uncapped, "score": value, "band": band, "caps": caps_json, "run_freshness_bps": run_fresh }))
+    let mut caps_json = vec![];
+    for code in &caps {
+        let reason = if *code == "collection_shortfall" {
+            format!("red because of unverified collection: {} of contractual dues for {} were bank-confirmed by {} (at least 90.00% needed)", pct(int(c, "rate_bps")?), s(c, "period")?, s(c, "cutoff")?)
+        } else {
+            CAPS.iter().find(|x| x.0 == *code).unwrap().1.to_string()
+        };
+        caps_json.push(json!({ "code": code, "reason": reason }));
+    }
+    let holds_json: Vec<Value> = holds.iter().map(|h| json!({ "code": h, "reason": HOLDS.iter().find(|x| x.0 == *h).unwrap().1 })).collect();
+    Ok(json!({ "method": METHOD, "parts_x100": { "cash_match": parts.0, "gap": parts.1, "late": parts.2, "freshness": parts.3 }, "raw_x100": raw, "uncapped_score": uncapped, "score": value, "band": band, "caps": caps_json, "run_freshness_bps": run_fresh, "holds": holds_json }))
 }

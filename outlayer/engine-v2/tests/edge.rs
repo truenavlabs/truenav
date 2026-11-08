@@ -30,7 +30,7 @@ fn run(c: &Value) -> Result<String, String> {
 #[test]
 fn every_edge_case_matches_the_reference_exactly() {
     let cs = cases();
-    assert_eq!(cs.len(), 14);
+    assert_eq!(cs.len(), 27);
     for c in &cs {
         let name = c["name"].as_str().unwrap();
         match (run(c), &c["expected"]) {
@@ -48,9 +48,11 @@ fn every_edge_case_matches_the_reference_exactly() {
 fn m5_case_keeps_the_credit_out_of_cash_and_collection() {
     let c = cases().into_iter().find(|c| c["name"] == "m5_mapped_payer_credit_without_claim").unwrap();
     let o: Value = serde_json::from_str(&run(&c).unwrap()).unwrap();
-    assert_eq!(o["match"]["due"][0]["status"], "unpaid");
-    assert_eq!(o["match"]["bank"][0]["outcome"], "settled_not_claimed");
-    assert_eq!(o["match"]["bank"][0]["used_cents"], 0);
+    let oct = o["match"]["due"].as_array().unwrap().iter().find(|d| d["period"] == "2026-10").unwrap().clone();
+    assert_eq!(oct["status"], "unpaid");
+    let credit = o["match"]["bank"].as_array().unwrap().iter().find(|t| t["posted_date"] == "2026-10-02").unwrap().clone();
+    assert_eq!(credit["outcome"], "settled_not_claimed");
+    assert_eq!(credit["used_cents"], 0);
     assert_eq!(o["metrics"]["cash_received_cents"], 0);
     assert_eq!(o["metrics"]["collection_rate_bps"], 0);
 }
@@ -66,4 +68,30 @@ fn to_utc_normalizes_offsets_and_refuses_the_rest() {
     for bad in ["2026-02-30", "2026-10-31T24:00:00Z", "2026-10-31T22:00:00", "2026-10-31T22:00Z", "2026-10-31T22:00:00+0700", "1969-12-31T23:59:59Z", "2026-13-01", "", "2026-10-31T22:00:00+24:00", "2026-10-31t22:00:00Z"] {
         assert_eq!(to_utc(bad), None, "{bad}");
     }
+}
+
+#[test]
+fn collection_cases_read_as_the_spec_says() {
+    let get = |name: &str| -> Value {
+        let c = cases().into_iter().find(|c| c["name"] == name).unwrap();
+        serde_json::from_str(&run(&c).unwrap()).unwrap()
+    };
+    let gap = get("collection_gap_one_unit_100_cents");
+    assert_eq!((gap["score"]["uncapped_score"].as_i64(), gap["score"]["score"].as_i64(), gap["score"]["band"].as_str()), (Some(100), Some(59), Some("red")));
+    assert_eq!(gap["score"]["caps"][0]["code"], "collection_shortfall");
+    assert_eq!(gap["score"]["caps"][0]["reason"], "red because of unverified collection: 0.00% of contractual dues for 2026-10 were bank-confirmed by 2026-11-07 (at least 90.00% needed)");
+    assert!(!gap.to_string().to_lowercase().contains("default"));
+    assert_eq!(get("collection_exactly_90_percent")["score"]["band"], "green");
+    assert_eq!(get("collection_89_99_percent")["score"]["caps"][0]["code"], "collection_shortfall");
+    assert_eq!(get("collection_rounds_to_90_but_below")["metrics"]["collection"]["rate_bps"], 9000);
+    assert_eq!(get("collection_rounds_to_90_but_below")["score"]["score"], 59);
+    let zero = get("collection_zero_dues_not_applicable");
+    assert_eq!(zero["metrics"]["collection"]["status"], "not_applicable");
+    assert_eq!(zero["metrics"]["collection"]["rate_bps"], Value::Null);
+    assert_eq!(zero["score"]["holds"][0]["code"], "collection_not_applicable");
+    assert_ne!(zero["score"]["band"], "green");
+    let early = get("collection_pending_before_cutoff");
+    assert_eq!(early["metrics"]["collection"]["status"], "pending");
+    assert_eq!(early["score"]["holds"][0]["code"], "collection_pending");
+    assert_ne!(early["score"]["band"], "green");
 }

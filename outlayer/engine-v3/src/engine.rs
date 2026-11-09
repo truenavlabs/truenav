@@ -35,6 +35,18 @@ pub struct LockRead {
     pub owner: Option<String>,
     pub fund_token_id: Option<String>,
 }
+/// One registry row, the same shape `rpc` builds from `get_lock`. A null view is an empty row.
+pub fn registry_lock(fingerprint: &str, fund_id: Option<&str>, owner: Option<&str>) -> LockRead {
+    LockRead {
+        fingerprint: fingerprint.to_string(),
+        completed: fund_id.is_some(),
+        fund_token_id: fund_id.map(str::to_string),
+        owner: owner.map(str::to_string),
+    }
+}
+fn empty_lock(lock: &LockRead) -> bool {
+    !lock.completed && lock.owner.is_none() && lock.fund_token_id.is_none()
+}
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Snapshot {
@@ -433,14 +445,20 @@ pub fn evaluate(
         fingerprints.push(fp);
         ranks.push(rank);
     }
-    let mut queried = fingerprints.clone();
-    for loan in &prepared {
+    let mut queried = Vec::new();
+    let mut loan_of: BTreeMap<String, usize> = BTreeMap::new();
+    for (i, loan) in prepared.iter().enumerate() {
         let t: LoanTerms =
             serde_json::from_value(loan["terms"].clone()).map_err(|_| "loan_terms_invalid")?;
         let asset = loan["asset"].as_str().ok_or("loan_terms_invalid")?;
         for h in pledge_lookup_hashes(&t, asset, &policy.case_sensitive_namespaces, mac)? {
-            if !queried.contains(&h) {
-                queried.push(h);
+            match loan_of.get(&h) {
+                Some(prev) if *prev != i => return Err("registry_snapshot_invalid"),
+                Some(_) => {}
+                None => {
+                    loan_of.insert(h.clone(), i);
+                    queried.push(h);
+                }
             }
         }
     }
@@ -452,12 +470,33 @@ pub fn evaluate(
     {
         return Err("registry_snapshot_invalid");
     }
-    let mut reads = BTreeMap::new();
+    let mut reads: BTreeMap<String, LockRead> = BTreeMap::new();
     for lock in &snapshot.locks {
-        if !fingerprints.contains(&lock.fingerprint)
-            || reads.insert(lock.fingerprint.clone(), lock).is_some()
-        {
+        let Some(&idx) = loan_of.get(&lock.fingerprint) else {
             return Err("registry_snapshot_invalid");
+        };
+        let primary = &fingerprints[idx];
+        if lock.fingerprint != *primary && empty_lock(lock) {
+            continue;
+        }
+        let mut mapped = lock.clone();
+        mapped.fingerprint = primary.clone();
+        match reads.get(primary) {
+            None => {
+                reads.insert(primary.clone(), mapped);
+            }
+            Some(prev) if empty_lock(prev) => {
+                reads.insert(primary.clone(), mapped);
+            }
+            Some(prev) => {
+                let prev_foreign = prev.owner.as_deref().is_some()
+                    && prev.owner.as_deref() != Some(c.scope.fund_account.as_str());
+                let this_foreign = mapped.owner.as_deref().is_some()
+                    && mapped.owner.as_deref() != Some(c.scope.fund_account.as_str());
+                if !prev_foreign && this_foreign {
+                    reads.insert(primary.clone(), mapped);
+                }
+            }
         }
     }
     let mut completed = 0usize;
@@ -921,12 +960,21 @@ pub fn sibling_nav(
             return Err("loan_terms_scope_mismatch");
         }
         let asset = loan["asset"].as_str().ok_or("loan_terms_invalid")?;
-        let fp = fingerprint(&terms, asset, &policy.case_sensitive_namespaces, mac)?;
+        let hashes = pledge_lookup_hashes(&terms, asset, &policy.case_sensitive_namespaces, mac)?;
+        let fp = hashes[0].clone();
         let rank = row["lien_rank"]
             .as_u64()
             .filter(|r| *r > 0)
             .ok_or("loan_terms_invalid")?;
-        let read = snapshot.locks.iter().find(|r| r.fingerprint == fp);
+        let read = hashes
+            .iter()
+            .find_map(|h| {
+                snapshot
+                    .locks
+                    .iter()
+                    .find(|r| r.fingerprint == *h && !empty_lock(r))
+            })
+            .or_else(|| snapshot.locks.iter().find(|r| r.fingerprint == fp));
         let own = read.is_some_and(|r| {
             r.completed
                 && r.owner.as_deref() == Some(&c.scope.fund_account)

@@ -1,5 +1,5 @@
 // Private loan fingerprints (owner decision D1, 7 Nov). A loan's on-chain loan_hash is
-//   HMAC-SHA256(key, "truenav-fp-v1|" + asset type + "|" + document id)
+//   HMAC under key path loan-terms-v2 of the length-prefixed truenav-fp-v4 preimage
 // computed by the OutLayer TEE module outlayer/fingerprint. The key is derived inside the TEE for the project and
 // the calling account (the servicer); the module never sees it and nobody holds it, so nobody can recompute a
 // fingerprint from a document id or test a guess against one. The servicer is the one place fingerprints come from

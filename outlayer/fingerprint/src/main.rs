@@ -1,7 +1,7 @@
-//! TrueNav loan fingerprint (owner decision D1, 7 Nov): replaces the guessable demo fingerprint
-//! sha256("truenav-demo-v1|" + asset + "|" + document id) with
-//! HMAC-SHA256(key, "truenav-fp-v1|" + asset + "|" + document id), where the key is derived inside the
-//! OutLayer TEE for this project and the calling account, never seen by the module, the operator or anyone else.
+//! TrueNav loan fingerprint (owner decision D1, 7 Nov): HMAC under key path `loan-terms-v2`
+//! of the length-prefixed `truenav-fp-v4` preimage (asset class, collateral namespace, document id).
+//! The key is derived inside the OutLayer TEE for this project and the calling account, never seen
+//! by the module, the operator or anyone else.
 //! Same input, same caller, same project: same fingerprint, so a second fund's pledge of the same loan still
 //! collides on chain. Runs over HTTPS only, so the document id never lands in public transaction data.
 use serde::Deserialize;

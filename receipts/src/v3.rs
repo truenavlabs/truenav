@@ -159,7 +159,11 @@ impl Receipts {
                 o.insert("score".into(), Value::Null);
             }
         }
-        Some(v)
+        Some(if v.is_object() {
+            super::project_public(&v)
+        } else {
+            v
+        })
     }
     /// Inclusive ascending history. Every entry has an explicit version tag, including historical v2 wrappers.
     pub fn get_receipt_history(

@@ -21,9 +21,32 @@ struct Read {
     snapshot: Snapshot,
 }
 impl RegistryReader for Read {
-    fn read(&self, _: &Scope, _: &[String], _: &str) -> truenav_v3_core::Result<Snapshot> {
+    fn read(&self, scope: &Scope, fp: &[String], _: &str) -> truenav_v3_core::Result<Snapshot> {
+        if scope.network != "near_testnet"
+            || self.snapshot.locks.len() != fp.len()
+            || self
+                .snapshot
+                .locks
+                .iter()
+                .any(|r| !fp.contains(&r.fingerprint))
+        {
+            return Err("registry_snapshot_invalid");
+        }
         Ok(self.snapshot.clone())
     }
+}
+fn alias_gaps(t: &LoanTerms, asset: &str) -> Vec<LockRead> {
+    pledge_lookup_hashes(t, asset, &[], &TestMac)
+        .unwrap()
+        .into_iter()
+        .skip(1)
+        .map(|fingerprint| LockRead {
+            fingerprint,
+            completed: false,
+            owner: None,
+            fund_token_id: None,
+        })
+        .collect()
 }
 fn test_key(role: &str) -> SigningKey {
     // Public fixture seed only, matching lab/sim-data e6f45eb. Never used by the live host.
@@ -138,6 +161,12 @@ fn setup(index: usize) -> (Context, Vec<SignedSource>, Policy, Read) {
         payments.push(json!({"payment_id":format!("p-{i}"),"loan_id":id,"payer":format!("TEST payer {i}"),"amount_cents":1,"paid_date":"2026-10-15","reference":format!("pay-{i}"),"component":"interest"}));
         transactions.push(json!({"transaction_id":format!("b-{i}"),"date":"2026-10-15","amount_cents":-1,"counterparty":format!("TEST payer {i}"),"reference":format!("pay-{i}"),"category":"LOAN_PAYMENT"}));
     }
+    let mut gaps = Vec::new();
+    for l in &loans {
+        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
+        gaps.extend(alias_gaps(&t, l["asset"].as_str().unwrap()));
+    }
+    locks.extend(gaps);
     fund.as_object_mut().unwrap().remove("loans");
     fund.as_object_mut().unwrap().remove("blocked_attempts");
     let servicer = json!({"loans":loans,"cashflow":{"as_of":c.valuation_time,"loans":roster,"schedule":schedule,"payments":payments}});
@@ -447,6 +476,12 @@ fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
             fund_token_id: Some(c.scope.token_id.clone()),
         });
     }
+    let mut gaps = Vec::new();
+    for l in &loans {
+        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
+        gaps.extend(alias_gaps(&t, "invoices"));
+    }
+    locks.extend(gaps);
     let fund = json!({"fund_id":c.scope.token_id,"headline_nav":10000000,"cash":0,"liabilities":0,"nav_report_date":"2026-11-08T06:00:00Z","certificate":{"data_asof":"2026-11-08T06:00:00Z","signer":"demo.manager"}});
     let mut sources = Vec::new();
     for (role, payload) in [
@@ -565,6 +600,12 @@ fn temporal_setup() -> (Context, Vec<SignedSource>, Policy, Read) {
         payments.push(json!({"payment_id":format!("p-{i}"),"loan_id":id,"paid_date":"2026-10-15","amount_cents":1}));
         txs.push(json!({"transaction_id":format!("b-{i}"),"date":"2026-10-15","amount_cents":-1,"counterparty":format!("TEST TEMPORAL {i}"),"category":"LOAN_PAYMENT"}));
     }
+    let mut gaps = Vec::new();
+    for l in &loans {
+        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
+        gaps.extend(alias_gaps(&t, "real_estate"));
+    }
+    locks.extend(gaps);
     sources[0].payload = json!({"loans":loans,"cashflow":{"as_of":c.valuation_time,"loans":roster,"schedule":dues,"payments":payments}});
     sources[1].payload["transactions"] = json!(txs);
     sources[2].payload["fund"]["headline_nav"] = json!(9400000);
@@ -745,6 +786,12 @@ fn same_loan_in_two_funds_caps_previously_97_to_59_and_red() {
         lock.fund_token_id = Some(c2.scope.token_id.clone());
     }
     r2.snapshot.locks[0] = r.snapshot.locks[5].clone();
+    let n = s2[0].payload["loans"].as_array().unwrap().len();
+    let swapped: LoanTerms =
+        serde_json::from_value(s2[0].payload["loans"][0]["terms"].clone()).unwrap();
+    let swapped_asset = s2[0].payload["loans"][0]["asset"].as_str().unwrap();
+    r2.snapshot.locks[n].fingerprint =
+        pledge_lookup_hashes(&swapped, swapped_asset, &[], &TestMac).unwrap()[1].clone();
     let owner = evaluate(&c2, &s2, &p2, &r2, &TestMac, &salt()).unwrap();
     assert_ne!(owner.envelope["pledge_result"], "conflict");
     assert!(!owner.envelope["caps"]
@@ -1004,4 +1051,119 @@ fn redteam_r1b_engine_must_read_the_migration_alias() {
         Ok(_) => {}
         Err(other) => panic!("engine failed before the alias check: {other}"),
     }
+}
+
+/// RPC returns one row per queried hash, including a null row when get_lock is empty.
+#[test]
+fn rpc_shaped_lock_list_remaps_alias_hits() {
+    use std::cell::Cell;
+    let (c, sources, p, _) = setup(0);
+    let loans = sources[0].payload["loans"].as_array().unwrap();
+    let n = loans.len();
+    let t: LoanTerms = serde_json::from_value(loans[0]["terms"].clone()).unwrap();
+    let asset = loans[0]["asset"].as_str().unwrap();
+    let id = loans[0]["id"].clone();
+    let hashes = pledge_lookup_hashes(&t, asset, &[], &TestMac).unwrap();
+    let primary = hashes[0].clone();
+    let alias = hashes[1].clone();
+    struct RpcRows {
+        live: BTreeMap<String, (String, String)>,
+        queried: Cell<usize>,
+    }
+    impl RegistryReader for RpcRows {
+        fn read(
+            &self,
+            scope: &Scope,
+            fps: &[String],
+            _: &str,
+        ) -> truenav_v3_core::Result<Snapshot> {
+            self.queried.set(fps.len());
+            if scope.network != "near_testnet" {
+                return Err("registry_snapshot_invalid");
+            }
+            let locks = fps
+                .iter()
+                .map(|fp| match self.live.get(fp) {
+                    Some((fund, account)) => registry_lock(fp, Some(fund), Some(account)),
+                    None => registry_lock(fp, None, None),
+                })
+                .collect();
+            Ok(Snapshot {
+                registry_account: "registry.tnlab-718ca9.testnet".into(),
+                block_height: "123456".into(),
+                block_hash: "TEST_ONLY_finalized_block".into(),
+                finalized: true,
+                manager_id: "mgr-harbor.demo".into(),
+                locks,
+                attempts: json!([]),
+                certificate_history: json!([]),
+                manager_funds: vec![],
+                manager_attempt_log: json!({}),
+            })
+        }
+    }
+    let detail = |out: &Output, key: &str| {
+        out.private_report["pledge_detail"]["loans"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["loan_id"] == id)
+            .unwrap()[key]
+            .clone()
+    };
+    let run = |live: BTreeMap<String, (String, String)>| {
+        let reader = RpcRows {
+            live,
+            queried: Cell::new(0),
+        };
+        let out = evaluate(&c, &sources, &p, &reader, &TestMac, &salt()).unwrap();
+        assert_eq!(
+            reader.queried.get(),
+            n * 2,
+            "registry read was not the 2N rpc list"
+        );
+        out
+    };
+    let none = run(BTreeMap::new());
+    assert_ne!(none.envelope["pledge_result"], "conflict");
+    assert_eq!(detail(&none, "completed"), json!(false));
+    let mut own_primary = BTreeMap::new();
+    own_primary.insert(
+        primary.clone(),
+        (c.scope.token_id.clone(), c.scope.fund_account.clone()),
+    );
+    let owned = run(own_primary);
+    assert_ne!(owned.envelope["pledge_result"], "conflict");
+    assert_eq!(detail(&owned, "completed"), json!(true));
+    assert_eq!(detail(&owned, "owner"), json!(c.scope.fund_account));
+    let mut own_alias = BTreeMap::new();
+    own_alias.insert(
+        alias.clone(),
+        (c.scope.token_id.clone(), c.scope.fund_account.clone()),
+    );
+    let via_alias = run(own_alias);
+    assert_ne!(via_alias.envelope["pledge_result"], "conflict");
+    assert_eq!(detail(&via_alias, "completed"), json!(true));
+    assert_eq!(detail(&via_alias, "owner"), json!(c.scope.fund_account));
+    let mut foreign_primary = BTreeMap::new();
+    foreign_primary.insert(
+        primary,
+        ("other-simulated-fund".into(), "other.sim.testnet".into()),
+    );
+    let foreign = run(foreign_primary);
+    assert_eq!(foreign.envelope["pledge_result"], "conflict");
+    assert_eq!(foreign.envelope["band"], "red");
+    assert!(foreign.envelope["score"].as_u64().map(|n| n <= 59).unwrap_or(true));
+    let mut foreign_alias = BTreeMap::new();
+    foreign_alias.insert(
+        alias,
+        ("other-simulated-fund".into(), "other.sim.testnet".into()),
+    );
+    let foreign_old = run(foreign_alias);
+    assert_eq!(foreign_old.envelope["pledge_result"], "conflict");
+    assert_eq!(foreign_old.envelope["band"], "red");
+    assert!(foreign_old.envelope["score"]
+        .as_u64()
+        .map(|n| n <= 59)
+        .unwrap_or(true));
 }

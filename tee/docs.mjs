@@ -6,7 +6,7 @@
 //   node tee/docs.mjs      writes tee/docs/*.txt and tee/loans.json
 //
 // loan_hash is the private fingerprint from the OutLayer TEE (owner decision D1, 7 Nov):
-// HMAC-SHA256(key inside the TEE, "truenav-fp-v1|" + asset + "|" + document id), recorded with its attestation in
+// HMAC under key path loan-terms-v2 of the length-prefixed truenav-fp-v4 preimage, recorded with its attestation in
 // tee/fixtures/fingerprints.json (made by node tee/fingerprint.mjs, checked by npm run verify:fingerprints).
 // Nobody can recompute it from a document id; the old guessable sha256 demo fingerprint is gone.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";

@@ -86,6 +86,20 @@ mod tests {
     }
 
     #[test]
+    fn pledge_frame_matches_pledge_message_for_every_recorded_fixture() {
+        let raw = include_str!("../../../tee/fixtures/fingerprints.json");
+        let v: serde_json::Value = serde_json::from_str(raw).unwrap();
+        for rec in v["records"].as_array().unwrap() {
+            let asset = rec["asset_type"].as_str().unwrap();
+            let doc = rec["document_id"].as_str().unwrap();
+            for ns in ["demo", "county-a", "county-b"] {
+                let msg = truenav_v3_core::source::pledge_message(asset, ns, doc).unwrap();
+                assert_eq!(pledge_frame(asset, ns, doc), msg, "{asset} {ns} {doc}");
+            }
+        }
+    }
+
+    #[test]
     fn pledge_frame_matches_the_engine_v4_layout() {
         let frame = pledge_frame("real_estate", "county-a", "PARCEL-1");
         let mut expect = Vec::new();

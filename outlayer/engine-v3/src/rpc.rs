@@ -80,13 +80,15 @@ impl<'a> NearViews<'a> {
                         .to_string(),
                 )
             };
-            let locked = !r.is_null();
-            locks.push(LockRead {
-                fingerprint: fp.clone(),
-                completed: locked,
-                fund_token_id: r["fund_id"].as_str().map(str::to_string),
-                owner,
-            });
+            locks.push(registry_lock(
+                fp,
+                if r.is_null() {
+                    None
+                } else {
+                    r["fund_id"].as_str()
+                },
+                owner.as_deref(),
+            ));
         }
         let mut attempts = Vec::new();
         let mut offset = 0u64;

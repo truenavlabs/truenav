@@ -181,6 +181,7 @@ const PUBLIC_RECEIPT_KEYS: &[&str] = &[
     "caps",
     "checks_run",
     "evidence_hashes",
+    "error",
     "exceptions",
     "head_status",
     "holds",
@@ -198,6 +199,52 @@ const PUBLIC_RECEIPT_KEYS: &[&str] = &[
     "synthetic",
     "token_id",
     "version_key",
+    "method_spec_sha256",
+    "network",
+    "receipts_contract",
+    "currency",
+    "engine_code_sha256",
+    "fund_id",
+    "fund_account",
+    "period_start",
+    "period_end",
+    "prev_receipt_sha256",
+    "supersedes_seq",
+    "correction_reason_code",
+    "issued_at",
+    "data_as_of",
+    "valuation_time",
+    "request_id",
+    "request_nonce",
+    "input_sha256",
+    "attestation_ref",
+    "source_key_ids",
+    "commitments",
+    "pledge_scope",
+    "fingerprint_scheme",
+    "pledge_result",
+    "pledge_coverage_bps",
+    "loans_checked",
+    "blocked_attempts",
+    "blocked_attempts_window",
+    "lien_support",
+    "reported_nav",
+    "trueval",
+    "truerange_low",
+    "truerange_high",
+    "nav_result",
+    "nav_gap_band",
+    "unverified_share_band",
+    "cash_evidence_status",
+    "cash_match_band",
+    "yield_gap_band",
+    "collection_rate_band",
+    "late_share_band",
+    "late_loan_cohorts",
+    "status",
+    "parts_band",
+    "freshness_band",
+    "ext",
 ];
 fn public_codes(v: &Value) -> Value {
     let Some(xs) = v.as_array() else {
@@ -223,7 +270,7 @@ fn project_public(v: &Value) -> Value {
         let Some(value) = obj.get(*key) else {
             continue;
         };
-        let next = if *key == "caps" || *key == "holds" || *key == "exceptions" {
+        let next = if *key == "caps" || *key == "holds" {
             public_codes(value)
         } else {
             value.clone()
@@ -836,6 +883,13 @@ impl Receipts {
         if self.head_failed(&token_id) {
             r.band = "red".into();
             r.score = 0;
+            if let Ok(mut v) = serde_json::from_str::<Value>(&r.receipt) {
+                if let Some(o) = v.as_object_mut() {
+                    o.insert("head_status".into(), json!("failed"));
+                    o.insert("band".into(), json!("red"));
+                }
+                r.receipt = v.to_string();
+            }
         }
         r.receipt = redact_public_receipt(&r.receipt);
         Some(r)
@@ -844,11 +898,9 @@ impl Receipts {
     pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<Value> {
         let r = self.receipts.get(&(token_id, seq))?;
         if truenav_v3_core::wire::is_v3_method(&r.method) {
-            return Some(
-                serde_json::from_str(&r.receipt).unwrap_or_else(
-                    |_| json!({"receipt_version":"3","error":"v3_receipt_corrupt"}),
-                ),
-            );
+            let v = serde_json::from_str::<Value>(&r.receipt)
+                .unwrap_or_else(|_| json!({"receipt_version":"3","error":"v3_receipt_corrupt"}));
+            return Some(if v.is_object() { project_public(&v) } else { v });
         }
         let mut v = serde_json::to_value(r).ok()?;
         if let Some(raw) = v.get("receipt").and_then(Value::as_str) {

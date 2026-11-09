@@ -20,7 +20,7 @@ Built at NEAR HACKATHON 2026 by TrueNav Labs. Tracks: Privacy & Private AI, Open
 Needs Node 18 or later. Every step below runs from a fresh clone with no API key and no NEAR account. In CI, the `engine` job runs steps 2 and 3 (step 3 as `npm run tee:demo`, the same script) and `npm run eval`; the `judge-path` job runs steps 3 to 8 from a fresh checkout with no secrets set.
 
 1. `npm ci`
-2. `npm test`. You should see `# pass 169` and `# fail 0`, then "All worked example numbers match." (Harbor Credit Fund 99.17 green, Meridian Yield Fund 42.84 red).
+2. `npm test`. You should see `# pass 290` and `# fail 0`, then "All worked example numbers match." (Harbor Credit Fund 99.17 green, Meridian Yield Fund 42.84 red).
 3. `npm run demo`. Replays the TEE-signed verdicts and re-checks every signature: the three tampered documents are flagged, `honest documents: 16 of 16 pass, every signature checked`, and Harbor goes from `99.17 green` to `51.59 red` when the TEE flags one of its loans.
 4. `npm run chain:read`. Reads the live contract on NEAR testnet and recomputes both scores from chain data only; you should see each fund followed by `-> matches the recomputed score`.
 5. `npm run verify:attestation`. Checks the published NEAR AI Cloud attestation yourself: the Intel TDX quote, that the TEE signing key and nonce are bound into it, the measurements and the NVIDIA GPU evidence, that this key signed every verdict, and that it is the key the live contract accepts. Ends with `Attestation verified`.

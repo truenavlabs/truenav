@@ -25,3 +25,12 @@ e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:g
 e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12552
 e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12663
 e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12783
+
+# Reviewed pinned-image public WASI SHA256 in engine_version_key, not a secret.
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:14
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:3511
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:5554
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:9051
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12552
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12663
+6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12783

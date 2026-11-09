@@ -17,7 +17,7 @@ try{
  const provider=new JsonRpcProvider({url:sandbox.rpcUrl});
  const accounts=Object.fromEntries(Object.entries(ids).map(([name,id])=>[name,new Account(id,provider,genesis.find(g=>g.accountId===id).privateKey)]));
  const one=1n;
- const decode=tx=>{assert.ok(tx.status&&Object.hasOwn(tx.status,'SuccessValue'),'local sandbox transaction failed');return tx.status.SuccessValue?JSON.parse(Buffer.from(tx.status.SuccessValue,'base64').toString()):null;};
+ const decode=tx=>{assert.ok(tx.status&&Object.hasOwn(tx.status,'SuccessValue'),'local sandbox transaction failed: '+JSON.stringify(tx.status));return tx.status.SuccessValue?JSON.parse(Buffer.from(tx.status.SuccessValue,'base64').toString()):null;};
  const call=async(who,contract,method,args={},deposit=0n,gas='100')=>decode(await accounts[who].signAndSendTransaction({receiverId:ids[contract],actions:[actions.functionCall(method,args,teraToGas(gas),deposit)],throwOnFailure:false,waitUntil:'FINAL'}));
  const view=(method,args={})=>provider.callFunction({contractId:receiptId,method,args,blockQuery:{finality:'final'}});
  const deploy=async(name,bytes,method,args)=>decode(await accounts[name].signAndSendTransaction({receiverId:ids[name],actions:[actions.deployContract(bytes),actions.functionCall(method,args,teraToGas('100'),0n)],waitUntil:'FINAL'}));
@@ -37,6 +37,7 @@ try{
   assert.ok(request,'local mock worker request must arrive');const input=JSON.parse(request.input_data);
   await call('worker','outlayer','resolve',{request_id:request.request_id,success:true,output:JSON.stringify(make(input))},0n,'200');
   const outcome=await provider.viewTransactionStatusWithReceipts({txHash:hash,accountId:ids.runner,waitUntil:'FINAL'});
+  console.log('CI receipt gas and status',JSON.stringify(outcome.receipts_outcome.map(r=>({executor:r.outcome.executor_id,gas_burnt:r.outcome.gas_burnt,status:r.outcome.status}))), 'callback budget Tgas',config.callback_tgas);
   assert.ok(outcome.receipts_outcome.every(r=>!r.outcome.status.Failure),'callback must fit its configured wasm gas budget');return decode(outcome);
  }
  const v2=JSON.parse(read('receipts/tests/fixtures/engine-receipts.json').receipts['DEMO-CREDIT'].output);
@@ -64,6 +65,6 @@ try{
  assert.equal(await run(body),'stored:3');const correction=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(correction.supersedes_seq,'2');assert.equal(correction.prev_receipt_sha256,first.receipt_sha256);
  assert.equal(await run(input=>({...body(input),metrics:{late_share_bps:1500,cohort_principal_cents:850000000}})),'v3_schema');assert.equal((await view('get_latest_receipt',{token_id:'DEMO-CREDIT'})).seq,'3');assert.equal((await view('get_token',{token_id:'DEMO-CREDIT'})).pending,null);
  console.log('PASS CI local sandbox: actual old wasm state retained, v3 callback within 80 Tgas, chain/correction/tags, append-only metadata without quote claims, private-field rejection');
-}catch{
- console.error('FAIL CI local sandbox v3 migration/callback gate');process.exitCode=1;
+}catch(error){
+ console.error('FAIL CI local sandbox v3 migration/callback gate', String(error?.stack ?? error).replace(/ed25519:[1-9A-HJ-NP-Za-km-z]+/g,'ed25519:[redacted]'));process.exitCode=1;
 }finally{await sandbox.tearDown();}

@@ -27,7 +27,8 @@ jobs:
           "$RUNNER_TEMP/receipt-v3-schema/bin/python" receipts/tests/receipt-v3-schema.test.py
       - run: npm run tee:demo
       - run: npm run eval
-      - run: npm audit --audit-level=high
+      # Ganache is used only by local EVM tests; gate on production dependencies.
+      - run: npm audit --omit=dev --audit-level=high
 
   contract:
     runs-on: ubuntu-24.04

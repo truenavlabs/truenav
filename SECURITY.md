@@ -19,3 +19,11 @@ Open a private security advisory on this repository (GitHub, Security tab). Plea
 - TEE: the attestation report is published (`tee/fixtures/attestation-report.json.b64`) and re-checkable with `npm run verify:attestation`; every verdict is bound to one contract, network, version and a 30-day expiry.
 
 See `TRUST_MODEL.md`, `THREAT_MODEL.md` and `AUDIT_FINDINGS.md`.
+
+## Receipts v3 attestation records, local candidate
+
+No hardware quote is validated on-chain. A stored proof locator is not an attestation verdict. Frozen v3 receipts remain immutable with attestation_ref=null. The callback separately binds canonical B through body_sha256. Only the designated OutLayer relayer can append proof records; storage is paid, existing records cannot be deleted or overwritten, and exact retries are idempotent. Admin writer rotation requires a pause and never changes old records.
+
+Off-chain verification must check the public OutLayer proof against the receipt/body hashes, approved engine, original request input, signer/project, REPORTDATA, all worker measurements and Intel quote verification. No record or unavailable evidence means unavailable. Only a successful off-chain match may be labelled attested. No real v3 OutLayer proof has been produced by this local task.
+
+The new method and storage are in round-1 audit scope before the upgrade: writer authorization and rotation, no permissionless proof slot, immutable receipt/body binding, composite keys, append-only indexes, idempotent replay, bounded references/pages, deposit/refund accounting and the off-chain trust boundary. A clean local test run does not substitute for that audit. See receipts/attestation/OUTLAYER_BODY_BINDING.md and UPGRADE_V3.md.

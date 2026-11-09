@@ -6,3 +6,12 @@ f7d6cf8ce54205d5f21dc787f648b0634c0feb10:outlayer/spike/smoke.mjs:generic-api-ke
 88ffe2057bfb20dc7fa8b1ccb3eb974e1035d227:cashflow/test/pipeline.test.mjs:generic-api-key:11
 # Prose describing verification-key administration, not a credential (rc2 review, generic-api-key).
 d0350988e45896c3ab06a41d2250551c5aa4ca7a:SPEC_RECEIPT_V3.md:generic-api-key:205
+
+# Reviewed public WASI build SHA256 in engine_version_key, not an authentication secret.
+# Exact findings only; source fields and all other history remain scanned.
+3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:14
+3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:3415
+3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:5362
+3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:8763
+3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:12168
+3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:12279

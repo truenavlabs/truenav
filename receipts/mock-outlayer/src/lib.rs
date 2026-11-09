@@ -6,9 +6,19 @@
 //! the deposit to `payer_account_id`. `set_refuse(true)` makes request_execution panic at admission, so the caller
 //! sees a failed promise and NEAR returns the deposit to the caller. It records each request's arguments so the
 //! harness can check what went on chain.
+// Match the real OutLayer request interface, including generated ABI wrappers.
+#![allow(clippy::too_many_arguments)]
 use near_sdk::serde_json::{self, Value};
 use near_sdk::store::IterableMap;
 use near_sdk::{env, near, require, AccountId, CryptoHash, Gas, GasWeight, NearToken, PanicOnDefault, Promise};
+
+// Keep admission/storage headroom; never reserve all prepaid gas for the yield.
+fn yield_gas(prepaid: Gas, used: Gas) -> Option<Gas> {
+    prepaid.as_gas().checked_sub(used.as_gas())?
+        .checked_sub(Gas::from_tgas(50).as_gas())
+        .filter(|gas| *gas > 0)
+        .map(|gas| Gas::from_gas(gas.min(Gas::from_tgas(150).as_gas())))
+}
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
@@ -56,7 +66,8 @@ impl Mock {
         let payer: AccountId = payer_account_id.parse().unwrap_or_else(|_| env::panic_str("bad payer_account_id"));
         let id = self.next;
         self.next += 1;
-        let idx = env::promise_yield_create("on_resolved", serde_json::json!({ "request_id": id }).to_string(), Gas::from_tgas(200), GasWeight(1), 0);
+        let gas = yield_gas(env::prepaid_gas(), env::used_gas()).unwrap_or_else(|| env::panic_str("insufficient admission gas"));
+        let idx = env::promise_yield_create("on_resolved", serde_json::json!({ "request_id": id }).to_string(), gas, GasWeight(0), 0);
         let data_id = env::read_register(0).expect("yield data id");
         self.refunds.insert(id, (payer, env::attached_deposit().as_yoctonear()));
         self.open.insert(id, Request { request_id: id, sender: env::predecessor_account_id(), payer: payer_account_id, source: source.to_string(), input_data, secrets_ref: secrets_ref.to_string(), deposit: env::attached_deposit().as_yoctonear().to_string(), data_id });
@@ -98,7 +109,7 @@ impl Mock {
             // test only: "BIG:<n>" returns n filler bytes built here (nothing stored), for oversized-result tests
             Some(out) if ok && out.starts_with("BIG:") => {
                 let n: usize = out[4..].parse().unwrap_or_else(|_| env::panic_str("BIG:<n>"));
-                env::value_return(&vec![b'x'; n]);
+                env::value_return(vec![b'x'; n]);
             }
             Some(out) if ok => env::value_return(out.as_bytes()),
             _ => {
@@ -113,5 +124,34 @@ impl Mock {
 
     pub fn get_requests(&self) -> Vec<Request> {
         self.open.values().cloned().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn yield_leaves_admission_headroom() {
+        assert_eq!(yield_gas(Gas::from_tgas(200), Gas::from_tgas(5)), Some(Gas::from_tgas(145)));
+        assert_eq!(yield_gas(Gas::from_tgas(230), Gas::from_tgas(5)), Some(Gas::from_tgas(150)));
+        assert_eq!(yield_gas(Gas::from_tgas(100), Gas::from_tgas(5)), Some(Gas::from_tgas(45)));
+    }
+    #[test]
+    fn admission_with_200_tgas_creates_a_request() {
+        let mut ctx = near_sdk::test_utils::VMContextBuilder::new();
+        ctx.current_account_id("mock.testnet".parse().unwrap())
+            .predecessor_account_id("receipts.testnet".parse().unwrap())
+            .prepaid_gas(Gas::from_tgas(200));
+        near_sdk::testing_env!(ctx.build());
+        let mut mock = Mock::new("worker.testnet".parse().unwrap());
+        mock.request_execution(serde_json::json!({}), serde_json::json!({}), "{}".into(), serde_json::json!({}), "Json".into(), "receipts.testnet".into(), Value::Null);
+        assert_eq!(mock.get_requests().len(), 1);
+        assert_eq!(mock.get_requests()[0].request_id, 1);
+    }
+    #[test]
+    fn insufficient_gas_never_underflows_or_reserves_everything() {
+        for prepaid in [0, 5, 50, 55] {
+            assert_eq!(yield_gas(Gas::from_tgas(prepaid), Gas::from_tgas(5)), None);
+        }
     }
 }

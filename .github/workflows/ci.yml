@@ -124,9 +124,9 @@ jobs:
       - run: npm ci
       - name: Rust 1.99.0 with clippy
         run: rustup toolchain install 1.99.0 --profile minimal --component clippy
-      - name: Unit tests and clippy (receipts, query, mock signer)
+      - name: Unit tests and clippy (receipts, query, mock OutLayer, mock signer)
         run: |
-          for d in receipts query mirror/mock-signer; do
+          for d in receipts query receipts/mock-outlayer mirror/mock-signer; do
             (cd $d && cargo +1.99.0 test --locked && cargo +1.99.0 clippy --locked --all-targets -- -D warnings)
           done
       - name: Contract wasm in the pinned image (receipts, query, mock OutLayer, mock signer)

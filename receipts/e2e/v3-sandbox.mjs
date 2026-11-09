@@ -34,6 +34,12 @@ try{
   const hash=baseEncode(createHash('sha256').update(signed.transaction.encode()).digest());await provider.sendTransactionAsync(signed);
   let request;
   for(let i=0;i<100;i++){const rows=await provider.callFunction({contractId:ids.outlayer,method:'get_requests',args:{},blockQuery:{finality:'final'}});if(rows.length){request=rows[0];break}await new Promise(r=>setTimeout(r,200));}
+  if(!request){
+   try {
+    const failed=await provider.viewTransactionStatusWithReceipts({txHash:hash,accountId:ids.runner,waitUntil:'NONE'});
+    console.error('CI admission timeout',JSON.stringify({status:failed.status,receipts:failed.receipts_outcome.map(r=>({executor:r.outcome.executor_id,gas_burnt:r.outcome.gas_burnt,status:r.outcome.status}))}));
+   } catch(error) {console.error('CI admission status lookup failed',String(error?.message??error).replace(/ed25519:[A-Za-z0-9]+/g,'[REDACTED]'));}
+  }
   assert.ok(request,'local mock worker request must arrive');const input=JSON.parse(request.input_data);
   await call('worker','outlayer','resolve',{request_id:request.request_id,success:true,output:JSON.stringify(make(input))},0n,'200');
   const outcome=await provider.viewTransactionStatusWithReceipts({txHash:hash,accountId:ids.runner,waitUntil:'FINAL'});

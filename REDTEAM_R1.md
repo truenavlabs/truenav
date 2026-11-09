@@ -39,7 +39,7 @@ Branch `lab/fix-r1`. Status after the approved fix pass.
 | RT-04 | fixed | NFKC, Unicode lowercase, and stripped whitespace and invisible characters. No confusable-skeleton crate is linked. |
 | RT-05 | fixed | v3 sources require a non-empty `fund_id` (`source_scope_mismatch` otherwise). The envelope has no `token_id` fallback. The matcher requires `context.fund_id` and rejects a mismatch. |
 | RT-06 | fixed | The repro is namespace-anchored. A borrower rename inside the same external ref stays one pledge. `-copy` is not stripped. Another namespace does not collide. The pre-v4 asset string is a migration alias only, not a conflict key. |
-| RT-07 | fixed | Proof timestamps are Unix seconds. `UpToDate` quotes older than 7 days, or more than 5 minutes in the future, are `attestation_expired`. |
+| RT-07 | fixed | The quote timestamp must sit in `QUOTE_RUN_WINDOW_SEC` of the attested `valuation_time` (5 minutes before through 60 minutes after). Outside that window the result is `attestation_unbound`. A receipt older than 7 days stays `attested` and is reported `stale` with `receipt_age_days`. |
 | RT-08 | fixed | 12 records per receipt and 3 per attester, counted across rotation. The repro matches those approved caps. |
 | RT-09 | fixed | Missing index or record returns `attestation_record_missing` or `attestation_index_missing`. |
 | RT-10 | fixed | Corrupt head returns the typed error and `head_status: failed`, refunds, and does not start a run. A failed run marks the live head failed. |

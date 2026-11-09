@@ -2,7 +2,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {matchWithCapabilities, bodyOf, canonical, sha} from './match-core.mjs';
+import {matchWithCapabilities, bodyOf, canonical, sha, QUOTE_RUN_WINDOW_SEC} from './match-core.mjs';
 import {taskHash, quoteFields} from '../../tee/fingerprint.mjs';
 
 const read = (p) => JSON.parse(fs.readFileSync(new URL('../../' + p, import.meta.url)));
@@ -13,6 +13,7 @@ function fixture() {
   const m = quoteFields(Buffer.from(real.tdx_quote, 'base64'));
   const p = {
     ...real,
+    timestamp: Math.floor(Date.parse(e.valuation_time) / 1000),
     wasm_hash: e.engine_code_sha256,
     executed_wasm_sha256: e.engine_code_sha256,
     input_hash: 'a'.repeat(64),
@@ -56,23 +57,47 @@ test('redteam_r1 caller fund_id must match the attested token', async () => {
   assert.equal(out.reason, 'fund_id_unbound');
 });
 
-test('redteam_r1 stale UpToDate quote must expire', async () => {
+function reseal(f) {
+  const {receipt_sha256: _dropped, ...preimage} = f.args.envelope;
+  f.args.envelope.receipt_sha256 = sha(canonical(preimage));
+  f.p.output_hash = sha(canonical(bodyOf(f.args.envelope)));
+  f.args.record.receipt_sha256 = f.args.envelope.receipt_sha256;
+  f.args.record.body_sha256 = f.p.output_hash;
+}
+
+test('redteam_r1 an old receipt with a matching quote stays attested and is flagged stale', async () => {
   const f = fixture();
-  f.p.timestamp = 1_600_000_000;
+  const old = '2020-01-01T00:00:00Z';
+  f.args.envelope.valuation_time = old;
+  f.p.timestamp = Math.floor(Date.parse(old) / 1000);
+  reseal(f);
   const out = await matchWithCapabilities(f.args, f.caps);
-  assert.equal(out.status, 'invalid');
-  assert.equal(out.reason, 'attestation_expired');
+  assert.equal(out.status, 'attested');
+  assert.equal(out.reason, 'ok');
+  assert.equal(out.stale, true);
+  assert.ok(out.receipt_age_days >= 7);
 });
 
-test('redteam_r1 a future quote beyond five minutes must expire', async () => {
+test('redteam_r1 a quote far from valuation_time is unbound', async () => {
   const f = fixture();
-  f.p.timestamp = Math.floor(Date.now() / 1000) + 10 * 60;
+  const anchor = Math.floor(Date.parse(f.args.envelope.valuation_time) / 1000);
+  f.p.timestamp = anchor - QUOTE_RUN_WINDOW_SEC.before - 60;
   const out = await matchWithCapabilities(f.args, f.caps);
   assert.equal(out.status, 'invalid');
-  assert.equal(out.reason, 'attestation_expired');
-  const fresh = fixture();
-  fresh.p.timestamp = Math.floor(Date.now() / 1000) + 60;
-  assert.equal((await matchWithCapabilities(fresh.args, fresh.caps)).status, 'attested');
+  assert.equal(out.reason, 'attestation_unbound');
+});
+
+test('redteam_r1 a quote past the run window is rejected', async () => {
+  const f = fixture();
+  const anchor = Math.floor(Date.parse(f.args.envelope.valuation_time) / 1000);
+  f.p.timestamp = anchor + QUOTE_RUN_WINDOW_SEC.after + 60;
+  const late = await matchWithCapabilities(f.args, f.caps);
+  assert.equal(late.status, 'invalid');
+  assert.equal(late.reason, 'attestation_unbound');
+  const inside = fixture();
+  const anchor2 = Math.floor(Date.parse(inside.args.envelope.valuation_time) / 1000);
+  inside.p.timestamp = anchor2 + QUOTE_RUN_WINDOW_SEC.after;
+  assert.equal((await matchWithCapabilities(inside.args, inside.caps)).status, 'attested');
 });
 
 test('redteam_r1 caller fund_id is required', async () => {

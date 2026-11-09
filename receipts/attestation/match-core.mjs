@@ -18,6 +18,18 @@ export function proofReference(x){
  return /^by-tx\/[1-9A-HJ-NP-Za-km-z]{32,64}$/.test(tail)||/^by-call\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(tail);
 }
 const result=(status,reason)=>({status,reason});
+// Proof timestamps are Unix seconds, the same u64 taskHash writes little-endian.
+// The quote must fall in this window of the attested valuation_time (that field stays in the body).
+// issued_at is removed by bodyOf, so it is not the anchor. before is 5 minutes, after is 60 minutes.
+export const QUOTE_RUN_WINDOW_SEC={before:5*60,after:60*60};
+// Verifier clock only. A receipt this old is still attested; the flag is reported, not a failure.
+export const RECEIPT_STALE_AFTER_SEC=7*24*60*60;
+function unixSeconds(iso){
+ if(typeof iso!=='string'||!iso)return null;
+ const ms=Date.parse(iso);
+ if(!Number.isFinite(ms))return null;
+ return Math.floor(ms/1000);
+}
 export function bodyOf(envelope){const b=structuredClone(envelope);for(const k of ['receipt_sha256','attestation_ref','issued_at'])delete b[k];return b;}
 /** E and the record must come from finalized contract views; expected context from its original execution request.
  * This component matches the public proof. Chain anchoring and full frozen-schema validation remain the caller's
@@ -46,13 +58,12 @@ export async function matchWithCapabilities({envelope:e,record:r,context:c},caps
   if(!c.approved_measurements.some(a=>['mrtd','rtmr0','rtmr1','rtmr2','rtmr3'].every(k=>typeof a[k]==='string'&&a[k].toLowerCase()===measurement[k])))return result('invalid','attestation_invalid');
   let verified;try{verified=await caps.verifyQuote(quote);}catch{return result('invalid','attestation_invalid');}
   if(verified?.status!=='UpToDate')return result('invalid','attestation_invalid');
-  // OutLayer proof.timestamp is Unix seconds (u64 LE in taskHash). 7 days, pending a product call. 5 minutes of future skew.
-  const QUOTE_MAX_AGE_SEC=7*24*60*60;
-  const QUOTE_FUTURE_SKEW_SEC=5*60;
   const ts=proof.timestamp;
-  if(typeof ts!=='number'||!Number.isSafeInteger(ts)||ts<0)return result('invalid','attestation_expired');
+  if(typeof ts!=='number'||!Number.isSafeInteger(ts)||ts<0)return result('invalid','attestation_unbound');
+  const anchor=unixSeconds(e.valuation_time);
+  if(anchor===null||ts<anchor-QUOTE_RUN_WINDOW_SEC.before||ts>anchor+QUOTE_RUN_WINDOW_SEC.after)return result('invalid','attestation_unbound');
   const nowSec=Math.floor(Date.now()/1000);
-  if(ts>nowSec+QUOTE_FUTURE_SKEW_SEC||nowSec-ts>QUOTE_MAX_AGE_SEC)return result('invalid','attestation_expired');
-  return {status:'attested',reason:'ok',token_id:e.token_id,fund_id:e.fund_id,seq:e.seq,receipt_sha256,body_sha256:bodyHash,proof_ref:r.proof_ref};
+  const receipt_age_sec=nowSec-anchor;
+  return {status:'attested',reason:'ok',token_id:e.token_id,fund_id:e.fund_id,seq:e.seq,receipt_sha256,body_sha256:bodyHash,proof_ref:r.proof_ref,receipt_age_days:Math.trunc(receipt_age_sec/86400),stale:receipt_age_sec>=RECEIPT_STALE_AFTER_SEC};
  }catch{return result('invalid','attestation_invalid');}
 }

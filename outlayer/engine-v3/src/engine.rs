@@ -263,6 +263,50 @@ impl Pseudonymizer for CashMac<'_> {
     }
 }
 
+/// Tape dollars to integer cents from decimal text. No f64 multiply.
+/// A JSON number is taken from its decimal rendering. Exponents are refused.
+/// After half-away-from-zero rounding to cents, the absolute value must be below 2^53.
+pub(crate) fn tape_principal_cents(v: &Value) -> Option<i128> {
+    let text = match v {
+        Value::String(s) => s.clone(),
+        Value::Number(n) => n.to_string(),
+        _ => return None,
+    };
+    let s = text.trim();
+    if s.is_empty()
+        || s.starts_with('+')
+        || s.starts_with('-')
+        || s.contains(['e', 'E'])
+        || s.ends_with('.')
+    {
+        return None;
+    }
+    let (whole, frac) = match s.split_once('.') {
+        Some((w, f)) => (w, f),
+        None => (s, ""),
+    };
+    if whole.is_empty()
+        || !whole.bytes().all(|c| c.is_ascii_digit())
+        || !frac.bytes().all(|c| c.is_ascii_digit())
+    {
+        return None;
+    }
+    let whole_n: i128 = whole.parse().ok()?;
+    let mut padded = frac.to_string();
+    while padded.len() < 3 {
+        padded.push('0');
+    }
+    let head: i128 = padded[..2].parse().ok()?;
+    let round_up = padded.as_bytes()[2] >= b'5';
+    let mut cents = whole_n.checked_mul(100)?.checked_add(head)?;
+    if round_up {
+        cents = cents.checked_add(1)?;
+    }
+    if cents.unsigned_abs() >= (1u128 << 53) {
+        return None;
+    }
+    Some(cents)
+}
 pub fn evaluate(
     c: &Context,
     sources: &[SignedSource],
@@ -445,9 +489,7 @@ pub fn evaluate(
                 conflict = true
             }
             let signed: Option<LoanTerms> = serde_json::from_value(loan["terms"].clone()).ok();
-            let tape_cents = loan["principal"]
-                .as_f64()
-                .map(|d| (d * 100.0).round() as i128);
+            let tape_cents = tape_principal_cents(&loan["principal"]);
             let signed_cents = signed
                 .as_ref()
                 .and_then(|t| t.principal_cents.parse::<i128>().ok());
@@ -921,5 +963,27 @@ impl Output {
             b.as_object_mut().expect("validated envelope").remove(k);
         }
         b
+    }
+}
+
+#[cfg(test)]
+mod cents_tests {
+    use super::tape_principal_cents;
+    use serde_json::json;
+
+    #[test]
+    fn tape_principal_cents_parses_decimal_text_not_a_float_multiply() {
+        assert_eq!(tape_principal_cents(&json!(100000)).unwrap(), 10_000_000);
+        assert_eq!(tape_principal_cents(&json!(200_000.0)).unwrap(), 20_000_000);
+        assert_eq!(
+            tape_principal_cents(&json!("100000.10")).unwrap(),
+            10_000_010
+        );
+        assert_eq!(tape_principal_cents(&json!("1.005")).unwrap(), 101);
+        assert!(tape_principal_cents(&json!("90071992547409.92")).is_none());
+        assert_eq!(
+            tape_principal_cents(&json!("90071992547409.91")).unwrap(),
+            9_007_199_254_740_991
+        );
     }
 }

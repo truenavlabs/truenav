@@ -584,3 +584,32 @@ fn utc_timestamps_reject_impossible_civil_dates_and_unrepresentable_clock_values
         assert!(c.get_token("HONEST-CREDIT".into()).unwrap()["pending"].is_null());
     }
 }
+
+#[test]
+fn redteam_r1_token_registration_is_bounded() {
+    let mut c = setup();
+    set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
+    for i in 0..40 {
+        c.register_token(format!("CAP-{i}"), "credit".into());
+    }
+    let err = panics(|| c.register_token("CAP-40".into(), "credit".into()));
+    assert!(err.contains("token limit"), "unbounded registration returned: {err}");
+}
+
+#[test]
+fn redteam_r1_public_v2_views_must_not_expose_exact_cents() {
+    let mut c = setup();
+    assert_eq!(
+        run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |_| {}))),
+        "stored:1"
+    );
+    let wrapped = c.get_receipt("HONEST-CREDIT".into(), 1).unwrap();
+    let receipt: Value = serde_json::from_str(wrapped["receipt"].as_str().unwrap()).unwrap();
+    assert!(receipt.get("parts_x100").is_none(), "parts_x100 is on the public view");
+    assert!(receipt.get("raw_x100").is_none(), "raw_x100 is on the public view");
+    assert!(receipt.get("uncapped_score").is_none(), "uncapped_score is on the public view");
+    assert!(
+        receipt["metrics"].get("cash_received_cents").is_none(),
+        "exact cents are on the public view"
+    );
+}

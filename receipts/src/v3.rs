@@ -908,4 +908,46 @@ mod tests {
         assert!(out["attestation_ref"].is_null());
         println!("DRY_RUN: explicit dev contract accepted only by flagged test validation");
     }
+    #[test]
+    fn redteam_r1_corrupt_head_must_not_return_success() {
+        let mut c = setup();
+        c.set_runner(account("runner.testnet"), true);
+        c.register_token("DEMO-CREDIT".into(), "credit".into());
+        c.receipts.insert(
+            ("DEMO-CREDIT".into(), 1),
+            StoredReceipt {
+                token_id: "DEMO-CREDIT".into(),
+                seq: 1,
+                request_id: 1,
+                method: "truenav-v3.0.1".into(),
+                version_key: "0".repeat(64),
+                score: 0,
+                band: "red".into(),
+                period: "2026-10".into(),
+                as_of: "2026-11-09T00:00:00Z".into(),
+                caps: vec![],
+                holds: vec![],
+                receipt_sha256: "ab".repeat(32),
+                receipt: "null".into(),
+                requested_ns: 1,
+                stored_ns: 2,
+                block_height: 3,
+            },
+        );
+        c.tokens.get_mut("DEMO-CREDIT").unwrap().receipts = 1;
+        let mut b = VMContextBuilder::new();
+        b.current_account_id(account("receipts.tnlab-718ca9.testnet"))
+            .predecessor_account_id(account("runner.testnet"))
+            .signer_account_id(account("runner.testnet"))
+            .attached_deposit(NearToken::from_near(2))
+            .prepaid_gas(Gas::from_tgas(300))
+            .account_balance(NearToken::from_near(100));
+        testing_env!(b.build());
+        match c.request_run("DEMO-CREDIT".into()) {
+            PromiseOrValue::Promise(_) => {}
+            PromiseOrValue::Value(v) => {
+                panic!("corrupt head completed as a successful value: {v}")
+            }
+        }
+    }
 }

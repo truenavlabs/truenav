@@ -767,3 +767,77 @@ fn unknown_second_lien_has_a_visible_hold_without_a_conflict_cap() {
         .unwrap()
         .contains(&json!("pledge_conflict")));
 }
+
+/// A foreign lock on the same terms must cap the score even when the tape calls the position a second lien.
+#[test]
+fn redteam_r1_second_lien_of_another_funds_loan_must_cap_at_59() {
+    let (c, mut s, p, mut r) = temporal_setup();
+    s[0].payload["loans"][5]["lien_rank"] = json!(2);
+    s[3].payload["loan_terms"][5]["lien_rank"] = json!(2);
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    for src in &mut s {
+        sign(src);
+    }
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(
+        out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")),
+        "pledge_result={} score={}",
+        out.envelope["pledge_result"],
+        out.envelope["score"]
+    );
+    assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
+    assert_eq!(out.envelope["band"], "red");
+}
+
+/// A one-cent change of signed principal must not mint a fresh fingerprint that drops the conflict cap.
+#[test]
+fn redteam_r1_one_cent_term_edit_must_not_escape_pledge_conflict() {
+    let (c, mut sources, p, mut r) = temporal_setup();
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    let conflicted = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(conflicted.envelope["score"], 59);
+    let mut terms = sources[3].payload["loan_terms"][5]["terms"].clone();
+    let cents = terms["principal_cents"]
+        .as_str()
+        .unwrap()
+        .parse::<u128>()
+        .unwrap()
+        + 1;
+    terms["principal_cents"] = json!(cents.to_string());
+    sources[0].payload["loans"][5]["terms"] = terms.clone();
+    sources[3].payload["loan_terms"][5]["terms"] = terms.clone();
+    let edited: LoanTerms = serde_json::from_value(terms).unwrap();
+    r.snapshot.locks[5].fingerprint = fingerprint(&edited, &[], &TestMac).unwrap();
+    r.snapshot.locks[5].owner = None;
+    r.snapshot.locks[5].fund_token_id = None;
+    for src in &mut sources {
+        sign(src);
+    }
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(
+        out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")),
+        "one-cent edit pledge_result={} score={}",
+        out.envelope["pledge_result"],
+        out.envelope["score"]
+    );
+    assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
+    assert_eq!(out.envelope["band"], "red");
+}
+
+/// NAV principal is the figure investors rely on, so it has to be the signed terms principal.
+#[test]
+fn redteam_r1_tape_principal_must_match_signed_terms() {
+    let (c, mut s, p, r) = temporal_setup();
+    s[0].payload["loans"][5]["principal"] = json!(200_000.0);
+    sign(&mut s[0]);
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt());
+    assert!(out.is_err(), "inflated tape principal was accepted");
+}

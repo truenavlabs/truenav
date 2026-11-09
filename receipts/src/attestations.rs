@@ -572,6 +572,37 @@ mod tests {
             .sum();
         assert_eq!(refunded, 1);
     }
+    #[test]
+    fn redteam_r1_rotation_cannot_exceed_three_records_per_receipt() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        for n in 1..=3 {
+            publish(&mut c, &b, n);
+        }
+        ctx("admin.testnet", 1, 5);
+        c.pause();
+        c.set_attester(Some(acc("new-relayer.testnet")));
+        c.unpause();
+        ctx("new-relayer.testnet", NearToken::from_near(1).as_yoctonear(), 6);
+        let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| publish(&mut c, &b, 4)));
+        assert!(added.is_err(), "rotating the attester granted a fresh record budget");
+        assert!(c.get_attestations(b.token_id, b.seq, None, None).len() <= 3);
+    }
+    #[test]
+    fn redteam_r1_missing_attestation_record_must_not_panic() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 5);
+        publish(&mut c, &b, 1);
+        let id = identity(&b.token_id, b.seq.0, &b.receipt_sha256, None);
+        let mut indexed = id.clone();
+        indexed.extend_from_slice(&0u64.to_be_bytes());
+        let record_key = env::storage_read(&storage_key(b"item:", &indexed)).unwrap();
+        env::storage_remove(&record_key);
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            publish(&mut c, &b, 2);
+        }));
+        assert!(outcome.is_ok(), "a missing stored attestation record panicked the publisher");
+    }
 }
 
 #[cfg(test)]

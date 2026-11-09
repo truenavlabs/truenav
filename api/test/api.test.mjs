@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { KeyPair } from "near-api-js";
 import { createServer, queryHash, spendMessage } from "../server.mjs";
+import { initSpendStore } from "../spend-store.mjs";
 
 const fx = JSON.parse(readFileSync(new URL("../../receipts/tests/fixtures/engine-receipts.json", import.meta.url))).receipts;
 // the pinned engine build, read from BUILD.md (a public wasm sha256)
@@ -20,7 +21,7 @@ const stored = (token, seq = 1) => {
 const NOW = 5_000_000_000n;
 const buyerKey = KeyPair.fromRandom("ed25519");
 const EXP = "60000";
-const spendStore = join(mkdtempSync(join(tmpdir(), "truenav-api-spend-")), "nonces.json");
+const spendStore = initSpendStore(mkdtempSync(join(tmpdir(), "truenav-api-spend-")));
 const buyerProof = (id, kind, token, audience = "query.test") => {
   const nonce = randomBytes(16).toString("hex");
   const sig = Buffer.from(buyerKey.sign(spendMessage({ audience, id, kind, token, nonce, exp: EXP })).signature).toString("base64");

@@ -10,10 +10,6 @@
 #![allow(clippy::too_many_arguments)]
 use near_sdk::serde_json::{self, Value};
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
-    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
 use near_sdk::store::IterableMap;
 use near_sdk::{env, near, require, AccountId, CryptoHash, Gas, GasWeight, NearToken, PanicOnDefault, Promise};
 

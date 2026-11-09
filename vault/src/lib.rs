@@ -8,10 +8,6 @@
 //! only stores certificates whose signature it checked, so the vault trusts the registry and nothing else.
 use near_sdk::json_types::U128;
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
-    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
 use near_sdk::store::LookupMap;
 use near_sdk::{env, near, require, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
 

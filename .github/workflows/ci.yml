@@ -155,6 +155,15 @@ jobs:
             echo "$c built $got pinned $want"
             [ "$got" = "$want" ] || { echo "::error::$c wasm $got does not match the pinned $want"; exit 1; }
           done
+      - name: Sandbox account string is absent from pinned and default wasm
+        run: node receipts/check-sandbox-account.mjs
+      - name: Sandbox-feature receipts wasm in target/near-sandbox
+        run: |
+          docker run --rm -u 0 -v "$PWD:/home/near/code" -w /home/near/code/receipts \
+            sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
+            bash build-sandbox-wasm.sh
+          node receipts/check-sandbox-account.mjs
+          grep -a -q 'outlayer.test.near' receipts/target/near-sandbox/truenav_receipts.wasm
       - name: Native engine for the worker
         working-directory: outlayer/engine-v2
         run: cargo +1.99.0 build --locked --example native

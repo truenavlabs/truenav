@@ -20,11 +20,6 @@ pub mod mirror;
 pub mod v3;
 pub mod validate;
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
-    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
-
 /// Testnet builds accept only this worker. `set_config` cannot change it later.
 pub const TESTNET_OUTLAYER: &str = "outlayer.testnet";
 /// Allowed only when the crate is built with `--features sandbox`. Not a runtime setting.

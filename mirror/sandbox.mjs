@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { Sandbox, GenesisAccount, DEFAULT_ACCOUNT_ID, DEFAULT_PRIVATE_KEY } from 'near-sandbox';
 import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto } from 'near-api-js';
 import { validateSigned } from './broadcast.mjs';
+import { ensureContractWasm } from '../receipts/e2e/ensure-wasm.mjs';
 const root = new URL('../',import.meta.url);
 const wasm=(path)=>new Uint8Array(readFileSync(new URL(path,root)));
 const sandbox=await Sandbox.start({config:{additionalAccounts:[GenesisAccount.createDefault('v1.signer-prod.testnet'),GenesisAccount.createDefault('outlayer.test.near')]}});
@@ -22,11 +23,11 @@ try {
  const call=(who,contract,method,args,deposit=0n,gas=100000000000000n)=>who.signAndSendTransaction({receiverId:contract,actions:[actions.functionCall(method,args,gas,deposit)],waitUntil:'FINAL'});
  const view=(method,args={})=>provider.callFunction({contractId:id('receipts'),method,args,blockQuery:{finality:'final'}});
  const config={outlayer:id('outlayer'),project_id:`${id('receipts')}/truenav-engine`,version_key:'36'.repeat(32),method:'cashflow-v2.1.0',secrets_profile:'engine',secrets_owner:id('receipts'),max_instructions:10000000000,max_memory_mb:128,max_execution_seconds:30,outlayer_deposit:nearToYocto('0.01').toString(),storage_deposit:nearToYocto('0.25').toString(),outlayer_tgas:230,callback_tgas:50};
- await accounts.receipts.signAndSendTransaction({receiverId:id('receipts'),actions:[actions.deployContract(wasm('receipts/target/near/truenav_receipts.wasm')),actions.functionCall('new',{admin:DEFAULT_ACCOUNT_ID,pauser:DEFAULT_ACCOUNT_ID,config},50000000000000n,0n)],waitUntil:'FINAL'});
- await accounts.outlayer.signAndSendTransaction({receiverId:id('outlayer'),actions:[actions.deployContract(wasm('receipts/mock-outlayer/target/near/mock_outlayer.wasm')),actions.functionCall('new',{worker:id('worker')},50000000000000n,0n)],waitUntil:'FINAL'});
+ await accounts.receipts.signAndSendTransaction({receiverId:id('receipts'),actions:[actions.deployContract(wasm(ensureContractWasm({crate:'receipts',artifact:'truenav_receipts',sandbox:true}))),actions.functionCall('new',{admin:DEFAULT_ACCOUNT_ID,pauser:DEFAULT_ACCOUNT_ID,config},50000000000000n,0n)],waitUntil:'FINAL'});
+ await accounts.outlayer.signAndSendTransaction({receiverId:id('outlayer'),actions:[actions.deployContract(wasm(ensureContractWasm({crate:'receipts/mock-outlayer',artifact:'mock_outlayer'}))),actions.functionCall('new',{worker:id('worker')},50000000000000n,0n)],waitUntil:'FINAL'});
  // Give the fixed production signer account a public disposable key only in this local genesis.
  const signer=new Account('v1.signer-prod.testnet',provider,DEFAULT_PRIVATE_KEY);
- await signer.signAndSendTransaction({receiverId:'v1.signer-prod.testnet',actions:[actions.deployContract(wasm('mirror/mock-signer/target/near/truenav_mock_signer.wasm'))],waitUntil:'FINAL'});
+ await signer.signAndSendTransaction({receiverId:'v1.signer-prod.testnet',actions:[actions.deployContract(wasm(ensureContractWasm({crate:'mirror/mock-signer',artifact:'truenav_mock_signer'})))],waitUntil:'FINAL'});
  await call(owner,id('receipts'),'set_runner',{account:DEFAULT_ACCOUNT_ID,allowed:true},1n);
  await call(owner,id('receipts'),'register_token',{token_id:'DEMO-CREDIT',kind:'credit'},1n);
  const pending=call(owner,id('receipts'),'request_run',{token_id:'DEMO-CREDIT'},nearToYocto('0.26'),300000000000000n);

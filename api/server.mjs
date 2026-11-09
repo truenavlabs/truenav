@@ -12,14 +12,11 @@
 //
 // Without a usable entitlement the API answers 402 with exactly what to buy (contract, method, args, fee).
 import { createServer as httpServer } from "node:http";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import {verifyRecord} from "../agent/agent.mjs";
 import { createHash } from "node:crypto";
 import { PublicKey } from "near-api-js";
 import {validToken, decodeReceipt, publicV3, spendMessage} from "./receipt.mjs";
+import { BUYER_LIMIT, BUYER_WINDOW_MS, createCheapLimiter, reserveSpend } from "./spend-store.mjs";
 
 export const queryHash = (kind, token) => createHash("sha256").update(`${kind}|${token}`).digest("hex");
 export { spendMessage };
@@ -38,22 +35,7 @@ const REQUEST_ID = /^[A-Za-z0-9_-]{8,64}$/;
 const NONCE = /^[A-Za-z0-9_-]{16,64}$/;
 const MAX_BODY = 4096;
 const SPEND_TTL_MS = 5 * 60 * 1000;
-const BUYER_LIMIT = 8;
-const BUYER_WINDOW_MS = 60 * 1000;
 export { SPEND_TTL_MS, BUYER_LIMIT, BUYER_WINDOW_MS };
-
-function readStore(path) {
-  try {
-    const parsed = JSON.parse(readFileSync(path, "utf8"));
-    return { nonces: parsed.nonces && typeof parsed.nonces === "object" ? parsed.nonces : {}, buyers: parsed.buyers && typeof parsed.buyers === "object" ? parsed.buyers : {} };
-  } catch {
-    return { nonces: {}, buyers: {} };
-  }
-}
-function writeStore(path, store) {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(store), { mode: 0o600 });
-}
 
 const send = (res, status, body) => {
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -64,16 +46,10 @@ const send = (res, status, body) => {
  * chain: { view(contractId, method, args) -> value, redeem(requestId, queryHash) -> uses_left (throws on refusal),
  * nowNs() -> current chain time in ns as BigInt }. receipts, query: contract account ids. fee: yoctoNEAR string.
  */
-export function handler({ chain, receipts, query, fee, spendStore }) {
+export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, preBuyerLimit }) {
   const latest = (token) => chain.view(receipts, "get_latest", { token_id: token });
   const toBuy = (kind, token, why) => ({ error: "payment_required", reason: why, buy: { contract: query, method: "buy_query", args: { request_id: "<your unique id, 8 to 64 of [A-Za-z0-9_-]>", query_hash: queryHash(kind, token), kind }, attach_yocto: fee } });
-  const storePath = spendStore || join(tmpdir(), "truenav-spend-store.json");
-  let storeQueue = Promise.resolve();
-  function withStore(fn) {
-    const run = storeQueue.then(fn, fn);
-    storeQueue = run.then(() => {}, () => {});
-    return run;
-  }
+  const cheap = createCheapLimiter({ ipLimit: preIpLimit, buyerLimit: preBuyerLimit });
   const inflight = new Map();
   // One redeem at a time per request id. The next caller re-reads uses_left after the first redeem settles.
   function singleFlight(key, fn) {
@@ -85,10 +61,20 @@ export function handler({ chain, receipts, query, fee, spendStore }) {
     return run;
   }
 
+  function limited(req) {
+    const nowMs = Date.now();
+    const ip = req.socket?.remoteAddress || "unknown";
+    if (!cheap("ip", ip, nowMs)) return { status: 429, body: { error: "ip rate limit" } };
+    const buyer = req.headers["x-truenav-buyer"];
+    if (typeof buyer === "string" && buyer.length > 0 && !cheap("buyer", buyer, nowMs)) return { status: 429, body: { error: "buyer rate limit" } };
+    return null;
+  }
+
   async function entitlement(req, kind, token) {
     const id = req.headers["x-truenav-entitlement"];
     if (!id) return { status: 402, body: toBuy(kind, token, "no entitlement given") };
     if (!REQUEST_ID.test(id)) return { status: 400, body: { error: "bad entitlement id" } };
+    if (!spendStore) return { status: 503, body: { error: "spend store is not configured" } };
     const e = await chain.view(query, "get_entitlement", { request_id: id });
     if (!e) return { status: 402, body: toBuy(kind, token, "unknown entitlement") };
     if (req.headers["x-truenav-buyer"] !== String(e.buyer)) return { status: 403, body: { error: "entitlement is bound to another buyer" } };
@@ -105,20 +91,13 @@ export function handler({ chain, receipts, query, fee, spendStore }) {
     if (e.kind !== kind || e.query_hash !== queryHash(kind, token)) return { status: 403, body: { error: "entitlement is for another query" } };
     if (BigInt(e.expires_ns) <= (await chain.nowNs())) return { status: 402, body: toBuy(kind, token, "entitlement expired") };
     if (e.uses_left < 1) return { status: 402, body: toBuy(kind, token, "entitlement already used") };
-    const reserved = await withStore(async () => {
-      const store = readStore(storePath);
-      for (const [seen, until] of Object.entries(store.nonces)) if (until < nowMs) delete store.nonces[seen];
-      const nonceKey = `${query}|${nonce}`;
-      if (store.nonces[nonceKey]) return { status: 403, body: { error: "spend nonce reused" } };
-      const stamps = (Array.isArray(store.buyers[e.buyer]) ? store.buyers[e.buyer] : []).filter((t) => nowMs - t < BUYER_WINDOW_MS);
-      if (stamps.length >= BUYER_LIMIT) return { status: 429, body: { error: "buyer rate limit" } };
-      stamps.push(nowMs);
-      store.buyers[String(e.buyer)] = stamps;
-      store.nonces[nonceKey] = exp;
-      writeStore(storePath, store);
-      return null;
-    });
-    if (reserved) return reserved;
+    let reserved;
+    try {
+      reserved = reserveSpend(spendStore, { buyer: String(e.buyer), nonce: `${query}|${nonce}`, nowMs, exp, limit: BUYER_LIMIT, windowMs: BUYER_WINDOW_MS });
+    } catch (error) {
+      return { status: 503, body: { error: error.code === "spend_store_closed" ? "spend store closed" : "spend store unavailable" } };
+    }
+    if (!reserved.ok) return { status: reserved.error === "buyer rate limit" ? 429 : 403, body: { error: reserved.error } };
     return { id, e };
   }
 
@@ -132,6 +111,10 @@ export function handler({ chain, receipts, query, fee, spendStore }) {
       try { token = decodeURIComponent(m[1]); }
       catch { return send(res, 400, { error: "bad token encoding" }); }
       if (!validToken(token)) return send(res, 400, { error: "token must be an ASCII kebab id of 1 to 64 characters" });
+      if (m[2] === "report") {
+        const early = limited(req);
+        if (early) return send(res, early.status, early.body);
+      }
       let r = await latest(token);
       if (!r) return send(res, 404, { error: "no receipt for this token" });
       let decoded;
@@ -198,6 +181,8 @@ export function handler({ chain, receipts, query, fee, spendStore }) {
       }
       const token = body.token_id;
       if (typeof token !== "string" || !validToken(token)) return send(res, 400, { error: "token_id must be an ASCII kebab id of 1 to 64 characters" });
+      const early = limited(req);
+      if (early) return send(res, early.status, early.body);
       const ent = await entitlement(req, "ask", token);
       if (!ent.e) return send(res, ent.status, ent.body);
       return send(res, 501, { error: "qa_not_built", note: "private Q&A arrives in build step 6; nothing was spent", uses_left: ent.e.uses_left });

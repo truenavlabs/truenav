@@ -1,12 +1,14 @@
 // Red team round 2. Each test asserts the property that should hold.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, readFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, readFileSync, unlinkSync, writeFileSync} from 'node:fs';
+import {spawn} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash, randomBytes} from 'node:crypto';
 import {KeyPair} from 'near-api-js';
 import {createServer, queryHash, spendMessage, BUYER_LIMIT} from '../server.mjs';
+import {initSpendStore, reserveSpend} from '../spend-store.mjs';
 import {canonical} from '../receipt.mjs';
 
 const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json', import.meta.url))).vectors[0].envelope;
@@ -40,8 +42,9 @@ function queryChain(rec, {redeemDelayMs = 0} = {}) {
     },
   };
 }
-async function serve(chain, fn, spendStore = join(mkdtempSync(join(tmpdir(), 'truenav-r2-')), 'nonces.json')) {
-  const s = createServer({chain, receipts: 'receipts.test', query: 'query.test', fee: '1', spendStore});
+async function serve(chain, fn, spendStore = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-r2-'))), opts = {}) {
+  try { initSpendStore(spendStore); } catch (error) { if (error.code !== 'spend_store_closed') throw error; }
+  const s = createServer({chain, receipts: 'receipts.test', query: 'query.test', fee: '1', spendStore, ...opts});
   await new Promise((r) => s.listen(0, '127.0.0.1', r));
   try { await fn(`http://127.0.0.1:${s.address().port}`, spendStore); } finally { await new Promise((r) => s.close(r)); }
 }
@@ -106,7 +109,7 @@ test('redteam_r2 RT2-08 the agent must not approve a receipt whose TEE attestati
 
 test('redteam_r2 N6 spend proof rejects expiry, wrong audience, replay and buyer rate', async () => {
   const q = queryChain(record(v3));
-  const file = join(mkdtempSync(join(tmpdir(), 'truenav-n6-')), 'nonces.json');
+  const file = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-n6-')));
   q.buy('buyer.testnet', 'buyer-report-0003', 'report', v3.token_id);
   const replay = buyerProof('buyer-report-0003', 'report', v3.token_id);
   await serve(q.chain, async (url) => {
@@ -138,6 +141,83 @@ test('redteam_r2 N6 spend proof rejects expiry, wrong audience, replay and buyer
     assert.equal(statuses.filter((s) => s === 200).length, BUYER_LIMIT);
     assert.equal(statuses[BUYER_LIMIT], 429);
   });
+});
+
+function raceWorker(args) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [new URL('./spend-race-worker.mjs', import.meta.url).pathname, ...args], {stdio: ['ignore', 'pipe', 'pipe']});
+    let out = '';
+    child.stdout.on('data', (chunk) => { out += chunk; });
+    child.on('exit', (code) => resolve({code, out: out.trim()}));
+  });
+}
+
+test('redteam_r2 N6 two processes never accept one nonce twice', async () => {
+  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-race-')));
+  for (let i = 0; i < 120; i++) {
+    const nonce = `race${i.toString(16).padStart(16, '0')}`;
+    const pair = await Promise.all([0, 1].map(() => raceWorker([dir, 'once', nonce, 'buyer.testnet', '5000', '65000', '1', '100000'])));
+    const accepts = pair.filter((row) => row.out === 'accept').length;
+    assert.equal(accepts, 1, `trial ${i} accepted ${accepts} times (${pair.map((row) => row.out).join(' | ')})`);
+  }
+});
+
+test('redteam_r2 N6 two processes cannot overshoot the buyer rate limit', async () => {
+  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-rate-')));
+  const pair = await Promise.all(['A', 'B'].map((prefix) => raceWorker([dir, 'burst', prefix, 'buyer.testnet', '5000', '65000', '8'])));
+  const total = pair.reduce((sum, row) => sum + Number(row.out), 0);
+  assert.equal(total, BUYER_LIMIT, pair.map((row) => row.out).join(' '));
+});
+
+test('redteam_r2 N6 a corrupt or deleted store fails closed and is not reset', async () => {
+  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-closed-')));
+  const state = join(dir, 'state.json');
+  writeFileSync(state, '{not json');
+  const q = queryChain(record(v3));
+  q.buy('buyer.testnet', 'buyer-closed-0001', 'report', v3.token_id);
+  await serve(q.chain, async (url) => {
+    const res = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: buyerProof('buyer-closed-0001', 'report', v3.token_id).headers});
+    assert.equal(res.status, 503);
+    assert.equal(readFileSync(state, 'utf8'), '{not json');
+  }, dir);
+  unlinkSync(state);
+  await serve(q.chain, async (url) => {
+    const res = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: buyerProof('buyer-closed-0001', 'report', v3.token_id).headers});
+    assert.equal(res.status, 503);
+    assert.equal(existsSync(state), false);
+  }, dir);
+});
+
+test('redteam_r2 N6 bad report traffic is limited before any chain view', async () => {
+  let views = 0;
+  const q = queryChain(record(v3));
+  const inner = q.chain.view.bind(q.chain);
+  q.chain.view = async (...args) => { views += 1; return inner(...args); };
+  await serve(q.chain, async (url) => {
+    const headers = {'x-truenav-entitlement': 'buyer-report-0001', 'x-truenav-buyer': 'buyer.testnet'};
+    const rs = await Promise.all(Array.from({length: 200}, () => fetch(`${url}/fund/${v3.token_id}/report`, {headers})));
+    const limited = rs.filter((r) => r.status === 429).length;
+    assert.ok(limited > 100, `only ${limited} of 200 were limited`);
+    assert.ok(views < 80, `bad traffic made ${views} RPC views`);
+  }, initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-ip-'))), {preIpLimit: 20, preBuyerLimit: 20});
+});
+
+test('redteam_r2 N6 expired buyers and nonces are pruned', () => {
+  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-prune-')));
+  writeFileSync(join(dir, 'state.json'), JSON.stringify({v: 1, nonces: {old: 1, keep: 200000}, buyers: {gone: [0], stay: [90000]}}));
+  const result = reserveSpend(dir, {buyer: 'stay', nonce: 'fresh', nowMs: 100000, exp: 160000, limit: 8, windowMs: 60000});
+  assert.equal(result.ok, true);
+  const state = JSON.parse(readFileSync(join(dir, 'state.json'), 'utf8'));
+  assert.equal(state.nonces.old, undefined);
+  assert.equal(state.buyers.gone, undefined);
+  assert.ok(state.buyers.stay.includes(90000));
+});
+
+test('redteam_r2 N6 production refuses to start without TRUENAV_SPEND_STORE', async () => {
+  const {spawnSync} = await import('node:child_process');
+  const child = spawnSync(process.execPath, [new URL('../main.mjs', import.meta.url).pathname], {encoding: 'utf8'});
+  assert.equal(child.status, 2);
+  assert.match(child.stderr, /TRUENAV_SPEND_STORE/);
 });
 
 test('redteam_r2 RT2-14 a malformed percent-escape is a client error, not a chain failure', async () => {

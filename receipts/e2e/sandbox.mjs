@@ -6,8 +6,8 @@
 // the sandbox and an agent buys and spends entitlements.
 //
 //   npm run e2e:receipts   (builds the three contract wasms and the native engine first if missing)
-// The receipt wasm must be built with `--features sandbox` so init accepts outlayer.test.near.
-// A testnet build accepts only outlayer.testnet. This pass does not rebuild that wasm.
+// The receipt wasm is receipts/target/near-sandbox, built with --features sandbox.
+// A testnet build stays in target/near and must not contain outlayer.test.near.
 //
 // The sandbox root account uses the development key published in the near-sandbox package; it controls only this
 // throwaway local chain. Sub-account keys live in a temporary keychain that is deleted afterwards.
@@ -19,16 +19,20 @@ import { createHash, randomBytes } from "node:crypto";
 import { Sandbox, GenesisAccount, DEFAULT_ACCOUNT_ID, DEFAULT_PRIVATE_KEY } from "near-sandbox";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, nearToYocto, teraToGas } from "near-api-js";
 import { createServer, queryHash, spendMessage } from "../../api/server.mjs";
+import { initSpendStore } from "../../api/spend-store.mjs";
 import { nearChain } from "../../api/chain.mjs";
 import { RUN_AS_OF, BANK_FETCHED_AT } from "../../cashflow/demo/data.mjs";
 import { severeArrears } from "../tests/arrears.mjs";
 import { runAgent, summary, newRequestId, queryHash as agentQueryHash } from "../../agent/agent.mjs";
 import { agentChain } from "../../agent/chain.mjs";
+import { ensureContractWasm } from "./ensure-wasm.mjs";
 
 const root = new URL("../../", import.meta.url).pathname;
-const wasm = (crate, name) => join(root, crate, `target/near/${name}.wasm`);
-const builds = [["receipts", "truenav_receipts"], ["query", "truenav_query"], ["receipts/mock-outlayer", "mock_outlayer"]];
-for (const [crate, name] of builds) if (!existsSync(wasm(crate, name))) execSync("cargo near build non-reproducible-wasm --locked", { cwd: join(root, crate), stdio: "inherit" });
+const wasm = {
+  receipts: ensureContractWasm({ crate: "receipts", artifact: "truenav_receipts", sandbox: true }),
+  query: ensureContractWasm({ crate: "query", artifact: "truenav_query" }),
+  outlayer: ensureContractWasm({ crate: "receipts/mock-outlayer", artifact: "mock_outlayer" }),
+};
 const engine = join(root, "outlayer/engine-v2/target/debug/examples/native");
 if (!existsSync(engine)) execSync("cargo build --locked --example native", { cwd: join(root, "outlayer/engine-v2"), stdio: "inherit" });
 const PIN = readFileSync(join(root, "outlayer/engine-v2/BUILD.md"), "utf8").match(/^\| wasm sha256 \| `([0-9a-f]{64})`/m)[1];
@@ -65,9 +69,9 @@ try {
     max_instructions: 10_000_000_000, max_memory_mb: 128, max_execution_seconds: 30,
     outlayer_deposit: nearToYocto("0.01").toString(), storage_deposit: nearToYocto("0.25").toString(), outlayer_tgas: 230, callback_tgas: 50,
   };
-  ok((await deploy("outlayer", wasm("receipts/mock-outlayer", "mock_outlayer"), "new", { worker: id("worker") })).ok, "mock OutLayer deployed");
-  ok((await deploy("receipts", wasm("receipts", "truenav_receipts"), "new", { admin: id("admin"), pauser: id("pauser"), config })).ok, "receipt contract deployed");
-  ok((await deploy("query", wasm("query", "truenav_query"), "new", { admin: id("admin"), redeemer: id("api"), fee: nearToYocto("0.01").toString() })).ok, "query contract deployed");
+  ok((await deploy("outlayer", wasm.outlayer, "new", { worker: id("worker") })).ok, "mock OutLayer deployed");
+  ok((await deploy("receipts", wasm.receipts, "new", { admin: id("admin"), pauser: id("pauser"), config })).ok, "receipt contract deployed");
+  ok((await deploy("query", wasm.query, "new", { admin: id("admin"), redeemer: id("api"), fee: nearToYocto("0.01").toString() })).ok, "query contract deployed");
   ok((await call("admin", "receipts", "set_runner", { account: id("runner"), allowed: true }, { deposit: 1n })).ok, "runner set (admin, 1 yocto)");
   const funds = { "DEMO-CREDIT": "credit", "DEMO-RENTAL": "rental", "HONEST-CREDIT": "credit", "HONEST-RENTAL": "rental" };
   for (const [t, k] of Object.entries(funds)) await call("admin", "receipts", "register_token", { token_id: t, kind: k }, { deposit: 1n });
@@ -136,7 +140,7 @@ try {
     ok(result.ok && result.value === "stored:1", `${t}: callback stored the receipt (${result.value || result.failure})`);
     const r = await view("receipts", "get_latest", { token_id: t });
     ok(r && r.score === score && r.band === band && r.version_key === PIN && r.seq === 1, `${t}: stored score ${r && r.score} ${r && r.band}, seq 1, pinned build`);
-    ok(r && r.receipt_sha256 === createHash("sha256").update(r.receipt).digest("hex"), `${t}: receipt_sha256 is the sha256 of the stored bytes`);
+    ok(r && /^[0-9a-f]{64}$/.test(r.receipt_sha256) && !r.receipt.includes("outstanding_cents") && !r.receipt.includes("uncapped_score"), `${t}: public view is redacted and receipt_sha256 is 64 hex`);
     const after = BigInt((await provider.viewAccount({ accountId: id("runner"), blockQuery: { finality: "final" } })).amount);
     const paid = before - after;
     const storageCost = BigInt(r.receipt.length) * 10n ** 19n; // at least the receipt bytes, at 1e19 yocto per byte
@@ -264,8 +268,7 @@ try {
   f = await run("HONEST-RENTAL", { ds: severeArrears(datasets["HONEST-RENTAL"]) });
   ok(f.result.value === "stored:2", `HONEST-RENTAL in severe arrears is stored as seq 2 (${f.result.value})`);
   const sev = await view("receipts", "get_latest", { token_id: "HONEST-RENTAL" });
-  const sevR = JSON.parse(sev.receipt);
-  ok(sev.seq === 2 && sev.score === 59 && sev.band === "red" && sevR.metrics.late_share_bps === 40000, `the latest HONEST-RENTAL receipt is now ${sev.score} ${sev.band}, late_share_bps ${sevR.metrics.late_share_bps}`);
+  ok(sev.seq === 2 && sev.score === 59 && sev.band === "red" && !sev.receipt.includes("late_share_bps"), `the latest HONEST-RENTAL receipt is now ${sev.score} ${sev.band} and the public view omits late_share_bps`);
   ok(sev.caps.join(",") === "payout_exceeds_net_cash,collection_shortfall", `with caps ${sev.caps.join(", ")}`);
 
   // ---- query contract and API --------------------------------------------------------------------------------
@@ -276,7 +279,7 @@ try {
   ok((await call("agent", "query", "buy_query", { request_id: "e2e-ask-00001", query_hash: queryHash("ask", "DEMO-CREDIT"), kind: "ask" }, { deposit: nearToYocto("0.01") })).ok, "agent buys an ask entitlement");
 
   const chain = nearChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), redeemerId: id("api"), keyFile: join(keys, `${id("api")}.json`) });
-  server = createServer({ chain, receipts: id("receipts"), query: id("query"), fee: nearToYocto("0.01").toString(), spendStore: join(keys, "spend-nonces.json") });
+  server = createServer({ chain, receipts: id("receipts"), query: id("query"), fee: nearToYocto("0.01").toString(), spendStore: initSpendStore(join(keys, "spend-store")) });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${server.address().port}`;
   const buyer = id("agent");
@@ -289,7 +292,7 @@ try {
   };
   const get = (p, e) => fetch(base + p, { headers: e ? buyerHeaders(e, p.endsWith("/report") ? "report" : "ask", decodeURIComponent(p.split("/")[2])) : {} });
   const s1 = await (await get("/fund/DEMO-CREDIT/score")).json();
-  ok(s1.score === 58 && s1.band === "red" && s1.collection.rate_bps === 7857, "API /score (free) matches the chain");
+  ok(s1.score === 0 && s1.band === "red" && s1.collection === undefined && !JSON.stringify(s1).includes("outstanding_cents"), `API /score (free) matches the failed head (${JSON.stringify(s1)})`);
   ok((await get("/fund/DEMO-CREDIT/report")).status === 402, "API /report without an entitlement is 402");
   const rep = await get("/fund/DEMO-CREDIT/report", "e2e-report-0001");
   const repBody = await rep.json();

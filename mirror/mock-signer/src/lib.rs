@@ -1,10 +1,6 @@
 //! Public disposable local sandbox fixture only. Never deploy on a live network.
 use k256::ecdsa::SigningKey;
 
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
-    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
 use near_sdk::{
     env, near, require,
     serde_json::{json, Value},

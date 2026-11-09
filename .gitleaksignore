@@ -15,3 +15,13 @@ d0350988e45896c3ab06a41d2250551c5aa4ca7a:SPEC_RECEIPT_V3.md:generic-api-key:205
 3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:8763
 3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:12168
 3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:12279
+
+# Reviewed v3.0.1 public WASI build SHA256 in engine_version_key, not an authentication secret.
+# Exact implementation-commit findings only; all other fields and history remain scanned.
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:14
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:3511
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:5554
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:9051
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12552
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12663
+e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12783

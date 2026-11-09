@@ -119,7 +119,7 @@ fn setup(index: usize) -> (Context, Vec<SignedSource>, Policy, Read) {
         l["lien_rank"] = json!(1);
         terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
         locks.push(LockRead {
-            fingerprint: fingerprint(&t, &[], &TestMac).unwrap(),
+            fingerprint: fingerprint(&t, l["asset"].as_str().unwrap(), &[], &TestMac).unwrap(),
             completed: true,
             owner: Some(c.scope.fund_account.clone()),
             fund_token_id: Some(c.scope.token_id.clone()),
@@ -441,7 +441,7 @@ fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
         loans.push(json!({"id":id,"principal":500000,"accrued":0,"repaid":0,"asset":"invoices","bucket":if i<3{"dpd_61_90"}else{"current"},"servicer_asof":"2026-11-08T06:00:00Z","terms":tv,"lien_rank":1}));
         terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
         locks.push(LockRead {
-            fingerprint: fingerprint(&t, &[], &TestMac).unwrap(),
+            fingerprint: fingerprint(&t, "invoices", &[], &TestMac).unwrap(),
             completed: true,
             owner: Some(c.scope.fund_account.clone()),
             fund_token_id: Some(c.scope.token_id.clone()),
@@ -543,7 +543,7 @@ fn temporal_setup() -> (Context, Vec<SignedSource>, Policy, Read) {
         loans.push(json!({"id":id,"principal":100000,"accrued":0,"repaid":0,"asset":"real_estate","bucket":"current","servicer_asof":"2026-11-09T06:00:00Z","terms":tv,"lien_rank":1}));
         terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
         locks.push(LockRead {
-            fingerprint: fingerprint(&t, &[], &TestMac).unwrap(),
+            fingerprint: fingerprint(&t, "real_estate", &[], &TestMac).unwrap(),
             completed: true,
             owner: if i < 5 {
                 None
@@ -815,7 +815,7 @@ fn redteam_r1_one_cent_term_edit_must_not_escape_pledge_conflict() {
     sources[0].payload["loans"][5]["terms"] = terms.clone();
     sources[3].payload["loan_terms"][5]["terms"] = terms.clone();
     let edited: LoanTerms = serde_json::from_value(terms).unwrap();
-    r.snapshot.locks[5].fingerprint = fingerprint(&edited, &[], &TestMac).unwrap();
+    r.snapshot.locks[5].fingerprint = fingerprint(&edited, "real_estate", &[], &TestMac).unwrap();
     r.snapshot.locks[5].owner = None;
     r.snapshot.locks[5].fund_token_id = None;
     for src in &mut sources {
@@ -823,14 +823,18 @@ fn redteam_r1_one_cent_term_edit_must_not_escape_pledge_conflict() {
     }
     let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
     assert!(
-        out.envelope["caps"]
+        !out.envelope["caps"]
             .as_array()
             .unwrap()
             .contains(&json!("pledge_conflict")),
-        "one-cent edit pledge_result={} score={}",
-        out.envelope["pledge_result"],
-        out.envelope["score"]
+        "a principal edit is not a double pledge"
     );
+    assert!(out.envelope["exceptions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x["code"] == "terms_mismatch"));
+    assert_ne!(out.envelope["pledge_result"], "conflict");
     assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
     assert_eq!(out.envelope["band"], "red");
 }
@@ -843,12 +847,49 @@ fn redteam_r1_tape_principal_must_match_signed_terms() {
     sign(&mut s[0]);
     let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
     assert!(
-        out.envelope["caps"]
+        !out.envelope["caps"]
             .as_array()
             .unwrap()
             .contains(&json!("pledge_conflict")),
-        "inflated tape principal was accepted without a cap"
+        "a tape mismatch is not a double pledge"
     );
+    assert!(out.envelope["exceptions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x["code"] == "terms_mismatch"));
+    assert_ne!(out.envelope["pledge_result"], "conflict");
     assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
     assert_eq!(out.envelope["band"], "red");
+}
+
+/// The same collateral ref in two namespaces is two loans. The same namespace and ref across funds is one pledge.
+#[test]
+fn collateral_namespace_scopes_pledge_conflict() {
+    let (c, sources, p, mut r) = temporal_setup();
+    let ours = r.snapshot.locks[5].fingerprint.clone();
+    let mut other_terms = sources[3].payload["loan_terms"][5]["terms"].clone();
+    other_terms["collateral_namespace"] = json!("county-b");
+    let other: LoanTerms = serde_json::from_value(other_terms).unwrap();
+    let other_fp = fingerprint(&other, "real_estate", &[], &TestMac).unwrap();
+    assert_ne!(
+        ours, other_fp,
+        "another namespace must not share this pledge hash"
+    );
+    let clear = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_ne!(clear.envelope["pledge_result"], "conflict");
+    assert!(!clear.envelope["caps"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("pledge_conflict")));
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    let hit = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(hit.envelope["pledge_result"], "conflict");
+    assert!(hit.envelope["caps"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("pledge_conflict")));
+    assert!(hit.envelope["score"].as_u64().unwrap() <= 59);
+    assert_eq!(hit.envelope["band"], "red");
 }

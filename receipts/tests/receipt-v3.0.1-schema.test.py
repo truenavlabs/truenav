@@ -11,6 +11,9 @@ class Amendment(unittest.TestCase):
   old=load('schema/receipt-v3.schema.json');expected=copy.deepcopy(old)
   expected['$id']='urn:truenav:receipt:v3.0.1';expected['properties']['method_version']['const']='truenav-v3.0.1'
   expected['properties']['caps']['items']['enum'].append('pledge_conflict');expected['properties']['caps']['maxItems']=6
+  expected['properties']['fund_id']={'type':'string','minLength':1,'maxLength':128}
+  expected['properties']['exceptions']['items']['properties']['code']['enum'].append('terms_mismatch')
+  required=expected['required'];required.insert(required.index('token_id')+1,'fund_id')
   self.assertEqual(expected,load('schema/receipt-v3.0.1.schema.json'));Draft202012Validator.check_schema(expected)
  def test_cross_version_schema_selection_has_no_fallback(self):
   schemas={v:Draft202012Validator(load(p),format_checker=FormatChecker()) for v,p in [('truenav-v3.0.0','schema/receipt-v3.schema.json'),('truenav-v3.0.1','schema/receipt-v3.0.1.schema.json')]}

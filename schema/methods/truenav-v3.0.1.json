@@ -1,7 +1,7 @@
 {
   "artifact_version": "v3.0.1",
   "method_version": "truenav-v3.0.1",
-  "receipt_schema_sha256": "e7a26b711c8abbf6260627b8bb10fd35125eb8a1a85fa1c97c68df6b6dfd8239",
+  "receipt_schema_sha256": "1dea83f6b869b4266996d2f0964db6ccb9340ad43d22c4639fdf5a5d2997d4a5",
   "score": {
     "weights": {
       "gap": 40,
@@ -9,7 +9,7 @@
       "freshness": 20
     },
     "raw": "gap + coverage + freshness - penalty",
-    "final": "min(cash cap if applicable, pledge_conflict cap if applicable, max(0, raw))",
+    "final": "min(cash cap if applicable, pledge_conflict cap if applicable, terms_mismatch cap if applicable, max(0, raw))",
     "cash_cap_points": 59,
     "no_cash_cap_points": 100,
     "score_x100": "PRIVATE round_half_up(final*100), from unrounded total",
@@ -18,6 +18,8 @@
     "parts_x100": "PRIVATE separately round_half_up(part*100)",
     "raw_score": "PRIVATE unrounded total",
     "pledge_conflict_cap_points": 59,
+    "terms_mismatch_cap_points": 59,
+    "terms_mismatch_rule": "a principal or origination-date mismatch adds public exception terms_mismatch, caps final at 59 and sets band red. It does not set pledge_conflict",
     "conflict_rule": "confirmed active first-lien pledge_result=conflict adds pledge_conflict, caps final at 59 and sets band red; R7/R13 unchanged; nonnumeric eligibility stays nonnumeric",
     "second_lien_rule": "rank >=2 remains unknown with second_lien_unsupported hold only; no pledge_conflict cap unless a separate active first-lien conflict is confirmed"
   },

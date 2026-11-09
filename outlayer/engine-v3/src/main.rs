@@ -162,7 +162,20 @@ mod tee {
             .map(|r| {
                 let t: LoanTerms =
                     serde_json::from_value(r["terms"].clone()).map_err(|_| "loan_terms_invalid")?;
-                fingerprint(&t, &p.case_sensitive_namespaces, &HostMac)
+                let loan_id = r["loan_id"].as_str().ok_or("loan_terms_invalid")?;
+                let servicer = sources
+                    .iter()
+                    .find(|s| s.source == "servicer")
+                    .ok_or("source_roles")?
+                    .payload["loans"]
+                    .as_array()
+                    .ok_or("loan_tape_invalid")?;
+                let asset = servicer
+                    .iter()
+                    .find(|l| l["id"] == loan_id)
+                    .and_then(|l| l["asset"].as_str())
+                    .ok_or("loan_terms_invalid")?;
+                fingerprint(&t, asset, &p.case_sensitive_namespaces, &HostMac)
             })
             .collect()
     }
@@ -176,7 +189,13 @@ mod tee {
                     .into(),
                 fund_account: v["fund_account"].as_str().ok_or("request_context")?.into(),
                 token_id: v["token_id"].as_str().ok_or("request_context")?.into(),
-                fund_id: v["fund_id"].as_str().filter(|s| !s.is_empty()).unwrap_or(v["token_id"].as_str().ok_or("request_context")?).into(),
+                fund_id: {
+                    let id = v["fund_id"]
+                        .as_str()
+                        .filter(|s| !s.is_empty())
+                        .ok_or("source_scope_mismatch")?;
+                    id.into()
+                },
             },
             period: Period {
                 period_start: v["period_start"].as_str().ok_or("request_context")?.into(),

@@ -295,6 +295,7 @@ fn method_versions_select_only_their_own_schema_and_artifact() {
     seal_envelope(&mut e).unwrap();
     assert!(validate(&e).is_err());
     e["method_version"] = json!(CURRENT_METHOD);
+    e["fund_id"] = e["token_id"].clone();
     seal_envelope(&mut e).unwrap();
     assert_eq!(validate(&e), Err("method_hash_mismatch"));
     e["method_spec_sha256"] = json!(method_hash_for(CURRENT_METHOD).unwrap());

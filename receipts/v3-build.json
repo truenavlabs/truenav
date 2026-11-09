@@ -50,7 +50,7 @@
   },
   "method_schema": {
     "v3.0.0_raw_sha256": "bca1694674e7232fb53797a494ca84b0702bcf6908a14de9eb953061d5b114b2",
-    "v3.0.1_raw_sha256": "e7a26b711c8abbf6260627b8bb10fd35125eb8a1a85fa1c97c68df6b6dfd8239",
+    "v3.0.1_raw_sha256": "1dea83f6b869b4266996d2f0964db6ccb9340ad43d22c4639fdf5a5d2997d4a5",
     "amendment": "SPEC_RECEIPT_V3_0_1.md",
     "dispatch": "exact method_version, no fallback"
   },

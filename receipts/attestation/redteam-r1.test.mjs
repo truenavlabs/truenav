@@ -36,6 +36,7 @@ function fixture() {
     input_hash: p.input_hash,
     caller_account_id: p.caller_account_id,
     project_id: p.project_id,
+    fund_id: e.fund_id,
     approved_measurements: [m],
   };
   const caps = {
@@ -61,4 +62,23 @@ test('redteam_r1 stale UpToDate quote must expire', async () => {
   const out = await matchWithCapabilities(f.args, f.caps);
   assert.equal(out.status, 'invalid');
   assert.equal(out.reason, 'attestation_expired');
+});
+
+test('redteam_r1 a future quote beyond five minutes must expire', async () => {
+  const f = fixture();
+  f.p.timestamp = Math.floor(Date.now() / 1000) + 10 * 60;
+  const out = await matchWithCapabilities(f.args, f.caps);
+  assert.equal(out.status, 'invalid');
+  assert.equal(out.reason, 'attestation_expired');
+  const fresh = fixture();
+  fresh.p.timestamp = Math.floor(Date.now() / 1000) + 60;
+  assert.equal((await matchWithCapabilities(fresh.args, fresh.caps)).status, 'attested');
+});
+
+test('redteam_r1 caller fund_id is required', async () => {
+  const f = fixture();
+  delete f.args.context.fund_id;
+  const out = await matchWithCapabilities(f.args, f.caps);
+  assert.equal(out.status, 'invalid');
+  assert.equal(out.reason, 'fund_id_unbound');
 });

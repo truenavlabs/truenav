@@ -629,7 +629,8 @@
               "unlinked_settlement",
               "non_income_credit",
               "missing_coverage",
-              "late_payment"
+              "late_payment",
+              "terms_mismatch"
             ]
           },
           "band": {
@@ -803,6 +804,7 @@
     "engine_version_key",
     "engine_code_sha256",
     "token_id",
+    "fund_id",
     "fund_account",
     "kind",
     "period_start",

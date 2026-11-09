@@ -529,6 +529,13 @@ pub fn validate_signals(e: &Value) -> Result<()> {
         {
             return Err("v3_conflict_cap");
         }
+        let terms_mismatch = e["exceptions"].as_array().is_some_and(|xs| {
+            xs.iter()
+                .any(|x| x.get("code").and_then(|c| c.as_str()) == Some("terms_mismatch"))
+        });
+        if terms_mismatch && (e["band"] != "red" || score.is_some_and(|n| n > 59)) {
+            return Err("v3_terms_mismatch");
+        }
     }
     if score.is_some_and(|n| !caps.is_empty() && n > 59) {
         return Err("v3_cap");

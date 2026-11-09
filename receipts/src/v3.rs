@@ -76,7 +76,12 @@ impl Receipts {
         require!(enabled(), "migrate first");
         require!(self.paused, "pause before changing run context");
         require!(is_token_id(&token_id), "invalid token_id");
-        require!(self.tokens.values().all(|t| t.token_id == token_id || !t.token_id.eq_ignore_ascii_case(&token_id)), "token_id case collision");
+        require!(
+            self.tokens
+                .values()
+                .all(|t| t.token_id == token_id || !t.token_id.eq_ignore_ascii_case(&token_id)),
+            "token_id case collision"
+        );
         require!(self.pending.get(&token_id).is_none(), "run pending");
         require!(
             context.source_registry_sha256.len() == 64
@@ -192,9 +197,7 @@ impl Receipts {
             .receipts
             .checked_add(1)
             .expect("sequence exhausted");
-        let prev = self
-            .latest_raw(&p.token_id)
-            .map(|r| r.receipt_sha256);
+        let prev = self.latest_raw(&p.token_id).map(|r| r.receipt_sha256);
         let ctx = json!({"method_version":p.method,"network":"near_testnet","receipts_contract":env::current_account_id(),"token_id":p.token_id,"fund_id":p.token_id,"fund_account":c["fund_account"],"period_start":c["period_start"],"period_end":c["period_end"],"seq":seq.to_string(),"prev_receipt_sha256":prev,"supersedes_seq":c["supersedes_seq"],"correction_reason_code":c["correction_reason_code"],"request_id":p.request_id.to_string(),"request_nonce":p.run_nonce,"engine_version_key":p.version_key,"engine_code_sha256":p.version_key,"judge_valuation_time":c["judge_valuation_time"],"source_registry_sha256":c["source_registry_sha256"]});
         write(&key(b"pending:", &p.request_id.to_string()), &ctx);
     }
@@ -293,9 +296,7 @@ impl Receipts {
             .ok_or_else(|| err("sequence_exhausted"))?;
         if envelope["seq"].as_str().and_then(|s| s.parse::<u64>().ok()) != Some(seq)
             || envelope["prev_receipt_sha256"]
-                != json!(self
-                    .latest_raw(&p.token_id)
-                    .map(|r| r.receipt_sha256))
+                != json!(self.latest_raw(&p.token_id).map(|r| r.receipt_sha256))
         {
             return Err(err("v3_chain_mismatch"));
         }
@@ -547,12 +548,10 @@ mod tests {
         );
         assert_eq!(tagged, serde_json::to_value(r).unwrap());
         let public = c.get_receipt("DEMO-CREDIT".into(), 1).unwrap();
-        assert!(
-            !public["receipt"]
-                .as_str()
-                .unwrap_or("")
-                .contains("parts_x100")
-        );
+        assert!(!public["receipt"]
+            .as_str()
+            .unwrap_or("")
+            .contains("parts_x100"));
         assert!(c.get_first_v3_seq("DEMO-CREDIT".into()).is_none());
         assert!(c.get_receipt("DEMO-CREDIT".into(), 999).is_none());
         let mut c = c;
@@ -670,6 +669,7 @@ mod tests {
         let mut c = migrated();
         let mut e = golden();
         e["method_version"] = json!(truenav_v3_core::wire::CURRENT_METHOD);
+        e["fund_id"] = e["token_id"].clone();
         e["method_spec_sha256"] = json!(truenav_v3_core::wire::method_hash_for(
             truenav_v3_core::wire::CURRENT_METHOD
         )
@@ -825,9 +825,13 @@ mod tests {
     }
     #[test]
     fn token_case_aliases_are_rejected() {
-        let mut c=migrated();context("admin.testnet",1);
-        c.register_token("HARBOR-CREDIT-FUND".into(),"credit".into());
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(||c.register_token("harbor-credit-fund".into(),"credit".into()))).is_err());
+        let mut c = migrated();
+        context("admin.testnet", 1);
+        c.register_token("HARBOR-CREDIT-FUND".into(), "credit".into());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || c.register_token("harbor-credit-fund".into(), "credit".into())
+        ))
+        .is_err());
     }
     #[test]
     fn corrupt_head_returns_error_refunds_and_never_reserves_run() {

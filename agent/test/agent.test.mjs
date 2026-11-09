@@ -68,6 +68,25 @@ test("the rule's other branches: no receipt, yellow, hold, stale, and a record t
   assert.deepEqual(Object.values(decide("DEMO-CREDIT", forged, { nowMs: NOW })).slice(0, 2), ["decline", "receipt_mismatch"]);
   assert.equal(verifyRecord("DEMO-CREDIT", { ...stored("DEMO-CREDIT"), receipt_sha256: "00".repeat(32) }), "receipt_sha256_mismatch");
   assert.equal(verifyRecord("HONEST-CREDIT", stored("DEMO-CREDIT")), "receipt_token_mismatch");
+  const pub = (edit) => {
+    const row = stored("HONEST-CREDIT");
+    const body = JSON.parse(row.receipt);
+    const redacted = { token_id: body.token_id, score: body.score, band: body.band, caps: body.caps.map((c) => c.code), holds: body.holds.map((h) => h.code), as_of: body.as_of, period: body.period, synthetic: body.synthetic, method: body.method };
+    edit(redacted);
+    row.receipt = JSON.stringify(redacted);
+    return row;
+  };
+  for (const [name, edit] of [
+    ["rewritten as_of", (body) => { body.as_of = "1999-01-01T00:00:00Z"; }],
+    ["flipped synthetic", (body) => { body.synthetic = !body.synthetic; }],
+    ["changed period", (body) => { body.period = "1999-01"; }],
+    ["zeroed hash", () => {}],
+  ]) {
+    const row = pub(edit);
+    if (name === "zeroed hash") row.receipt_sha256 = "00".repeat(32);
+    assert.equal(verifyRecord("HONEST-CREDIT", row), "receipt_sha256_mismatch", name);
+    assert.equal(decide("HONEST-CREDIT", row, { nowMs: NOW }).reason, "receipt_mismatch", name);
+  }
 });
 
 test("the flow: free score read, exactly one report entitlement bought for the fee, decision with the receipt reference", async () => {

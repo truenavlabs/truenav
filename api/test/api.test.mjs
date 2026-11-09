@@ -21,7 +21,7 @@ const stored = (token, seq = 1) => {
 const NOW = 5_000_000_000n;
 const buyerKey = KeyPair.fromRandom("ed25519");
 const EXP = "60000";
-const spendStore = initSpendStore(mkdtempSync(join(tmpdir(), "truenav-api-spend-")));
+const spendStore = await initSpendStore(mkdtempSync(join(tmpdir(), "truenav-api-spend-")), { create: true });
 const buyerProof = (id, kind, token, audience = "query.test") => {
   const nonce = randomBytes(16).toString("hex");
   const sig = Buffer.from(buyerKey.sign(spendMessage({ audience, id, kind, token, nonce, exp: EXP })).signature).toString("base64");

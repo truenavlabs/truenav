@@ -6,7 +6,7 @@ import { initSpendStore } from "./spend-store.mjs";
 
 const need = (k) => process.env[k] || (console.error(`missing ${k}`), process.exit(2));
 const spendStore = need("TRUENAV_SPEND_STORE");
-try { initSpendStore(spendStore); }
+try { await initSpendStore(spendStore, { create: process.env.TRUENAV_SPEND_STORE_INIT === "1" }); }
 catch (error) { console.error(error.message); process.exit(2); }
 const rpcUrl = need("TRUENAV_RPC");
 if (!/testnet|127\.0\.0\.1|localhost/.test(rpcUrl)) {
@@ -17,4 +17,4 @@ const receipts = need("TRUENAV_RECEIPTS");
 const query = need("TRUENAV_QUERY");
 const chain = nearChain({ rpcUrl, query, redeemerId: need("TRUENAV_REDEEMER"), keyFile: need("TRUENAV_REDEEMER_KEY_FILE") });
 const port = Number(process.env.PORT || 8787);
-createServer({ chain, receipts, query, fee: process.env.TRUENAV_FEE || "10000000000000000000000", spendStore }).listen(port, () => console.log(`TrueNav API on :${port} (receipts ${receipts}, query ${query})`));
+createServer({ chain, receipts, query, fee: process.env.TRUENAV_FEE || "10000000000000000000000", spendStore, trustProxy: process.env.TRUENAV_TRUST_PROXY === "1" }).listen(port, () => console.log(`TrueNav API on :${port} (receipts ${receipts}, query ${query})`));

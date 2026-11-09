@@ -20,6 +20,19 @@ Open a private security advisory on this repository (GitHub, Security tab). Plea
 
 See `TRUST_MODEL.md`, `THREAT_MODEL.md` and `AUDIT_FINDINGS.md`.
 
+## Spend store runbook
+
+The API keeps spent nonces and the buyer rate counter in one directory on one machine. Two machines, or two copies of the directory, can each accept the same nonce.
+
+- Pick a persistent path, not `/tmp`. Example: `/var/lib/truenav/spend`.
+- `mkdir -m 700 /var/lib/truenav/spend`
+- Initialize once: `TRUENAV_SPEND_STORE=/var/lib/truenav/spend node api/spend-init.mjs` or start once with `TRUENAV_SPEND_STORE_INIT=1`. After `state.json` and `READY` exist, start without the init flag.
+- `chmod 700` the directory. The process refuses a group-writable or world-writable directory, a symlink store path, and a `LOCK` that is a symlink or a directory.
+- Set `TRUENAV_SPEND_STORE` to that directory. The process exits if the variable is missing. It does not create an empty store on its own. A missing or corrupt `state.json` returns 503 and is not replaced.
+- Recovery from "spend store corrupt": stop the API, restore `state.json` from backup, confirm `READY` is still there, and start again. Do not delete `state.json` to get a fresh store. Deleting it and initializing again starts a new nonce list, so a nonce can be replayed until its proof expires.
+- If the error says `LOCK` is a symlink or a directory: stop the API, remove that `LOCK` path only, leave `state.json` and `READY`, and start again.
+- The IP limiter reads the socket address. It does not trust `X-Forwarded-For` unless `TRUENAV_TRUST_PROXY=1`. Leave that unset behind an untrusted proxy, or every client shares the proxy address.
+
 ## Receipts v3 attestation records, local candidate
 
 No hardware quote is validated on-chain. A stored proof locator is not an attestation verdict. Frozen v3 receipts remain immutable with attestation_ref=null. The callback separately binds canonical B through body_sha256. Only the designated OutLayer relayer can append proof records; storage is paid, existing records cannot be deleted or overwritten, and exact retries are idempotent. Admin writer rotation requires a pause and never changes old records.

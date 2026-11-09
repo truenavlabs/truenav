@@ -39,20 +39,7 @@ export function verifyRecord(token, r) {
     if(!(rec.score===r.score || (rec.score===null && r.score===0)) || rec.band!==r.band || rec.method_version!==r.method || rec.engine_version_key!==r.version_key || rec.seq!==String(r.seq) || rec.valuation_time!==r.as_of || canonical(rec.caps)!==canonical(r.caps) || canonical(rec.holds)!==canonical(r.holds)) return 'receipt_index_mismatch';
     return null;
   }
-  if (sha256(r.receipt) !== r.receipt_sha256) {
-    // A wrong hash over the original bytes is a mismatch. get_latest instead returns the public
-    // projection, which does not hash to the stored preimage. That projection has code-only caps
-    // and no private money fields, and its score and band must still match the wrapper.
-    let pub;
-    try { pub = JSON.parse(r.receipt); } catch { return "receipt_sha256_mismatch"; }
-    const text = JSON.stringify(pub);
-    const fullBytes = text.includes("outstanding_cents") || text.includes("uncapped_score") || (Array.isArray(pub.caps) && pub.caps.some((c) => c && typeof c === "object"));
-    if (fullBytes) return "receipt_sha256_mismatch";
-    if (pub.head_status === "failed" && r.score === 0 && r.band === "red" && (pub.score === null || pub.score === 0)) return null;
-    const codes = (xs) => (Array.isArray(xs) ? JSON.stringify(xs.map((x) => (x && typeof x === "object" ? x.code : x))) : null);
-    if (pub.token_id !== token || pub.score !== r.score || pub.band !== r.band || codes(pub.caps) !== codes(r.caps) || codes(pub.holds) !== codes(r.holds)) return "receipt_sha256_mismatch";
-    return null;
-  }
+  if (sha256(r.receipt) !== r.receipt_sha256) return "receipt_sha256_mismatch";
   let rec;
   try {
     rec = JSON.parse(r.receipt);

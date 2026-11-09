@@ -46,7 +46,7 @@ const send = (res, status, body) => {
  * chain: { view(contractId, method, args) -> value, redeem(requestId, queryHash) -> uses_left (throws on refusal),
  * nowNs() -> current chain time in ns as BigInt }. receipts, query: contract account ids. fee: yoctoNEAR string.
  */
-export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, preBuyerLimit }) {
+export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, preBuyerLimit, trustProxy = false }) {
   const latest = (token) => chain.view(receipts, "get_latest", { token_id: token });
   const toBuy = (kind, token, why) => ({ error: "payment_required", reason: why, buy: { contract: query, method: "buy_query", args: { request_id: "<your unique id, 8 to 64 of [A-Za-z0-9_-]>", query_hash: queryHash(kind, token), kind }, attach_yocto: fee } });
   const cheap = createCheapLimiter({ ipLimit: preIpLimit, buyerLimit: preBuyerLimit });
@@ -61,12 +61,23 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
     return run;
   }
 
-  function limited(req) {
-    const nowMs = Date.now();
-    const ip = req.socket?.remoteAddress || "unknown";
-    if (!cheap("ip", ip, nowMs)) return { status: 429, body: { error: "ip rate limit" } };
+  function clientIp(req) {
+    if (trustProxy) {
+      const forwarded = req.headers["x-forwarded-for"];
+      if (typeof forwarded === "string" && forwarded.length > 0 && forwarded.length <= 128) return forwarded.split(",")[0].trim();
+    }
+    return req.socket?.remoteAddress || "unknown";
+  }
+  function limitedIp(req) {
     const buyer = req.headers["x-truenav-buyer"];
-    if (typeof buyer === "string" && buyer.length > 0 && !cheap("buyer", buyer, nowMs)) return { status: 429, body: { error: "buyer rate limit" } };
+    if (typeof buyer === "string" && buyer.length > 128) return { status: 400, body: { error: "buyer header too long" } };
+    const ip = clientIp(req);
+    try {
+      if (!cheap.allow("ip", ip, Date.now())) return { status: 429, body: { error: "ip rate limit" } };
+    } catch (error) {
+      if (error.code === "rate_key_rejected") return { status: 400, body: { error: "bad client address" } };
+      throw error;
+    }
     return null;
   }
 
@@ -88,14 +99,20 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
     if (exp > nowMs + SPEND_TTL_MS) return { status: 403, body: { error: "spend proof expiry is too far" } };
     const keys = await chain.accessKeys(String(e.buyer));
     if (!buyerProofOk(keys, spendMessage({ audience: query, id, kind, token, nonce, exp: expRaw }), sig)) return { status: 403, body: { error: "buyer proof does not match the entitlement" } };
+    try {
+      if (!cheap.allow("buyer", String(e.buyer), nowMs)) return { status: 429, body: { error: "buyer rate limit" } };
+    } catch (error) {
+      if (error.code === "rate_key_rejected") return { status: 400, body: { error: "bad buyer" } };
+      throw error;
+    }
     if (e.kind !== kind || e.query_hash !== queryHash(kind, token)) return { status: 403, body: { error: "entitlement is for another query" } };
     if (BigInt(e.expires_ns) <= (await chain.nowNs())) return { status: 402, body: toBuy(kind, token, "entitlement expired") };
     if (e.uses_left < 1) return { status: 402, body: toBuy(kind, token, "entitlement already used") };
     let reserved;
     try {
-      reserved = reserveSpend(spendStore, { buyer: String(e.buyer), nonce: `${query}|${nonce}`, nowMs, exp, limit: BUYER_LIMIT, windowMs: BUYER_WINDOW_MS });
+      reserved = await reserveSpend(spendStore, { buyer: String(e.buyer), nonce: `${query}|${nonce}`, nowMs, exp, limit: BUYER_LIMIT, windowMs: BUYER_WINDOW_MS });
     } catch (error) {
-      return { status: 503, body: { error: error.code === "spend_store_closed" ? "spend store closed" : "spend store unavailable" } };
+      return { status: 503, body: { error: error.code === "spend_store_closed" ? "spend store closed" : "spend store unavailable", detail: String(error.message || "").slice(0, 300) } };
     }
     if (!reserved.ok) return { status: reserved.error === "buyer rate limit" ? 429 : 403, body: { error: reserved.error } };
     return { id, e };
@@ -111,10 +128,8 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
       try { token = decodeURIComponent(m[1]); }
       catch { return send(res, 400, { error: "bad token encoding" }); }
       if (!validToken(token)) return send(res, 400, { error: "token must be an ASCII kebab id of 1 to 64 characters" });
-      if (m[2] === "report") {
-        const early = limited(req);
-        if (early) return send(res, early.status, early.body);
-      }
+      const early = limitedIp(req);
+      if (early) return send(res, early.status, early.body);
       let r = await latest(token);
       if (!r) return send(res, 404, { error: "no receipt for this token" });
       let decoded;
@@ -181,7 +196,7 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
       }
       const token = body.token_id;
       if (typeof token !== "string" || !validToken(token)) return send(res, 400, { error: "token_id must be an ASCII kebab id of 1 to 64 characters" });
-      const early = limited(req);
+      const early = limitedIp(req);
       if (early) return send(res, early.status, early.body);
       const ent = await entitlement(req, "ask", token);
       if (!ent.e) return send(res, ent.status, ent.body);

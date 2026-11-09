@@ -1,14 +1,14 @@
 // Red team round 2. Each test asserts the property that should hold.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync, mkdtempSync, readFileSync, unlinkSync, writeFileSync} from 'node:fs';
+import {chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, utimesSync, writeFileSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createHash, randomBytes} from 'node:crypto';
 import {KeyPair} from 'near-api-js';
 import {createServer, queryHash, spendMessage, BUYER_LIMIT} from '../server.mjs';
-import {initSpendStore, reserveSpend} from '../spend-store.mjs';
+import {createCheapLimiter, initSpendStore, MAX_LIMIT_KEYS, reserveSpend} from '../spend-store.mjs';
 import {canonical} from '../receipt.mjs';
 
 const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json', import.meta.url))).vectors[0].envelope;
@@ -42,8 +42,9 @@ function queryChain(rec, {redeemDelayMs = 0} = {}) {
     },
   };
 }
-async function serve(chain, fn, spendStore = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-r2-'))), opts = {}) {
-  try { initSpendStore(spendStore); } catch (error) { if (error.code !== 'spend_store_closed') throw error; }
+async function serve(chain, fn, spendStore, opts = {}) {
+  if (!spendStore) spendStore = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-r2-')), { create: true });
+  else { try { await initSpendStore(spendStore); } catch (error) { if (error.code !== 'spend_store_closed') throw error; } }
   const s = createServer({chain, receipts: 'receipts.test', query: 'query.test', fee: '1', spendStore, ...opts});
   await new Promise((r) => s.listen(0, '127.0.0.1', r));
   try { await fn(`http://127.0.0.1:${s.address().port}`, spendStore); } finally { await new Promise((r) => s.close(r)); }
@@ -109,7 +110,7 @@ test('redteam_r2 RT2-08 the agent must not approve a receipt whose TEE attestati
 
 test('redteam_r2 N6 spend proof rejects expiry, wrong audience, replay and buyer rate', async () => {
   const q = queryChain(record(v3));
-  const file = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-n6-')));
+  const file = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-n6-')), { create: true });
   q.buy('buyer.testnet', 'buyer-report-0003', 'report', v3.token_id);
   const replay = buyerProof('buyer-report-0003', 'report', v3.token_id);
   await serve(q.chain, async (url) => {
@@ -153,7 +154,7 @@ function raceWorker(args) {
 }
 
 test('redteam_r2 N6 two processes never accept one nonce twice', async () => {
-  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-race-')));
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-race-')), { create: true });
   for (let i = 0; i < 120; i++) {
     const nonce = `race${i.toString(16).padStart(16, '0')}`;
     const pair = await Promise.all([0, 1].map(() => raceWorker([dir, 'once', nonce, 'buyer.testnet', '5000', '65000', '1', '100000'])));
@@ -163,14 +164,14 @@ test('redteam_r2 N6 two processes never accept one nonce twice', async () => {
 });
 
 test('redteam_r2 N6 two processes cannot overshoot the buyer rate limit', async () => {
-  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-rate-')));
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-rate-')), { create: true });
   const pair = await Promise.all(['A', 'B'].map((prefix) => raceWorker([dir, 'burst', prefix, 'buyer.testnet', '5000', '65000', '8'])));
   const total = pair.reduce((sum, row) => sum + Number(row.out), 0);
   assert.equal(total, BUYER_LIMIT, pair.map((row) => row.out).join(' '));
 });
 
 test('redteam_r2 N6 a corrupt or deleted store fails closed and is not reset', async () => {
-  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-closed-')));
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-closed-')), { create: true });
   const state = join(dir, 'state.json');
   writeFileSync(state, '{not json');
   const q = queryChain(record(v3));
@@ -199,13 +200,13 @@ test('redteam_r2 N6 bad report traffic is limited before any chain view', async 
     const limited = rs.filter((r) => r.status === 429).length;
     assert.ok(limited > 100, `only ${limited} of 200 were limited`);
     assert.ok(views < 80, `bad traffic made ${views} RPC views`);
-  }, initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-ip-'))), {preIpLimit: 20, preBuyerLimit: 20});
+  }, await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-ip-')), { create: true }), {preIpLimit: 20, preBuyerLimit: 20});
 });
 
-test('redteam_r2 N6 expired buyers and nonces are pruned', () => {
-  const dir = initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-prune-')));
+test('redteam_r2 N6 expired buyers and nonces are pruned', async () => {
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-prune-')), { create: true });
   writeFileSync(join(dir, 'state.json'), JSON.stringify({v: 1, nonces: {old: 1, keep: 200000}, buyers: {gone: [0], stay: [90000]}}));
-  const result = reserveSpend(dir, {buyer: 'stay', nonce: 'fresh', nowMs: 100000, exp: 160000, limit: 8, windowMs: 60000});
+  const result = await reserveSpend(dir, {buyer: 'stay', nonce: 'fresh', nowMs: 100000, exp: 160000, limit: 8, windowMs: 60000});
   assert.equal(result.ok, true);
   const state = JSON.parse(readFileSync(join(dir, 'state.json'), 'utf8'));
   assert.equal(state.nonces.old, undefined);
@@ -218,6 +219,84 @@ test('redteam_r2 N6 production refuses to start without TRUENAV_SPEND_STORE', as
   const child = spawnSync(process.execPath, [new URL('../main.mjs', import.meta.url).pathname], {encoding: 'utf8'});
   assert.equal(child.status, 2);
   assert.match(child.stderr, /TRUENAV_SPEND_STORE/);
+});
+
+test('redteam_r2 N6 six processes breaking one stale lock accept a nonce once', async () => {
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-stale-')), { create: true });
+  const lock = join(dir, 'LOCK');
+  for (let i = 0; i < 300; i++) {
+    writeFileSync(lock, JSON.stringify({ pid: 999999, token: 'dead', at: 1 }));
+    const old = new Date(Date.now() - 60_000);
+    utimesSync(lock, old, old);
+    const nonce = `stale${i.toString(16).padStart(16, '0')}`;
+    const rows = await Promise.all([0, 1, 2, 3, 4, 5].map(() => raceWorker([dir, 'once', nonce, 'buyer.testnet', '5000', '65000', '1', '100000'])));
+    const accepts = rows.filter((row) => row.out === 'accept').length;
+    assert.equal(accepts, 1, `trial ${i} accepted ${accepts} (${rows.map((row) => row.out).join(' | ')})`);
+  }
+});
+
+test('redteam_r2 N6 a missing store is not created unless init is explicit', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'truenav-uninit-'));
+  await assert.rejects(() => initSpendStore(dir), /TRUENAV_SPEND_STORE_INIT/);
+  assert.equal(existsSync(join(dir, 'state.json')), false);
+  const created = await initSpendStore(dir, { create: true });
+  assert.equal(created, dir);
+  const again = mkdtempSync(join(tmpdir(), 'truenav-empty-'));
+  await assert.rejects(() => reserveSpend(again, { buyer: 'b', nonce: 'n', nowMs: 1, exp: 2 }), /not initialized/);
+});
+
+test('redteam_r2 N6 a symlink or directory LOCK and a writable store are refused', async () => {
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-lock-')), { create: true });
+  const lock = join(dir, 'LOCK');
+  symlinkSync('/tmp/truenav-missing-lock-target', lock);
+  await assert.rejects(() => reserveSpend(dir, { buyer: 'b', nonce: 'n1', nowMs: 1, exp: 9 }), /symlink/);
+  unlinkSync(lock);
+  mkdirSync(lock);
+  await assert.rejects(() => reserveSpend(dir, { buyer: 'b', nonce: 'n2', nowMs: 1, exp: 9 }), /directory/);
+  rmSync(lock, { recursive: true });
+  chmodSync(dir, 0o707);
+  await assert.rejects(() => initSpendStore(dir), /writable/);
+  chmodSync(dir, 0o700);
+});
+
+test('redteam_r2 N6 an unverified buyer header does not lock that buyer', async () => {
+  const q = queryChain(record(v3));
+  q.buy('buyer.testnet', 'buyer-victim-0001', 'report', v3.token_id);
+  let views = 0;
+  const inner = q.chain.view.bind(q.chain);
+  q.chain.view = async (...args) => { views += 1; return inner(...args); };
+  await serve(q.chain, async (url) => {
+    const bad = {'x-truenav-entitlement': 'buyer-victim-0001', 'x-truenav-buyer': 'victim.testnet'};
+    const rs = await Promise.all(Array.from({length: 30}, () => fetch(`${url}/fund/${v3.token_id}/report`, {headers: bad})));
+    assert.ok(rs.every((r) => r.status !== 429), `unverified header was limited: ${rs.map((r) => r.status).join(',')}`);
+    const good = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: buyerProof('buyer-victim-0001', 'report', v3.token_id).headers});
+    assert.equal(good.status, 200, await good.text());
+    assert.ok(views < 80, `views ${views}`);
+  }, await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-victim-')), { create: true }), {preIpLimit: 1000, preBuyerLimit: 5});
+});
+
+test('redteam_r2 N6 the cheap limiter bounds keys and rejects a long key', () => {
+  const cheap = createCheapLimiter({ ipLimit: 10, buyerLimit: 10, windowMs: 60_000, maxKeys: 32 });
+  try {
+    for (let i = 0; i < 5000; i++) cheap.allow('ip', `k${i}`, 1000);
+    assert.ok(cheap.size() <= 32, `map grew to ${cheap.size()}`);
+    assert.ok(cheap.size() <= MAX_LIMIT_KEYS);
+    assert.throws(() => cheap.allow('ip', 'x'.repeat(8192), 1000), /rate limit key rejected/);
+    assert.ok(cheap.size() <= 32);
+  } finally { cheap.stop(); }
+});
+
+test('redteam_r2 N6 /score is rate limited before chain views', async () => {
+  let views = 0;
+  const q = queryChain(record(v3));
+  const inner = q.chain.view.bind(q.chain);
+  q.chain.view = async (...args) => { views += 1; return inner(...args); };
+  await serve(q.chain, async (url) => {
+    const rs = await Promise.all(Array.from({length: 40}, () => fetch(`${url}/fund/${v3.token_id}/score`)));
+    const limited = rs.filter((r) => r.status === 429).length;
+    assert.ok(limited >= 20, `only ${limited} score requests were limited`);
+    assert.ok(views <= 20, `score made ${views} views`);
+  }, await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-score-')), { create: true }), {preIpLimit: 20, preBuyerLimit: 20});
 });
 
 test('redteam_r2 RT2-14 a malformed percent-escape is a client error, not a chain failure', async () => {

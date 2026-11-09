@@ -1,8 +1,11 @@
 // Cross-process spend nonce and buyer rate limit.
-// One directory, one machine. An O_EXCL lock file is the single writer. Two API processes on that
-// machine share the directory and therefore the lock. Two machines, or two copies of the directory,
-// do not. A corrupt or missing state file fails closed and is not replaced with an empty store.
-import { closeSync, constants, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+// One directory, one machine, mode 0700. Several API processes on that machine share the directory.
+// Two machines, or two copies of the directory, do not. A missing store is not created unless init
+// is explicit (TRUENAV_SPEND_STORE_INIT=1 or node api/spend-init.mjs). A corrupt state file fails closed.
+import { createHash, randomBytes } from "node:crypto";
+import { chmodSync, constants, existsSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { lstat, mkdir, open, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export const BUYER_LIMIT = 8;
@@ -10,8 +13,11 @@ export const BUYER_WINDOW_MS = 60 * 1000;
 export const PRE_IP_LIMIT = 60;
 export const PRE_BUYER_LIMIT = 30;
 export const PRE_WINDOW_MS = 10 * 1000;
+export const MAX_LIMIT_KEYS = 1024;
+export const MAX_LIMIT_KEY_LEN = 128;
 const LOCK_WAIT_MS = 3000;
 const STALE_LOCK_MS = 5000;
+const INIT_HINT = "spend store is not initialized. Set TRUENAV_SPEND_STORE_INIT=1 once, or run: node api/spend-init.mjs <dir>. Refusing to create an empty store.";
 
 function fail(message) {
   const error = new Error(message);
@@ -19,69 +25,108 @@ function fail(message) {
   throw error;
 }
 
-function sleep(ms) {
-  const end = Date.now() + ms;
-  while (Date.now() < end) { /* the lock hold is a few milliseconds; a short spin is enough */ }
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function withLock(dir, fn) {
-  const lockPath = join(dir, "LOCK");
-  const started = Date.now();
-  let fd;
-  for (;;) {
-    try {
-      fd = openSync(lockPath, constants.O_CREAT | constants.O_EXCL | constants.O_RDWR);
-      break;
-    } catch (error) {
-      if (error.code !== "EEXIST") fail(`spend store lock failed: ${error.code || error.message}`);
-      try {
-        if (Date.now() - statSync(lockPath).mtimeMs > STALE_LOCK_MS) unlinkSync(lockPath);
-      } catch { /* the holder released it, or it is still live */ }
-      if (Date.now() - started > LOCK_WAIT_MS) fail("spend store lock unavailable");
-      sleep(2);
-    }
-  }
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
-    return fn();
-  } finally {
-    try { closeSync(fd); } catch { /* the fd is already closed */ }
-    try { unlinkSync(lockPath); } catch { /* another recovery already removed a stale lock */ }
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === "EPERM";
   }
 }
 
-function readState(dir) {
+async function assertStoreDir(dir) {
+  let st;
+  try { st = await lstat(dir); }
+  catch (error) {
+    if (error.code === "ENOENT") fail(INIT_HINT);
+    fail(`spend store path is unreadable: ${error.code || error.message}`);
+  }
+  if (st.isSymbolicLink()) fail("spend store path is a symlink. Point TRUENAV_SPEND_STORE at a real directory, chmod 700, and start again.");
+  if (!st.isDirectory()) fail("spend store path is not a directory.");
+  const mode = st.mode & 0o777;
+  if (mode & 0o022) fail(`spend store directory is group or world writable (mode ${mode.toString(8)}). chmod 700 the directory and start again.`);
+}
+
+async function readState(dir) {
   const path = join(dir, "state.json");
-  if (!existsSync(path)) fail("spend store missing");
+  let st;
+  try { st = await lstat(path); }
+  catch (error) {
+    if (error.code === "ENOENT") fail("spend store missing");
+    fail(`spend store unreadable: ${error.code || error.message}`);
+  }
+  if (st.isSymbolicLink()) fail("state.json is a symlink. Restore the real state.json from backup. Do not start an empty store.");
   let text;
-  try { text = readFileSync(path, "utf8"); }
+  try { text = await readFile(path, "utf8"); }
   catch (error) { fail(`spend store unreadable: ${error.code || error.message}`); }
   let parsed;
   try { parsed = JSON.parse(text); }
-  catch { fail("spend store corrupt"); }
+  catch { fail("spend store corrupt. Stop the API, restore state.json from backup, and start again. Do not delete it to force a fresh store."); }
   if (!parsed || parsed.v !== 1 || !parsed.nonces || !parsed.buyers || typeof parsed.nonces !== "object" || typeof parsed.buyers !== "object" || Array.isArray(parsed.nonces) || Array.isArray(parsed.buyers)) {
-    fail("spend store corrupt");
+    fail("spend store corrupt. Stop the API, restore state.json from backup, and start again. Do not delete it to force a fresh store.");
   }
   return parsed;
 }
 
-function writeState(dir, state) {
-  const tmp = join(dir, `state.${process.pid}.${Date.now()}.tmp`);
-  writeFileSync(tmp, JSON.stringify(state), { mode: 0o600 });
-  renameSync(tmp, join(dir, "state.json"));
+async function cleanTmp(dir) {
+  let names;
+  try { names = await readdir(dir); }
+  catch { return; }
+  const now = Date.now();
+  for (const name of names) {
+    if (!name.endsWith(".tmp") && !name.startsWith("LOCK.dead.")) continue;
+    const path = join(dir, name);
+    try {
+      const st = await lstat(path);
+      if (st.isSymbolicLink() || now - st.mtimeMs > 60_000) await unlink(path);
+    } catch { /* another process removed it */ }
+  }
 }
 
-export function initSpendStore(dir) {
+async function writeState(dir, state) {
+  await cleanTmp(dir);
+  const tmp = join(dir, `state.${process.pid}.${Date.now()}.tmp`);
+  const fh = await open(tmp, "w", 0o600);
+  try {
+    await fh.writeFile(JSON.stringify(state));
+    await fh.sync();
+  } finally {
+    await fh.close();
+  }
+  await rename(tmp, join(dir, "state.json"));
+  const dirHandle = await open(dir, "r");
+  try { await dirHandle.sync(); }
+  finally { await dirHandle.close(); }
+}
+
+export async function initSpendStore(dir, { create = false } = {}) {
   if (!dir || typeof dir !== "string") fail("spend store path is required");
+  if (!existsSync(dir)) {
+    if (!create) fail(INIT_HINT);
+    await mkdir(dir, { recursive: true, mode: 0o700 });
+    chmodSync(dir, 0o700);
+  }
+  await assertStoreDir(dir);
   const path = join(dir, "state.json");
   const ready = join(dir, "READY");
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  if (!existsSync(ready) && !existsSync(path)) {
-    writeState(dir, { v: 1, nonces: {}, buyers: {} });
-    writeFileSync(ready, "1\n", { mode: 0o600 });
+  const hasState = existsSync(path);
+  const hasReady = existsSync(ready);
+  if (!hasState && !hasReady) {
+    if (!create) fail(INIT_HINT);
+    await writeState(dir, { v: 1, nonces: {}, buyers: {} });
+    await writeFile(ready, "1\n", { mode: 0o600 });
+    const dirHandle = await open(dir, "r");
+    try { await dirHandle.sync(); }
+    finally { await dirHandle.close(); }
     return dir;
   }
-  if (!existsSync(path) || !existsSync(ready)) fail("spend store missing");
-  readState(dir);
+  if (!hasState || !hasReady) fail("spend store missing. Restore state.json and READY from backup. Refusing to recreate them.");
+  await readState(dir);
   return dir;
 }
 
@@ -96,39 +141,184 @@ function prune(state, nowMs, windowMs) {
   }
 }
 
-export function reserveSpend(dir, { buyer, nonce, nowMs, exp, limit = BUYER_LIMIT, windowMs = BUYER_WINDOW_MS }) {
-  return withLock(dir, () => {
-    const state = readState(dir);
+async function readLock(lockPath) {
+  let st;
+  try { st = await lstat(lockPath); }
+  catch (error) {
+    if (error.code === "ENOENT") return { missing: true };
+    fail(`spend store lock failed: ${error.code || error.message}`);
+  }
+  if (st.isSymbolicLink()) {
+    fail(`LOCK is a symlink. Stop the API, remove ${lockPath} only, and start again. Leave state.json and READY in place.`);
+  }
+  if (st.isDirectory()) {
+    fail(`LOCK is a directory. Stop the API, remove that directory only, and start again. Leave state.json and READY in place.`);
+  }
+  if (!st.isFile()) fail(`LOCK is not a regular file. Remove ${lockPath} and start again. Leave state.json and READY in place.`);
+  let text;
+  try { text = await readFile(lockPath, "utf8"); }
+  catch (error) {
+    if (error.code === "ENOENT") return { missing: true };
+    fail(`spend store lock unreadable: ${error.code || error.message}`);
+  }
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch { parsed = null; }
+  const age = Date.now() - st.mtimeMs;
+  const owner = parsed && Number.isInteger(parsed.pid) ? parsed.pid : 0;
+  return { missing: false, token: parsed?.token, pid: owner, age, stale: !pidAlive(owner) && age > STALE_LOCK_MS };
+}
+
+async function confirmLock(lockPath, token) {
+  const seen = await readLock(lockPath);
+  return !seen.missing && seen.token === token && seen.pid === process.pid;
+}
+
+async function ownLock(dir, token) {
+  return confirmLock(join(dir, "LOCK"), token);
+}
+
+function flockHeld(lockPath) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("flock", ["-x", "-w", "3", lockPath, "node", "-e", "process.stdout.write('ready\\n'); process.stdin.resume()"], { stdio: ["pipe", "pipe", "pipe"] });
+    let buf = "";
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(Object.assign(new Error("spend store lock unavailable"), { code: "spend_store_closed" }));
+    }, LOCK_WAIT_MS + 500);
+    child.stdout.on("data", (chunk) => {
+      buf += chunk;
+      if (buf.includes("ready")) {
+        clearTimeout(timer);
+        resolve(child);
+      }
+    });
+    child.on("error", (error) => { clearTimeout(timer); reject(error); });
+    child.on("exit", (code) => {
+      if (!buf.includes("ready")) {
+        clearTimeout(timer);
+        reject(Object.assign(new Error(`spend store lock unavailable (${code})`), { code: "spend_store_closed" }));
+      }
+    });
+  });
+}
+
+async function releaseFlock(child) {
+  if (!child || child.killed) return;
+  child.stdin.end();
+  await new Promise((resolve) => child.on("exit", resolve));
+}
+
+async function withLock(dir, fn) {
+  const lockPath = join(dir, "LOCK");
+  await readLock(lockPath).catch((error) => { if (error.code === "spend_store_closed") throw error; });
+  const token = randomBytes(16).toString("hex");
+  const child = await flockHeld(lockPath);
+  try {
+    const body = JSON.stringify({ pid: process.pid, token, at: Date.now() });
+    const fh = await open(lockPath, "w", 0o600);
+    try {
+      await fh.writeFile(body);
+      await fh.sync();
+    } finally {
+      await fh.close();
+    }
+    if (!(await confirmLock(lockPath, token))) fail("spend store lock lost");
+    return await fn(token);
+  } finally {
+    await releaseFlock(child);
+  }
+}
+
+function nonceFile(dir, nonce) {
+  return join(dir, "used", createHash("sha256").update(nonce).digest("hex"));
+}
+
+async function claimNonce(dir, nonce, exp, nowMs) {
+  const path = nonceFile(dir, nonce);
+  await mkdir(join(dir, "used"), { recursive: true, mode: 0o700 });
+  try {
+    const st = await lstat(path);
+    if (st.isSymbolicLink() || !st.isFile()) fail("spend nonce path is not a regular file");
+    const until = Number(await readFile(path, "utf8"));
+    if (Number.isFinite(until) && until >= nowMs) return false;
+    await unlink(path);
+  } catch (error) {
+    if (error.code !== "ENOENT") fail(`spend nonce unreadable: ${error.code || error.message}`);
+  }
+  let fh;
+  try { fh = await open(path, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600); }
+  catch (error) {
+    if (error.code === "EEXIST") return false;
+    fail(`spend nonce create failed: ${error.code || error.message}`);
+  }
+  try {
+    await fh.writeFile(String(exp));
+    await fh.sync();
+  } finally {
+    await fh.close();
+  }
+  return true;
+}
+
+export async function reserveSpend(dir, { buyer, nonce, nowMs, exp, limit = BUYER_LIMIT, windowMs = BUYER_WINDOW_MS }) {
+  await assertStoreDir(dir);
+  if (!existsSync(join(dir, "state.json")) || !existsSync(join(dir, "READY"))) fail(INIT_HINT);
+  return withLock(dir, async (token) => {
+    if (!(await ownLock(dir, token))) return { ok: false, error: "spend store lock lost" };
+    const state = await readState(dir);
     prune(state, nowMs, windowMs);
     if (state.nonces[nonce]) {
-      writeState(dir, state);
+      await writeState(dir, state);
       return { ok: false, error: "spend nonce reused" };
     }
     const stamps = state.buyers[buyer] || [];
     if (stamps.length >= limit) {
-      writeState(dir, state);
+      await writeState(dir, state);
       return { ok: false, error: "buyer rate limit" };
     }
+    if (!(await ownLock(dir, token))) return { ok: false, error: "spend store lock lost" };
+    const claimed = await claimNonce(dir, nonce, exp, nowMs);
+    if (!claimed) return { ok: false, error: "spend nonce reused" };
     stamps.push(nowMs);
     state.buyers[buyer] = stamps;
     state.nonces[nonce] = exp;
-    writeState(dir, state);
+    if (await ownLock(dir, token)) await writeState(dir, state);
     return { ok: true };
   });
 }
 
-export function createCheapLimiter({ ipLimit = PRE_IP_LIMIT, buyerLimit = PRE_BUYER_LIMIT, windowMs = PRE_WINDOW_MS } = {}) {
+export function createCheapLimiter({ ipLimit = PRE_IP_LIMIT, buyerLimit = PRE_BUYER_LIMIT, windowMs = PRE_WINDOW_MS, maxKeys = MAX_LIMIT_KEYS } = {}) {
   const hits = new Map();
-  return function allow(kind, key, nowMs) {
+  function sweep(nowMs) {
+    for (const [id, stamps] of hits) {
+      const live = stamps.filter((t) => nowMs - t < windowMs);
+      if (live.length === 0) hits.delete(id);
+      else if (live.length !== stamps.length) hits.set(id, live);
+    }
+  }
+  function allow(kind, key, nowMs) {
+    if (typeof key !== "string" || key.length === 0 || key.length > MAX_LIMIT_KEY_LEN) {
+      const error = new Error("rate limit key rejected");
+      error.code = "rate_key_rejected";
+      throw error;
+    }
+    sweep(nowMs);
     const cap = kind === "ip" ? ipLimit : buyerLimit;
     const id = `${kind}:${key}`;
-    const prev = (hits.get(id) || []).filter((t) => nowMs - t < windowMs);
+    const prev = hits.get(id) || [];
     if (prev.length >= cap) {
+      hits.delete(id);
       hits.set(id, prev);
       return false;
     }
     prev.push(nowMs);
+    hits.delete(id);
     hits.set(id, prev);
+    while (hits.size > maxKeys) hits.delete(hits.keys().next().value);
     return true;
-  };
+  }
+  const timer = setInterval(() => sweep(Date.now()), windowMs);
+  timer.unref?.();
+  return { allow, sweep, size: () => hits.size, stop: () => clearInterval(timer) };
 }

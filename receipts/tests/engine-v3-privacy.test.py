@@ -1,7 +1,7 @@
 """Run the unchanged all-public-field observer on actual engine-derived outputs."""
 import unittest
 from decimal import Decimal as D
-from receipt_v3_observer import infer, load, assert_not_narrower, nav_cell
+from receipt_v3_1_observer import infer, load, assert_not_narrower, nav_cell
 
 DERIVED=load('schema/vectors/engine-v3-derived.json')['vectors']
 BOUNDS=load('schema/vectors/disclosure-bounds.json')
@@ -45,4 +45,17 @@ class EngineDisclosureGuard(unittest.TestCase):
    a=infer(v['envelope'])
    for k in ('reported_nav','trueval','truerange_low','truerange_high'):
     self.assertGreaterEqual(a[k].width(),nav_cell(v['envelope'][k]).width()-D('1e-12'))
+ def test_active_conflict_cap_does_not_refine_private_money_or_coverage(self):
+  for v in load('schema/vectors/engine-v3-derived.json')['conflict_cases']:
+   e=v['envelope'];r=v['private_TEST_report'];observed=infer(e)
+   self.assertEqual(e['pledge_result'],'conflict');self.assertIn('pledge_conflict',e['caps']);self.assertLessEqual(e['score'],59);self.assertEqual(e['band'],'red')
+   self.assertGreaterEqual(observed['coverage'].width(),D('.6')-D('1e-12'))
+   for k in ('reported_nav','trueval','truerange_low','truerange_high'):
+    self.assertGreaterEqual(observed[k].width(),nav_cell(e[k]).width()-D('1e-12'))
+    self.assertGreaterEqual(D(r['exact'][k]),observed[k].lo);self.assertLessEqual(D(r['exact'][k]),observed[k].hi)
+   answers={k:r[k] for k in ('score_x100','raw_score')};answers.update({'parts_x100.'+k:x for k,x in r['parts_x100'].items()})
+   for k,x in answers.items():
+    i=observed[k];x=D(str(x))
+    if i.lo is not None:self.assertGreaterEqual(x+D('1e-10'),i.lo)
+    if i.hi is not None:self.assertLessEqual(x-D('1e-10'),i.hi)
 if __name__=='__main__':unittest.main(verbosity=2)

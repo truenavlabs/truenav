@@ -1,10 +1,10 @@
 {
-  "note": "Pinned-image build candidate for receipts v3 migration plus the existing mirror recovery/date fixes. Not deployed. Use UPGRADE_V3.md for approval gates; the legacy fresh-deploy helper is not a v3 upgrade path. Query is unchanged.",
-  "receipts": "ece3cde2f08c8216590bd61f1803a762ac4e555065509cab1049bc842c8e5fb9",
+  "note": "Local receipts v3 candidate: migration, combined receipts, existing mirror fixes, canonical body binding and append-only attestation metadata. No hardware quote validated on-chain. Not deployed; round-1 audit and separate approvals required. Query unchanged.",
+  "receipts": "0b0e3aa7558073cf8ddea6151774ebfa8ac6e7815019fd296fa80a44538676a8",
   "query": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156",
   "dist": {
     "note": "Local candidate bytes, not a deployed-code claim. Normal v3 artifact only, no dry-run feature. Prior c19fc647 bytes remain in frozen ecf179c history for CI state migration replay.",
-    "receipts/dist/truenav_receipts.wasm": "ece3cde2f08c8216590bd61f1803a762ac4e555065509cab1049bc842c8e5fb9",
+    "receipts/dist/truenav_receipts.wasm": "0b0e3aa7558073cf8ddea6151774ebfa8ac6e7815019fd296fa80a44538676a8",
     "receipts/dist/truenav_query.wasm": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
   }
 }

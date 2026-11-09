@@ -1,10 +1,7 @@
 // Internal capability boundary. Public callers use match.mjs; tests inject simulated capabilities here only.
 import {createHash} from 'node:crypto';
-import {readFileSync} from 'node:fs';
+import {receiptPolicy} from './receipt-policy.mjs';
 import {taskHash} from '../../tee/fingerprint.mjs';
-const schema=JSON.parse(readFileSync(new URL('../../schema/receipt-v3.schema.json',import.meta.url)));
-const method=JSON.parse(readFileSync(new URL('../../schema/methods/truenav-v3.0.0-rc3.json',import.meta.url)));
-const fields=Object.keys(schema.properties).sort();
 export function canonical(x){
  if(x===null||typeof x==='boolean'||typeof x==='string')return JSON.stringify(x);
  if(typeof x==='number'){if(!Number.isSafeInteger(x))throw new Error('unsafe public number');return JSON.stringify(x);}
@@ -28,7 +25,9 @@ export function bodyOf(envelope){const b=structuredClone(envelope);for(const k o
  */
 export async function matchWithCapabilities({envelope:e,record:r,context:c},caps){
  try{
-  if(!e||e.receipt_version!=='3'||e.method_version!=='truenav-v3.0.0'||e.network!=='near_testnet'||e.receipts_contract!=='receipts.tnlab-718ca9.testnet'||e.attestation_ref!==null||canonical(Object.keys(e).sort())!==canonical(fields))return result('invalid','schema_invalid');
+  let policy;try{policy=receiptPolicy(e);}catch{return result('invalid','schema_invalid');}
+  const {schema,method}=policy;const fields=Object.keys(schema.properties).sort();
+  if(!e||e.receipt_version!=='3'||e.network!=='near_testnet'||e.receipts_contract!=='receipts.tnlab-718ca9.testnet'||e.attestation_ref!==null||canonical(Object.keys(e).sort())!==canonical(fields))return result('invalid','schema_invalid');
   const {receipt_sha256,...preimage}=e;if(!hash(receipt_sha256)||sha(canonical(preimage))!==receipt_sha256)return result('invalid','hash_mismatch');
   if(e.method_spec_sha256!==sha(canonical(method)))return result('invalid','method_hash_mismatch');
   if(!r)return result('unavailable','attestation_missing');

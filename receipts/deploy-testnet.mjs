@@ -29,7 +29,7 @@ const KEYS = join(homedir(), ".near-credentials/testnet");
 const root = new URL("../", import.meta.url).pathname;
 const SIGNER_KEYFILE = process.env.TRUENAV_SIGNER_KEYFILE || join(KEYS, `${MASTER}.json`);
 const ids = { receipts: `receipts.${MASTER}`, query: `query.${MASTER}`, runner: `runner.${MASTER}`, api: `api.${MASTER}` };
-// receipts and query hold their code storage (about 1 NEAR per 100 KB: about 470 KB for the v3 candidate and 155,543 bytes for query;
+// receipts and query hold their code storage (about 1 NEAR per 100 KB: about 540 KB for the v3.0.1 candidate and 155,543 bytes for query;
 // the initial code/state plus 0.1 NEAR margin must fit the 5.5 testnet NEAR budget, checked by the e2e); a run's receipt
 // storage is paid by the runner's deposit; the runner needs one run's deposit (0.26 NEAR, mostly refunded)
 const FUND = { receipts: "5.5", query: "1.7", runner: "0.4", api: "0.1" };
@@ -161,7 +161,7 @@ if (step === "D1") {
 }
 if (step === "D2") {
   const args = { admin: MASTER, pauser: MASTER, config: CONFIG };
-  console.log(`D2: deploy the receipt contract (wasm ${PINNED.receipts}, ${readFileSync(WASM.receipts).length} bytes) to ${ids.receipts} and initialise it. Cost: about 2.68 NEAR locked for code and state storage on ${ids.receipts} (267,971 bytes after D3, measured on the sandbox; its own balance, funded ${FUND.receipts} in D1, about 0.52 left for gas and refunds), plus gas.`);
+  console.log(`D2: deploy the receipt contract (wasm ${PINNED.receipts}, ${readFileSync(WASM.receipts).length} bytes) to ${ids.receipts} and initialise it. Code storage alone is about ${(readFileSync(WASM.receipts).length / 100000).toFixed(3)} testnet NEAR at 1e19 yocto per byte, plus state and gas; funded ${FUND.receipts} in D1. This initializes the compatibility v2 path, not the v3 migration; follow UPGRADE_V3.md for v3.`);
   show(ids.receipts, [`DeployContract sha256 ${PINNED.receipts}`, `FunctionCall new ${JSON.stringify(args)} gas 50 Tgas deposit 0`]);
   if (execute) await send(ids.receipts, ids.receipts, [actions.deployContract(new Uint8Array(readFileSync(WASM.receipts))), actions.functionCall("new", args, teraToGas("50"), 0n)]);
 }

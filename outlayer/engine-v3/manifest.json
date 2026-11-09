@@ -1,6 +1,14 @@
 {
   "encryption_keys": [
-    {"path": "loan-terms-v2"},
-    {"path": "truenav-report-v3"}
+    {
+      "path": "loan-terms-v2",
+      "bind": "project",
+      "caller": "predecessor"
+    },
+    {
+      "path": "truenav-report-v3",
+      "bind": "project",
+      "caller": "predecessor"
+    }
   ]
 }

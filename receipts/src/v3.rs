@@ -147,7 +147,7 @@ impl Receipts {
     }
     pub fn get_latest_receipt(&self, token_id: String) -> Option<Value> {
         let r = self.get_latest(token_id)?;
-        if r.method != "truenav-v3.0.0" {
+        if !truenav_v3_core::wire::is_v3_method(&r.method) {
             return None;
         }
         serde_json::from_str(&r.receipt).ok()
@@ -191,7 +191,7 @@ impl Receipts {
         let prev = self
             .get_latest(p.token_id.clone())
             .map(|r| r.receipt_sha256);
-        let ctx = json!({"network":"near_testnet","receipts_contract":env::current_account_id(),"token_id":p.token_id,"fund_account":c["fund_account"],"period_start":c["period_start"],"period_end":c["period_end"],"seq":seq.to_string(),"prev_receipt_sha256":prev,"supersedes_seq":c["supersedes_seq"],"correction_reason_code":c["correction_reason_code"],"request_id":p.request_id.to_string(),"request_nonce":p.run_nonce,"engine_version_key":p.version_key,"engine_code_sha256":p.version_key,"judge_valuation_time":c["judge_valuation_time"],"source_registry_sha256":c["source_registry_sha256"]});
+        let ctx = json!({"method_version":p.method,"network":"near_testnet","receipts_contract":env::current_account_id(),"token_id":p.token_id,"fund_account":c["fund_account"],"period_start":c["period_start"],"period_end":c["period_end"],"seq":seq.to_string(),"prev_receipt_sha256":prev,"supersedes_seq":c["supersedes_seq"],"correction_reason_code":c["correction_reason_code"],"request_id":p.request_id.to_string(),"request_nonce":p.run_nonce,"engine_version_key":p.version_key,"engine_code_sha256":p.version_key,"judge_valuation_time":c["judge_valuation_time"],"source_registry_sha256":c["source_registry_sha256"]});
         write(&key(b"pending:", &p.request_id.to_string()), &ctx);
     }
     pub(crate) fn v3_run_input(&self, token: &str, nonce: &str) -> Value {
@@ -201,7 +201,7 @@ impl Receipts {
         let mut c =
             read(&key(b"pending:", &p.request_id.to_string())).expect("v3 pending context missing");
         c["request_nonce"] = json!(nonce);
-        let previous=self.get_latest(token.to_string()).map(|r|if r.method=="truenav-v3.0.0"{serde_json::from_str::<Value>(&r.receipt).expect("stored v3")}else{let v:Value=serde_json::from_str(&r.receipt).expect("stored v2");json!({"receipt_version":"2","receipt_sha256":r.receipt_sha256,"period":r.period,"passport":v["passport"]})});
+        let previous=self.get_latest(token.to_string()).map(|r|if truenav_v3_core::wire::is_v3_method(&r.method){serde_json::from_str::<Value>(&r.receipt).expect("stored v3")}else{let v:Value=serde_json::from_str(&r.receipt).expect("stored v2");json!({"receipt_version":"2","receipt_sha256":r.receipt_sha256,"period":r.period,"passport":v["passport"]})});
         json!({"receipt_version":"3","context":c,"previous_receipt":previous})
     }
     pub(crate) fn accept_v3(&mut self, p: &Pending, body: &Value) -> Result<u64, String> {
@@ -241,6 +241,7 @@ impl Receipts {
             }
         }
         for name in [
+            "method_version",
             "network",
             "receipts_contract",
             "token_id",
@@ -309,6 +310,7 @@ impl Receipts {
             (Some(old), Some(s)) if old == s => {}
             _ => return Err(err("v3_correction_invalid")),
         }
+        let body_sha256 = truenav_v3_core::hash(canonical(body).map_err(err)?.as_bytes());
         let receipt = canonical(&envelope).map_err(err)?;
         let caps = envelope["caps"]
             .as_array()
@@ -348,6 +350,7 @@ impl Receipts {
             "receipt_stored",
             json!({"receipt_version":"3","token_id":p.token_id,"seq":seq.to_string(),"receipt_sha256":r.receipt_sha256}),
         );
+        crate::attestations::bind_body(&p.token_id, seq, &r.receipt_sha256, &body_sha256);
         self.receipts.insert((p.token_id.clone(), seq), r);
         token.receipts = seq;
         self.tokens.insert(p.token_id.clone(), token);
@@ -436,7 +439,7 @@ mod tests {
             run_nonce: e["request_nonce"].as_str().unwrap().into(),
             requester: account("runner.testnet"),
             version_key: e["engine_version_key"].as_str().unwrap().into(),
-            method: "truenav-v3.0.0".into(),
+            method: e["method_version"].as_str().unwrap().into(),
             storage_deposit: U128(1),
             outlayer_deposit: U128(0),
             pending_bytes: 0,
@@ -533,6 +536,14 @@ mod tests {
         );
         assert_eq!(c.accept_v3(&p, &body(&e)).unwrap(), 1);
         assert_eq!(c.get_receipt(p.token_id.clone(), 1).unwrap(), e);
+        let bound = c
+            .get_body_binding(p.token_id.clone(), near_sdk::json_types::U64(1))
+            .unwrap();
+        assert_eq!(
+            bound.body_sha256,
+            hash(canonical(&body(&e)).unwrap().as_bytes())
+        );
+        assert_eq!(bound.receipt_sha256, e["receipt_sha256"]);
         assert_eq!(c.get_latest_receipt(p.token_id.clone()).unwrap(), e);
         assert_eq!(c.get_first_v3_seq(p.token_id.clone()), Some("1".into()));
         assert!(c.get_receipt(p.token_id, 2).is_none());
@@ -602,5 +613,68 @@ mod tests {
         context("admin.testnet", 1);
         let config = c.config.clone();
         c.set_config(config);
+    }
+    #[test]
+    fn amendment_reads_as_full_envelope_and_cannot_borrow_the_frozen_method() {
+        let mut c = migrated();
+        let mut e = golden();
+        e["method_version"] = json!(truenav_v3_core::wire::CURRENT_METHOD);
+        e["method_spec_sha256"] = json!(truenav_v3_core::wire::method_hash_for(
+            truenav_v3_core::wire::CURRENT_METHOD
+        )
+        .unwrap());
+        e["pledge_result"] = json!("conflict");
+        e["caps"] = json!(["pledge_conflict"]);
+        e["score"] = json!(59);
+        e["band"] = json!("red");
+        truenav_v3_core::wire::seal_envelope(&mut e).unwrap();
+        let p = pending(&mut c, &e);
+        context(
+            "receipts.tnlab-718ca9.testnet",
+            timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
+        );
+        let mut old = e.clone();
+        old["method_version"] = json!("truenav-v3.0.0");
+        old["method_spec_sha256"] = json!(truenav_v3_core::wire::method_hash());
+        assert_eq!(c.accept_v3(&p, &body(&old)), Err("v3_schema".into()));
+        assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
+        assert_eq!(c.get_receipt(p.token_id.clone(), 1), Some(e.clone()));
+        assert_eq!(c.get_latest_receipt(p.token_id.clone()), Some(e.clone()));
+        assert_eq!(c.get_first_v3_seq(p.token_id.clone()), Some("1".into()));
+        assert!(c.get_receipt(p.token_id.clone(), 999).is_none());
+        assert!(c
+            .get_body_binding(p.token_id, near_sdk::json_types::U64(1))
+            .is_some());
+    }
+    #[cfg(feature = "dry-run-tests")]
+    #[test]
+    fn explicit_dry_run_context_is_not_a_frozen_production_receipt() {
+        let mut c = migrated();
+        let mut e = golden();
+        let overlay: Value =
+            serde_json::from_str(include_str!("../tests/deploy-context.dryrun.json")).unwrap();
+        e["receipts_contract"] = overlay["receipts_contract"].clone();
+        let p = pending(&mut c, &e);
+        let dev: AccountId = overlay["receipts_contract"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let mut b = VMContextBuilder::new();
+        b.current_account_id(dev.clone())
+            .predecessor_account_id(dev.clone())
+            .signer_account_id(dev)
+            .block_timestamp(
+                timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
+            )
+            .prepaid_gas(Gas::from_tgas(300))
+            .account_balance(NearToken::from_near(100));
+        testing_env!(b.build());
+        assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
+        let out = c.get_latest_receipt(p.token_id).unwrap();
+        assert!(truenav_v3_core::validate(&out).is_err());
+        truenav_v3_core::wire::validate_dry_run(&out, true).unwrap();
+        assert!(out["attestation_ref"].is_null());
+        println!("DRY_RUN: explicit dev contract accepted only by flagged test validation");
     }
 }

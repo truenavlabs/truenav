@@ -1,53 +1,101 @@
 {
-  "registry_version": "truenav-src-v1",
   "keys": [
     {
-      "key_id": "servicer:sim:v1",
+      "fund_scope": [
+        "attack-alpha-fund",
+        "attack-beta-fund",
+        "attack-forge-fund",
+        "attack-lien-fund",
+        "attack-nav-fund",
+        "attack-stale-fund",
+        "bramble-gap-fund",
+        "cobalt-ledger-fund",
+        "harbor-credit-fund",
+        "kiln-evidence-fund",
+        "meridian-yield-fund",
+        "quarry-recovery-fund",
+        "sable-arrears-fund",
+        "vesper-conflict-fund"
+      ],
+      "key_id": "servicer:simcredit:v1",
+      "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+      "revoked": false,
       "role": "servicer",
-      "fund_scope": [
-        "harbor-credit-fund",
-        "meridian-yield-fund"
-      ],
-      "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-      "valid_from": "2026-01-01T00:00:00Z",
-      "valid_until": "2027-01-01T00:00:00Z",
-      "revoked": false
+      "valid_from": "2024-01-01T00:00:00Z",
+      "valid_until": "2028-01-01T00:00:00Z"
     },
     {
-      "key_id": "bank:sim:v1",
+      "fund_scope": [
+        "attack-alpha-fund",
+        "attack-beta-fund",
+        "attack-forge-fund",
+        "attack-lien-fund",
+        "attack-nav-fund",
+        "attack-stale-fund",
+        "bramble-gap-fund",
+        "cobalt-ledger-fund",
+        "harbor-credit-fund",
+        "kiln-evidence-fund",
+        "meridian-yield-fund",
+        "quarry-recovery-fund",
+        "sable-arrears-fund",
+        "vesper-conflict-fund"
+      ],
+      "key_id": "bank:simcash:v1",
+      "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+      "revoked": false,
       "role": "bank",
-      "fund_scope": [
-        "harbor-credit-fund",
-        "meridian-yield-fund"
-      ],
-      "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-      "valid_from": "2026-01-01T00:00:00Z",
-      "valid_until": "2027-01-01T00:00:00Z",
-      "revoked": false
+      "valid_from": "2024-01-01T00:00:00Z",
+      "valid_until": "2028-01-01T00:00:00Z"
     },
     {
-      "key_id": "fund_admin:sim:v1",
+      "fund_scope": [
+        "attack-alpha-fund",
+        "attack-beta-fund",
+        "attack-forge-fund",
+        "attack-lien-fund",
+        "attack-nav-fund",
+        "attack-stale-fund",
+        "bramble-gap-fund",
+        "cobalt-ledger-fund",
+        "harbor-credit-fund",
+        "kiln-evidence-fund",
+        "meridian-yield-fund",
+        "quarry-recovery-fund",
+        "sable-arrears-fund",
+        "vesper-conflict-fund"
+      ],
+      "key_id": "fund_admin:simadmin:v1",
+      "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+      "revoked": false,
       "role": "fund_admin",
-      "fund_scope": [
-        "harbor-credit-fund",
-        "meridian-yield-fund"
-      ],
-      "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-      "valid_from": "2026-01-01T00:00:00Z",
-      "valid_until": "2027-01-01T00:00:00Z",
-      "revoked": false
+      "valid_from": "2024-01-01T00:00:00Z",
+      "valid_until": "2028-01-01T00:00:00Z"
     },
     {
-      "key_id": "custodian:sim:v1",
-      "role": "custodian",
       "fund_scope": [
+        "attack-alpha-fund",
+        "attack-beta-fund",
+        "attack-forge-fund",
+        "attack-lien-fund",
+        "attack-nav-fund",
+        "attack-stale-fund",
+        "bramble-gap-fund",
+        "cobalt-ledger-fund",
         "harbor-credit-fund",
-        "meridian-yield-fund"
+        "kiln-evidence-fund",
+        "meridian-yield-fund",
+        "quarry-recovery-fund",
+        "sable-arrears-fund",
+        "vesper-conflict-fund"
       ],
-      "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-      "valid_from": "2026-01-01T00:00:00Z",
-      "valid_until": "2027-01-01T00:00:00Z",
-      "revoked": false
+      "key_id": "custodian:simcustody:v1",
+      "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+      "revoked": false,
+      "role": "custodian",
+      "valid_from": "2024-01-01T00:00:00Z",
+      "valid_until": "2028-01-01T00:00:00Z"
     }
-  ]
+  ],
+  "registry_version": "truenav-src-v1"
 }

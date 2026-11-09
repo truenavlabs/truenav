@@ -98,7 +98,14 @@ impl Registry {
             return Err("source_registry_invalid");
         }
         let mut seen = std::collections::BTreeSet::new();
+        let mut modes = std::collections::BTreeSet::new();
         for key in &self.keys {
+            modes.insert(
+                key.key_id
+                    .split(':')
+                    .nth(1)
+                    .is_some_and(|s| s.starts_with("live_")),
+            );
             if !seen.insert(&key.key_id)
                 || !key.key_id.starts_with(&format!("{}:", key.role))
                 || timestamp(&key.valid_from)? >= timestamp(&key.valid_until)?
@@ -106,6 +113,63 @@ impl Registry {
             {
                 return Err("source_registry_invalid");
             }
+        }
+        if modes.len() > 1 {
+            return Err("source_registry_mixed_modes");
+        }
+        Ok(())
+    }
+    pub fn check_live(&self) -> Result<()> {
+        self.check()?;
+        if self.keys.is_empty()
+            || self.keys.iter().any(|k| {
+                !k.key_id
+                    .split(':')
+                    .nth(1)
+                    .is_some_and(|s| s.starts_with("live_"))
+            })
+        {
+            return Err("source_registry_live_required");
+        }
+        Ok(())
+    }
+}
+/// One explicit fixture OR live trust context. A previously loaded ID can never change key bytes.
+pub struct RegistrySession {
+    live: bool,
+    bindings: std::collections::BTreeMap<String, String>,
+}
+impl RegistrySession {
+    pub fn new(live: bool) -> Self {
+        Self {
+            live,
+            bindings: Default::default(),
+        }
+    }
+    pub fn load(&mut self, registry: &Registry) -> Result<()> {
+        registry.check()?;
+        if self.live {
+            registry.check_live()?;
+        } else if registry.keys.iter().any(|k| {
+            k.key_id
+                .split(':')
+                .nth(1)
+                .is_some_and(|s| s.starts_with("live_"))
+        }) {
+            return Err("source_registry_mixed_modes");
+        }
+        for key in &registry.keys {
+            if self
+                .bindings
+                .get(&key.key_id)
+                .is_some_and(|p| p != &key.public_key)
+            {
+                return Err("source_key_rebound");
+            }
+        }
+        for key in &registry.keys {
+            self.bindings
+                .insert(key.key_id.clone(), key.public_key.clone());
         }
         Ok(())
     }

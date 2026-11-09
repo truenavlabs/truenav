@@ -238,9 +238,15 @@ impl Receipts {
         require!(fee > 0 && fee <= state.config.fee_cap, "fee above cap");
         require!(state.next_nonce < u64::MAX, "nonce exhausted");
         let receipt = self
-            .receipts.get(&(token_id.clone(), seq))
+            .receipts
+            .get(&(token_id.clone(), seq))
             .expect("stored receipt required");
-        require!(receipt.method != "truenav-v3.0.0" || serde_json::from_str::<Value>(&receipt.receipt).is_ok_and(|e|e["status"]=="scored"), "unscored v3 cannot mirror a numeric score");
+        require!(
+            !truenav_v3_core::wire::is_v3_method(&receipt.method)
+                || serde_json::from_str::<Value>(&receipt.receipt)
+                    .is_ok_and(|e| e["status"] == "scored"),
+            "unscored v3 cannot mirror a numeric score"
+        );
         let nonce = state.next_nonce;
         let request = MirrorRequest {
             nonce,

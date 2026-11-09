@@ -381,8 +381,9 @@ pub fn score(fund: &Value, now: i64, history: &Value) -> Nav {
     let total: f64 = groups.values().sum();
     let mut amounts: Vec<_> = groups.values().copied().collect();
     amounts.sort_by(|a, b| b.total_cmp(a));
-    let manager =
-        id(&fund["certificate"]["manager_id"]).or_else(|| id(&fund["certificate"]["signer"]));
+    let manager = id(&fund["registry_manager_id"])
+        .or_else(|| id(&fund["certificate"]["manager_id"]))
+        .or_else(|| id(&fund["certificate"]["signer"]));
     Nav {
         fund_id: fund["fund_id"].as_str().unwrap_or("").into(),
         manager,

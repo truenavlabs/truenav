@@ -6,13 +6,13 @@
       "name": "harbor",
       "envelope": {
         "receipt_version": "3",
-        "method_version": "truenav-v3.0.0",
-        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
-        "engine_code_sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
         "token_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
         "kind": "credit",
@@ -28,28 +28,28 @@
         "request_id": "TEST_harbor",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
-        "input_sha256": "04d6856cf15af5ef2aba83f37ab6fdeb8f25960be4d84d71baf476d7e6616472",
-        "receipt_sha256": "0dcb6e58786db22a4a5dd5e2d8eca5c5bcb21798cfd61f1b1ea7d853ac95e501",
+        "input_sha256": "d26ef37480ebf413b1a97c931e1be4cd3c9b45b88bfeee450e59af22ee1dab8a",
+        "receipt_sha256": "743a1eafa60da373e96968212fcb0598b9ae190eac6fbe63801f6201c76a55f4",
         "attestation_ref": null,
         "source_key_ids": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "sig_ok": true
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "sig_ok": true
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "sig_ok": true
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "sig_ok": true
           }
         ],
@@ -66,7 +66,7 @@
           "score_x100": "09abe75772790a30353752ae6b73496512d58664328e5e1ed052cc12439de12d",
           "parts_x100": "a6c5569873bce927e4fe95f0328ad77c5e3fbc3e255a06c212432c33c2ffc9af",
           "raw_score": "db55d0471f31dfeabbb21f6900c66dbe3b97eb903e80140e23862303002710e6",
-          "full_report": "8efe37a7769c7405e1be7a1afe721b3c8036bda9fe61b26f6aad4362c0c29f8e"
+          "full_report": "ad2180112ef97bc044c058a5fa22967d08357871b1c85c66962639958d713ca6"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -1440,51 +1440,99 @@
             "registry_version": "truenav-src-v1",
             "keys": [
               {
-                "key_id": "servicer:sim:v1",
+                "key_id": "servicer:simcredit:v1",
                 "role": "servicer",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "bank:sim:v1",
+                "key_id": "bank:simcash:v1",
                 "role": "bank",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "fund_admin:sim:v1",
+                "key_id": "fund_admin:simadmin:v1",
                 "role": "fund_admin",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "custodian:sim:v1",
+                "key_id": "custodian:simcustody:v1",
                 "role": "custodian",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               }
             ]
@@ -1510,7 +1558,7 @@
         "sources": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -2046,11 +2094,11 @@
               }
             },
             "payload_sha256": "fc797a29a8f683d97a0d5b3d94f3370ce2ef68c9df8afa4f44881e8f18e0bc7c",
-            "signature": "47aeda0da6149b188b2d6bedf0d6b4dc4a2d0d714e26b0e151df1d833ee3259536f74d257c3acd77f1ec251145b28488cc8da35704281367be3f0486ce3fac05"
+            "signature": "5acf006d781244ceaad214c38fe9039e926e0b0cf345a70b772459742d562f5a221c616f4ad06b3f38d917c2c6b724626838ea8eb414ca2b98e478b9427fcf07"
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -2158,11 +2206,11 @@
               ]
             },
             "payload_sha256": "c1a68061a06bffbca4540226f40a8759b3864198d661ff6ba76b5eee37a837ed",
-            "signature": "c554dbc9af158b21efb499caa0e946f9bcf951f53d49f1fd4a90a5c643ea8386aa4500b4829ec847c1543a9cf22b77158c61c5a438df1eb2dec7f8c28dc58f0f"
+            "signature": "fcf8d6279ab5cb4be9be2b76f2a9e7f56a24ced21c8b81de987ef34cb62988d684a22a7a7a2daaccf5707e686631f296e5a514bde1ed5c3e49574c13c4a0ec07"
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -2221,11 +2269,11 @@
               }
             },
             "payload_sha256": "a3bc1b4be37d798717ad176537ddaffaf406d3ca8b156864ddefa38e9dd2c5af",
-            "signature": "1ab6178b75dc7affb239a45a32c563de5d918c1663bba381da3071e329b8bf18e546f8f3d716e948d79b442938048d08b254fbb759e23f180790ee39d4dd2d07"
+            "signature": "7eda14421beb86de97bb814866bde51cfade356b92b9e20583e1b27f6fa7d0d5e246ea93eac6b92176435504e1575bdd36163251ecf31980c92a848fe58d690f"
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -2411,11 +2459,11 @@
               ]
             },
             "payload_sha256": "4413e42f33e39cd78b8ce2230bc40681b05a47b23e4efde8f179c7996bb57089",
-            "signature": "f2e29906e4daa51c699e2f77ef7ba0046f179a45212bcc14fbc6c7308bae8bb6e21d4f5cb41503b68797e5c0498a3b16bbd9631aaaf82412a045446efe47e008"
+            "signature": "8ce926efd28998ef54bea5b7488aeb493b85e97be70371e6cb45d1a8f61a10a79c1cc70560d9bd36770069849b9e9bbca2818ba4f4e3fd48b2ef4d5a4efa7404"
           }
         ],
         "classification": "PRIVATE synthetic full report",
-        "report_version": "truenav-v3.0.0",
+        "report_version": "truenav-v3.0.1",
         "certificate_salt": "6aa11feb3f6fa2dd9e302410a2f5fb4fa90816390d98179158607005dbf03b40",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "input_manifest": {
@@ -2424,7 +2472,7 @@
           "sources": [
             {
               "source": "servicer",
-              "key_id": "servicer:sim:v1",
+              "key_id": "servicer:simcredit:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -2960,11 +3008,11 @@
                 }
               },
               "payload_sha256": "fc797a29a8f683d97a0d5b3d94f3370ce2ef68c9df8afa4f44881e8f18e0bc7c",
-              "signature": "47aeda0da6149b188b2d6bedf0d6b4dc4a2d0d714e26b0e151df1d833ee3259536f74d257c3acd77f1ec251145b28488cc8da35704281367be3f0486ce3fac05"
+              "signature": "5acf006d781244ceaad214c38fe9039e926e0b0cf345a70b772459742d562f5a221c616f4ad06b3f38d917c2c6b724626838ea8eb414ca2b98e478b9427fcf07"
             },
             {
               "source": "bank",
-              "key_id": "bank:sim:v1",
+              "key_id": "bank:simcash:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -3072,11 +3120,11 @@
                 ]
               },
               "payload_sha256": "c1a68061a06bffbca4540226f40a8759b3864198d661ff6ba76b5eee37a837ed",
-              "signature": "c554dbc9af158b21efb499caa0e946f9bcf951f53d49f1fd4a90a5c643ea8386aa4500b4829ec847c1543a9cf22b77158c61c5a438df1eb2dec7f8c28dc58f0f"
+              "signature": "fcf8d6279ab5cb4be9be2b76f2a9e7f56a24ced21c8b81de987ef34cb62988d684a22a7a7a2daaccf5707e686631f296e5a514bde1ed5c3e49574c13c4a0ec07"
             },
             {
               "source": "fund_admin",
-              "key_id": "fund_admin:sim:v1",
+              "key_id": "fund_admin:simadmin:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -3135,11 +3183,11 @@
                 }
               },
               "payload_sha256": "a3bc1b4be37d798717ad176537ddaffaf406d3ca8b156864ddefa38e9dd2c5af",
-              "signature": "1ab6178b75dc7affb239a45a32c563de5d918c1663bba381da3071e329b8bf18e546f8f3d716e948d79b442938048d08b254fbb759e23f180790ee39d4dd2d07"
+              "signature": "7eda14421beb86de97bb814866bde51cfade356b92b9e20583e1b27f6fa7d0d5e246ea93eac6b92176435504e1575bdd36163251ecf31980c92a848fe58d690f"
             },
             {
               "source": "custodian",
-              "key_id": "custodian:sim:v1",
+              "key_id": "custodian:simcustody:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -3325,7 +3373,7 @@
                 ]
               },
               "payload_sha256": "4413e42f33e39cd78b8ce2230bc40681b05a47b23e4efde8f179c7996bb57089",
-              "signature": "f2e29906e4daa51c699e2f77ef7ba0046f179a45212bcc14fbc6c7308bae8bb6e21d4f5cb41503b68797e5c0498a3b16bbd9631aaaf82412a045446efe47e008"
+              "signature": "8ce926efd28998ef54bea5b7488aeb493b85e97be70371e6cb45d1a8f61a10a79c1cc70560d9bd36770069849b9e9bbca2818ba4f4e3fd48b2ef4d5a4efa7404"
             }
           ],
           "registry_state_root": {
@@ -3341,51 +3389,99 @@
               "registry_version": "truenav-src-v1",
               "keys": [
                 {
-                  "key_id": "servicer:sim:v1",
+                  "key_id": "servicer:simcredit:v1",
                   "role": "servicer",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "bank:sim:v1",
+                  "key_id": "bank:simcash:v1",
                   "role": "bank",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "fund_admin:sim:v1",
+                  "key_id": "fund_admin:simadmin:v1",
                   "role": "fund_admin",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "custodian:sim:v1",
+                  "key_id": "custodian:simcustody:v1",
                   "role": "custodian",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 }
               ]
@@ -3407,13 +3503,13 @@
       "name": "meridian",
       "envelope": {
         "receipt_version": "3",
-        "method_version": "truenav-v3.0.0",
-        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
-        "engine_code_sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
         "token_id": "meridian-yield-fund",
         "fund_account": "meridian.sim.testnet",
         "kind": "credit",
@@ -3429,28 +3525,28 @@
         "request_id": "TEST_meridian",
         "request_nonce": "59d4e991ac98c991bed5b0c39d8cb0d11ede44bebe852be9abe49596a1098667",
         "synthetic": true,
-        "input_sha256": "89205867bb908956b4b4c0e6e2e7488d01b1927b64e668319f4bc2382a9bb3fd",
-        "receipt_sha256": "e0487473d8ec39d3d70079a79e538bf2024332b2696234ec14b170b402213b3d",
+        "input_sha256": "a705a4737879bc4398b08321b2c45197f8ff4d3c6be662c8afa1851abd2f4a99",
+        "receipt_sha256": "e0a9e1aadaeb2b08264ce083837ae1e4ee25a7277780c9c3fde0d0b28b84b663",
         "attestation_ref": null,
         "source_key_ids": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "sig_ok": true
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "sig_ok": true
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "sig_ok": true
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "sig_ok": true
           }
         ],
@@ -3467,7 +3563,7 @@
           "score_x100": "e1c307df9271150bbe367f13a92ba760edca2706f5be0847bd2874fa57c23b85",
           "parts_x100": "ad087a3ee5edbc8fcef0e35f7a48a92ad8a4ba40288f8f039ae651f442aed7c7",
           "raw_score": "b1ccfa9e01f681f0a172286d00ccc1ec4a1e34559061b9fbfa41f63282091f62",
-          "full_report": "905255c2870f9fb286aad3bbd33c1ddb62edeea0c4ee086afef5f3f9270d3140"
+          "full_report": "81093f1703808951e1bc1a52f246095dba6e7eb3f4db424ca36aea43b41dbeb7"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -4257,51 +4353,99 @@
             "registry_version": "truenav-src-v1",
             "keys": [
               {
-                "key_id": "servicer:sim:v1",
+                "key_id": "servicer:simcredit:v1",
                 "role": "servicer",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "bank:sim:v1",
+                "key_id": "bank:simcash:v1",
                 "role": "bank",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "fund_admin:sim:v1",
+                "key_id": "fund_admin:simadmin:v1",
                 "role": "fund_admin",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "custodian:sim:v1",
+                "key_id": "custodian:simcustody:v1",
                 "role": "custodian",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               }
             ]
@@ -4327,7 +4471,7 @@
         "sources": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -4575,11 +4719,11 @@
               }
             },
             "payload_sha256": "2cb4fd33b8267a4199299f5ff15ab647b6dfc270ec2736f0be40a60108b179e7",
-            "signature": "61ddacb7b68951a02a87d4dc29a807b4d87e7fc27190dc96af9fedf867c7641e62e76a4b6340f7e8301df847a43e3389740bff70a019a5ee763ebd17502e8307"
+            "signature": "ae7792ca081887314b2908d5c44fdb4eadb0bc42e559d43229c5571eea2d5de02a58ef32b4f190425bc509c1873733f751a0c3359823e92858ca217784e68c04"
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -4639,11 +4783,11 @@
               ]
             },
             "payload_sha256": "167b616b3b4f9ade3bd598f93d3fd05236e57363f1529b5b4daf9a7aa9fa921f",
-            "signature": "92c4d7aea27de078cccf63bc9d2e2be0b38994e06af1bf30ebb6e013649642367782e5b4d3722f62620861483f6446a7318b44b6e6b847bd5f037488a690140e"
+            "signature": "369bbba8f6c308dad1858ca3a8772c995ade90b44b0a5042834cd715f959f43e85070197e3db7ed2e109150e5e9c05d78d9dff4be587b28fd5077526ff16610a"
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -4701,11 +4845,11 @@
               }
             },
             "payload_sha256": "19c28d470759e8176b48596cda584ca4cce43905fa654ad6cced0a29ea361d7b",
-            "signature": "ce522e357aea5f4de389e78f5928902095eaaaea8f5d18bcdc836c68aef32211716dc7c646e979b8a28b9cdeedb501a52070e87894d57779264d5c1fc9a12a05"
+            "signature": "3f1c94b58b2a918f3423930b0e0be48c07e41c43a194ef258ce5f108c961116b4d4d67dc89459b8fb5208f87be923514da1dd9ebe81a5fc3391234d451481f0d"
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -4793,11 +4937,11 @@
               ]
             },
             "payload_sha256": "a51b99dddd662169dc066c78c328a60013a493ae4da888122fb6211137f69d25",
-            "signature": "ac2896891dc9ac2495d88d7c4d46e3962e89529f6772cff736e199712c6f5a1a46a74d8be783a19e4a1f9eb74b2dd83e27f115cad17239ac3290b65437ae5009"
+            "signature": "99656f66b11832d9debaf2a7b670204d0681f54871be91f6ccbf953e83156bc376d856808c5e3d56f91c7f845b68fe8a4d56d030367a0a06132ba457e4275208"
           }
         ],
         "classification": "PRIVATE synthetic full report",
-        "report_version": "truenav-v3.0.0",
+        "report_version": "truenav-v3.0.1",
         "certificate_salt": "6aa11feb3f6fa2dd9e302410a2f5fb4fa90816390d98179158607005dbf03b40",
         "request_nonce": "59d4e991ac98c991bed5b0c39d8cb0d11ede44bebe852be9abe49596a1098667",
         "input_manifest": {
@@ -4806,7 +4950,7 @@
           "sources": [
             {
               "source": "servicer",
-              "key_id": "servicer:sim:v1",
+              "key_id": "servicer:simcredit:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -5054,11 +5198,11 @@
                 }
               },
               "payload_sha256": "2cb4fd33b8267a4199299f5ff15ab647b6dfc270ec2736f0be40a60108b179e7",
-              "signature": "61ddacb7b68951a02a87d4dc29a807b4d87e7fc27190dc96af9fedf867c7641e62e76a4b6340f7e8301df847a43e3389740bff70a019a5ee763ebd17502e8307"
+              "signature": "ae7792ca081887314b2908d5c44fdb4eadb0bc42e559d43229c5571eea2d5de02a58ef32b4f190425bc509c1873733f751a0c3359823e92858ca217784e68c04"
             },
             {
               "source": "bank",
-              "key_id": "bank:sim:v1",
+              "key_id": "bank:simcash:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -5118,11 +5262,11 @@
                 ]
               },
               "payload_sha256": "167b616b3b4f9ade3bd598f93d3fd05236e57363f1529b5b4daf9a7aa9fa921f",
-              "signature": "92c4d7aea27de078cccf63bc9d2e2be0b38994e06af1bf30ebb6e013649642367782e5b4d3722f62620861483f6446a7318b44b6e6b847bd5f037488a690140e"
+              "signature": "369bbba8f6c308dad1858ca3a8772c995ade90b44b0a5042834cd715f959f43e85070197e3db7ed2e109150e5e9c05d78d9dff4be587b28fd5077526ff16610a"
             },
             {
               "source": "fund_admin",
-              "key_id": "fund_admin:sim:v1",
+              "key_id": "fund_admin:simadmin:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -5180,11 +5324,11 @@
                 }
               },
               "payload_sha256": "19c28d470759e8176b48596cda584ca4cce43905fa654ad6cced0a29ea361d7b",
-              "signature": "ce522e357aea5f4de389e78f5928902095eaaaea8f5d18bcdc836c68aef32211716dc7c646e979b8a28b9cdeedb501a52070e87894d57779264d5c1fc9a12a05"
+              "signature": "3f1c94b58b2a918f3423930b0e0be48c07e41c43a194ef258ce5f108c961116b4d4d67dc89459b8fb5208f87be923514da1dd9ebe81a5fc3391234d451481f0d"
             },
             {
               "source": "custodian",
-              "key_id": "custodian:sim:v1",
+              "key_id": "custodian:simcustody:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -5272,7 +5416,7 @@
                 ]
               },
               "payload_sha256": "a51b99dddd662169dc066c78c328a60013a493ae4da888122fb6211137f69d25",
-              "signature": "ac2896891dc9ac2495d88d7c4d46e3962e89529f6772cff736e199712c6f5a1a46a74d8be783a19e4a1f9eb74b2dd83e27f115cad17239ac3290b65437ae5009"
+              "signature": "99656f66b11832d9debaf2a7b670204d0681f54871be91f6ccbf953e83156bc376d856808c5e3d56f91c7f845b68fe8a4d56d030367a0a06132ba457e4275208"
             }
           ],
           "registry_state_root": {
@@ -5288,51 +5432,99 @@
               "registry_version": "truenav-src-v1",
               "keys": [
                 {
-                  "key_id": "servicer:sim:v1",
+                  "key_id": "servicer:simcredit:v1",
                   "role": "servicer",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "bank:sim:v1",
+                  "key_id": "bank:simcash:v1",
                   "role": "bank",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "fund_admin:sim:v1",
+                  "key_id": "fund_admin:simadmin:v1",
                   "role": "fund_admin",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "custodian:sim:v1",
+                  "key_id": "custodian:simcustody:v1",
                   "role": "custodian",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 }
               ]
@@ -5354,20 +5546,20 @@
       "name": "harbor_correction",
       "envelope": {
         "receipt_version": "3",
-        "method_version": "truenav-v3.0.0",
-        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
-        "engine_code_sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
         "token_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
         "kind": "credit",
         "period_start": "2026-10-01",
         "period_end": "2026-11-01",
         "seq": "2",
-        "prev_receipt_sha256": "0dcb6e58786db22a4a5dd5e2d8eca5c5bcb21798cfd61f1b1ea7d853ac95e501",
+        "prev_receipt_sha256": "743a1eafa60da373e96968212fcb0598b9ae190eac6fbe63801f6201c76a55f4",
         "supersedes_seq": "1",
         "correction_reason_code": "source_correction",
         "issued_at": "2026-11-10T12:01:00Z",
@@ -5376,28 +5568,28 @@
         "request_id": "TEST_correction",
         "request_nonce": "472d53dcf3ea90e90226226a520cdb559cfab7d4658dcf2b65c5eb1014ec3689",
         "synthetic": true,
-        "input_sha256": "53ffc71655b55c6bdcaa7305dd73332f30d962861c33315850afe7071eb127f1",
-        "receipt_sha256": "4cff684d14ef68236e64a84fc49e2ae58124a64640a1c4593deb5ffe207c7b99",
+        "input_sha256": "c8197c26a6a70682f22766764968078b8ca023d72b518cec474d09d31fca4d91",
+        "receipt_sha256": "34845a3cc9cacd01ea0385b838bb5be49e67fe0e29a96e76abefc359457177f9",
         "attestation_ref": null,
         "source_key_ids": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "sig_ok": true
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "sig_ok": true
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "sig_ok": true
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "sig_ok": true
           }
         ],
@@ -5414,7 +5606,7 @@
           "score_x100": "75622831bf554963e8c6fb73e6c2ea00927ba845e905f9baf196c702d0faa903",
           "parts_x100": "17db15895b32a706fe2fb2b50231d007317cd8273f045286c271f79e4841a1ec",
           "raw_score": "27990a679d5805152b8fc18c9e0ca7283793a627b181026598dbe69502b1ec66",
-          "full_report": "47f63b35f1b373c0b07cd745a2f4adabc12a9a40412c8d96ef7879ae1d39be0c"
+          "full_report": "2bf0eb7ccc0d942c8b09fb6a8a39046bd0f20b2241b306e4eae232815b21a99c"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -6788,51 +6980,99 @@
             "registry_version": "truenav-src-v1",
             "keys": [
               {
-                "key_id": "servicer:sim:v1",
+                "key_id": "servicer:simcredit:v1",
                 "role": "servicer",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "bank:sim:v1",
+                "key_id": "bank:simcash:v1",
                 "role": "bank",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "fund_admin:sim:v1",
+                "key_id": "fund_admin:simadmin:v1",
                 "role": "fund_admin",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "custodian:sim:v1",
+                "key_id": "custodian:simcustody:v1",
                 "role": "custodian",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               }
             ]
@@ -6858,7 +7098,7 @@
         "sources": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -7394,11 +7634,11 @@
               }
             },
             "payload_sha256": "fc797a29a8f683d97a0d5b3d94f3370ce2ef68c9df8afa4f44881e8f18e0bc7c",
-            "signature": "47aeda0da6149b188b2d6bedf0d6b4dc4a2d0d714e26b0e151df1d833ee3259536f74d257c3acd77f1ec251145b28488cc8da35704281367be3f0486ce3fac05"
+            "signature": "5acf006d781244ceaad214c38fe9039e926e0b0cf345a70b772459742d562f5a221c616f4ad06b3f38d917c2c6b724626838ea8eb414ca2b98e478b9427fcf07"
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -7506,11 +7746,11 @@
               ]
             },
             "payload_sha256": "c1a68061a06bffbca4540226f40a8759b3864198d661ff6ba76b5eee37a837ed",
-            "signature": "c554dbc9af158b21efb499caa0e946f9bcf951f53d49f1fd4a90a5c643ea8386aa4500b4829ec847c1543a9cf22b77158c61c5a438df1eb2dec7f8c28dc58f0f"
+            "signature": "fcf8d6279ab5cb4be9be2b76f2a9e7f56a24ced21c8b81de987ef34cb62988d684a22a7a7a2daaccf5707e686631f296e5a514bde1ed5c3e49574c13c4a0ec07"
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -7569,11 +7809,11 @@
               }
             },
             "payload_sha256": "a3bc1b4be37d798717ad176537ddaffaf406d3ca8b156864ddefa38e9dd2c5af",
-            "signature": "1ab6178b75dc7affb239a45a32c563de5d918c1663bba381da3071e329b8bf18e546f8f3d716e948d79b442938048d08b254fbb759e23f180790ee39d4dd2d07"
+            "signature": "7eda14421beb86de97bb814866bde51cfade356b92b9e20583e1b27f6fa7d0d5e246ea93eac6b92176435504e1575bdd36163251ecf31980c92a848fe58d690f"
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -7759,11 +7999,11 @@
               ]
             },
             "payload_sha256": "4413e42f33e39cd78b8ce2230bc40681b05a47b23e4efde8f179c7996bb57089",
-            "signature": "f2e29906e4daa51c699e2f77ef7ba0046f179a45212bcc14fbc6c7308bae8bb6e21d4f5cb41503b68797e5c0498a3b16bbd9631aaaf82412a045446efe47e008"
+            "signature": "8ce926efd28998ef54bea5b7488aeb493b85e97be70371e6cb45d1a8f61a10a79c1cc70560d9bd36770069849b9e9bbca2818ba4f4e3fd48b2ef4d5a4efa7404"
           }
         ],
         "classification": "PRIVATE synthetic full report",
-        "report_version": "truenav-v3.0.0",
+        "report_version": "truenav-v3.0.1",
         "certificate_salt": "6aa11feb3f6fa2dd9e302410a2f5fb4fa90816390d98179158607005dbf03b40",
         "request_nonce": "472d53dcf3ea90e90226226a520cdb559cfab7d4658dcf2b65c5eb1014ec3689",
         "input_manifest": {
@@ -7772,7 +8012,7 @@
           "sources": [
             {
               "source": "servicer",
-              "key_id": "servicer:sim:v1",
+              "key_id": "servicer:simcredit:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -8308,11 +8548,11 @@
                 }
               },
               "payload_sha256": "fc797a29a8f683d97a0d5b3d94f3370ce2ef68c9df8afa4f44881e8f18e0bc7c",
-              "signature": "47aeda0da6149b188b2d6bedf0d6b4dc4a2d0d714e26b0e151df1d833ee3259536f74d257c3acd77f1ec251145b28488cc8da35704281367be3f0486ce3fac05"
+              "signature": "5acf006d781244ceaad214c38fe9039e926e0b0cf345a70b772459742d562f5a221c616f4ad06b3f38d917c2c6b724626838ea8eb414ca2b98e478b9427fcf07"
             },
             {
               "source": "bank",
-              "key_id": "bank:sim:v1",
+              "key_id": "bank:simcash:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -8420,11 +8660,11 @@
                 ]
               },
               "payload_sha256": "c1a68061a06bffbca4540226f40a8759b3864198d661ff6ba76b5eee37a837ed",
-              "signature": "c554dbc9af158b21efb499caa0e946f9bcf951f53d49f1fd4a90a5c643ea8386aa4500b4829ec847c1543a9cf22b77158c61c5a438df1eb2dec7f8c28dc58f0f"
+              "signature": "fcf8d6279ab5cb4be9be2b76f2a9e7f56a24ced21c8b81de987ef34cb62988d684a22a7a7a2daaccf5707e686631f296e5a514bde1ed5c3e49574c13c4a0ec07"
             },
             {
               "source": "fund_admin",
-              "key_id": "fund_admin:sim:v1",
+              "key_id": "fund_admin:simadmin:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -8483,11 +8723,11 @@
                 }
               },
               "payload_sha256": "a3bc1b4be37d798717ad176537ddaffaf406d3ca8b156864ddefa38e9dd2c5af",
-              "signature": "1ab6178b75dc7affb239a45a32c563de5d918c1663bba381da3071e329b8bf18e546f8f3d716e948d79b442938048d08b254fbb759e23f180790ee39d4dd2d07"
+              "signature": "7eda14421beb86de97bb814866bde51cfade356b92b9e20583e1b27f6fa7d0d5e246ea93eac6b92176435504e1575bdd36163251ecf31980c92a848fe58d690f"
             },
             {
               "source": "custodian",
-              "key_id": "custodian:sim:v1",
+              "key_id": "custodian:simcustody:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -8673,7 +8913,7 @@
                 ]
               },
               "payload_sha256": "4413e42f33e39cd78b8ce2230bc40681b05a47b23e4efde8f179c7996bb57089",
-              "signature": "f2e29906e4daa51c699e2f77ef7ba0046f179a45212bcc14fbc6c7308bae8bb6e21d4f5cb41503b68797e5c0498a3b16bbd9631aaaf82412a045446efe47e008"
+              "signature": "8ce926efd28998ef54bea5b7488aeb493b85e97be70371e6cb45d1a8f61a10a79c1cc70560d9bd36770069849b9e9bbca2818ba4f4e3fd48b2ef4d5a4efa7404"
             }
           ],
           "registry_state_root": {
@@ -8689,51 +8929,99 @@
               "registry_version": "truenav-src-v1",
               "keys": [
                 {
-                  "key_id": "servicer:sim:v1",
+                  "key_id": "servicer:simcredit:v1",
                   "role": "servicer",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "bank:sim:v1",
+                  "key_id": "bank:simcash:v1",
                   "role": "bank",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "fund_admin:sim:v1",
+                  "key_id": "fund_admin:simadmin:v1",
                   "role": "fund_admin",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "custodian:sim:v1",
+                  "key_id": "custodian:simcustody:v1",
                   "role": "custodian",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 }
               ]
@@ -8755,13 +9043,13 @@
       "name": "harbor_capped",
       "envelope": {
         "receipt_version": "3",
-        "method_version": "truenav-v3.0.0",
-        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
-        "engine_code_sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
         "token_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
         "kind": "credit",
@@ -8777,28 +9065,28 @@
         "request_id": "TEST_harbor",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
-        "input_sha256": "9518c61e60ad28c011335847baab81c29e007c1e35dc1674da9e94681e49e920",
-        "receipt_sha256": "c64a9e53c7946fdccd87684ce901787746c4c1aae46e7fdd901b7532dcab0643",
+        "input_sha256": "8d1582379286fdf874d745c1176ba0b86cb4ab3c7c1669f09368f44abc512984",
+        "receipt_sha256": "75e5baab2506d1c6ff4f8ae6601ab076397f4fd37527701c2276e4e3b642ccc5",
         "attestation_ref": null,
         "source_key_ids": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "sig_ok": true
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "sig_ok": true
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "sig_ok": true
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "sig_ok": true
           }
         ],
@@ -8815,7 +9103,7 @@
           "score_x100": "a9c25716f78792590bd8712d1073816b8cf046bcec0614e0dc4899bcec2e5704",
           "parts_x100": "a6c5569873bce927e4fe95f0328ad77c5e3fbc3e255a06c212432c33c2ffc9af",
           "raw_score": "db55d0471f31dfeabbb21f6900c66dbe3b97eb903e80140e23862303002710e6",
-          "full_report": "aa09c41736ddc23b17f27c5d1e6fc367097bc783b40a2b9107ca902a94c52645"
+          "full_report": "5e9a7bd22f6124df4bb49ac0ed58b32ff8fb40e7342c54780f4b7a1fe6b0cc68"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -10191,51 +10479,99 @@
             "registry_version": "truenav-src-v1",
             "keys": [
               {
-                "key_id": "servicer:sim:v1",
+                "key_id": "servicer:simcredit:v1",
                 "role": "servicer",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "bank:sim:v1",
+                "key_id": "bank:simcash:v1",
                 "role": "bank",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "fund_admin:sim:v1",
+                "key_id": "fund_admin:simadmin:v1",
                 "role": "fund_admin",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               },
               {
-                "key_id": "custodian:sim:v1",
+                "key_id": "custodian:simcustody:v1",
                 "role": "custodian",
                 "fund_scope": [
+                  "attack-alpha-fund",
+                  "attack-beta-fund",
+                  "attack-forge-fund",
+                  "attack-lien-fund",
+                  "attack-nav-fund",
+                  "attack-stale-fund",
+                  "bramble-gap-fund",
+                  "cobalt-ledger-fund",
                   "harbor-credit-fund",
-                  "meridian-yield-fund"
+                  "kiln-evidence-fund",
+                  "meridian-yield-fund",
+                  "quarry-recovery-fund",
+                  "sable-arrears-fund",
+                  "vesper-conflict-fund"
                 ],
-                "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                "valid_from": "2026-01-01T00:00:00Z",
-                "valid_until": "2027-01-01T00:00:00Z",
+                "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                "valid_from": "2024-01-01T00:00:00Z",
+                "valid_until": "2028-01-01T00:00:00Z",
                 "revoked": false
               }
             ]
@@ -10261,7 +10597,7 @@
         "sources": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -10797,11 +11133,11 @@
               }
             },
             "payload_sha256": "fc797a29a8f683d97a0d5b3d94f3370ce2ef68c9df8afa4f44881e8f18e0bc7c",
-            "signature": "47aeda0da6149b188b2d6bedf0d6b4dc4a2d0d714e26b0e151df1d833ee3259536f74d257c3acd77f1ec251145b28488cc8da35704281367be3f0486ce3fac05"
+            "signature": "5acf006d781244ceaad214c38fe9039e926e0b0cf345a70b772459742d562f5a221c616f4ad06b3f38d917c2c6b724626838ea8eb414ca2b98e478b9427fcf07"
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -10909,11 +11245,11 @@
               ]
             },
             "payload_sha256": "c1a68061a06bffbca4540226f40a8759b3864198d661ff6ba76b5eee37a837ed",
-            "signature": "c554dbc9af158b21efb499caa0e946f9bcf951f53d49f1fd4a90a5c643ea8386aa4500b4829ec847c1543a9cf22b77158c61c5a438df1eb2dec7f8c28dc58f0f"
+            "signature": "fcf8d6279ab5cb4be9be2b76f2a9e7f56a24ced21c8b81de987ef34cb62988d684a22a7a7a2daaccf5707e686631f296e5a514bde1ed5c3e49574c13c4a0ec07"
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -10972,11 +11308,11 @@
               }
             },
             "payload_sha256": "ef416afeeb290d2d467b79499a103fec84f9aeb8036533de78714285b856a97e",
-            "signature": "5f6d333b15d2ec55c12a15bafb8967b8285a3ea39a39b08f72eef430b76372fcf4d485a27906a7d13b1bf22e820cd4a36b15df69750849dcff63ef8629995305"
+            "signature": "78bcdde376d6d13df374294ddfe93476991a3dafff2fffec0b705dccce9ea77b25963ff3836c4b43b7de728723bab5b80b00842a4e78dd9b8d8e65a9e455df0e"
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "scope": {
               "network": "near_testnet",
               "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -11162,11 +11498,11 @@
               ]
             },
             "payload_sha256": "4413e42f33e39cd78b8ce2230bc40681b05a47b23e4efde8f179c7996bb57089",
-            "signature": "f2e29906e4daa51c699e2f77ef7ba0046f179a45212bcc14fbc6c7308bae8bb6e21d4f5cb41503b68797e5c0498a3b16bbd9631aaaf82412a045446efe47e008"
+            "signature": "8ce926efd28998ef54bea5b7488aeb493b85e97be70371e6cb45d1a8f61a10a79c1cc70560d9bd36770069849b9e9bbca2818ba4f4e3fd48b2ef4d5a4efa7404"
           }
         ],
         "classification": "PRIVATE synthetic full report",
-        "report_version": "truenav-v3.0.0",
+        "report_version": "truenav-v3.0.1",
         "certificate_salt": "6aa11feb3f6fa2dd9e302410a2f5fb4fa90816390d98179158607005dbf03b40",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "input_manifest": {
@@ -11175,7 +11511,7 @@
           "sources": [
             {
               "source": "servicer",
-              "key_id": "servicer:sim:v1",
+              "key_id": "servicer:simcredit:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -11711,11 +12047,11 @@
                 }
               },
               "payload_sha256": "fc797a29a8f683d97a0d5b3d94f3370ce2ef68c9df8afa4f44881e8f18e0bc7c",
-              "signature": "47aeda0da6149b188b2d6bedf0d6b4dc4a2d0d714e26b0e151df1d833ee3259536f74d257c3acd77f1ec251145b28488cc8da35704281367be3f0486ce3fac05"
+              "signature": "5acf006d781244ceaad214c38fe9039e926e0b0cf345a70b772459742d562f5a221c616f4ad06b3f38d917c2c6b724626838ea8eb414ca2b98e478b9427fcf07"
             },
             {
               "source": "bank",
-              "key_id": "bank:sim:v1",
+              "key_id": "bank:simcash:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -11823,11 +12159,11 @@
                 ]
               },
               "payload_sha256": "c1a68061a06bffbca4540226f40a8759b3864198d661ff6ba76b5eee37a837ed",
-              "signature": "c554dbc9af158b21efb499caa0e946f9bcf951f53d49f1fd4a90a5c643ea8386aa4500b4829ec847c1543a9cf22b77158c61c5a438df1eb2dec7f8c28dc58f0f"
+              "signature": "fcf8d6279ab5cb4be9be2b76f2a9e7f56a24ced21c8b81de987ef34cb62988d684a22a7a7a2daaccf5707e686631f296e5a514bde1ed5c3e49574c13c4a0ec07"
             },
             {
               "source": "fund_admin",
-              "key_id": "fund_admin:sim:v1",
+              "key_id": "fund_admin:simadmin:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -11886,11 +12222,11 @@
                 }
               },
               "payload_sha256": "ef416afeeb290d2d467b79499a103fec84f9aeb8036533de78714285b856a97e",
-              "signature": "5f6d333b15d2ec55c12a15bafb8967b8285a3ea39a39b08f72eef430b76372fcf4d485a27906a7d13b1bf22e820cd4a36b15df69750849dcff63ef8629995305"
+              "signature": "78bcdde376d6d13df374294ddfe93476991a3dafff2fffec0b705dccce9ea77b25963ff3836c4b43b7de728723bab5b80b00842a4e78dd9b8d8e65a9e455df0e"
             },
             {
               "source": "custodian",
-              "key_id": "custodian:sim:v1",
+              "key_id": "custodian:simcustody:v1",
               "scope": {
                 "network": "near_testnet",
                 "receipts_contract": "receipts.tnlab-718ca9.testnet",
@@ -12076,7 +12412,7 @@
                 ]
               },
               "payload_sha256": "4413e42f33e39cd78b8ce2230bc40681b05a47b23e4efde8f179c7996bb57089",
-              "signature": "f2e29906e4daa51c699e2f77ef7ba0046f179a45212bcc14fbc6c7308bae8bb6e21d4f5cb41503b68797e5c0498a3b16bbd9631aaaf82412a045446efe47e008"
+              "signature": "8ce926efd28998ef54bea5b7488aeb493b85e97be70371e6cb45d1a8f61a10a79c1cc70560d9bd36770069849b9e9bbca2818ba4f4e3fd48b2ef4d5a4efa7404"
             }
           ],
           "registry_state_root": {
@@ -12092,51 +12428,99 @@
               "registry_version": "truenav-src-v1",
               "keys": [
                 {
-                  "key_id": "servicer:sim:v1",
+                  "key_id": "servicer:simcredit:v1",
                   "role": "servicer",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:057d88a2c0b1897c56bf0dd12381fb6065e3aa8f604f2b16a31618d0c4247b32",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "bank:sim:v1",
+                  "key_id": "bank:simcash:v1",
                   "role": "bank",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:f3bdd85a9d4562b1a2f9b25fcfd5248151705bfaa4687cc90b29219182798867",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "fund_admin:sim:v1",
+                  "key_id": "fund_admin:simadmin:v1",
                   "role": "fund_admin",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:1bd3db7066da5c5398e14a5a5ca875d1b42718fe249c16b0befe4e576fbc481a",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 },
                 {
-                  "key_id": "custodian:sim:v1",
+                  "key_id": "custodian:simcustody:v1",
                   "role": "custodian",
                   "fund_scope": [
+                    "attack-alpha-fund",
+                    "attack-beta-fund",
+                    "attack-forge-fund",
+                    "attack-lien-fund",
+                    "attack-nav-fund",
+                    "attack-stale-fund",
+                    "bramble-gap-fund",
+                    "cobalt-ledger-fund",
                     "harbor-credit-fund",
-                    "meridian-yield-fund"
+                    "kiln-evidence-fund",
+                    "meridian-yield-fund",
+                    "quarry-recovery-fund",
+                    "sable-arrears-fund",
+                    "vesper-conflict-fund"
                   ],
-                  "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
-                  "valid_from": "2026-01-01T00:00:00Z",
-                  "valid_until": "2027-01-01T00:00:00Z",
+                  "public_key": "ed25519:dedd0375b7f889616deca1970554770e6fb397fe24103ab5a4c9539019ce0cd6",
+                  "valid_from": "2024-01-01T00:00:00Z",
+                  "valid_until": "2028-01-01T00:00:00Z",
                   "revoked": false
                 }
               ]
@@ -12160,13 +12544,13 @@
       "name": "loan_turns_unverified",
       "before": {
         "receipt_version": "3",
-        "method_version": "truenav-v3.0.0",
-        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
-        "engine_code_sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
         "token_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
         "kind": "credit",
@@ -12182,28 +12566,28 @@
         "request_id": "TEST_harbor",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
-        "input_sha256": "f566ddb663ec1b56e5d16bf8288d784feb735fcb90c9f18b3151fa01ea6b7d2a",
-        "receipt_sha256": "3caa9658c79d17d4d5ca7bf1ab91b3669b05803d5dab06872b02074941a14c13",
+        "input_sha256": "56849575c698a4ef35e3fdb2d71649e971752bdbccd5a6ad7bf9decb1448df71",
+        "receipt_sha256": "1b10b94358d78ea31d437296091bc037dd227bbee7a920667a2aa0008dad708a",
         "attestation_ref": null,
         "source_key_ids": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "sig_ok": true
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "sig_ok": true
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "sig_ok": true
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "sig_ok": true
           }
         ],
@@ -12220,7 +12604,7 @@
           "score_x100": "1f65dedbb8de45f2fa61f337a11cfc27dce0a26bb14def87de6dfdec43cad443",
           "parts_x100": "483bf583d74d8904aa0226e0eaad9560baef9496f34a2151c3c5be947610db6d",
           "raw_score": "e2661eb82b1f0584c38f7c2feab733c0325942cd281da886a1f0389f5cd5f244",
-          "full_report": "2244ec34579d74503aa30b296af3f315fc13b7e7e83db0f922c45e000299215e"
+          "full_report": "a28da80a24229f08c57da62b069c09a86f4703e4089e5b348f170a8efb6495e3"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -12271,20 +12655,20 @@
       },
       "after": {
         "receipt_version": "3",
-        "method_version": "truenav-v3.0.0",
-        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
-        "engine_code_sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
         "token_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
         "kind": "credit",
         "period_start": "2026-10-01",
         "period_end": "2026-11-01",
         "seq": "2",
-        "prev_receipt_sha256": "3caa9658c79d17d4d5ca7bf1ab91b3669b05803d5dab06872b02074941a14c13",
+        "prev_receipt_sha256": "1b10b94358d78ea31d437296091bc037dd227bbee7a920667a2aa0008dad708a",
         "supersedes_seq": "1",
         "correction_reason_code": "coverage_correction",
         "issued_at": "2026-11-10T12:01:00Z",
@@ -12293,28 +12677,28 @@
         "request_id": "TEST_harbor",
         "request_nonce": "885a6462a6e63f2374d4390313cd54554842324130ecd5d05f2226a8dc594e90",
         "synthetic": true,
-        "input_sha256": "04ea2da84bad0300515cabdf53129dc5825ec60ec6821352275f2de503fd9aa1",
-        "receipt_sha256": "cc8ef9db5e9f6a57741ad92562dfe2bc409b826e0603de573fbb9be09c95530d",
+        "input_sha256": "779b71110e0b039c435891add97e06291d40110de521eab4aa42d302855225fc",
+        "receipt_sha256": "5589806ebd32cbbc4322d5e46fc8fd93ef8e480f0619a1625989d68900e6de69",
         "attestation_ref": null,
         "source_key_ids": [
           {
             "source": "servicer",
-            "key_id": "servicer:sim:v1",
+            "key_id": "servicer:simcredit:v1",
             "sig_ok": true
           },
           {
             "source": "bank",
-            "key_id": "bank:sim:v1",
+            "key_id": "bank:simcash:v1",
             "sig_ok": true
           },
           {
             "source": "fund_admin",
-            "key_id": "fund_admin:sim:v1",
+            "key_id": "fund_admin:simadmin:v1",
             "sig_ok": true
           },
           {
             "source": "custodian",
-            "key_id": "custodian:sim:v1",
+            "key_id": "custodian:simcustody:v1",
             "sig_ok": true
           }
         ],
@@ -12331,7 +12715,7 @@
           "score_x100": "7d87d324afbf2e8cce27f8a31f69a77e4bfc5dc8aefacdc77c6ce67f0aa6b89a",
           "parts_x100": "ffd3d9faff4919c15698510941a829dbeab08b24ec3b146b8a16e83515fd8d31",
           "raw_score": "143c0abd6b2b003c7d3d8ab0976c7dbf27928cde0d29a8e8b245b93ffe304cae",
-          "full_report": "4fb8a82ba10608fb3cac3235bb7a60d3259fc6bb780c07d18d3ef5f1ae5f91ec"
+          "full_report": "5ecb3c83695299fc9ef5c1d36acb84d1832e2ac81f0eff100b366514bddeaf17"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -12383,6 +12767,140 @@
       "known_side_information": {
         "coverage_loss_points": "0.4",
         "money_values_unchanged": false
+      }
+    }
+  ],
+  "conflict_cases": [
+    {
+      "name": "active_first_lien_conflict",
+      "envelope": {
+        "receipt_version": "3",
+        "method_version": "truenav-v3.0.1",
+        "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
+        "network": "near_testnet",
+        "receipts_contract": "receipts.tnlab-718ca9.testnet",
+        "currency": "USD",
+        "engine_version_key": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "engine_code_sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
+        "token_id": "harbor-credit-fund",
+        "fund_account": "harbor.sim.testnet",
+        "kind": "credit",
+        "period_start": "2026-10-01",
+        "period_end": "2026-11-01",
+        "seq": "1",
+        "prev_receipt_sha256": null,
+        "supersedes_seq": null,
+        "correction_reason_code": null,
+        "issued_at": "2026-11-10T12:01:00Z",
+        "data_as_of": "2026-11-09T06:00:00Z",
+        "valuation_time": "2026-11-10T12:00:00Z",
+        "request_id": "TEST_harbor",
+        "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
+        "synthetic": true,
+        "input_sha256": "9dd563fb86a6887dbe8dc1be957dbcceb5bf4333f80915bc97dd5c2c1b8cfd69",
+        "receipt_sha256": "3ad9227a588557fd38a0f037d1fe5b21bb3ae2cc722d215a6163b3da51a10fe5",
+        "attestation_ref": null,
+        "source_key_ids": [
+          {
+            "source": "servicer",
+            "key_id": "servicer:simcredit:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "bank",
+            "key_id": "bank:simcash:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "fund_admin",
+            "key_id": "fund_admin:simadmin:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "custodian",
+            "key_id": "custodian:simcustody:v1",
+            "sig_ok": true
+          }
+        ],
+        "commitments": {
+          "tape": "e57e666a9e2e19dfbd78b8500897c0e9ae0d367b1546de32e1045aa1de01238a",
+          "cash": "b1b670b9e40529bf0b6ff3169a55a1aa4ebc35a36e5864b55f57f8b335e91bda",
+          "nav_report": "0a46f336ea265bc00c42bd42d3782513862bd001f13c28574820c8d21bf7f786",
+          "pledge_detail": "e828eced30a2c08fe8cc8a523b713494d115c2e38c8b81532d142948f33fe2b4",
+          "registry_state_root": "4877845be985e130de52faebf195ca7b1c9b519d7af14e3095197e8fd1c97e5f",
+          "reported_nav": "3a36fd14517026fa1877f7ccbcba7aacb2b8c76fc659986112c923764d128af8",
+          "trueval": "eb9c29a9e610096dbceb19eb39524f2972a7f23a28b4435659b7ba2cc69c7bfe",
+          "truerange_low": "f7ff178ef3c3bae23b5697f9807b015555c1f89ba2c7a5684d2cbb176bd8121c",
+          "truerange_high": "53ca3942591fc864f13d297a0b69b5235faed6d537227f7286b06b64e8faf0b0",
+          "score_x100": "a9c25716f78792590bd8712d1073816b8cf046bcec0614e0dc4899bcec2e5704",
+          "parts_x100": "951785cfee7e869cae9f44e534455355cc1f3defbd4e36339c6f1c02f496a8a3",
+          "raw_score": "a4e8b472190415ca36c1092d61b9a0291dcf767594dfd66d108abb887a8c6f1b",
+          "full_report": "e3ae500d48acb78e5726626fd876767afbc211c5ad159b2829a35b5ed8c138f2"
+        },
+        "pledge_scope": {
+          "registry_account": "registry.tnlab-718ca9.testnet",
+          "block_height": "123456",
+          "block_hash": "TEST_ONLY_finalized_block",
+          "scope_id": "loan-terms-v2:first-lien",
+          "coverage_status": "complete"
+        },
+        "fingerprint_scheme": "loan-terms-v2",
+        "pledge_result": "conflict",
+        "pledge_coverage_bps": 10000,
+        "loans_checked": "gte_50",
+        "blocked_attempts": "zero",
+        "blocked_attempts_window": "period_to_valuation",
+        "lien_support": "first_lien_only",
+        "reported_nav": "940000000",
+        "trueval": "934000000",
+        "truerange_low": "926000000",
+        "truerange_high": "942000000",
+        "nav_result": "inside",
+        "nav_gap_band": "inside",
+        "unverified_share_band": "gt_0_lte_10pct",
+        "cash_evidence_status": "verified",
+        "cash_match_band": "gte_98_lte_100pct",
+        "yield_gap_band": "gte_0_lt_3pp",
+        "collection_rate_band": "gte_90pct",
+        "late_share_band": "zero",
+        "late_loan_cohorts": {
+          "dpd_1_30": "zero",
+          "dpd_31_60": "zero",
+          "dpd_61_90": "zero",
+          "dpd_91_plus": "zero"
+        },
+        "exceptions": [],
+        "status": "scored",
+        "score": 59,
+        "band": "red",
+        "parts_band": {
+          "coverage": "high",
+          "nav_gap": "high",
+          "freshness": "high",
+          "penalty": "none"
+        },
+        "caps": [
+          "pledge_conflict"
+        ],
+        "holds": [],
+        "freshness_band": "gt_24_lte_72h",
+        "ext": {}
+      },
+      "private_TEST_report": {
+        "score_x100": 5900,
+        "parts_x100": {
+          "gap": 4000,
+          "coverage": 3760,
+          "freshness": 1917,
+          "penalty": 0
+        },
+        "raw_score": "96.76666666666667",
+        "exact": {
+          "reported_nav": "940000000",
+          "trueval": "934172000",
+          "truerange_low": "925924739",
+          "truerange_high": "942419261"
+        }
       }
     }
   ]

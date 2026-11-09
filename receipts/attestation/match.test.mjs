@@ -18,3 +18,9 @@ test('our canonical B survives the worker JSON parse/compact serialization uncha
 test('missing attester or publication height is not an anchored record shape',async()=>{for(const field of ['attester','block_height']){const f=fixture();delete f.args.record[field];assert.equal((await matchWithCapabilities(f.args,f.caps)).status,'invalid');assert.equal(f.calls(),0);}});
 
 test('the public proof matcher never loads the test-only deployment overlay',async()=>{const f=fixture();f.args.envelope.receipts_contract=read('receipts/tests/deploy-context.dryrun.json').receipts_contract;const {receipt_sha256,...p}=f.args.envelope;f.args.envelope.receipt_sha256=sha(canonical(p));assert.equal((await matchWithCapabilities(f.args,f.caps)).reason,'schema_invalid');assert.equal(f.calls(),0);});
+
+test('method dispatch rejects v3.0.0 with the amendment cap and cross-version artifacts',async()=>{
+ const f=fixture();const e=f.args.envelope;e.method_version='truenav-v3.0.0';e.method_spec_sha256=sha(canonical(read('schema/methods/truenav-v3.0.0-rc3.json')));e.pledge_result='conflict';e.caps=['pledge_conflict'];e.score=59;e.band='red';const {receipt_sha256,...preimage}=e;e.receipt_sha256=sha(canonical(preimage));
+ assert.equal((await matchWithCapabilities(f.args,f.caps)).reason,'schema_invalid');assert.equal(f.calls(),0);
+ const g=fixture();g.args.envelope.method_version='truenav-v3.0.1';g.args.envelope.method_spec_sha256=sha(canonical(read('schema/methods/truenav-v3.0.0-rc3.json')));const {receipt_sha256:unused,...p}=g.args.envelope;g.args.envelope.receipt_sha256=sha(canonical(p));assert.equal((await matchWithCapabilities(g.args,g.caps)).reason,'method_hash_mismatch');
+});

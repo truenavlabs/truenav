@@ -189,7 +189,7 @@ fn cohorts(nav: &Nav) -> Value {
 }
 fn blank(c: &Context) -> Value {
     json!({
-     "receipt_version":"3","method_version":"truenav-v3.0.0","method_spec_sha256":truenav_v3_core::wire::method_hash(),"network":c.scope.network,"receipts_contract":c.scope.receipts_contract,"currency":"USD","engine_version_key":c.engine_version_key,"engine_code_sha256":c.engine_code_sha256,
+     "receipt_version":"3","method_version":truenav_v3_core::wire::CURRENT_METHOD,"method_spec_sha256":truenav_v3_core::wire::method_hash_for(truenav_v3_core::wire::CURRENT_METHOD).expect("current artifact"),"network":c.scope.network,"receipts_contract":c.scope.receipts_contract,"currency":"USD","engine_version_key":c.engine_version_key,"engine_code_sha256":c.engine_code_sha256,
      "token_id":c.scope.token_id,"fund_account":c.scope.fund_account,"kind":"credit","period_start":c.period.period_start,"period_end":c.period.period_end,"seq":c.seq,"prev_receipt_sha256":c.prev_receipt_sha256,"supersedes_seq":c.supersedes_seq,"correction_reason_code":c.correction_reason_code,"issued_at":c.issued_at,"data_as_of":null,"valuation_time":c.valuation_time,"request_id":c.request_id,"request_nonce":c.request_nonce,"synthetic":true,"input_sha256":"","receipt_sha256":"","attestation_ref":null,"source_key_ids":[],"commitments":{},
      "pledge_scope":{"registry_account":"registry.tnlab-718ca9.testnet","block_height":"0","block_hash":"unavailable","scope_id":"loan-terms-v2:first-lien","coverage_status":"unknown"},"fingerprint_scheme":"loan-terms-v2","pledge_result":"unknown","pledge_coverage_bps":null,"loans_checked":"unknown","blocked_attempts":"unknown","blocked_attempts_window":"period_to_valuation","lien_support":"first_lien_only",
      "reported_nav":null,"trueval":null,"truerange_low":null,"truerange_high":null,"nav_result":"unknown","nav_gap_band":"unknown","unverified_share_band":"unknown","cash_evidence_status":"invalid","cash_match_band":"unknown","yield_gap_band":"unknown","collection_rate_band":"unknown","late_share_band":"unknown","late_loan_cohorts":{"dpd_1_30":"unknown","dpd_31_60":"unknown","dpd_61_90":"unknown","dpd_91_plus":"unknown"},"exceptions":[],"status":"verification_failed","score":null,"band":"red","parts_band":{"coverage":"unknown","nav_gap":"unknown","freshness":"unknown","penalty":"unknown"},"caps":[],"holds":[],"freshness_band":"unknown","ext":{}
@@ -204,7 +204,7 @@ fn seal(
 ) -> Result<Output> {
     // The report includes exact evidence and salt. It never enters public stdout.
     report["classification"] = json!("PRIVATE synthetic full report");
-    report["report_version"] = json!("truenav-v3.0.0");
+    report["report_version"] = json!(truenav_v3_core::wire::CURRENT_METHOD);
     report["certificate_salt"] = json!(hex::encode(salt));
     report["request_nonce"] = json!(hex::encode(nonce));
     let mut cs = json!({});
@@ -303,6 +303,10 @@ pub fn evaluate(
                 .get(role)
                 .ok_or("revision_policy_missing")?,
         );
+        // An unknown identifier is untrusted text and must not become a public provenance field.
+        if result == Err("source_key_unknown") {
+            return Err("source_key_unknown");
+        }
         if let Err(code) = result {
             errors.insert(code);
         } else if timestamp(&s.data_as_of)? > now + 600_000 {
@@ -431,7 +435,7 @@ pub fn evaluate(
             if ranks[i] >= 2 {
                 second = true
             }
-            if done && owner.is_some() && !own {
+            if ranks[i] == 1 && done && owner.is_some() && !own {
                 conflict = true
             }
             if !done || owner.is_none() || dup {
@@ -455,9 +459,7 @@ pub fn evaluate(
             return Err("cash_attestation_unbound");
         }
     }
-    if fund["certificate"].is_object() {
-        fund["certificate"]["manager_id"] = json!(snapshot.manager_id);
-    }
+    fund["registry_manager_id"] = json!(snapshot.manager_id);
     fund["source_data_asof"] = json!(ordered
         .iter()
         .map(|s| s.data_as_of.as_str())
@@ -525,7 +527,7 @@ pub fn evaluate(
         },
     )
     .map_err(|_| "cash_evidence_invalid")?;
-    let caps: Vec<_> = cash.score["caps"]
+    let mut caps: Vec<_> = cash.score["caps"]
         .as_array()
         .ok_or("cash_evidence_invalid")?
         .iter()
@@ -542,6 +544,9 @@ pub fn evaluate(
         .contains(x)
     }) {
         return Err("cash_cap_unknown");
+    }
+    if conflict {
+        caps.push("pledge_conflict");
     }
     let mut holds = Vec::new();
     for h in cash.score["holds"]
@@ -590,7 +595,9 @@ pub fn evaluate(
         || holds
             .iter()
             .any(|h| ["collection_pending", "collection_not_applicable"].contains(&h.as_str()));
-    let band = if scored {
+    let band = if conflict {
+        "red"
+    } else if scored {
         if score >= 85 && !yellow_hold {
             "green"
         } else if score >= 60 {
@@ -610,10 +617,10 @@ pub fn evaluate(
     e["holds"] = json!(holds);
     e["data_as_of"] = json!(nav.data_as_of);
     e["pledge_scope"] = json!({"registry_account":snapshot.registry_account,"block_height":snapshot.block_height,"block_hash":snapshot.block_hash,"scope_id":"loan-terms-v2:first-lien","coverage_status":if total==0{"unknown"}else if completed==total{"complete"}else{"partial"}});
-    e["pledge_result"] = json!(if second {
-        "unknown"
-    } else if conflict {
+    e["pledge_result"] = json!(if conflict {
         "conflict"
+    } else if second {
+        "unknown"
     } else if incomplete || total == 0 {
         "incomplete"
     } else {
@@ -850,6 +857,7 @@ pub fn sibling_nav(
         .iter()
         .map(|s| s.data_as_of.as_str())
         .min_by_key(|s| timestamp(s).unwrap_or(i64::MIN)));
+    fund["registry_manager_id"] = json!(snapshot.manager_id);
     fund["loans"] = json!(loans);
     let now = timestamp(&c.valuation_time)?;
     let mut seen = BTreeSet::new();

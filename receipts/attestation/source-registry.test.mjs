@@ -1,0 +1,10 @@
+// TEST ONLY public verification keys. No runtime private key generation or files here.
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+import {SourceRegistrySession} from './source-registry.mjs';
+const fixture=()=>JSON.parse(readFileSync(new URL('../../engine/v3-core/tests/fixtures/source-registry.TEST.json',import.meta.url)));
+const live=()=>{const r=fixture();for(const k of r.keys)k.key_id=k.role+':live_test123:v1';return r;};
+test('registry requires an explicit fixture or live context',()=>{assert.throws(()=>new SourceRegistrySession(),/source_registry_mode/);assert.equal(new SourceRegistrySession('fixture').load(fixture()).keys.length,4);assert.equal(new SourceRegistrySession('live').load(live()).keys.length,4);});
+test('duplicate IDs reject even when their public keys are identical',()=>{const r=fixture();r.keys.push(structuredClone(r.keys[0]));assert.throws(()=>new SourceRegistrySession('fixture').load(r),/source_key_duplicate/);});
+test('a previously loaded ID cannot bind a different public key',()=>{const s=new SourceRegistrySession('fixture');const r=fixture();s.load(r);r.keys[0].public_key=r.keys[1].public_key;assert.throws(()=>s.load(r),/source_key_rebound/);});
+test('fixture and live registries never share a context, including concatenation',()=>{for(const mode of ['fixture','live']){const s=new SourceRegistrySession(mode);s.load(mode==='fixture'?fixture():live());assert.throws(()=>s.load(mode==='fixture'?live():fixture()),/source_registry_mixed_modes/);const r=fixture();r.keys.push(...live().keys);assert.throws(()=>new SourceRegistrySession(mode).load(r),/source_registry_mixed_modes/);}});
+test('registry snapshots are immutable and failed loads do not rebind trusted IDs',()=>{const s=new SourceRegistrySession('fixture');const r=fixture();const accepted=s.load(r);assert.throws(()=>{accepted.keys[0].public_key='changed';},TypeError);const bad=fixture();bad.keys[3].valid_until=bad.keys[3].valid_from;assert.throws(()=>s.load(bad));assert.deepEqual(s.load(fixture()),accepted);});

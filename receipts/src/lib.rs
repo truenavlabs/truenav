@@ -15,15 +15,19 @@
 //! This contract never holds or moves fund money. It holds only the deposits that pay for a run (forwarded to
 //! OutLayer, whose unused part OutLayer refunds to the requester) and for receipt storage (the unused part is
 //! refunded to the requester in the callback). Everything stored here is public chain state.
-pub mod validate;
+pub mod attestations;
 pub mod mirror;
 pub mod v3;
+pub mod validate;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::{self, json, Value};
 use near_sdk::store::{IterableMap, IterableSet, LookupMap};
-use near_sdk::{assert_one_yocto, env, near, require, AccountId, BorshStorageKey, Gas, NearToken, PanicOnDefault, Promise, PromiseError};
+use near_sdk::{
+    assert_one_yocto, env, near, require, AccountId, BorshStorageKey, Gas, NearToken,
+    PanicOnDefault, Promise, PromiseError,
+};
 use validate::{check, is_stage, is_token_id, Expect, MAX_RECEIPT_BYTES};
 
 pub const EVENT_STANDARD: &str = "truenav-receipts";
@@ -161,22 +165,49 @@ pub struct Receipts {
 }
 
 fn emit(event: &str, data: Value) {
-    env::log_str(&format!("EVENT_JSON:{}", json!({ "standard": EVENT_STANDARD, "version": EVENT_VERSION, "event": event, "data": [data] })));
+    env::log_str(&format!(
+        "EVENT_JSON:{}",
+        json!({ "standard": EVENT_STANDARD, "version": EVENT_VERSION, "event": event, "data": [data] })
+    ));
 }
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 fn check_config(c: &Config) {
-    require!(!c.project_id.is_empty() && c.project_id.len() <= 128, "bad project_id");
-    require!(c.version_key.len() == 64 && c.version_key.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)), "version_key must be a 64-hex wasm hash, never latest");
-    require!(c.method.starts_with("cashflow-v2.") || c.method == "truenav-v3.0.0", "unknown method");
-    require!(!c.secrets_profile.is_empty() && c.secrets_profile.len() <= 64, "bad secrets_profile");
-    require!(c.outlayer_tgas + c.callback_tgas <= 290, "gas above 290 Tgas");
-    require!(c.callback_tgas >= MIN_CALLBACK_TGAS && c.outlayer_tgas >= 50, "gas too low");
+    require!(
+        !c.project_id.is_empty() && c.project_id.len() <= 128,
+        "bad project_id"
+    );
+    require!(
+        c.version_key.len() == 64
+            && c.version_key
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)),
+        "version_key must be a 64-hex wasm hash, never latest"
+    );
+    require!(
+        c.method.starts_with("cashflow-v2.") || truenav_v3_core::wire::is_v3_method(&c.method),
+        "unknown method"
+    );
+    require!(
+        !c.secrets_profile.is_empty() && c.secrets_profile.len() <= 64,
+        "bad secrets_profile"
+    );
+    require!(
+        c.outlayer_tgas + c.callback_tgas <= 290,
+        "gas above 290 Tgas"
+    );
+    require!(
+        c.callback_tgas >= MIN_CALLBACK_TGAS && c.outlayer_tgas >= 50,
+        "gas too low"
+    );
     // a receipt is at most MAX_RECEIPT_BYTES; the stored record roughly doubles it with its index fields, and the
     // pending record and a failure record come on top
     let worst = (2 * MAX_RECEIPT_BYTES as u128 + 2_000) * env::storage_byte_cost().as_yoctonear();
-    require!(c.storage_deposit.0 >= worst, "storage_deposit too low for the largest receipt");
+    require!(
+        c.storage_deposit.0 >= worst,
+        "storage_deposit too low for the largest receipt"
+    );
 }
 
 #[near]
@@ -207,7 +238,10 @@ impl Receipts {
     }
     fn only_pauser_or_admin(&self) -> AccountId {
         let me = env::predecessor_account_id();
-        require!(me == self.pauser || me == self.admin, "pauser or admin only");
+        require!(
+            me == self.pauser || me == self.admin,
+            "pauser or admin only"
+        );
         assert_one_yocto();
         me
     }
@@ -219,7 +253,10 @@ impl Receipts {
     #[payable]
     pub fn accept_admin(&mut self) {
         let me = env::predecessor_account_id();
-        require!(self.proposed_admin.as_ref() == Some(&me), "not the proposed admin");
+        require!(
+            self.proposed_admin.as_ref() == Some(&me),
+            "not the proposed admin"
+        );
         assert_one_yocto();
         emit("admin_changed", json!({ "old": self.admin, "new": me }));
         self.admin = me;
@@ -238,7 +275,10 @@ impl Receipts {
         } else {
             self.runners.remove(&account);
         }
-        emit("runner_set", json!({ "account": account, "allowed": allowed }));
+        emit(
+            "runner_set",
+            json!({ "account": account, "allowed": allowed }),
+        );
     }
     #[payable]
     pub fn pause(&mut self) {
@@ -257,18 +297,44 @@ impl Receipts {
     pub fn set_config(&mut self, config: Config) {
         self.only_admin();
         check_config(&config);
-        require!(!v3::enabled() || config.method == "truenav-v3.0.0", "v3 migration forbids v2 writes");
-        emit("config_changed", json!({ "old_version_key": self.config.version_key, "new_version_key": config.version_key, "method": config.method }));
+        require!(
+            !v3::enabled() || config.method == truenav_v3_core::wire::CURRENT_METHOD,
+            "v3 migration forbids v2 writes"
+        );
+        emit(
+            "config_changed",
+            json!({ "old_version_key": self.config.version_key, "new_version_key": config.version_key, "method": config.method }),
+        );
         self.config = config;
     }
     #[payable]
     pub fn register_token(&mut self, token_id: String, kind: String) {
         self.only_admin();
-        require!(is_token_id(&token_id), "token_id must match [A-Z0-9-]{1,64}");
-        require!(kind == "credit" || kind == "rental", "kind must be credit or rental");
-        require!(self.tokens.get(&token_id).is_none(), "token already registered");
-        self.tokens.insert(token_id.clone(), TokenInfo { token_id: token_id.clone(), kind: kind.clone(), receipts: 0, registered_ns: env::block_timestamp() });
-        emit("token_registered", json!({ "token_id": token_id, "kind": kind }));
+        require!(
+            is_token_id(&token_id),
+            "token_id must match [A-Z0-9-]{1,64}"
+        );
+        require!(
+            kind == "credit" || kind == "rental",
+            "kind must be credit or rental"
+        );
+        require!(
+            self.tokens.get(&token_id).is_none(),
+            "token already registered"
+        );
+        self.tokens.insert(
+            token_id.clone(),
+            TokenInfo {
+                token_id: token_id.clone(),
+                kind: kind.clone(),
+                receipts: 0,
+                registered_ns: env::block_timestamp(),
+            },
+        );
+        emit(
+            "token_registered",
+            json!({ "token_id": token_id, "kind": kind }),
+        );
     }
     /// Drop a pending request whose callback never arrived (OutLayer's yield always resumes or times out, so this
     /// is a last resort). Its storage deposit goes back to the requester, less the few bytes of a late-callback
@@ -278,17 +344,38 @@ impl Receipts {
     #[payable]
     pub fn clear_pending(&mut self, token_id: String) -> Promise {
         self.only_admin();
-        let p = self.pending.remove(&token_id).unwrap_or_else(|| env::panic_str("no pending request"));
+        let p = self
+            .pending
+            .remove(&token_id)
+            .unwrap_or_else(|| env::panic_str("no pending request"));
         self.pending.flush();
         v3::clear_context(p.request_id);
         let s0 = env::storage_usage();
-        let mut late = Late { requester: p.requester.clone(), outlayer_deposit: p.outlayer_deposit, held: U128(0) };
-        env::storage_write(&late_key(p.request_id), &borsh::to_vec(&late).unwrap_or_default());
+        let mut late = Late {
+            requester: p.requester.clone(),
+            outlayer_deposit: p.outlayer_deposit,
+            held: U128(0),
+        };
+        env::storage_write(
+            &late_key(p.request_id),
+            &borsh::to_vec(&late).unwrap_or_default(),
+        );
         // the record's own bytes (a u128 field keeps the same size when `held` is filled in)
-        late.held = U128((env::storage_usage().saturating_sub(s0) as u128) * env::storage_byte_cost().as_yoctonear());
-        env::storage_write(&late_key(p.request_id), &borsh::to_vec(&late).unwrap_or_default());
-        emit("pending_cleared", json!({ "token_id": token_id, "request_id": p.request_id }));
-        Promise::new(p.requester).transfer(NearToken::from_yoctonear(p.storage_deposit.0.saturating_sub(late.held.0)))
+        late.held = U128(
+            (env::storage_usage().saturating_sub(s0) as u128)
+                * env::storage_byte_cost().as_yoctonear(),
+        );
+        env::storage_write(
+            &late_key(p.request_id),
+            &borsh::to_vec(&late).unwrap_or_default(),
+        );
+        emit(
+            "pending_cleared",
+            json!({ "token_id": token_id, "request_id": p.request_id }),
+        );
+        Promise::new(p.requester).transfer(NearToken::from_yoctonear(
+            p.storage_deposit.0.saturating_sub(late.held.0),
+        ))
     }
 
     // ---- runs --------------------------------------------------------------------------------------------------
@@ -298,13 +385,25 @@ impl Receipts {
         let requester = env::predecessor_account_id();
         require!(self.runners.contains(&requester), "runner only");
         require!(self.tokens.get(&token_id).is_some(), "unknown token");
-        require!(self.pending.get(&token_id).is_none(), "a run is already pending for this token");
+        require!(
+            self.pending.get(&token_id).is_none(),
+            "a run is already pending for this token"
+        );
         let c = self.config.clone();
-        require!(!v3::enabled() || c.method == "truenav-v3.0.0", "v3 migration forbids v2 writes");
+        require!(
+            !v3::enabled() || c.method == truenav_v3_core::wire::CURRENT_METHOD,
+            "v3 migration forbids v2 writes"
+        );
         let need = c.outlayer_deposit.0 + c.storage_deposit.0;
         let attached = env::attached_deposit().as_yoctonear();
-        require!(attached >= need, format!("attach at least {need} yoctoNEAR"));
-        require!(env::prepaid_gas().as_tgas() >= c.outlayer_tgas + c.callback_tgas + 10, "not enough gas");
+        require!(
+            attached >= need,
+            format!("attach at least {need} yoctoNEAR")
+        );
+        require!(
+            env::prepaid_gas().as_tgas() >= c.outlayer_tgas + c.callback_tgas + 10,
+            "not enough gas"
+        );
 
         let request_id = self.next_request;
         self.next_request += 1;
@@ -330,7 +429,9 @@ impl Receipts {
         };
         self.pending.insert(token_id.clone(), pending.clone());
         self.pending.flush();
-        if c.method == "truenav-v3.0.0" { self.reserve_v3(&pending); }
+        if truenav_v3_core::wire::is_v3_method(&c.method) {
+            self.reserve_v3(&pending);
+        }
         pending.pending_bytes = env::storage_usage().saturating_sub(s0);
         self.pending.insert(token_id.clone(), pending);
         // The whole input is built here, never taken from the caller: token_id (checked as registered above), this
@@ -347,22 +448,38 @@ impl Receipts {
             "payer_account_id": requester,
             "params": null,
         });
-        emit("run_requested", json!({ "token_id": token_id, "request_id": request_id, "run_nonce": run_nonce, "version_key": c.version_key, "method": c.method }));
+        emit(
+            "run_requested",
+            json!({ "token_id": token_id, "request_id": request_id, "run_nonce": run_nonce, "version_key": c.version_key, "method": c.method }),
+        );
         if attached > need {
-            Promise::new(requester).transfer(NearToken::from_yoctonear(attached - need)).detach();
+            Promise::new(requester)
+                .transfer(NearToken::from_yoctonear(attached - need))
+                .detach();
         }
         Promise::new(c.outlayer.clone())
-            .function_call("request_execution", args.to_string().into_bytes(), NearToken::from_yoctonear(c.outlayer_deposit.0), Gas::from_tgas(c.outlayer_tgas))
-            .then(Promise::new(env::current_account_id()).function_call(
-                "on_run_result",
-                json!({ "token_id": token_id, "request_id": request_id }).to_string().into_bytes(),
-                NearToken::from_yoctonear(0),
-                Gas::from_tgas(c.callback_tgas),
-            ))
+            .function_call(
+                "request_execution",
+                args.to_string().into_bytes(),
+                NearToken::from_yoctonear(c.outlayer_deposit.0),
+                Gas::from_tgas(c.outlayer_tgas),
+            )
+            .then(
+                Promise::new(env::current_account_id()).function_call(
+                    "on_run_result",
+                    json!({ "token_id": token_id, "request_id": request_id })
+                        .to_string()
+                        .into_bytes(),
+                    NearToken::from_yoctonear(0),
+                    Gas::from_tgas(c.callback_tgas),
+                ),
+            )
     }
 
     fn run_input(&self, token_id: &str, run_nonce: &str) -> Value {
-        if self.config.method == "truenav-v3.0.0" { return self.v3_run_input(token_id, run_nonce); }
+        if self.config.method == truenav_v3_core::wire::CURRENT_METHOD {
+            return self.v3_run_input(token_id, run_nonce);
+        }
         let mut input = json!({ "token_id": token_id, "run_nonce": run_nonce });
         if let Some(last) = self.get_latest(token_id.to_string()) {
             // stored receipts passed validate.rs, so the passport entries have these fields
@@ -398,22 +515,37 @@ impl Receipts {
     /// or already refunded): nothing is refunded.
     fn late_callback(&mut self, token_id: &str, request_id: u64, none: &str) -> String {
         let key = late_key(request_id);
-        let Some(raw) = env::storage_read(&key) else { return none.into() };
+        let Some(raw) = env::storage_read(&key) else {
+            return none.into();
+        };
         env::storage_remove(&key);
-        let Ok(late) = borsh::from_slice::<Late>(&raw) else { return none.into() };
+        let Ok(late) = borsh::from_slice::<Late>(&raw) else {
+            return none.into();
+        };
         let failed = matches!(env::promise_result_checked(0, 0), Err(PromiseError::Failed));
         let refund = late.held.0 + if failed { late.outlayer_deposit.0 } else { 0 };
         if refund > 0 {
-            Promise::new(late.requester).transfer(NearToken::from_yoctonear(refund)).detach();
+            Promise::new(late.requester)
+                .transfer(NearToken::from_yoctonear(refund))
+                .detach();
         }
-        let code = if failed { "late_refunded" } else { "late_ignored" };
-        emit("late_callback", json!({ "token_id": token_id, "request_id": request_id, "code": code, "refund": U128(refund) }));
+        let code = if failed {
+            "late_refunded"
+        } else {
+            "late_ignored"
+        };
+        emit(
+            "late_callback",
+            json!({ "token_id": token_id, "request_id": request_id, "code": code, "refund": U128(refund) }),
+        );
         code.into()
     }
 
     #[private]
     pub fn on_run_result(&mut self, token_id: String, request_id: u64) -> String {
-        let Some(p) = self.pending.get(&token_id).cloned() else { return self.late_callback(&token_id, request_id, "no_pending") };
+        let Some(p) = self.pending.get(&token_id).cloned() else {
+            return self.late_callback(&token_id, request_id, "no_pending");
+        };
         if p.request_id != request_id {
             return self.late_callback(&token_id, request_id, "stale_callback");
         }
@@ -436,8 +568,18 @@ impl Receipts {
         let code = match outcome {
             Ok(seq) => format!("stored:{seq}"),
             Err(code) => {
-                self.failures.insert(token_id.clone(), Failure { request_id, code: code.clone(), at_ns: env::block_timestamp() });
-                emit("run_failed", json!({ "token_id": token_id, "request_id": request_id, "code": code }));
+                self.failures.insert(
+                    token_id.clone(),
+                    Failure {
+                        request_id,
+                        code: code.clone(),
+                        at_ns: env::block_timestamp(),
+                    },
+                );
+                emit(
+                    "run_failed",
+                    json!({ "token_id": token_id, "request_id": request_id, "code": code }),
+                );
                 code
             }
         };
@@ -447,7 +589,9 @@ impl Receipts {
         let charged = ((p.pending_bytes + added) as u128) * env::storage_byte_cost().as_yoctonear();
         let refund = p.storage_deposit.0.saturating_sub(charged) + deposit_back;
         if refund > 0 {
-            Promise::new(p.requester).transfer(NearToken::from_yoctonear(refund)).detach();
+            Promise::new(p.requester)
+                .transfer(NearToken::from_yoctonear(refund))
+                .detach();
         }
         code
     }
@@ -462,8 +606,12 @@ impl Receipts {
             return Err("receipt_too_large".into());
         }
         let v: Value = truenav_v3_core::parse(bytes).map_err(|_| "receipt_not_json".to_string())?;
-        if p.method == "truenav-v3.0.0" { return self.accept_v3(p, &v); }
-        if v3::enabled() { return Err("v2_writes_disabled".into()); }
+        if truenav_v3_core::wire::is_v3_method(&p.method) {
+            return self.accept_v3(p, &v);
+        }
+        if v3::enabled() {
+            return Err("v2_writes_disabled".into());
+        }
         match &v {
             // OutLayer's answer for an admitted run that failed or timed out; it already refunded the payer
             Value::Null => return Err("outlayer_run_failed".into()),
@@ -473,14 +621,34 @@ impl Receipts {
             _ => return Err("receipt_not_object".into()),
         }
         if let Some(stage) = v.get("error").and(v.get("stage")).and_then(Value::as_str) {
-            return Err(if is_stage(stage) { format!("module_failed:{stage}") } else { "module_failed".into() });
+            return Err(if is_stage(stage) {
+                format!("module_failed:{stage}")
+            } else {
+                "module_failed".into()
+            });
         }
-        let token = self.tokens.get(&p.token_id).cloned().ok_or("unknown_token")?;
-        let s = check(&v, &Expect { method: &p.method, token_id: &p.token_id, kind: &token.kind, run_nonce: &p.run_nonce })?;
+        let token = self
+            .tokens
+            .get(&p.token_id)
+            .cloned()
+            .ok_or("unknown_token")?;
+        let s = check(
+            &v,
+            &Expect {
+                method: &p.method,
+                token_id: &p.token_id,
+                kind: &token.kind,
+                run_nonce: &p.run_nonce,
+            },
+        )?;
         let seq = token.receipts + 1;
-        let receipt = String::from_utf8(bytes.to_vec()).map_err(|_| "receipt_not_utf8".to_string())?;
+        let receipt =
+            String::from_utf8(bytes.to_vec()).map_err(|_| "receipt_not_utf8".to_string())?;
         let sha = hex(&env::sha256(bytes));
-        emit("receipt_stored", json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": p.method, "version_key": p.version_key, "receipt_sha256": sha }));
+        emit(
+            "receipt_stored",
+            json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": p.method, "version_key": p.version_key, "receipt_sha256": sha }),
+        );
         self.receipts.insert(
             (p.token_id.clone(), seq),
             StoredReceipt {
@@ -523,10 +691,17 @@ impl Receipts {
     }
     pub fn get_token(&self, token_id: String) -> Option<Value> {
         let t = self.tokens.get(&token_id)?;
-        Some(json!({ "token": t, "pending": self.pending.get(&token_id), "last_failure": self.failures.get(&token_id) }))
+        Some(
+            json!({ "token": t, "pending": self.pending.get(&token_id), "last_failure": self.failures.get(&token_id) }),
+        )
     }
     pub fn list_tokens(&self, from: Option<u64>, limit: Option<u64>) -> Vec<TokenInfo> {
-        self.tokens.values().skip(from.unwrap_or(0) as usize).take(limit.unwrap_or(50).min(100) as usize).cloned().collect()
+        self.tokens
+            .values()
+            .skip(from.unwrap_or(0) as usize)
+            .take(limit.unwrap_or(50).min(100) as usize)
+            .cloned()
+            .collect()
     }
     pub fn get_latest(&self, token_id: String) -> Option<StoredReceipt> {
         let n = self.tokens.get(&token_id)?.receipts;
@@ -538,16 +713,29 @@ impl Receipts {
     /// Explicit version tag. Historical v2 wrapper fields are unchanged; v3 is the complete envelope.
     pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<Value> {
         let r = self.receipts.get(&(token_id, seq))?;
-        if r.method == "truenav-v3.0.0" { return serde_json::from_str(&r.receipt).ok(); }
+        if truenav_v3_core::wire::is_v3_method(&r.method) {
+            return serde_json::from_str(&r.receipt).ok();
+        }
         let mut v = serde_json::to_value(r).ok()?;
         v["receipt_version"] = json!("2");
         Some(v)
     }
     /// Newest first, from `from_seq` (default the latest) down, at most 10 per page.
-    pub fn get_history(&self, token_id: String, from_seq: Option<u64>, limit: Option<u64>) -> Vec<StoredReceipt> {
-        let Some(t) = self.tokens.get(&token_id) else { return vec![] };
+    pub fn get_history(
+        &self,
+        token_id: String,
+        from_seq: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<StoredReceipt> {
+        let Some(t) = self.tokens.get(&token_id) else {
+            return vec![];
+        };
         let top = from_seq.unwrap_or(t.receipts).min(t.receipts);
         let n = limit.unwrap_or(MAX_HISTORY_PAGE).min(MAX_HISTORY_PAGE);
-        (1..=top).rev().take(n as usize).filter_map(|seq| self.receipts.get(&(token_id.clone(), seq)).cloned()).collect()
+        (1..=top)
+            .rev()
+            .take(n as usize)
+            .filter_map(|seq| self.receipts.get(&(token_id.clone(), seq)).cloned())
+            .collect()
     }
 }

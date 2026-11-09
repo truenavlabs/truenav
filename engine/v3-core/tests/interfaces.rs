@@ -91,31 +91,33 @@ fn rfc8032_source_known_answer() {
     .unwrap();
 }
 fn test_key(role: &str) -> SigningKey {
-    SigningKey::from_bytes(&sha2_bytes(
-        format!("TrueNav engine-v3 TEST ONLY seed v1:{role}").as_bytes(),
-    ))
+    // Public fixture seed only, matching lab/sim-data e6f45eb. Never used by the live host.
+    let id = match role {
+        "servicer" => "servicer:simcredit:v1",
+        "bank" => "bank:simcash:v1",
+        "fund_admin" => "fund_admin:simadmin:v1",
+        "custodian" => "custodian:simcustody:v1",
+        _ => panic!("TEST role"),
+    };
+    let mut framed = Vec::new();
+    for x in ["truenav-sim-key-v1", "truenav-full-model-v3", id] {
+        lp(&mut framed, x.as_bytes()).unwrap();
+    }
+    SigningKey::from_bytes(&sha2_bytes(&framed))
 }
 #[test]
 fn public_test_registry_matches_runtime_keys() {
-    let keys: Vec<_> = ["servicer", "bank", "fund_admin", "custodian"]
-        .iter()
-        .map(|r| SourceKey {
-            key_id: format!("{r}:sim:v1"),
-            role: r.to_string(),
-            fund_scope: vec!["harbor-credit-fund".into(), "meridian-yield-fund".into()],
-            public_key: format!(
+    let registry: Registry =
+        serde_json::from_str(include_str!("fixtures/source-registry.TEST.json")).unwrap();
+    for k in &registry.keys {
+        assert_eq!(
+            k.public_key,
+            format!(
                 "ed25519:{}",
-                hex::encode(test_key(r).verifying_key().as_bytes())
-            ),
-            valid_from: "2026-01-01T00:00:00Z".into(),
-            valid_until: "2027-01-01T00:00:00Z".into(),
-            revoked: false,
-        })
-        .collect();
-    let registry = Registry {
-        registry_version: "truenav-src-v1".into(),
-        keys,
-    };
+                hex::encode(test_key(&k.role).verifying_key().as_bytes())
+            )
+        );
+    }
     registry.check().unwrap();
     let v = serde_json::to_value(&registry).unwrap();
     let path = "tests/fixtures/source-registry.TEST.json";
@@ -272,4 +274,65 @@ fn private_score_decimal_is_plain_canonical_text() {
         assert_eq!(truenav_v3_core::wire::decimal(x).unwrap(), want)
     }
     assert!(truenav_v3_core::wire::decimal(f64::NAN).is_err());
+}
+
+#[test]
+fn method_versions_select_only_their_own_schema_and_artifact() {
+    use truenav_v3_core::wire::*;
+    assert_eq!(
+        hash(SCHEMA.as_bytes()),
+        "bca1694674e7232fb53797a494ca84b0702bcf6908a14de9eb953061d5b114b2"
+    );
+    let mut e = read("schema/vectors/receipt-v3-golden.json")["vectors"][0]["envelope"].clone();
+    e["pledge_result"] = json!("conflict");
+    e["caps"] = json!(["pledge_conflict"]);
+    e["score"] = json!(59);
+    e["band"] = json!("red");
+    seal_envelope(&mut e).unwrap();
+    assert!(validate(&e).is_err());
+    e["method_version"] = json!(CURRENT_METHOD);
+    seal_envelope(&mut e).unwrap();
+    assert_eq!(validate(&e), Err("method_hash_mismatch"));
+    e["method_spec_sha256"] = json!(method_hash_for(CURRENT_METHOD).unwrap());
+    seal_envelope(&mut e).unwrap();
+    validate(&e).unwrap();
+    let v0: Value = serde_json::from_str(SCHEMA).unwrap();
+    let v1: Value = serde_json::from_str(SCHEMA_V301).unwrap();
+    assert!(validate_schema(&e, &v0).is_err());
+    validate_schema(&e, &v1).unwrap();
+    for (k, v) in [
+        ("score", json!(97)),
+        ("band", json!("green")),
+        ("caps", json!([])),
+        ("pledge_result", json!("unknown")),
+    ] {
+        let mut bad = e.clone();
+        bad[k] = v;
+        seal_envelope(&mut bad).unwrap();
+        assert!(validate(&bad).is_err());
+    }
+}
+#[test]
+fn source_registries_reject_duplicates_rebinding_and_fixture_live_mixing() {
+    let fixture: Registry =
+        serde_json::from_str(include_str!("fixtures/source-registry.TEST.json")).unwrap();
+    let mut session = RegistrySession::new(false);
+    session.load(&fixture).unwrap();
+    let mut changed = fixture.clone();
+    changed.keys[0].public_key = changed.keys[1].public_key.clone();
+    assert_eq!(session.load(&changed), Err("source_key_rebound"));
+    let mut duplicate = fixture.clone();
+    duplicate.keys.push(duplicate.keys[0].clone());
+    assert!(duplicate.check().is_err());
+    let mut live = fixture.clone();
+    for k in &mut live.keys {
+        k.key_id = format!("{}:live_test123:v1", k.role);
+    }
+    let mut runtime = RegistrySession::new(true);
+    runtime.load(&live).unwrap();
+    assert!(runtime.load(&fixture).is_err());
+    assert!(session.load(&live).is_err());
+    let mut mixed = fixture.clone();
+    mixed.keys.push(live.keys[0].clone());
+    assert!(mixed.check().is_err());
 }

@@ -15,6 +15,8 @@ PD tables are demo, not calibrated. The 30 days, 50% and 10% thresholds are True
 
 Built at NEAR HACKATHON 2026 by TrueNav Labs. Tracks: Privacy & Private AI, Open Innovation.
 
+Fixture keys are publicly derivable test keys for reproducibility. The live demo uses fresh runtime keys.
+
 ## Try it: no keys, no account (start here)
 
 Needs Node 18 or later. Every step below runs from a fresh clone with no API key and no NEAR account. In CI, the `engine` job runs steps 2 and 3 (step 3 as `npm run tee:demo`, the same script) and `npm run eval`; the `judge-path` job runs steps 3 to 8 from a fresh checkout with no secrets set.

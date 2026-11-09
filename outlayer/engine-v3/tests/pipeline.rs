@@ -26,9 +26,19 @@ impl RegistryReader for Read {
     }
 }
 fn test_key(role: &str) -> SigningKey {
-    SigningKey::from_bytes(&sha2_bytes(
-        format!("TrueNav engine-v3 TEST ONLY seed v1:{role}").as_bytes(),
-    ))
+    // Public fixture seed only, matching lab/sim-data e6f45eb. Never used by the live host.
+    let id = match role {
+        "servicer" => "servicer:simcredit:v1",
+        "bank" => "bank:simcash:v1",
+        "fund_admin" => "fund_admin:simadmin:v1",
+        "custodian" => "custodian:simcustody:v1",
+        _ => panic!("TEST role"),
+    };
+    let mut framed = Vec::new();
+    for x in ["truenav-sim-key-v1", "truenav-full-model-v3", id] {
+        lp(&mut framed, x.as_bytes()).unwrap();
+    }
+    SigningKey::from_bytes(&sha2_bytes(&framed))
 }
 fn sign(s: &mut SignedSource) {
     s.payload_sha256 = hash(canonical(&s.payload).unwrap().as_bytes());
@@ -142,7 +152,14 @@ fn setup(index: usize) -> (Context, Vec<SignedSource>, Policy, Read) {
     ] {
         let mut s = SignedSource {
             source: role.into(),
-            key_id: format!("{role}:sim:v1"),
+            key_id: policy
+                .source_registry
+                .keys
+                .iter()
+                .find(|k| k.role == role)
+                .unwrap()
+                .key_id
+                .clone(),
             scope: c.scope.clone(),
             period: c.period.clone(),
             revision: "1".into(),
@@ -239,7 +256,14 @@ fn invalid_signatures_close_the_receipt_before_private_values_are_used() {
         if code == "forged" {
             s[0].payload = json!("malformed private input")
         } else {
-            s[0].key_id = "servicer:unknown:v1".into()
+            s[0].key_id = "servicer:private_loan_input:v1".into()
+        }
+        if code == "unknown" {
+            assert!(matches!(
+                evaluate(&c, &s, &p, &r, &TestMac, &salt()),
+                Err("source_key_unknown")
+            ));
+            continue;
         }
         let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
         assert_eq!(out.envelope["status"], "verification_failed");
@@ -354,7 +378,13 @@ fn engine_derived_vectors() {
     sign(&mut s[2]);
     let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
     vectors.push(json!({"name":"harbor_capped","envelope":out.envelope,"private_TEST_report":out.private_report}));
-    let v = json!({"classification":"TEST ONLY runtime-derived synthetic evidence, public TEST salts, no live attestation","source_registry":"engine/v3-core/tests/fixtures/source-registry.TEST.json","vectors":vectors,"temporal_cases":[temporal_case()]});
+    let (c, sources, p, mut r) = temporal_setup();
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    let conflict = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    let private = &conflict.private_report;
+    let case = json!({"name":"active_first_lien_conflict","envelope":conflict.envelope,"private_TEST_report":{"score_x100":private["score_x100"],"parts_x100":private["parts_x100"],"raw_score":private["raw_score"],"exact":private["exact"]}});
+    let v = json!({"classification":"TEST ONLY runtime-derived synthetic evidence, public TEST salts, no live attestation","source_registry":"engine/v3-core/tests/fixtures/source-registry.TEST.json","vectors":vectors,"temporal_cases":[temporal_case()],"conflict_cases":[case]});
     if std::env::var_os("TRUENAV_WRITE_DERIVED_VECTORS").is_some() {
         assert!(
             std::env::var_os("TRUENAV_TEST_ENGINE_SHA256").is_some(),
@@ -428,7 +458,14 @@ fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
     ] {
         let mut s = SignedSource {
             source: role.into(),
-            key_id: format!("{role}:sim:v1"),
+            key_id: p
+                .source_registry
+                .keys
+                .iter()
+                .find(|k| k.role == role)
+                .unwrap()
+                .key_id
+                .clone(),
             scope: c.scope.clone(),
             period: c.period.clone(),
             revision: "1".into(),
@@ -479,7 +516,7 @@ fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
 }
 
 // A narrowly scoped 100-position fixture is needed to exercise the accepted temporal disclosure window.
-fn temporal_case() -> Value {
+fn temporal_setup() -> (Context, Vec<SignedSource>, Policy, Read) {
     let (c, mut sources, p, mut r) = setup(0);
     let mut loans = Vec::new();
     let mut terms = Vec::new();
@@ -535,6 +572,10 @@ fn temporal_case() -> Value {
         sign(s)
     }
     r.snapshot.locks = locks;
+    (c, sources, p, r)
+}
+fn temporal_case() -> Value {
+    let (c, sources, p, mut r) = temporal_setup();
     let before = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
     r.snapshot.locks[5].owner = None;
     r.snapshot.locks[5].fund_token_id = None;
@@ -583,4 +624,146 @@ fn issuer_cannot_attest_cash_without_a_matching_signed_bank_balance() {
         evaluate(&c, &s, &p, &r, &TestMac, &salt()),
         Err("cash_attestation_unbound")
     ));
+}
+
+#[test]
+fn fingerprint_and_report_keys_are_common_to_the_receipts_predecessor() {
+    let m: Value = serde_json::from_str(include_str!("../manifest.json")).unwrap();
+    let keys = m["encryption_keys"].as_array().unwrap();
+    assert_eq!(keys.len(), 2);
+    for k in keys {
+        assert_eq!(k["bind"], "project");
+        assert_eq!(k["caller"], "predecessor");
+    }
+    assert!(keys.iter().any(|k| k["path"] == "loan-terms-v2"));
+    assert!(keys.iter().any(|k| k["path"] == "truenav-report-v3"));
+}
+
+#[cfg(feature = "dry-run-tests")]
+#[test]
+fn explicit_dry_run_engine_envelope_fails_normal_frozen_validation() {
+    let (mut c, mut s, p, r) = setup(0);
+    let overlay: Value = serde_json::from_str(include_str!(
+        "../../../receipts/tests/deploy-context.dryrun.json"
+    ))
+    .unwrap();
+    c.scope.receipts_contract = overlay["receipts_contract"].as_str().unwrap().into();
+    for source in &mut s {
+        source.scope = c.scope.clone();
+        sign(source);
+    }
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(validate(&out.envelope).is_err());
+    truenav_v3_core::wire::validate_dry_run(&out.envelope, true).unwrap();
+    assert_eq!(out.envelope["score"], 99);
+    println!("DRY_RUN: engine dev-account envelope rejected by normal frozen validation");
+}
+
+#[test]
+fn unsupported_second_lien_never_hides_a_proven_first_lien_conflict() {
+    let (c, mut s, p, mut r) = setup(0);
+    s[0].payload["loans"][0]["lien_rank"] = json!(2);
+    s[3].payload["loan_terms"][0]["lien_rank"] = json!(2);
+    sign(&mut s[0]);
+    sign(&mut s[3]);
+    r.snapshot.locks[0].owner = Some("another-fund.sim.testnet".into());
+    r.snapshot.locks[0].fund_token_id = Some("another-fund".into());
+    let second_only = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(second_only.envelope["pledge_result"], "unknown");
+    r.snapshot.locks[1].owner = Some("another-fund.sim.testnet".into());
+    r.snapshot.locks[1].fund_token_id = Some("another-fund".into());
+    let mixed = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(mixed.envelope["pledge_result"], "conflict");
+    assert!(mixed.envelope["holds"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("second_lien_unsupported")));
+}
+
+#[test]
+fn a_missing_certificate_cannot_erase_registered_manager_membership() {
+    let f: Value = serde_json::from_str(include_str!("../../../spec/nav/fixtures.json")).unwrap();
+    let mut fund = f["funds"][0].clone();
+    fund["certificate"] = Value::Null;
+    fund["registry_manager_id"] = json!("registered-test-manager");
+    let at = truenav_v3_core::timestamp(f["valuation_time"].as_str().unwrap()).unwrap();
+    let n = nav::score(&fund, at, &json!([]));
+    assert_eq!(n.manager.as_deref(), Some("registered-test-manager"));
+    assert_eq!(n.status, "not_rated");
+}
+
+#[test]
+fn same_loan_in_two_funds_caps_previously_97_to_59_and_red() {
+    let (c, sources, p, mut r) = temporal_setup();
+    let before = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(before.envelope["score"], 97);
+    // Registry proves this exact terms fingerprint is actively locked to another fund.
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    let conflict = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(conflict.envelope["pledge_result"], "conflict");
+    assert_eq!(conflict.envelope["score"], 59);
+    assert_eq!(conflict.envelope["band"], "red");
+    assert_eq!(conflict.private_report["score_x100"], 5900);
+    assert!(conflict.envelope["caps"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("pledge_conflict")));
+    assert!(
+        conflict.private_report["raw_score"]
+            .as_str()
+            .unwrap()
+            .parse::<f64>()
+            .unwrap()
+            > 59.0
+    );
+    let (mut c2, mut s2, mut p2, mut r2) = setup(0);
+    c2.scope.token_id = "other-simulated-fund".into();
+    c2.scope.fund_account = "other.sim.testnet".into();
+    for k in &mut p2.source_registry.keys {
+        k.fund_scope.push(c2.scope.token_id.clone());
+    }
+    for s in &mut s2 {
+        s.scope = c2.scope.clone();
+    }
+    // Both source-signed tapes name the same loan terms. File names do not enter the identity.
+    s2[0].payload["loans"][0]["terms"] = sources[0].payload["loans"][5]["terms"].clone();
+    s2[3].payload["loan_terms"][0]["terms"] = sources[3].payload["loan_terms"][5]["terms"].clone();
+    for s in &mut s2 {
+        sign(s);
+    }
+    s2[2].payload["fund"]["fund_id"] = json!(c2.scope.token_id);
+    s2[0].payload["loans"][0]["principal"] = json!(100000);
+    for s in &mut s2 {
+        sign(s);
+    }
+    for lock in &mut r2.snapshot.locks {
+        lock.owner = Some(c2.scope.fund_account.clone());
+        lock.fund_token_id = Some(c2.scope.token_id.clone());
+    }
+    r2.snapshot.locks[0] = r.snapshot.locks[5].clone();
+    let owner = evaluate(&c2, &s2, &p2, &r2, &TestMac, &salt()).unwrap();
+    assert_ne!(owner.envelope["pledge_result"], "conflict");
+    assert!(!owner.envelope["caps"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("pledge_conflict")));
+}
+#[test]
+fn unknown_second_lien_has_a_visible_hold_without_a_conflict_cap() {
+    let (c, mut s, p, r) = setup(0);
+    s[0].payload["loans"][0]["lien_rank"] = json!(2);
+    s[3].payload["loan_terms"][0]["lien_rank"] = json!(2);
+    sign(&mut s[0]);
+    sign(&mut s[3]);
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(out.envelope["pledge_result"], "unknown");
+    assert!(out.envelope["holds"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("second_lien_unsupported")));
+    assert!(!out.envelope["caps"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("pledge_conflict")));
 }

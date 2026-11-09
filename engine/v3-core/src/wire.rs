@@ -7,16 +7,33 @@ use std::fmt;
 
 pub const METHOD: &str = include_str!("../../../schema/methods/truenav-v3.0.0-rc3.json");
 pub const SCHEMA: &str = include_str!("../../../schema/receipt-v3.schema.json");
+pub const METHOD_V301: &str = include_str!("../../../schema/methods/truenav-v3.0.1.json");
+pub const SCHEMA_V301: &str = include_str!("../../../schema/receipt-v3.0.1.schema.json");
+pub const CURRENT_METHOD: &str = "truenav-v3.0.1";
+pub fn is_v3_method(method: &str) -> bool {
+    matches!(method, "truenav-v3.0.0" | "truenav-v3.0.1")
+}
+pub fn artifacts(version: &str) -> Result<(&'static str, &'static str)> {
+    match version {
+        "truenav-v3.0.0" => Ok((SCHEMA, METHOD)),
+        "truenav-v3.0.1" => Ok((SCHEMA_V301, METHOD_V301)),
+        _ => Err("v3_method"),
+    }
+}
 pub const MAX_PUBLIC_BYTES: usize = 10_000;
 pub fn hash(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 pub fn method_hash() -> String {
-    hash(
-        canonical(&serde_json::from_str(METHOD).expect("frozen artifact"))
+    method_hash_for("truenav-v3.0.0").expect("frozen method")
+}
+pub fn method_hash_for(version: &str) -> Result<String> {
+    let (_, artifact) = artifacts(version)?;
+    Ok(hash(
+        canonical(&serde_json::from_str(artifact).expect("method artifact"))
             .expect("frozen canonical")
             .as_bytes(),
-    )
+    ))
 }
 
 struct Strict(Value);
@@ -397,14 +414,16 @@ fn schema_match(v: &Value, s: &Value) -> bool {
     true
 }
 pub fn validate(e: &Value) -> Result<()> {
-    let schema: Value = serde_json::from_str(SCHEMA).expect("frozen schema");
+    let version = e["method_version"].as_str().ok_or("v3_method")?;
+    let (schema, _) = artifacts(version)?;
+    let schema: Value = serde_json::from_str(schema).expect("versioned schema");
     if !schema_match(e, &schema) {
         return Err("v3_schema");
     }
     if canonical(e)?.len() > MAX_PUBLIC_BYTES {
         return Err("receipt_too_large");
     }
-    if e["method_spec_sha256"] != method_hash() {
+    if e["method_spec_sha256"] != method_hash_for(version)? {
         return Err("method_hash_mismatch");
     }
     for k in ["seq", "supersedes_seq"] {
@@ -484,7 +503,8 @@ pub fn validate_dry_run(e: &Value, explicit_dry_run: bool) -> Result<()> {
         return Err("dry_run_context");
     }
     // Validate the sole permitted deployment substitution, then all normal frozen semantics.
-    let mut schema: Value = serde_json::from_str(SCHEMA).expect("frozen schema");
+    let (schema, _) = artifacts(e["method_version"].as_str().ok_or("v3_method")?)?;
+    let mut schema: Value = serde_json::from_str(schema).expect("versioned schema");
     schema["properties"]["receipts_contract"]["const"] = overlay["receipts_contract"].clone();
     validate_schema(e, &schema)?;
     let mut normal = e.clone();
@@ -502,6 +522,14 @@ pub fn validate_signals(e: &Value) -> Result<()> {
     }
     let caps = e["caps"].as_array().ok_or("v3_caps")?;
     let holds = e["holds"].as_array().ok_or("v3_holds")?;
+    if e["method_version"] == CURRENT_METHOD {
+        let conflict = e["pledge_result"] == "conflict";
+        if conflict != caps.contains(&Value::String("pledge_conflict".into()))
+            || (conflict && (e["band"] != "red" || score.is_some_and(|n| n > 59)))
+        {
+            return Err("v3_conflict_cap");
+        }
+    }
     if score.is_some_and(|n| !caps.is_empty() && n > 59) {
         return Err("v3_cap");
     }
@@ -540,6 +568,7 @@ pub fn validate_signals(e: &Value) -> Result<()> {
     }
     if holds.contains(&Value::String("second_lien_unsupported".into()))
         && e["pledge_result"] != "unknown"
+        && e["pledge_result"] != "conflict"
     {
         return Err("v3_lien");
     }
@@ -599,6 +628,7 @@ mod pattern_tests {
     fn every_frozen_schema_pattern_has_a_bounded_implementation() {
         for doc in [
             SCHEMA,
+            SCHEMA_V301,
             include_str!("../../../schema/source-key-registry.schema.json"),
         ] {
             let s: Value = serde_json::from_str(doc).unwrap();

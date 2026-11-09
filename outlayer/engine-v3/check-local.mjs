@@ -13,8 +13,13 @@ const m=spawnSync('cargo',['+1.99.0','metadata','--no-deps','--format-version','
 const wasm=path.join(JSON.parse(m.stdout).target_directory,'wasm32-wasip2/release/truenav-engine-v3.wasm');
 const engineHash=createHash('sha256').update(readFileSync(wasm)).digest('hex');
 run('cargo',['+1.99.0','test','--locked','--manifest-path','outlayer/engine-v3/Cargo.toml'],{TRUENAV_TEST_ENGINE_SHA256:engineHash,...(process.argv.includes('--regenerate-test-vectors')?{TRUENAV_WRITE_DERIVED_VECTORS:'1'}:{})});
-for(const file of ['receipt-v3-schema.test.py','receipt-v3-privacy.test.py','engine-v3-privacy.test.py'])run('python3',[`receipts/tests/${file}`]);
-run('node',['--test','receipts/tests/receipt-v3-interface.test.mjs']);
+console.log('DRY_RUN: explicit dev-account engine tests; normal frozen validation must reject their envelopes');
+run('cargo',['+1.99.0','test','--locked','--manifest-path','outlayer/engine-v3/Cargo.toml','--features','dry-run-tests']);
+for(const file of ['receipt-v3-schema.test.py','receipt-v3.0.1-schema.test.py','receipt-v3-privacy.test.py','engine-v3-privacy.test.py'])run('python3',[`receipts/tests/${file}`]);
+run('node',['--test','receipts/tests/receipt-v3-interface.test.mjs','receipts/attestation/match.test.mjs','receipts/attestation/source-registry.test.mjs','receipts/attestation/output-parity.test.mjs']);
 run('npm',['run','receipt:v3:pins']);
 run('cargo',['+1.99.0','test','--locked','--manifest-path','receipts/Cargo.toml']);
+console.log('DRY_RUN: explicit dev-account contract tests; overlay is not a production/verifier default');
+run('cargo',['+1.99.0','test','--locked','--manifest-path','receipts/Cargo.toml','--features','dry-run-tests']);
+run('node',['receipts/attestation/check-protocol.mjs','--recorded']);
 console.log(`Backend gates passed, engine wasm sha256 ${engineHash}`);

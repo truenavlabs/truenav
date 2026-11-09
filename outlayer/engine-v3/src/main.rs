@@ -307,7 +307,9 @@ mod tee {
             return Err("request_limit");
         }
         let request = parse(input)?;
-        if request["receipt_version"] != "3" {
+        if request["receipt_version"] != "3"
+            || request["context"]["method_version"] != truenav_v3_core::wire::CURRENT_METHOD
+        {
             return Err("request_version");
         }
         let unix = std::time::SystemTime::now()
@@ -332,7 +334,9 @@ mod tee {
         }
         let registry: Registry =
             serde_json::from_value(registry_json).map_err(|_| "source_registry_invalid")?;
-        registry.check()?;
+        // One explicitly live trust root, never the reproducible fixture registry.
+        let mut trust = RegistrySession::new(true);
+        trust.load(&registry)?;
         let minimum_revisions: BTreeMap<String, u64> =
             serde_json::from_str(&env("TRUENAV_SOURCE_MIN_REVISIONS_JSON")?)
                 .map_err(|_| "revision_policy_missing")?;
@@ -392,8 +396,7 @@ mod tee {
             let src = docs.fetch(&sibling.scope, &sibling.period)?;
             let fps = fingerprints(&src, &sibling, &policy)?;
             let ss = views.snapshot(&sibling.scope, &fps, &sibling.valuation_time)?;
-            let mut f = sibling_nav(&sibling, &src, &policy, &ss, &HostMac)?;
-            f["certificate"]["manager_id"] = own["manager_id"].clone();
+            let f = sibling_nav(&sibling, &src, &policy, &ss, &HostMac)?;
             snapshot.manager_funds.push(f);
         }
         let mut salt = [0u8; 32];

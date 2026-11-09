@@ -2,7 +2,8 @@
 
 Status: FROZEN v3.0.0-rc3, pending the owner's final read (9 Nov 2026 Bangkok).
 the owner's 9 Nov rc3 review: whole public score, private committed precision fields, known-answer vectors and benchmark cohorts.
-READINESS BLOCKER: the requested universal +/-0.5 coverage-point disclosure bound fails the CI counterexamples below.
+the owner's 9 Nov disclosure decision accepts the all-public-field measured bounds below. Status: FROZEN v3.0.0-rc3,
+pending the owner's final read. No disclosure field was removed or weakened to obtain a passing guard.
 
 Design only, the owner decisions of 9 Nov 2026 Bangkok. No engine deployment or transaction is authorized by
 this document. Schema and interface tests are local artifacts only. Option A is LOCKED: one combined receipt per credit fund per reporting period on receipts.
@@ -250,6 +251,10 @@ spreads. It remains an internal cap input. No dollar amounts anywhere in cash ou
 pass. Exception bands use fixed documented per-code policy, not issuer-selected thresholds; cap applicability is
 computed from exact inputs independently of the displayed band.
 
+Exception-array omission makes no zero assertion. Only an explicit code with band=none asserts a verified
+absence/zero; low/material/unknown carry their defined per-code meaning. An empty array is not a public exhaustive
+ledger of every nonzero private exception. The guard combines explicit exception entries with cash bands/caps.
+
 Primary suppression: hide positive counts 1..4 as <5. Complementary suppression: if totals, other cohorts or
 coverage fields would solve a suppressed cell, suppress another cell with a generic suppressed marker (not <5)
 and/or suppress the total. Do not suppress a large cell as <5. Evaluate all public fields jointly, including
@@ -292,16 +297,63 @@ unrounded final in receipt:v3:pins and lab/verifier's npm run judge -- --replay.
 Nonnumeric statuses have score=null, band per R14; source rejection nulls private precision fields and uses unknown
 parts_band. Missing values are not zero. No public score_x100, parts_x100 or raw_score keys are accepted.
 
-Residual disclosure: with an uncapped whole score s, public data_as_of (hence exact freshness F), an inside result
-(gap=40) and known penalty P, the score-only equation places coverage in [s-0.5-40-F+P, s+0.5-40-F+P), before
-clipping. This is nominally +/-0.5 score points, equivalent to +/-1.25 percentage points of R7 verified-value share.
-the owner's required acceptance bound is NOTHING FINER, for one receipt and two consecutive receipts, including a loan
-turning unverified. It is a requirement, not an established guarantee: clipping, parts_band, public share bands
-and temporal intersection can narrow it. The current locked envelope FAILS the strict bound. For Harbor, s=99,
-F=115/6, P=0 and coverage<=40 reduce the interval to [39+1/3,40], width 2/3 point, already finer than one point.
-A known 1%-of-book loan becoming unverified can narrow a two-receipt interval to width 0.6 point (test below).
-Backend CI asserts minimum feasible width >=1 point and FAILS on these cases; it must not pass by ignoring public
-constraints or calling these expected failures. No disclosure policy adjustment is authorized by this rc3 review.
+Residual disclosure is MEASURED PER PUBLIC VECTOR, not a universal half-point rule. The observer takes the
+ENTIRE public envelope, including unverified_share_band, rounded valuation cells, cash/exception/cohort bands,
+counts, caps/holds, timestamps, method identity and provenance. It never reads private report/test sidecars or
+expected bounds. Salted commitments are opaque under the stated cryptographic assumption; they are not extra
+amount measurements. Non-null external evidence must be supplied to an expanded observer, never silently ignored.
+
+the owner accepts: when unverified_share_band=zero, R7 coverage=40 exactly for these positive-coverage scored vectors.
+R13 zero implies no unverified value/not-listed balance/unattested cash; Policy NAV=L and LIH<=L, giving R7=40.
+The degenerate zero-denominator case is not assumed fully verified: score/positive parts-band excludes it here.
+This intended fully-verified signal also reveals derived raw/precision fields when the other parts are fixed;
+storing them privately does not claim to hide those mathematical consequences. Monetary values remain protected
+at their public rounding/band resolution.
+
+| Public vector / observation | Accepted coverage interval, points of 40 | Width | Verified-value share |
+| --- | --- | --- | --- |
+| Harbor | [40,40] | 0 | 100% exactly, intended |
+| Meridian | (approximately 35.9603088738611,40] | approximately 4.0396911261389 | (approximately 89.9007721846527%,100%] |
+| Harbor correction | [40,40] | 0 | 100% exactly, intended |
+| Harbor capped | [40,40] | 0 | 100% exactly, intended |
+| Harbor plus its correction | [40,40] | 0 | No additional narrowing |
+| Separate loan-turns-unverified TEST pair, before | [37.733333333333...,38.333333333333...) | 0.6 | [94.333333333333...%,95.833333333333...%) |
+| Same TEST pair, after known 0.4-point loss | [37.333333333333...,37.933333333333...) | 0.6 | [93.333333333333...%,94.833333333333...%) |
+
+The loan-change pair is a minimal SIM-DISCLOSURE observer fixture, not a replacement Harbor benchmark tape. It
+uses a wider NAV range in which both inside results are feasible. Its 1%-of-book loan loss is explicit attacker
+prior knowledge, not an amount learned from the receipt. The four original golden benchmarks retain their clocks.
+
+Meridian is NOT assessed with the old score-only [34,40] range. R6 outside_high, rounded TrueVal/high/headline,
+R7 verified value, R13 <=10% exposure, the whole score and parts bands jointly tighten it. Let T=max(LIH,L), P be
+Policy NAV, U the R13 numerator and D its denominator. T-P<=U and D<=max(headline,T), so coverage >=
+40*(1-u*max(headline/T,1)). R6 gives LIH=high+TrueVal*(40-gap)/400. Projecting these constraints with the score
+bin/penalty band gives the documented Meridian lower endpoint. The observer also projects gap, freshness, penalty,
+raw_score and private precision ranges; all measured bounds are frozen in schema/vectors/disclosure-bounds.json.
+
+Other hidden quantities have NO additional accepted precision loss:
+
+| Monetary quantity | Harbor, correction and capped cells, USD | Meridian cells, USD |
+| --- | --- | --- |
+| Exact reported NAV | [9,495,000,9,505,000) | [3,735,000,3,745,000) |
+| Exact TrueVal | [9,665,000,9,675,000) | [3,085,000,3,095,000) |
+| Exact TrueRange low | [9,315,000,9,325,000) | [2,725,000,2,735,000) |
+| Exact TrueRange high | [10,010,000,10,030,000) | [3,445,000,3,455,000) |
+
+These are the inverse fixed-ladder cells, including the step-selection rule, not a guessed symmetric cell around
+the displayed value. TrueRange midpoint/symmetry must not narrow them. Cash ratios stay at their public bands;
+absolute cash totals have no public dollar denominator and remain scale-free. Original loan principal has no
+public amount; outstanding EAD has only a broad valuation-derived ceiling, with no precision finer than the
+minimum public valuation step ($10,000). No identifiable per-loan amount is published. A previously known loan
+amount in a TEST attack is prior knowledge, not a new receipt disclosure.
+
+General guard rule: compute the tightest intervals implied by the frozen public-observer constraints for EACH
+hidden quantity and compare against its documented bound. FAIL if any interval is narrower, including tightened
+endpoints, single/consecutive observations, cash bands, NAV cells or loan amounts. Monetary floors remain at
+public rounding/band resolution; the score disclosure acceptance does not waive them. Frozen expected bounds
+are review artifacts, never regenerated in CI. Numerical tolerance is 1e-12 for legacy arithmetic (far below cent/score precision).
+This is a reproducible inference regression model, not a proof against arbitrary external confidential knowledge;
+new fields/unsupported proof payloads must fail closed and expand the model under review.
 
 ### Public score-part bands
 
@@ -411,19 +463,20 @@ protects commitments from guessing; it cannot hide information already disclosed
    use corrections, stable fund IDs and known registry events to solve changes. Independent salts must defeat
    commitment comparison. Complementary suppression is temporal as well as within one receipt; previously public
    facts cannot be re-hidden, so suppress new fields or withhold unsafe publication and record a private reason.
-4. Score disclosure CI: intersect whole-score bins with public data_as_of, inside result, registry penalty,
-   parts_band and all other public constraints. Minimum allowed coverage interval width is exactly 1 score point
-   (nominal +/-0.5), equivalently 2.5 percentage points of verified-value share (nominal +/-1.25). FAIL anything
-   finer for one receipt and two receipts, including a loan becoming unverified. At saturation/caps use the true
-   preimage interval, not an invented symmetric bin. Do not exclude edge cases or suppress guard failures.
-   Current failures: Harbor boundary clips width to 2/3; a known 0.4-point coverage loss (one 1%-of-book loan) with
-   F=115/6, gap=40, penalty=0 and public scores 97/97 intersects to width 0.6. The second case explicitly gives
-   the attacker that loan-value side information, as permitted in synthetic red-team scenarios. Both must be
-   reported as privacy blockers; no claim of 'nothing finer' can be made while they persist.
-   Continue independent hidden NAV/cash/loan reconstruction, midpoint, cohort, small-group and temporal tests.
-   parts_band boundary crossings and a zero unverified_share_band can further narrow coverage. Those public facts
-   cannot be ignored to obtain a passing result. Removing precise public score fields improves disclosure but
-   is not proof of the requested universal bound. See receipts/tests/receipt-v3-privacy.test.py.
+4. All-public-field disclosure CI: receipts/tests/receipt_v3_observer.py reads every public envelope field via
+   a frozen field catalog plus the closed schema. It derives score/cap/freshness/parts bounds, R6/R7/R13 value
+   constraints, inverse NAV ladder cells, TrueRange midpoint, cash bands and count/cohort constraints. No private
+   TEST report or expected result is an observer input. Tests cover ALL four goldens, their correction pair and
+   a distinct two-receipt loan-turns-unverified case, not a Harbor-only constant.
+   Accepted coverage bounds are the per-vector table in sec. 7: zero unverified share intentionally reveals 40;
+   Meridian retains its measured all-fields interval. General rule: FAIL any tighter interval for any hidden
+   quantity than the documented bound. Preserve every other amount at no finer than public rounding/band.
+   Known TEST loan-loss prior knowledge cannot be silently attributed to receipt-only inference. The old universal
+   +/-0.5 rule is superseded. schema/vectors/disclosure-bounds.json freezes endpoints and open/closed semantics.
+   Negative tests inject finer amount/coverage inferences and new private/public fields to prove the gate rejects
+   them. No failure is marked expected or skipped. New observer constraints may expose new leakage; update the owner
+   rather than auto-regenerating a more permissive bound. Non-null proof evidence requires explicit model expansion.
+   Retain the full cash/NAV/midpoint, cohort, small-group, stale-data and temporal attack matrix around this gate.
 
 5. Reject hidden keys and canaries in all nested objects/errors/logs; claimed_not_settled_cents, cash dollar totals,
    denominator amounts, arbitrary ext and raw source hashes must be absent. Test unauthorized buyer/key replay.
@@ -444,7 +497,7 @@ until the owner approves a concrete disclosure change. No test waivers disguised
 No disclosure decisions remain open. Coverage floors to 100 bps, or 2500 bps for small checked-count bands
 lt_5/from_5_to_9 (also conservative unknown/suppressed). Attempts wire tokens are zero/one/two_plus, displayed
 as 0/1/2+. All four NAV figures retain ladder rounding and individual salted commitments. Public score is whole;
-precision fields are private with separate commitments. The strict disclosure guard is currently blocked. The signed-terms fingerprint fix and
+precision fields are private with separate commitments. The disclosure guard enforces the owner's accepted all-fields measured bounds. The signed-terms fingerprint fix and
 bounded conditional buyer analyst remain locked. the owner's final read is pending; changes after this rc3 need an
 explicit revision and coordination with consuming lanes.
 

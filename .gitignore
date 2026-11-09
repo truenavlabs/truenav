@@ -10,3 +10,6 @@ skills/
 .DS_Store
 out/
 .near-credentials/
+
+# Python interface-test bytecode, never a source artifact.
+__pycache__/

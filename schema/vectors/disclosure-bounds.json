@@ -1,0 +1,1047 @@
+{
+  "version": "rc3_john_9nov_accepted_measured",
+  "funds": {
+    "harbor": {
+      "token_id": "harbor-credit-fund",
+      "bounds": {
+        "coverage": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "gap": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "freshness": {
+          "lower": "19.166666666666668",
+          "upper": "19.166666666666668",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "raw_score": {
+          "lower": "99.16666666666667",
+          "upper": "99.16666666666667",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "score_x100": {
+          "lower": "9917",
+          "upper": "9917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.coverage": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.gap": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.freshness": {
+          "lower": "1917",
+          "upper": "1917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "reported_nav": {
+          "lower": "949500000",
+          "upper": "950500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "trueval": {
+          "lower": "966500000",
+          "upper": "967500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_low": {
+          "lower": "931500000",
+          "upper": "932500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_high": {
+          "lower": "1001000000",
+          "upper": "1003000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "cash_match_band": {
+          "lower": "0.98",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "yield_gap_band": {
+          "lower": "0",
+          "upper": "3",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_band"
+        },
+        "collection_rate_band": {
+          "lower": "0.90",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "late_share_band": {
+          "lower": "0",
+          "upper": "0.10",
+          "lower_closed": false,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "completed_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "open_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_1_30": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_31_60": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_61_90": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_91_plus": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "blocked_attempt_count": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cash_amounts": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "original_loan_principal": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "loan_outstanding": {
+          "policy": "minimum_width",
+          "width": "1000000",
+          "unit": "cents",
+          "reason": "No per-loan dollar field; broad public valuation ceiling, never precision finer than minimum public NAV step."
+        }
+      }
+    },
+    "meridian": {
+      "token_id": "meridian-yield-fund",
+      "bounds": {
+        "coverage": {
+          "lower": "35.96030887386109975230909501227272794652811602426956719192427149281653",
+          "upper": "40",
+          "lower_closed": false,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "gap": {
+          "lower": "0",
+          "upper": "5.873024459472232247690904987727272053471883975730432808075728507183466",
+          "lower_closed": false,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "freshness": {
+          "lower": "16.666666666666668",
+          "upper": "16.666666666666668",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "penalty": {
+          "lower": "9.166666666666668",
+          "upper": "15",
+          "lower_closed": false,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "raw_score": {
+          "lower": "42.5",
+          "upper": "43.5",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "score_x100": {
+          "lower": "4250",
+          "upper": "4350",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.coverage": {
+          "lower": "3596",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.gap": {
+          "lower": "0",
+          "upper": "587",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.freshness": {
+          "lower": "1667",
+          "upper": "1667",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.penalty": {
+          "lower": "917",
+          "upper": "1500",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "reported_nav": {
+          "lower": "373500000",
+          "upper": "374500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "trueval": {
+          "lower": "308500000",
+          "upper": "309500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_low": {
+          "lower": "272500000",
+          "upper": "273500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_high": {
+          "lower": "344500000",
+          "upper": "345500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "cash_match_band": {
+          "lower": "0.98",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "yield_gap_band": {
+          "lower": "0",
+          "upper": "3",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_band"
+        },
+        "collection_rate_band": {
+          "lower": "0.90",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "late_share_band": {
+          "lower": "0.25",
+          "upper": "1",
+          "lower_closed": false,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "completed_loan_count": {
+          "lower": "5",
+          "upper": "9",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "open_loan_count": {
+          "lower": "5",
+          "upper": "9",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_1_30": {
+          "lower": "0",
+          "upper": "7",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_31_60": {
+          "lower": "0",
+          "upper": "7",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_61_90": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_91_plus": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "blocked_attempt_count": {
+          "lower": "1",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cash_amounts": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "original_loan_principal": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "loan_outstanding": {
+          "policy": "minimum_width",
+          "width": "1000000",
+          "unit": "cents",
+          "reason": "No per-loan dollar field; broad public valuation ceiling, never precision finer than minimum public NAV step."
+        }
+      }
+    },
+    "harbor_correction": {
+      "token_id": "harbor-credit-fund",
+      "bounds": {
+        "coverage": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "gap": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "freshness": {
+          "lower": "19.166666666666668",
+          "upper": "19.166666666666668",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "raw_score": {
+          "lower": "99.16666666666667",
+          "upper": "99.16666666666667",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "score_x100": {
+          "lower": "9917",
+          "upper": "9917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.coverage": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.gap": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.freshness": {
+          "lower": "1917",
+          "upper": "1917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "reported_nav": {
+          "lower": "949500000",
+          "upper": "950500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "trueval": {
+          "lower": "966500000",
+          "upper": "967500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_low": {
+          "lower": "931500000",
+          "upper": "932500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_high": {
+          "lower": "1001000000",
+          "upper": "1003000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "cash_match_band": {
+          "lower": "0.98",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "yield_gap_band": {
+          "lower": "0",
+          "upper": "3",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_band"
+        },
+        "collection_rate_band": {
+          "lower": "0.90",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "late_share_band": {
+          "lower": "0",
+          "upper": "0.10",
+          "lower_closed": false,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "completed_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "open_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_1_30": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_31_60": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_61_90": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_91_plus": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "blocked_attempt_count": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cash_amounts": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "original_loan_principal": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "loan_outstanding": {
+          "policy": "minimum_width",
+          "width": "1000000",
+          "unit": "cents",
+          "reason": "No per-loan dollar field; broad public valuation ceiling, never precision finer than minimum public NAV step."
+        }
+      }
+    },
+    "harbor_capped": {
+      "token_id": "harbor-credit-fund",
+      "bounds": {
+        "coverage": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "gap": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "freshness": {
+          "lower": "19.166666666666668",
+          "upper": "19.166666666666668",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "raw_score": {
+          "lower": "99.16666666666667",
+          "upper": "99.16666666666667",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "score_x100": {
+          "lower": "5900",
+          "upper": "5900",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.coverage": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.gap": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.freshness": {
+          "lower": "1917",
+          "upper": "1917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "reported_nav": {
+          "lower": "949500000",
+          "upper": "950500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "trueval": {
+          "lower": "966500000",
+          "upper": "967500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_low": {
+          "lower": "931500000",
+          "upper": "932500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_high": {
+          "lower": "1001000000",
+          "upper": "1003000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "cash_match_band": {
+          "lower": "0.98",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "yield_gap_band": {
+          "lower": "3",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_band"
+        },
+        "collection_rate_band": {
+          "lower": "0.90",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "late_share_band": {
+          "lower": "0",
+          "upper": "0.10",
+          "lower_closed": false,
+          "upper_closed": true,
+          "policy": "public_band"
+        },
+        "completed_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "open_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_1_30": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_31_60": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_61_90": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_91_plus": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "blocked_attempt_count": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cash_amounts": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "original_loan_principal": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "loan_outstanding": {
+          "policy": "minimum_width",
+          "width": "1000000",
+          "unit": "cents",
+          "reason": "No per-loan dollar field; broad public valuation ceiling, never precision finer than minimum public NAV step."
+        }
+      }
+    }
+  },
+  "pairs": {
+    "loan_turns_unverified": {
+      "bounds": {
+        "coverage": {
+          "lower": "37.733333333333332",
+          "upper": "38.333333333333332",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "reported_nav": {
+          "lower": "9995000000",
+          "upper": "10010000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "trueval": {
+          "lower": "9495000000",
+          "upper": "9505000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_low": {
+          "lower": "8995000000",
+          "upper": "9005000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        },
+        "truerange_high": {
+          "lower": "9995000000",
+          "upper": "10010000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "public_rounding"
+        }
+      }
+    },
+    "harbor_correction": {
+      "bounds": {
+        "coverage": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "gap": {
+          "lower": "40",
+          "upper": "40",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "freshness": {
+          "lower": "19.166666666666668",
+          "upper": "19.166666666666668",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "raw_score": {
+          "lower": "99.16666666666667",
+          "upper": "99.16666666666667",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "score_x100": {
+          "lower": "9917",
+          "upper": "9917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.coverage": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.gap": {
+          "lower": "4000",
+          "upper": "4000",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.freshness": {
+          "lower": "1917",
+          "upper": "1917",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "parts_x100.penalty": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "reported_nav": {
+          "lower": "949500000",
+          "upper": "950500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "trueval": {
+          "lower": "966500000",
+          "upper": "967500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "truerange_low": {
+          "lower": "931500000",
+          "upper": "932500000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "truerange_high": {
+          "lower": "1001000000",
+          "upper": "1003000000",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "cash_match_band": {
+          "lower": "0.98",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "yield_gap_band": {
+          "lower": "0",
+          "upper": "3",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "collection_rate_band": {
+          "lower": "0.90",
+          "upper": "1",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "late_share_band": {
+          "lower": "0",
+          "upper": "0.10",
+          "lower_closed": false,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "completed_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "open_loan_count": {
+          "lower": "10",
+          "upper": "19",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_1_30": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_31_60": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_61_90": {
+          "lower": "0",
+          "upper": "17",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cohort.dpd_91_plus": {
+          "lower": "1",
+          "upper": "4",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "blocked_attempt_count": {
+          "lower": "0",
+          "upper": "0",
+          "lower_closed": true,
+          "upper_closed": true,
+          "policy": "measured"
+        },
+        "cash_amounts": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "original_loan_principal": {
+          "lower": "0",
+          "upper": null,
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        },
+        "loan_outstanding": {
+          "lower": "0",
+          "upper": "2931818181.818181818181818181818181818181818181818181818181818181818182",
+          "lower_closed": true,
+          "upper_closed": false,
+          "policy": "measured"
+        }
+      }
+    }
+  },
+  "rule": "Fail any computed interval narrower than the frozen documented interval or public monetary rounding/band; never regenerate these expectations in CI."
+}

@@ -1,6 +1,6 @@
 {
   "synthetic": true,
-  "method_spec_sha256": "e3deef76f4c4aeb5784390312bef9956100db15170c3f936bdd28b3987498cf8",
+  "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
   "vectors": [
     {
       "input_cents": "999000000",

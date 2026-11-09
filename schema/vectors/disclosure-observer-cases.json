@@ -1,0 +1,241 @@
+{
+  "cases": [
+    {
+      "classification": "TEST ONLY public-envelope observer case, not source data or live evidence",
+      "name": "loan_turns_unverified",
+      "before": {
+        "receipt_version": "3",
+        "method_version": "truenav-v3.0.0",
+        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "network": "near_testnet",
+        "receipts_contract": "receipts.tnlab-718ca9.testnet",
+        "currency": "USD",
+        "engine_version_key": "synthetic_rc2_unbuilt",
+        "engine_code_sha256": "44604ac616730c267970ae96b94855cf15ea713de1c211491865a929100bcc9b",
+        "token_id": "SIM-DISCLOSURE",
+        "fund_account": "observer.sim.testnet",
+        "kind": "credit",
+        "period_start": "2026-10-01",
+        "period_end": "2026-11-01",
+        "seq": "1",
+        "prev_receipt_sha256": null,
+        "supersedes_seq": null,
+        "correction_reason_code": null,
+        "issued_at": "2026-11-10T12:01:00Z",
+        "data_as_of": "2026-11-09T06:00:00Z",
+        "valuation_time": "2026-11-10T12:00:00Z",
+        "request_id": "test_observer_before",
+        "request_nonce": "50f1addb5a07635bc6c45a60364bba72494d87d7354af113f7a8dec3354eaf7a",
+        "synthetic": true,
+        "input_sha256": "8897f11345f832e64069d9e0f30421970e21b98513a4b34e5eec292456e174ef",
+        "attestation_ref": null,
+        "source_key_ids": [
+          {
+            "source": "servicer",
+            "key_id": "servicer:sim:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "bank",
+            "key_id": "bank:sim:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "fund_admin",
+            "key_id": "fund_admin:sim:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "custodian",
+            "key_id": "custodian:sim:v1",
+            "sig_ok": true
+          }
+        ],
+        "commitments": {
+          "tape": "17bb31c5d07f725f2f0e9cfe7867a69e959d8b5d7bb31fc1b59013f98efb5e74",
+          "cash": "a791b1054e1dd1598938ae8827514b6c32189b4d57d035251cde2cbb2a4bcd87",
+          "nav_report": "7fbf7b612dc92bac9cd0aca2aacf39936c2ee00b85a14a46ccc865060d5a3368",
+          "pledge_detail": "67461e902e16106ba188d718bbfc5e6270ef9792527204837ea66d3718e47574",
+          "registry_state_root": "15f970bc5a23812cc5d32fac6ea2a872731bb71a1b79c954b833f59a69c4352c",
+          "full_report": "a235aee29a24071053e5d6fac1afbe0ecdb7c8fc699f40772354923f50edfc54",
+          "reported_nav": "009a03b04de02be59eb06b1ecd8f628d82ac0f7f377cc34989fe739a539230fa",
+          "trueval": "531a735b498e396c7f6569e1c515e831ffdd7a09981333ad8ddd01c2b53784b8",
+          "truerange_low": "cf5659633c2795494b880aac7cf05673afea2086bbd153e83b4e99c8e0e3427d",
+          "truerange_high": "0d7e97f8f1a5dbead99a9972577e48aa955f664edac1a154024c66a3919960ef",
+          "score_x100": "90e48bf6d3f6b5b64eb2e69d2e06c8775ce9493d4e6f457de6e668e6257a254a",
+          "parts_x100": "e4a9d265b1a979fa35844e91b59c92c0709900d6cacceb7693354d66c52edbd8",
+          "raw_score": "97a3c77ba13487c7e0ef89169360be3fe8263203fce94a8cb2e4a78b7a7bfe26"
+        },
+        "pledge_scope": {
+          "registry_account": "registry.tnlab-718ca9.testnet",
+          "block_height": "1",
+          "block_hash": "synthetic_block_not_live",
+          "scope_id": "simulated_credit_v3",
+          "coverage_status": "complete"
+        },
+        "fingerprint_scheme": "loan-terms-v2",
+        "pledge_result": "clear",
+        "pledge_coverage_bps": 10000,
+        "loans_checked": "gte_50",
+        "blocked_attempts": "zero",
+        "blocked_attempts_window": "period_to_valuation",
+        "lien_support": "first_lien_only",
+        "reported_nav": "10000000000",
+        "trueval": "9500000000",
+        "truerange_low": "9000000000",
+        "truerange_high": "10000000000",
+        "nav_result": "inside",
+        "nav_gap_band": "inside",
+        "unverified_share_band": "gt_0_lte_10pct",
+        "cash_evidence_status": "verified",
+        "cash_match_band": "gte_98_lte_100pct",
+        "yield_gap_band": "gte_0_lt_3pp",
+        "collection_rate_band": "gte_90pct",
+        "late_share_band": "gt_0_lte_10pct",
+        "late_loan_cohorts": {
+          "dpd_1_30": "lt_5",
+          "dpd_31_60": "suppressed",
+          "dpd_61_90": "suppressed",
+          "dpd_91_plus": "lt_5"
+        },
+        "exceptions": [],
+        "status": "scored",
+        "band": "green",
+        "parts_band": {
+          "coverage": "high",
+          "nav_gap": "high",
+          "freshness": "high",
+          "penalty": "none"
+        },
+        "caps": [],
+        "holds": [
+          "concentration_largest_obligor",
+          "concentration_top_five"
+        ],
+        "freshness_band": "gt_24_lte_72h",
+        "ext": {},
+        "receipt_sha256": "39819e523c73bfc21cb987558379d5a49af77d193d7885873e2be0602acb9bab",
+        "score": 97
+      },
+      "after": {
+        "receipt_version": "3",
+        "method_version": "truenav-v3.0.0",
+        "method_spec_sha256": "1fa5c75900e6b420bf737314e57f3e3268fa4dc89e000602d49618ec5ce22318",
+        "network": "near_testnet",
+        "receipts_contract": "receipts.tnlab-718ca9.testnet",
+        "currency": "USD",
+        "engine_version_key": "synthetic_rc2_unbuilt",
+        "engine_code_sha256": "44604ac616730c267970ae96b94855cf15ea713de1c211491865a929100bcc9b",
+        "token_id": "SIM-DISCLOSURE",
+        "fund_account": "observer.sim.testnet",
+        "kind": "credit",
+        "period_start": "2026-10-01",
+        "period_end": "2026-11-01",
+        "seq": "2",
+        "prev_receipt_sha256": "39819e523c73bfc21cb987558379d5a49af77d193d7885873e2be0602acb9bab",
+        "supersedes_seq": "1",
+        "correction_reason_code": "coverage_correction",
+        "issued_at": "2026-11-10T12:01:00Z",
+        "data_as_of": "2026-11-09T06:00:00Z",
+        "valuation_time": "2026-11-10T12:00:00Z",
+        "request_id": "test_observer_after",
+        "request_nonce": "98ac771e00f7bae4a957189e651c90762da7f45a7769e948f3d0e62d14f89bf0",
+        "synthetic": true,
+        "input_sha256": "8897f11345f832e64069d9e0f30421970e21b98513a4b34e5eec292456e174ef",
+        "attestation_ref": null,
+        "source_key_ids": [
+          {
+            "source": "servicer",
+            "key_id": "servicer:sim:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "bank",
+            "key_id": "bank:sim:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "fund_admin",
+            "key_id": "fund_admin:sim:v1",
+            "sig_ok": true
+          },
+          {
+            "source": "custodian",
+            "key_id": "custodian:sim:v1",
+            "sig_ok": true
+          }
+        ],
+        "commitments": {
+          "tape": "17bb31c5d07f725f2f0e9cfe7867a69e959d8b5d7bb31fc1b59013f98efb5e74",
+          "cash": "a791b1054e1dd1598938ae8827514b6c32189b4d57d035251cde2cbb2a4bcd87",
+          "nav_report": "7fbf7b612dc92bac9cd0aca2aacf39936c2ee00b85a14a46ccc865060d5a3368",
+          "pledge_detail": "67461e902e16106ba188d718bbfc5e6270ef9792527204837ea66d3718e47574",
+          "registry_state_root": "15f970bc5a23812cc5d32fac6ea2a872731bb71a1b79c954b833f59a69c4352c",
+          "full_report": "a235aee29a24071053e5d6fac1afbe0ecdb7c8fc699f40772354923f50edfc54",
+          "reported_nav": "009a03b04de02be59eb06b1ecd8f628d82ac0f7f377cc34989fe739a539230fa",
+          "trueval": "531a735b498e396c7f6569e1c515e831ffdd7a09981333ad8ddd01c2b53784b8",
+          "truerange_low": "cf5659633c2795494b880aac7cf05673afea2086bbd153e83b4e99c8e0e3427d",
+          "truerange_high": "0d7e97f8f1a5dbead99a9972577e48aa955f664edac1a154024c66a3919960ef",
+          "score_x100": "90e48bf6d3f6b5b64eb2e69d2e06c8775ce9493d4e6f457de6e668e6257a254a",
+          "parts_x100": "e4a9d265b1a979fa35844e91b59c92c0709900d6cacceb7693354d66c52edbd8",
+          "raw_score": "97a3c77ba13487c7e0ef89169360be3fe8263203fce94a8cb2e4a78b7a7bfe26"
+        },
+        "pledge_scope": {
+          "registry_account": "registry.tnlab-718ca9.testnet",
+          "block_height": "1",
+          "block_hash": "synthetic_block_not_live",
+          "scope_id": "simulated_credit_v3",
+          "coverage_status": "complete"
+        },
+        "fingerprint_scheme": "loan-terms-v2",
+        "pledge_result": "clear",
+        "pledge_coverage_bps": 10000,
+        "loans_checked": "gte_50",
+        "blocked_attempts": "zero",
+        "blocked_attempts_window": "period_to_valuation",
+        "lien_support": "first_lien_only",
+        "reported_nav": "10000000000",
+        "trueval": "9500000000",
+        "truerange_low": "9000000000",
+        "truerange_high": "10000000000",
+        "nav_result": "inside",
+        "nav_gap_band": "inside",
+        "unverified_share_band": "gt_0_lte_10pct",
+        "cash_evidence_status": "verified",
+        "cash_match_band": "gte_98_lte_100pct",
+        "yield_gap_band": "gte_0_lt_3pp",
+        "collection_rate_band": "gte_90pct",
+        "late_share_band": "gt_0_lte_10pct",
+        "late_loan_cohorts": {
+          "dpd_1_30": "lt_5",
+          "dpd_31_60": "suppressed",
+          "dpd_61_90": "suppressed",
+          "dpd_91_plus": "lt_5"
+        },
+        "exceptions": [],
+        "status": "scored",
+        "band": "green",
+        "parts_band": {
+          "coverage": "high",
+          "nav_gap": "high",
+          "freshness": "high",
+          "penalty": "none"
+        },
+        "caps": [],
+        "holds": [
+          "concentration_largest_obligor",
+          "concentration_top_five"
+        ],
+        "freshness_band": "gt_24_lte_72h",
+        "ext": {},
+        "receipt_sha256": "f69c742b46e3ee10c42b272f170f52cb0da74bfcf34e9dbd82869bd635aa4002",
+        "score": 97
+      },
+      "known_side_information": {
+        "coverage_loss_points": "0.4",
+        "money_values_unchanged": true
+      },
+      "explanation": "A 1%-of-book loan becomes unverified; ownership can remain clear while verifier eligibility changes. The attacker already knows this loss; loan value is not recovered from the receipt."
+    }
+  ]
+}

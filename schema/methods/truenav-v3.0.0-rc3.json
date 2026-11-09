@@ -395,7 +395,8 @@
     "none": "verified absent/zero",
     "low": "nonzero event without a cash cap triggered by that exception",
     "material": "exception triggers its associated cash cap",
-    "unknown": "required evidence unavailable; never implies zero"
+    "unknown": "required evidence unavailable; never implies zero",
+    "omitted_code": "No zero assertion; not an exhaustive public private-event ledger."
   },
   "cohort_policy": {
     "dpd_1_30": {
@@ -506,10 +507,13 @@
   ],
   "band_interval_basis": "public score, thresholds 85/60; R12 band ceiling only",
   "score_privacy_requirement": {
-    "coverage_half_width_points": "0.5",
-    "verified_value_share_half_width": "0.0125",
+    "status": "john_accepted_measured_all_public_fields_9nov",
+    "zero_unverified_share": "coverage=40 exactly for scored positive-coverage vectors",
+    "other_vectors": "frozen per-quantity measured intervals",
+    "monetary_floor": "no finer than public rounding/band",
     "one_and_two_receipts": true,
-    "status": "blocked_counterexamples_in_privacy_guard",
-    "warning": "Whole-score bin is one point before clipping and auxiliary evidence; posterior can be narrower."
+    "observer_policy_sha256": "3cc9cedcde004a9030fa6d0b756bc87afe2b3c458743e7b3f472af7c18472268",
+    "disclosure_bounds_sha256": "a951d33ad50bc4604fde70f760e339bbb9e11e6d9755e311095f7a1750926652",
+    "observer_implementation_sha256": "f1eb1a6fe63e46453edfb2aef14639e432eec4e9fad0daabc6fd00f4297794e5"
   }
 }

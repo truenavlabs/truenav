@@ -1,0 +1,110 @@
+{
+  "max_open_loans": 10000,
+  "zero_intentionally_public": true,
+  "tested_numerator": "positive completed-read count, not arbitrary hidden cohort",
+  "pairs": [
+    {
+      "loans_checked": "from_5_to_9",
+      "coverage_bps": 0,
+      "possible_completed_counts": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "loans_checked": "from_5_to_9",
+      "coverage_bps": 2500,
+      "possible_completed_counts": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "loans_checked": "from_5_to_9",
+      "coverage_bps": 5000,
+      "possible_completed_counts": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "loans_checked": "from_5_to_9",
+      "coverage_bps": 7500,
+      "possible_completed_counts": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "loans_checked": "from_5_to_9",
+      "coverage_bps": 10000,
+      "possible_completed_counts": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "loans_checked": "lt_5",
+      "coverage_bps": 0,
+      "possible_completed_counts": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "loans_checked": "lt_5",
+      "coverage_bps": 2500,
+      "possible_completed_counts": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "loans_checked": "lt_5",
+      "coverage_bps": 5000,
+      "possible_completed_counts": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "loans_checked": "lt_5",
+      "coverage_bps": 7500,
+      "possible_completed_counts": [
+        3,
+        4
+      ]
+    },
+    {
+      "loans_checked": "lt_5",
+      "coverage_bps": 10000,
+      "possible_completed_counts": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}

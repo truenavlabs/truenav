@@ -1,0 +1,1390 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:truenav:receipt:v3:rc2",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "receipt_version": {
+      "const": "3"
+    },
+    "method_version": {
+      "const": "truenav-v3.0.0"
+    },
+    "method_spec_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "network": {
+      "const": "near_testnet"
+    },
+    "receipts_contract": {
+      "const": "receipts.tnlab-718ca9.testnet"
+    },
+    "currency": {
+      "const": "USD"
+    },
+    "engine_version_key": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "engine_code_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "token_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "fund_account": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,62}[a-z0-9]$"
+    },
+    "kind": {
+      "const": "credit"
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "seq": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "description": "Canonical u64; semantic validator rejects >18446744073709551615."
+    },
+    "prev_receipt_sha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "supersedes_seq": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "description": "Canonical u64; semantic validator rejects >18446744073709551615."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "correction_reason_code": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "source_correction",
+            "calculation_correction",
+            "coverage_correction"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "data_as_of": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "valuation_time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "request_nonce": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "synthetic": {
+      "const": true
+    },
+    "input_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "receipt_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "attestation_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_key_ids": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "servicer",
+              "bank",
+              "fund_admin",
+              "custodian"
+            ]
+          },
+          "key_id": {
+            "type": "string",
+            "pattern": "^(servicer|bank|fund_admin|custodian):[a-z0-9][a-z0-9_-]{0,31}:v[1-9][0-9]{0,8}$"
+          },
+          "sig_ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source",
+          "key_id",
+          "sig_ok"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "source": {
+                "const": "servicer"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "source": {
+                "const": "bank"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "source": {
+                "const": "fund_admin"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "source": {
+                "const": "custodian"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        }
+      ]
+    },
+    "commitments": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tape": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "cash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "nav_report": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "pledge_detail": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "registry_state_root": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "full_report": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reported_nav": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "trueval": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "truerange_low": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "truerange_high": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "tape",
+        "cash",
+        "nav_report",
+        "pledge_detail",
+        "registry_state_root",
+        "full_report",
+        "reported_nav",
+        "trueval",
+        "truerange_low",
+        "truerange_high"
+      ]
+    },
+    "pledge_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "registry_account": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,62}[a-z0-9]$"
+        },
+        "block_height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "description": "Canonical u64; semantic validator rejects >18446744073709551615."
+        },
+        "block_hash": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "scope_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "coverage_status": {
+          "type": "string",
+          "enum": [
+            "complete",
+            "partial",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "registry_account",
+        "block_height",
+        "block_hash",
+        "scope_id",
+        "coverage_status"
+      ]
+    },
+    "fingerprint_scheme": {
+      "const": "loan-terms-v2"
+    },
+    "pledge_result": {
+      "type": "string",
+      "enum": [
+        "clear",
+        "conflict",
+        "incomplete",
+        "unknown"
+      ]
+    },
+    "pledge_coverage_bps": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "multipleOf": 100
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "loans_checked": {
+      "type": "string",
+      "enum": [
+        "zero",
+        "lt_5",
+        "from_5_to_9",
+        "from_10_to_19",
+        "from_20_to_49",
+        "gte_50",
+        "unknown",
+        "suppressed"
+      ]
+    },
+    "blocked_attempts": {
+      "type": "string",
+      "enum": [
+        "zero",
+        "one",
+        "two_plus",
+        "unknown"
+      ]
+    },
+    "blocked_attempts_window": {
+      "const": "period_to_valuation"
+    },
+    "lien_support": {
+      "const": "first_lien_only"
+    },
+    "reported_nav": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]{0,38})$",
+          "description": "Signed integer cents, i128 range; no negative zero. Semantically validated."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "trueval": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]{0,38})$",
+          "description": "Signed integer cents, i128 range; no negative zero. Semantically validated."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "truerange_low": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]{0,38})$",
+          "description": "Signed integer cents, i128 range; no negative zero. Semantically validated."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "truerange_high": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]{0,38})$",
+          "description": "Signed integer cents, i128 range; no negative zero. Semantically validated."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nav_result": {
+      "type": "string",
+      "enum": [
+        "inside",
+        "outside_low",
+        "outside_high",
+        "outside_both",
+        "unknown"
+      ]
+    },
+    "nav_gap_band": {
+      "type": "string",
+      "enum": [
+        "inside",
+        "gt_0_lte_5pct",
+        "gt_5_lte_10pct",
+        "gt_10pct",
+        "unknown"
+      ]
+    },
+    "unverified_share_band": {
+      "type": "string",
+      "enum": [
+        "zero",
+        "gt_0_lte_10pct",
+        "gt_10_lte_25pct",
+        "gt_25_lte_50pct",
+        "gt_50pct",
+        "unknown"
+      ]
+    },
+    "cash_evidence_status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "partial",
+        "stale",
+        "missing",
+        "invalid"
+      ]
+    },
+    "cash_match_band": {
+      "type": "string",
+      "enum": [
+        "lt_90pct",
+        "gte_90_lt_98pct",
+        "gte_98_lte_100pct",
+        "unknown"
+      ]
+    },
+    "yield_gap_band": {
+      "type": "string",
+      "enum": [
+        "lt_0pp",
+        "gte_0_lt_3pp",
+        "gte_3pp",
+        "unknown"
+      ]
+    },
+    "collection_rate_band": {
+      "type": "string",
+      "enum": [
+        "lt_90pct",
+        "gte_90pct",
+        "pending",
+        "no_dues",
+        "unknown"
+      ]
+    },
+    "late_share_band": {
+      "type": "string",
+      "enum": [
+        "zero",
+        "gt_0_lte_10pct",
+        "gt_10_lte_25pct",
+        "gt_25pct",
+        "unknown"
+      ]
+    },
+    "late_loan_cohorts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dpd_1_30": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 10000
+            },
+            {
+              "type": "string",
+              "enum": [
+                "zero",
+                "lt_5",
+                "suppressed",
+                "unknown"
+              ]
+            }
+          ]
+        },
+        "dpd_31_60": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 10000
+            },
+            {
+              "type": "string",
+              "enum": [
+                "zero",
+                "lt_5",
+                "suppressed",
+                "unknown"
+              ]
+            }
+          ]
+        },
+        "dpd_61_90": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 10000
+            },
+            {
+              "type": "string",
+              "enum": [
+                "zero",
+                "lt_5",
+                "suppressed",
+                "unknown"
+              ]
+            }
+          ]
+        },
+        "dpd_91_plus": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 10000
+            },
+            {
+              "type": "string",
+              "enum": [
+                "zero",
+                "lt_5",
+                "suppressed",
+                "unknown"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "dpd_1_30",
+        "dpd_31_60",
+        "dpd_61_90",
+        "dpd_91_plus"
+      ]
+    },
+    "exceptions": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "claimed_not_settled",
+              "distribution_funded_by_sponsor",
+              "duplicate_claim",
+              "reversal",
+              "unlinked_settlement",
+              "non_income_credit",
+              "missing_coverage",
+              "late_payment"
+            ]
+          },
+          "band": {
+            "type": "string",
+            "enum": [
+              "none",
+              "low",
+              "material",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "band"
+        ]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scored",
+        "disclaimed",
+        "verification_failed",
+        "invalid_fund_fields",
+        "not_rated"
+      ]
+    },
+    "score_x100": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "band": {
+      "type": "string",
+      "enum": [
+        "green",
+        "yellow",
+        "red",
+        "grey"
+      ]
+    },
+    "parts_x100": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gap": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "freshness": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "penalty": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "gap",
+        "coverage",
+        "freshness",
+        "penalty"
+      ]
+    },
+    "raw_score": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parts_band": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coverage": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none",
+            "unknown"
+          ]
+        },
+        "nav_gap": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none",
+            "unknown"
+          ]
+        },
+        "freshness": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none",
+            "unknown"
+          ]
+        },
+        "penalty": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "coverage",
+        "nav_gap",
+        "freshness",
+        "penalty"
+      ]
+    },
+    "caps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "self_reported_only",
+          "yield_gap",
+          "distribution_funded_by_sponsor",
+          "claimed_not_settled",
+          "collection_shortfall"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 5
+    },
+    "holds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "recent_pledge_attempt",
+          "collection_pending",
+          "collection_not_applicable",
+          "source_signature_invalid",
+          "source_key_unknown",
+          "source_key_revoked",
+          "source_key_expired",
+          "source_scope_mismatch",
+          "source_revision_replay",
+          "registry_read_incomplete",
+          "second_lien_unsupported",
+          "concentration_largest_obligor",
+          "concentration_top_five",
+          "no_verified_loans",
+          "unverified_exposure_unknown",
+          "unverified_exposure_majority",
+          "certificate_missing",
+          "certificate_stale",
+          "fund_fields_invalid"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 19
+    },
+    "freshness_band": {
+      "type": "string",
+      "enum": [
+        "lte_24h",
+        "gt_24_lte_72h",
+        "gt_72_lte_168h",
+        "gt_168h",
+        "unknown"
+      ]
+    },
+    "ext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "required": []
+    }
+  },
+  "required": [
+    "receipt_version",
+    "method_version",
+    "method_spec_sha256",
+    "network",
+    "receipts_contract",
+    "currency",
+    "engine_version_key",
+    "engine_code_sha256",
+    "token_id",
+    "fund_account",
+    "kind",
+    "period_start",
+    "period_end",
+    "seq",
+    "prev_receipt_sha256",
+    "supersedes_seq",
+    "correction_reason_code",
+    "issued_at",
+    "data_as_of",
+    "valuation_time",
+    "request_id",
+    "request_nonce",
+    "synthetic",
+    "input_sha256",
+    "receipt_sha256",
+    "attestation_ref",
+    "source_key_ids",
+    "commitments",
+    "pledge_scope",
+    "fingerprint_scheme",
+    "pledge_result",
+    "pledge_coverage_bps",
+    "loans_checked",
+    "blocked_attempts",
+    "blocked_attempts_window",
+    "lien_support",
+    "reported_nav",
+    "trueval",
+    "truerange_low",
+    "truerange_high",
+    "nav_result",
+    "nav_gap_band",
+    "unverified_share_band",
+    "cash_evidence_status",
+    "cash_match_band",
+    "yield_gap_band",
+    "collection_rate_band",
+    "late_share_band",
+    "late_loan_cohorts",
+    "exceptions",
+    "status",
+    "score_x100",
+    "band",
+    "parts_x100",
+    "raw_score",
+    "parts_band",
+    "caps",
+    "holds",
+    "freshness_band",
+    "ext"
+  ],
+  "description": "Public committed envelope only. attestation_status is reader-derived and is NOT a receipt field. Cross-field rules in SPEC_RECEIPT_V3.md and method artifact are mandatory.",
+  "x-band-intervals": {
+    "nav_gap_band": {
+      "inside": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "gt_0_lte_5pct": {
+        "lower": "0",
+        "upper": "0.05",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_5_lte_10pct": {
+        "lower": "0.05",
+        "upper": "0.10",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_10pct": {
+        "lower": "0.10",
+        "upper": null,
+        "lower_closed": false,
+        "upper_closed": false
+      }
+    },
+    "unverified_share_band": {
+      "zero": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "gt_0_lte_10pct": {
+        "lower": "0",
+        "upper": "0.10",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_10_lte_25pct": {
+        "lower": "0.10",
+        "upper": "0.25",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_25_lte_50pct": {
+        "lower": "0.25",
+        "upper": "0.50",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_50pct": {
+        "lower": "0.50",
+        "upper": null,
+        "lower_closed": false,
+        "upper_closed": false
+      }
+    },
+    "cash_match_band": {
+      "lt_90pct": {
+        "lower": "0",
+        "upper": "0.90",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "gte_90_lt_98pct": {
+        "lower": "0.90",
+        "upper": "0.98",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "gte_98_lte_100pct": {
+        "lower": "0.98",
+        "upper": "1",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    },
+    "yield_gap_band": {
+      "lt_0pp": {
+        "lower": null,
+        "upper": "0",
+        "lower_closed": false,
+        "upper_closed": false
+      },
+      "gte_0_lt_3pp": {
+        "lower": "0",
+        "upper": "3",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "gte_3pp": {
+        "lower": "3",
+        "upper": null,
+        "lower_closed": true,
+        "upper_closed": false
+      }
+    },
+    "collection_rate_band": {
+      "lt_90pct": {
+        "lower": "0",
+        "upper": "0.90",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "gte_90pct": {
+        "lower": "0.90",
+        "upper": "1",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    },
+    "late_share_band": {
+      "zero": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "gt_0_lte_10pct": {
+        "lower": "0",
+        "upper": "0.10",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_10_lte_25pct": {
+        "lower": "0.10",
+        "upper": "0.25",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_25pct": {
+        "lower": "0.25",
+        "upper": "1",
+        "lower_closed": false,
+        "upper_closed": true
+      }
+    },
+    "freshness_band": {
+      "lte_24h": {
+        "lower": "0",
+        "upper": "24",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "gt_24_lte_72h": {
+        "lower": "24",
+        "upper": "72",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_72_lte_168h": {
+        "lower": "72",
+        "upper": "168",
+        "lower_closed": false,
+        "upper_closed": true
+      },
+      "gt_168h": {
+        "lower": "168",
+        "upper": null,
+        "lower_closed": false,
+        "upper_closed": false
+      }
+    },
+    "loans_checked": {
+      "zero": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "lt_5": {
+        "lower": "1",
+        "upper": "4",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "from_5_to_9": {
+        "lower": "5",
+        "upper": "9",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "from_10_to_19": {
+        "lower": "10",
+        "upper": "19",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "from_20_to_49": {
+        "lower": "20",
+        "upper": "49",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "gte_50": {
+        "lower": "50",
+        "upper": "10000",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    },
+    "blocked_attempts": {
+      "zero": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "one": {
+        "lower": "1",
+        "upper": "1",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "two_plus": {
+        "lower": "2",
+        "upper": null,
+        "lower_closed": true,
+        "upper_closed": false
+      }
+    },
+    "parts_band.coverage": {
+      "none": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "low": {
+        "lower": "0",
+        "upper": "20",
+        "lower_closed": false,
+        "upper_closed": false
+      },
+      "medium": {
+        "lower": "20",
+        "upper": "34",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "high": {
+        "lower": "34",
+        "upper": "40",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    },
+    "parts_band.nav_gap": {
+      "none": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "low": {
+        "lower": "0",
+        "upper": "20",
+        "lower_closed": false,
+        "upper_closed": false
+      },
+      "medium": {
+        "lower": "20",
+        "upper": "34",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "high": {
+        "lower": "34",
+        "upper": "40",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    },
+    "parts_band.freshness": {
+      "none": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "low": {
+        "lower": "0",
+        "upper": "10",
+        "lower_closed": false,
+        "upper_closed": false
+      },
+      "medium": {
+        "lower": "10",
+        "upper": "17",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "high": {
+        "lower": "17",
+        "upper": "20",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    },
+    "parts_band.penalty": {
+      "none": {
+        "lower": "0",
+        "upper": "0",
+        "lower_closed": true,
+        "upper_closed": true
+      },
+      "low": {
+        "lower": "0",
+        "upper": "5",
+        "lower_closed": false,
+        "upper_closed": false
+      },
+      "medium": {
+        "lower": "5",
+        "upper": "15",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "high": {
+        "lower": "15",
+        "upper": null,
+        "lower_closed": true,
+        "upper_closed": false
+      }
+    },
+    "band": {
+      "red": {
+        "lower": "0",
+        "upper": "60",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "yellow": {
+        "lower": "60",
+        "upper": "85",
+        "lower_closed": true,
+        "upper_closed": false
+      },
+      "green": {
+        "lower": "85",
+        "upper": "100",
+        "lower_closed": true,
+        "upper_closed": true
+      }
+    }
+  },
+  "x-status-only-tokens": [
+    "unknown",
+    "suppressed",
+    "pending",
+    "no_dues",
+    "grey"
+  ],
+  "x-exception-policy": {
+    "none": "verified absent/zero",
+    "low": "nonzero event without a cash cap triggered by that exception",
+    "material": "exception triggers its associated cash cap",
+    "unknown": "required evidence unavailable; never implies zero"
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "loans_checked": {
+            "enum": [
+              "lt_5",
+              "from_5_to_9",
+              "unknown",
+              "suppressed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "pledge_coverage_bps": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer",
+                "multipleOf": 2500
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "not": {
+              "const": "scored"
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "score_x100": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_key_ids": {
+            "contains": {
+              "properties": {
+                "sig_ok": {
+                  "const": false
+                }
+              },
+              "required": [
+                "sig_ok"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "verification_failed"
+          },
+          "band": {
+            "const": "red"
+          },
+          "score_x100": {
+            "type": "null"
+          },
+          "raw_score": {
+            "type": "null"
+          },
+          "holds": {
+            "contains": {
+              "const": "source_signature_invalid"
+            }
+          },
+          "parts_x100": {
+            "properties": {
+              "gap": {
+                "type": "null"
+              },
+              "coverage": {
+                "type": "null"
+              },
+              "freshness": {
+                "type": "null"
+              },
+              "penalty": {
+                "type": "null"
+              }
+            }
+          },
+          "parts_band": {
+            "properties": {
+              "coverage": {
+                "const": "unknown"
+              },
+              "nav_gap": {
+                "const": "unknown"
+              },
+              "freshness": {
+                "const": "unknown"
+              },
+              "penalty": {
+                "const": "unknown"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

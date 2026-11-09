@@ -1,0 +1,106 @@
+{
+  "synthetic": true,
+  "method_spec_sha256": "a94b0a055cdd6cfeb3e75b18c9c92b0075652edc4405840f6411cd958515c6b7",
+  "vectors": [
+    {
+      "input_cents": "999000000",
+      "step_cents": "1000000",
+      "rounded_cents": "999000000"
+    },
+    {
+      "input_cents": "1000000000",
+      "step_cents": "1000000",
+      "rounded_cents": "1000000000"
+    },
+    {
+      "input_cents": "1001000000",
+      "step_cents": "2000000",
+      "rounded_cents": "1002000000"
+    },
+    {
+      "input_cents": "1235000000",
+      "step_cents": "2000000",
+      "rounded_cents": "1236000000"
+    },
+    {
+      "input_cents": "2000000000",
+      "step_cents": "2000000",
+      "rounded_cents": "2000000000"
+    },
+    {
+      "input_cents": "5000000000",
+      "step_cents": "5000000",
+      "rounded_cents": "5000000000"
+    },
+    {
+      "input_cents": "12300000000",
+      "step_cents": "20000000",
+      "rounded_cents": "12300000000"
+    },
+    {
+      "input_cents": "1235000100",
+      "step_cents": "2000000",
+      "rounded_cents": "1236000000"
+    },
+    {
+      "input_cents": "1000500000",
+      "step_cents": "2000000",
+      "rounded_cents": "1000000000"
+    },
+    {
+      "input_cents": "1001500000",
+      "step_cents": "2000000",
+      "rounded_cents": "1002000000"
+    },
+    {
+      "input_cents": "12345000000",
+      "step_cents": "20000000",
+      "rounded_cents": "12340000000"
+    },
+    {
+      "input_cents": "-1000500000",
+      "step_cents": "2000000",
+      "rounded_cents": "-1000000000"
+    },
+    {
+      "input_cents": "-12345000000",
+      "step_cents": "20000000",
+      "rounded_cents": "-12340000000"
+    },
+    {
+      "input_cents": "999500000",
+      "step_cents": "1000000",
+      "rounded_cents": "1000000000"
+    },
+    {
+      "input_cents": "-999500000",
+      "step_cents": "1000000",
+      "rounded_cents": "-1000000000"
+    },
+    {
+      "input_cents": "1003000000",
+      "step_cents": "2000000",
+      "rounded_cents": "1004000000"
+    },
+    {
+      "input_cents": "4902500000",
+      "step_cents": "5000000",
+      "rounded_cents": "4905000000"
+    },
+    {
+      "input_cents": "12350000000",
+      "step_cents": "20000000",
+      "rounded_cents": "12360000000"
+    },
+    {
+      "input_cents": "-12350000000",
+      "step_cents": "20000000",
+      "rounded_cents": "-12360000000"
+    },
+    {
+      "input_cents": "0",
+      "step_cents": "1000000",
+      "rounded_cents": "0"
+    }
+  ]
+}

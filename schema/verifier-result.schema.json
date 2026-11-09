@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "attestation_status",
+    "reason_codes"
+  ],
+  "properties": {
+    "attestation_status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "unavailable",
+        "invalid"
+      ]
+    },
+    "reason_codes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "schema_invalid",
+          "hash_mismatch",
+          "method_unknown",
+          "method_hash_mismatch",
+          "engine_mismatch",
+          "attestation_missing",
+          "attestation_invalid",
+          "attestation_expired",
+          "attestation_unbound",
+          "source_signature_invalid",
+          "source_registry_unavailable",
+          "previous_missing",
+          "previous_hash_mismatch",
+          "sequence_invalid",
+          "head_untrusted",
+          "network_mismatch",
+          "contract_mismatch",
+          "correction_invalid",
+          "evidence_unavailable"
+        ]
+      }
+    }
+  }
+}

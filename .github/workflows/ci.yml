@@ -19,6 +19,12 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm test
+      - name: Receipt v3 frozen interface vectors and schema
+        run: |
+          node --test receipts/tests/receipt-v3-interface.test.mjs
+          python3 -m venv "$RUNNER_TEMP/receipt-v3-schema"
+          "$RUNNER_TEMP/receipt-v3-schema/bin/pip" install jsonschema==4.23.0
+          "$RUNNER_TEMP/receipt-v3-schema/bin/python" receipts/tests/receipt-v3-schema.test.py
       - run: npm run tee:demo
       - run: npm run eval
       - run: npm audit --audit-level=high
@@ -177,4 +183,4 @@ jobs:
           # from the Go module proxy and verifies it and every dependency against the checksum database
           # (sum.golang.org; v8.30.1 h1:PmEvCfVI7ti9dV3s5aMZUY7sS2GxRvG3yzih7E+cS3w=), failing on any mismatch
           go install github.com/zricethezav/gitleaks/v8@v8.30.1
-          "$(go env GOPATH)/bin/gitleaks" git --redact --no-banner .
+          "$(go env GOPATH)/bin/gitleaks" git --redact --no-banner --log-opts="--all" .

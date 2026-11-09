@@ -10,7 +10,10 @@ description = "Local sandbox stand-in for outlayer.testnet request_execution (yi
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-near-sdk = { version = "=5.30.1" }
+near-sdk = { version = "=5.30.1", default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+lol_alloc = "=0.4.1"
 
 [profile.release]
 codegen-units = 1
@@ -21,4 +24,4 @@ panic = "abort"
 overflow-checks = true
 
 [dev-dependencies]
-near-sdk = { version = "=5.30.1", features = ["unit-testing"] }
+near-sdk = { version = "=5.30.1", default-features = false, features = ["unit-testing"] }

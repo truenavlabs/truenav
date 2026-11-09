@@ -7,17 +7,18 @@ import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto } from 'near-ap
 import { validateSigned } from './broadcast.mjs';
 const root = new URL('../',import.meta.url);
 const wasm=(path)=>new Uint8Array(readFileSync(new URL(path,root)));
-const sandbox=await Sandbox.start({config:{additionalAccounts:[GenesisAccount.createDefault('v1.signer-prod.testnet')]}});
+const sandbox=await Sandbox.start({config:{additionalAccounts:[GenesisAccount.createDefault('v1.signer-prod.testnet'),GenesisAccount.createDefault('outlayer.test.near')]}});
 try {
  const provider=new JsonRpcProvider({url:sandbox.rpcUrl});
  const owner=new Account(DEFAULT_ACCOUNT_ID,provider,DEFAULT_PRIVATE_KEY);
  const accounts={};
- for(const name of ['receipts','outlayer','worker']) {
+ for(const name of ['receipts','worker']) {
   const key=KeyPair.fromRandom('ed25519');const id=`${name}.${DEFAULT_ACCOUNT_ID}`;
   await owner.signAndSendTransaction({receiverId:id,actions:[actions.createAccount(),actions.transfer(nearToYocto('30')),actions.addFullAccessKey(key.getPublicKey())],waitUntil:'FINAL'});
   accounts[name]=new Account(id,provider,key.toString());
  }
- const id=(name)=>accounts[name].accountId;
+ accounts.outlayer=new Account('outlayer.test.near',provider,DEFAULT_PRIVATE_KEY);
+ const id=(name)=>name==='outlayer'?'outlayer.test.near':accounts[name].accountId;
  const call=(who,contract,method,args,deposit=0n,gas=100000000000000n)=>who.signAndSendTransaction({receiverId:contract,actions:[actions.functionCall(method,args,gas,deposit)],waitUntil:'FINAL'});
  const view=(method,args={})=>provider.callFunction({contractId:id('receipts'),method,args,blockQuery:{finality:'final'}});
  const config={outlayer:id('outlayer'),project_id:`${id('receipts')}/truenav-engine`,version_key:'36'.repeat(32),method:'cashflow-v2.1.0',secrets_profile:'engine',secrets_owner:id('receipts'),max_instructions:10000000000,max_memory_mb:128,max_execution_seconds:30,outlayer_deposit:nearToYocto('0.01').toString(),storage_deposit:nearToYocto('0.25').toString(),outlayer_tgas:230,callback_tgas:50};

@@ -26,6 +26,11 @@ use near_sdk::store::{IterableMap, IterableSet, LookupMap, LookupSet, Vector};
 use near_sdk::json_types::U128;
 use near_sdk::{assert_one_yocto, env, near, require, AccountId, BorshStorageKey, PanicOnDefault, PromiseOrValue};
 
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
+    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
+
 pub const CERT_DOMAIN: &str = "truenav-cert-v1";
 
 #[derive(BorshStorageKey)]

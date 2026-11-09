@@ -13,6 +13,11 @@
 //! or output of a run. It holds only query fees. Everything stored here is public chain state (buyer account,
 //! query hash, times, uses).
 use near_sdk::json_types::{U128, U64};
+
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
+    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
 use near_sdk::serde_json::json;
 use near_sdk::store::LookupMap;
 use near_sdk::{assert_one_yocto, env, near, require, AccountId, BorshStorageKey, NearToken, PanicOnDefault, Promise};

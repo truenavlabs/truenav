@@ -1118,4 +1118,61 @@ mod tests {
         cfg.outlayer = account("anything-the-admin-controls.testnet");
         c.set_config(cfg);
     }
+
+    fn config_for(outlayer: &str) -> Config {
+        Config {
+            outlayer: account(outlayer),
+            project_id: "TEST".into(),
+            version_key: "0".repeat(64),
+            method: "cashflow-v2.1.0".into(),
+            secrets_profile: "TEST".into(),
+            secrets_owner: account("admin.testnet"),
+            max_instructions: 1_000_000_000,
+            max_memory_mb: 128,
+            max_execution_seconds: 30,
+            outlayer_deposit: U128(0),
+            storage_deposit: U128(NearToken::from_near(1).as_yoctonear()),
+            outlayer_tgas: 200,
+            callback_tgas: 80,
+        }
+    }
+
+    #[test]
+    fn outlayer_account_init_accepts_outlayer_testnet() {
+        let c = setup();
+        assert_eq!(c.config.outlayer.as_str(), "outlayer.testnet");
+    }
+
+    #[cfg(not(feature = "sandbox"))]
+    #[test]
+    #[should_panic(expected = "outlayer account is not the allowlisted worker")]
+    fn outlayer_account_init_rejects_sandbox_without_the_feature() {
+        context("admin.testnet", 1);
+        let _ = Receipts::new(
+            account("admin.testnet"),
+            account("pauser.testnet"),
+            config_for("outlayer.test.near"),
+        );
+    }
+
+    #[cfg(feature = "sandbox")]
+    #[test]
+    fn outlayer_account_init_accepts_sandbox_with_the_feature() {
+        context("admin.testnet", 1);
+        let c = Receipts::new(
+            account("admin.testnet"),
+            account("pauser.testnet"),
+            config_for("outlayer.test.near"),
+        );
+        assert_eq!(c.config.outlayer.as_str(), "outlayer.test.near");
+    }
+
+    #[test]
+    #[should_panic(expected = "outlayer account is fixed at init")]
+    fn outlayer_account_set_config_cannot_change_the_worker() {
+        let mut c = setup();
+        let mut cfg = c.config.clone();
+        cfg.outlayer = account("outlayer.test.near");
+        c.set_config(cfg);
+    }
 }

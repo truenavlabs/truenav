@@ -172,43 +172,48 @@ fn hex_mac(message: &[u8]) -> String {
 
 #[test]
 fn redteam_r1b_pledge_module_and_engine_must_share_one_mac_key() {
-    // OutLayer: HMAC-SHA256(master, "encryption-key:v1:{bind}:{project_uuid}:{caller}:{account}:{path}").
-    // Project ids stand in for the on-chain uuid. Both sides must name the same five inputs.
+    // OutLayer documents HMAC-SHA256(master, "encryption-key:v1:{bind}:{uuid}:{caller}:{account}:{path}").
+    // Project and account come from the deploy script. bind and caller come from each manifest.
+    let deploy = include_str!("../../../receipts/deploy-testnet.mjs");
+    let master = between(deploy, "TRUENAV_MASTER || \"", "\"");
+    let account = format!("receipts.{master}");
+    let project = format!("{account}/truenav-engine");
+    assert!(
+        deploy.contains("project_id: `${ids.receipts}/truenav-engine`"),
+        "deploy script no longer pins the engine project"
+    );
     let module: serde_json::Value =
         serde_json::from_str(include_str!("../../../outlayer/fingerprint/manifest.json")).unwrap();
     let engine: serde_json::Value =
         serde_json::from_str(include_str!("../../../outlayer/engine-v3/manifest.json")).unwrap();
+    let module_key = key_named(&module, "loan-terms-v2");
+    let engine_key = key_named(&engine, "loan-terms-v2");
+    assert_eq!(module_key, engine_key);
+    let scope = format!(
+        "encryption-key:v1:{}:{}:{}:{}:{}",
+        module_key.0, project, module_key.1, account, module_key.2
+    );
     let fp = include_str!("../../../tee/fingerprint.mjs");
-    let project = between(fp, "export const FP_PROJECT = \"", "\"");
-    let account = between(fp, "export const FP_CALLER = \"", "\"");
-    let path = between(fp, "export const FP_KEY_PATH = \"", "\"");
-    let engine_key = engine["encryption_keys"]
+    assert_eq!(between(fp, "export const FP_PROJECT = \"", "\""), project);
+    assert_eq!(between(fp, "export const FP_CALLER = \"", "\""), account);
+    assert_eq!(
+        scope,
+        "encryption-key:v1:project:receipts.tnlab-718ca9.testnet/truenav-engine:predecessor:receipts.tnlab-718ca9.testnet:loan-terms-v2"
+    );
+}
+
+fn key_named(manifest: &serde_json::Value, path: &str) -> (String, String, String) {
+    let k = manifest["encryption_keys"]
         .as_array()
         .unwrap()
         .iter()
         .find(|k| k["path"] == path)
         .unwrap();
-    let module_scope = derivation(&module["encryption_keys"][0], project, account, path);
-    let engine_scope = derivation(
-        engine_key,
-        "receipts.tnlab-718ca9.testnet/truenav-engine",
-        "receipts.tnlab-718ca9.testnet",
-        path,
-    );
-    assert_eq!(
-        module_scope, engine_scope,
-        "pledge module and NAV engine derive different keys"
-    );
-    assert!(
-        module_scope.contains(":predecessor:receipts.tnlab-718ca9.testnet:loan-terms-v2"),
-        "the shared key must be the receipts predecessor, not a fund or the servicer"
-    );
-}
-
-fn derivation(k: &serde_json::Value, project: &str, account: &str, path: &str) -> String {
-    let bind = k["bind"].as_str().unwrap_or("project");
-    let caller = k["caller"].as_str().unwrap_or("signer");
-    format!("encryption-key:v1:{bind}:{project}:{caller}:{account}:{path}")
+    (
+        k["bind"].as_str().unwrap_or("project").to_string(),
+        k["caller"].as_str().unwrap_or("signer").to_string(),
+        k["path"].as_str().unwrap().to_string(),
+    )
 }
 
 fn between<'a>(src: &'a str, start: &str, end: &str) -> &'a str {

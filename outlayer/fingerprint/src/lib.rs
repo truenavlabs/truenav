@@ -16,25 +16,51 @@ pub fn is_canonical_id(id: &str) -> bool {
             .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || *c == b'-')
 }
 
-/// v4 pledge preimage for a canonical document id. Same layout as `truenav_v3_core::source::pledge_message`
-/// when the asset and namespace are already lowercase and the document is ASCII: length-prefixed
-/// `truenav-fp-v4`, asset, namespace, and the lowercased document. The NAV check MACs these bytes
-/// under key path `loan-terms-v2`.
+/// v4 pledge preimage. Same layout as `truenav_v3_core::source::pledge_message`.
+/// `case_sensitive` false lowercases the namespace and the document, which is the default policy.
+/// `case_sensitive` true keeps both as given, matching `fingerprint` when that namespace is listed.
 pub fn pledge_frame(asset_type: &str, collateral_namespace: &str, document_id: &str) -> Vec<u8> {
+    pledge_frame_with(asset_type, collateral_namespace, document_id, false)
+}
+
+pub fn pledge_frame_with(
+    asset_type: &str,
+    collateral_namespace: &str,
+    document_id: &str,
+    case_sensitive: bool,
+) -> Vec<u8> {
     fn lp(out: &mut Vec<u8>, bytes: &[u8]) {
         let n = u32::try_from(bytes.len()).expect("framing size");
         out.extend_from_slice(&n.to_be_bytes());
         out.extend_from_slice(bytes);
     }
-    let doc = document_id.to_ascii_lowercase();
     let asset = asset_type.to_ascii_lowercase();
-    let ns = collateral_namespace.to_ascii_lowercase();
+    let ns = if case_sensitive {
+        collateral_namespace.to_string()
+    } else {
+        collateral_namespace.to_ascii_lowercase()
+    };
+    let doc = if case_sensitive {
+        document_id.to_string()
+    } else {
+        document_id.to_ascii_lowercase()
+    };
     let mut framed = Vec::new();
     lp(&mut framed, b"truenav-fp-v4");
     lp(&mut framed, asset.as_bytes());
     lp(&mut framed, ns.as_bytes());
     lp(&mut framed, doc.as_bytes());
     framed
+}
+
+/// Mixed-case ASCII id used when a namespace is case-sensitive. Uppercase-only ids stay on `is_canonical_id`.
+pub fn is_mixed_case_id(id: &str) -> bool {
+    let b = id.as_bytes();
+    !b.is_empty()
+        && b.len() <= MAX_ID_LEN
+        && (b[0].is_ascii_alphanumeric())
+        && b.iter()
+            .all(|c| c.is_ascii_alphanumeric() || *c == b'-')
 }
 
 /// The host's MAC must be exactly 32 bytes (HMAC-SHA256); anything else is refused before hex encoding (finding 26).
@@ -114,6 +140,49 @@ mod tests {
         }
         assert_eq!(frame, expect);
         assert!(!frame.windows(8).any(|w| w == b"PARCEL-1"));
+    }
+
+    #[test]
+    fn mixed_case_producer_hash_matches_the_engine_lookup() {
+        use truenav_v3_core::source::{
+            fingerprint, pledge_lookup_hashes, sha2_bytes, Fingerprinter, LoanTerms,
+        };
+        struct Mac;
+        impl Fingerprinter for Mac {
+            fn mac(&self, message: &[u8]) -> truenav_v3_core::Result<[u8; 32]> {
+                Ok(sha2_bytes(message))
+            }
+        }
+        let terms = LoanTerms {
+            version: "loan-terms-v2".into(),
+            borrower_namespace: "demo".into(),
+            borrower_id: "B1".into(),
+            origination_date: "2026-01-01".into(),
+            principal_cents: "100".into(),
+            currency: "USD".into(),
+            collateral_namespace: "Deeds".into(),
+            collateral_ref: "Ab-1".into(),
+        };
+        let policy = vec!["Deeds".to_string()];
+        let frame = pledge_frame_with("real_estate", "Deeds", "Ab-1", true);
+        let produced = Mac.mac(&frame).unwrap();
+        let produced_hex = produced.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        let looked = pledge_lookup_hashes(&terms, "real_estate", &policy, &Mac).unwrap();
+        assert_eq!(looked.len(), 1);
+        assert_eq!(looked[0], produced_hex, "producer frame is not the engine lookup");
+        let via_fingerprint = fingerprint(&terms, "real_estate", &policy, &Mac).unwrap();
+        assert_eq!(via_fingerprint, produced_hex);
+        let other = fingerprint(
+            &LoanTerms {
+                collateral_ref: "aB-1".into(),
+                ..terms
+            },
+            "real_estate",
+            &policy,
+            &Mac,
+        )
+        .unwrap();
+        assert_ne!(other, produced_hex, "mixed-case refs collapsed");
     }
 
     #[test]

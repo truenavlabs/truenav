@@ -6,6 +6,8 @@
 // the sandbox and an agent buys and spends entitlements.
 //
 //   npm run e2e:receipts   (builds the three contract wasms and the native engine first if missing)
+// The receipt wasm must be built with `--features sandbox` so init accepts outlayer.test.near.
+// A testnet build accepts only outlayer.testnet. This pass does not rebuild that wasm.
 //
 // The sandbox root account uses the development key published in the near-sandbox package; it controls only this
 // throwaway local chain. Sub-account keys live in a temporary keychain that is deleted afterwards.
@@ -13,8 +15,8 @@ import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync, execSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { Sandbox, DEFAULT_ACCOUNT_ID, DEFAULT_PRIVATE_KEY } from "near-sandbox";
+import { createHash, randomBytes } from "node:crypto";
+import { Sandbox, GenesisAccount, DEFAULT_ACCOUNT_ID, DEFAULT_PRIVATE_KEY } from "near-sandbox";
 import { Account, JsonRpcProvider, KeyPair, actions, baseEncode, nearToYocto, teraToGas } from "near-api-js";
 import { createServer, queryHash, spendMessage } from "../../api/server.mjs";
 import { nearChain } from "../../api/chain.mjs";
@@ -37,15 +39,16 @@ const ok = (cond, what) => {
   if (!cond) failures++;
 };
 
-const sandbox = await Sandbox.start({});
+const sandbox = await Sandbox.start({ config: { additionalAccounts: [GenesisAccount.createDefault("outlayer.test.near")] } });
 const keys = mkdtempSync(join(tmpdir(), "truenav-receipts-keys-"));
 let server;
 try {
   const provider = new JsonRpcProvider({ url: sandbox.rpcUrl });
   const rootAcc = new Account(DEFAULT_ACCOUNT_ID, provider, DEFAULT_PRIVATE_KEY);
-  const id = (n) => `${n}.${DEFAULT_ACCOUNT_ID}`;
+  const id = (n) => (n === "outlayer" ? "outlayer.test.near" : `${n}.${DEFAULT_ACCOUNT_ID}`);
   const accounts = {};
-  for (const [n, near] of [["admin", "20"], ["pauser", "5"], ["runner", "20"], ["worker", "5"], ["api", "5"], ["agent", "5"], ["receipts", "30"], ["query", "10"], ["outlayer", "10"]]) {
+  accounts.outlayer = new Account("outlayer.test.near", provider, DEFAULT_PRIVATE_KEY);
+  for (const [n, near] of [["admin", "20"], ["pauser", "5"], ["runner", "20"], ["worker", "5"], ["api", "5"], ["agent", "5"], ["receipts", "30"], ["query", "10"]]) {
     const kp = KeyPair.fromRandom("ed25519");
     writeFileSync(join(keys, `${id(n)}.json`), JSON.stringify({ account_id: id(n), private_key: kp.toString() }), { mode: 0o600 });
     await rootAcc.signAndSendTransaction({ receiverId: id(n), actions: [actions.createAccount(), actions.transfer(nearToYocto(near)), actions.addFullAccessKey(kp.getPublicKey())], waitUntil: "FINAL" });
@@ -273,13 +276,18 @@ try {
   ok((await call("agent", "query", "buy_query", { request_id: "e2e-ask-00001", query_hash: queryHash("ask", "DEMO-CREDIT"), kind: "ask" }, { deposit: nearToYocto("0.01") })).ok, "agent buys an ask entitlement");
 
   const chain = nearChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), redeemerId: id("api"), keyFile: join(keys, `${id("api")}.json`) });
-  server = createServer({ chain, receipts: id("receipts"), query: id("query"), fee: nearToYocto("0.01").toString() });
+  server = createServer({ chain, receipts: id("receipts"), query: id("query"), fee: nearToYocto("0.01").toString(), spendStore: join(keys, "spend-nonces.json") });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${server.address().port}`;
   const buyer = id("agent");
   const buyerKey = KeyPair.fromString(JSON.parse(readFileSync(join(keys, `${buyer}.json`), "utf8")).private_key);
-  const buyerSig = (requestId, kind, token) => Buffer.from(buyerKey.sign(spendMessage(requestId, kind, token)).signature).toString("base64");
-  const get = (p, e) => fetch(base + p, { headers: e ? { "x-truenav-entitlement": e, "x-truenav-buyer": buyer, "x-truenav-buyer-sig": buyerSig(e, p.endsWith("/report") ? "report" : "ask", decodeURIComponent(p.split("/")[2])) } : {} });
+  const buyerHeaders = (requestId, kind, token) => {
+    const nonce = randomBytes(16).toString("hex");
+    const exp = String(Date.now() + 60_000);
+    const sig = Buffer.from(buyerKey.sign(spendMessage({ audience: id("query"), id: requestId, kind, token, nonce, exp })).signature).toString("base64");
+    return { "x-truenav-entitlement": requestId, "x-truenav-buyer": buyer, "x-truenav-buyer-sig": sig, "x-truenav-buyer-nonce": nonce, "x-truenav-buyer-exp": exp };
+  };
+  const get = (p, e) => fetch(base + p, { headers: e ? buyerHeaders(e, p.endsWith("/report") ? "report" : "ask", decodeURIComponent(p.split("/")[2])) : {} });
   const s1 = await (await get("/fund/DEMO-CREDIT/score")).json();
   ok(s1.score === 58 && s1.band === "red" && s1.collection.rate_bps === 7857, "API /score (free) matches the chain");
   ok((await get("/fund/DEMO-CREDIT/report")).status === 402, "API /report without an entitlement is 402");
@@ -288,7 +296,7 @@ try {
   ok(rep.status === 200 && repBody.receipt.token_id === "DEMO-CREDIT" && repBody.entitlement.uses_left === 0, "API /report spends the entitlement on chain and returns the receipt");
   ok((await view("query", "get_entitlement", { request_id: "e2e-report-0001" })).uses_left === 0, "the use is recorded on chain");
   ok((await get("/fund/DEMO-CREDIT/report", "e2e-report-0001")).status === 402, "a second /report with the same entitlement is 402");
-  const askR = await fetch(base + "/ask", { method: "POST", headers: { "content-type": "application/json", "x-truenav-entitlement": "e2e-ask-00001", "x-truenav-buyer": buyer, "x-truenav-buyer-sig": buyerSig("e2e-ask-00001", "ask", "DEMO-CREDIT") }, body: JSON.stringify({ token_id: "DEMO-CREDIT", question: "collection rate?" }) });
+  const askR = await fetch(base + "/ask", { method: "POST", headers: { "content-type": "application/json", ...buyerHeaders("e2e-ask-00001", "ask", "DEMO-CREDIT") }, body: JSON.stringify({ token_id: "DEMO-CREDIT", question: "collection rate?" }) });
   ok(askR.status === 501 && (await view("query", "get_entitlement", { request_id: "e2e-ask-00001" })).uses_left === 20, "API /ask checks the entitlement, spends nothing, 501 until step 6");
   const s2 = await (await get("/fund/DEMO-CREDIT/score")).json();
   ok(JSON.stringify(s2) === JSON.stringify(s1), "the purchases did not change the score response");

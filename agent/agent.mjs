@@ -14,6 +14,7 @@
 //   v3 with no matched attestation_ref       review (unattested; a matching engine hash alone is not a pass)
 //   v3 engine hash other than the pinned key decline
 import { createHash } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import {decodeReceipt, publicV3, canonical, spendMessage} from "../api/receipt.mjs";
 
 export const MAX_AGE_DAYS = 45;
@@ -69,10 +70,9 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   const ageDays = (nowMs - Date.parse(r.as_of)) / 86_400_000;
   if (!(ageDays <= maxAgeDays)) return { action: "review", reason: "stale", detail: `receipt as of ${r.as_of} is ${Math.floor(ageDays)} days old` };
   if (decoded.version === "3") {
-    const proof = decoded.receipt.attestation_ref;
     const pinned = decoded.receipt.engine_code_sha256;
     if (pinned && pinned !== r.version_key) return { action: "decline", reason: "engine_hash", detail: "engine hash does not match the pinned build" };
-    if (proof == null || proof === "") return { action: "review", reason: "unattested", detail: "no TEE attestation matched this receipt" };
+    return { action: "review", reason: "unattested", detail: "unattested: no verified TEE attestation; a stored attestation_ref is not a pass" };
   }
   return { action: "approve", reason: "green", detail: `score ${r.score} green, no caps, no holds` };
 }
@@ -119,8 +119,11 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
   out.entitlement = { bought: true, contract: query, request_id: e.request_id, buyer: e.buyer, paid: e.paid, expires_ns: e.expires_ns, uses_left: e.uses_left, tx_hash: e.tx_hash || null };
   // 3. optionally spend it on the full report through the API, and check it is the receipt the score came from
   if (apiUrl) {
-    const headers = { "x-truenav-entitlement": requestId, "x-truenav-buyer": e.buyer };
-    if (typeof chain.signSpend === "function") headers["x-truenav-buyer-sig"] = await chain.signSpend(spendMessage(requestId, "report", token));
+    const nowMs = chain.nowMs ? await chain.nowMs() : Date.now();
+    const exp = String(nowMs + 60_000);
+    const nonce = randomBytes(16).toString("hex");
+    const headers = { "x-truenav-entitlement": requestId, "x-truenav-buyer": e.buyer, "x-truenav-buyer-nonce": nonce, "x-truenav-buyer-exp": exp };
+    if (typeof chain.signSpend === "function") headers["x-truenav-buyer-sig"] = await chain.signSpend(spendMessage({ audience: query, id: requestId, kind: "report", token, nonce, exp }));
     const res = await fetch(`${apiUrl}/fund/${encodeURIComponent(token)}/report`, { headers });
     const body = await res.json();
     if (res.status !== 200) throw new Error(`report refused (${res.status}): ${body.error}`);
@@ -131,7 +134,7 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
       const decoded=decodeReceipt({...latest,receipt:JSON.stringify(body.receipt)});
       const mismatch=verifyRecord(token,decoded.record);
       if(mismatch) throw new Error(mismatch);
-      out.report={status:200,...publicV3(decoded.receipt)};
+      out.report={status:200,...publicV3(decoded.receipt), attestation:"unattested"};
     }
     else out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, score: body.receipt.score, band: body.receipt.band, caps: body.receipt.caps, holds: body.receipt.holds };
   }

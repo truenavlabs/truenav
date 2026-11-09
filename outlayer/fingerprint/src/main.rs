@@ -35,6 +35,9 @@ struct Input {
     /// Random, ignored by the MAC. The run's public attestation carries sha256(input); without a nonce that hash
     /// would be as guessable as the old demo fingerprint (spike finding, 7 Nov).
     nonce: String,
+    /// When true, namespace and document keep their case, matching a case-sensitive engine namespace.
+    #[serde(default)]
+    case_sensitive: bool,
 }
 
 fn run() -> Result<serde_json::Value, String> {
@@ -56,13 +59,23 @@ fn run() -> Result<serde_json::Value, String> {
     }
     // Canonical ids only (uppercase A to Z, digits, hyphen, 1 to 128 characters): refused, never rewritten, so two
     // spellings of one loan can never get two fingerprints (AUDIT_FINDINGS 25). This also rules out '|'.
-    if !is_canonical_id(&input.document_id) {
+    if input.case_sensitive {
+        if !truenav_fingerprint::is_mixed_case_id(&input.collateral_namespace)
+            || !truenav_fingerprint::is_mixed_case_id(&input.document_id)
+        {
+            return Err(
+                "case-sensitive namespace and document must be ASCII letters, digits and hyphens"
+                    .into(),
+            );
+        }
+    } else if !is_canonical_id(&input.document_id) {
         return Err("document_id must be canonical: uppercase A to Z, digits and hyphens, 1 to 128 characters".into());
     }
-    let message = truenav_fingerprint::pledge_frame(
+    let message = truenav_fingerprint::pledge_frame_with(
         &input.asset_type,
         &input.collateral_namespace,
         &input.document_id,
+        input.case_sensitive,
     );
     let tag = keys::mac(KEY, None, &message)?;
     // Exactly 32 bytes of HMAC-SHA256, or the run fails (AUDIT_FINDINGS 26).

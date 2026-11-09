@@ -11,12 +11,15 @@ description = "TrueNav test registry: signer registry, signed score certificates
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-near-sdk = { version = "=5.30.1", features = ["unstable"] }
+near-sdk = { version = "=5.30.1", default-features = false, features = ["unstable"] }
 near-contract-standards = "=5.30.1"
 hex = "=0.4.3"
 
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+lol_alloc = "=0.4.1"
+
 [dev-dependencies]
-near-sdk = { version = "=5.30.1", features = ["unstable", "unit-testing"] }
+near-sdk = { version = "=5.30.1", default-features = false, features = ["unstable", "unit-testing"] }
 k256 = { version = "=0.13.4", features = ["ecdsa"] }
 
 [profile.release]

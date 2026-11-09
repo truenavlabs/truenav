@@ -1,0 +1,10 @@
+# cargo audit configuration. Every ignore needs a reason and is reviewed when dependencies change.
+[advisories]
+ignore = [
+  # RUSTSEC-2026-0387 crypto-bigint 0.5.5 timing variability.
+  # Two paths: dev-only near-sdk unit-testing (near-vm-runner -> p256), and the mock wasm via k256 0.13.4 -> elliptic-curve 0.13.
+  # The patched release is crypto-bigint >= 0.7.6. k256 0.14.0 still depends on elliptic-curve 0.14.1, which pins crypto-bigint 0.7.5.
+  # elliptic-curve 0.14.3 pins 0.7.8, but no k256 release requires it, and moving this mock off k256 0.13 changes the frozen viem signature fixture.
+  # The mock is a local sandbox signer. It is not a testnet deploy. The production contracts do not link this crate.
+  "RUSTSEC-2026-0387",
+]

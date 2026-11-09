@@ -11,10 +11,13 @@ description = "TrueNav circuit breaker demo: a fund-share vault that refuses new
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-near-sdk = { version = "=5.30.1" }
+near-sdk = { version = "=5.30.1", default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+lol_alloc = "=0.4.1"
 
 [dev-dependencies]
-near-sdk = { version = "=5.30.1", features = ["unit-testing"] }
+near-sdk = { version = "=5.30.1", default-features = false, features = ["unit-testing"] }
 
 [profile.release]
 codegen-units = 1

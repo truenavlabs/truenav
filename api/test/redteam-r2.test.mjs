@@ -1,10 +1,12 @@
 // Red team round 2. Each test asserts the property that should hold.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import {createHash} from 'node:crypto';
+import {mkdtempSync, readFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createHash, randomBytes} from 'node:crypto';
 import {KeyPair} from 'near-api-js';
-import {createServer, queryHash, spendMessage} from '../server.mjs';
+import {createServer, queryHash, spendMessage, BUYER_LIMIT} from '../server.mjs';
 import {canonical} from '../receipt.mjs';
 
 const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json', import.meta.url))).vectors[0].envelope;
@@ -12,7 +14,11 @@ const record = (e, score = e.score) => ({token_id: e.token_id, seq: Number(e.seq
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
 const buyerKey = KeyPair.fromRandom('ed25519');
-const buyerSig = (id, kind, token) => Buffer.from(buyerKey.sign(spendMessage(id, kind, token)).signature).toString('base64');
+const EXP = '60000';
+const buyerProof = (id, kind, token, {audience = 'query.test', nonce = randomBytes(16).toString('hex'), exp = EXP} = {}) => {
+  const sig = Buffer.from(buyerKey.sign(spendMessage({audience, id, kind, token, nonce, exp})).signature).toString('base64');
+  return {nonce, exp, sig, headers: {'x-truenav-entitlement': id, 'x-truenav-buyer': 'buyer.testnet', 'x-truenav-buyer-sig': sig, 'x-truenav-buyer-nonce': nonce, 'x-truenav-buyer-exp': exp}};
+};
 function queryChain(rec, {redeemDelayMs = 0} = {}) {
   const ents = new Map();
   let redeemCalls = 0;
@@ -34,10 +40,10 @@ function queryChain(rec, {redeemDelayMs = 0} = {}) {
     },
   };
 }
-async function serve(chain, fn) {
-  const s = createServer({chain, receipts: 'receipts.test', query: 'query.test', fee: '1'});
+async function serve(chain, fn, spendStore = join(mkdtempSync(join(tmpdir(), 'truenav-r2-')), 'nonces.json')) {
+  const s = createServer({chain, receipts: 'receipts.test', query: 'query.test', fee: '1', spendStore});
   await new Promise((r) => s.listen(0, '127.0.0.1', r));
-  try { await fn(`http://127.0.0.1:${s.address().port}`); } finally { await new Promise((r) => s.close(r)); }
+  try { await fn(`http://127.0.0.1:${s.address().port}`, spendStore); } finally { await new Promise((r) => s.close(r)); }
 }
 
 test('redteam_r2 RT2-05 an entitlement id seen on chain must not be spendable by someone else', async () => {
@@ -49,7 +55,7 @@ test('redteam_r2 RT2-05 an entitlement id seen on chain must not be spendable by
     // The buyer signs truenav-spend with a key on their account. The attacker does not.
     const stolen = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: {'x-truenav-entitlement': 'buyer-report-0001'}});
     const named = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: {'x-truenav-entitlement': 'buyer-report-0001', 'x-truenav-buyer': 'buyer.testnet'}});
-    const victim = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: {'x-truenav-entitlement': 'buyer-report-0001', 'x-truenav-buyer': 'buyer.testnet', 'x-truenav-buyer-sig': buyerSig('buyer-report-0001', 'report', v3.token_id)}});
+    const victim = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: buyerProof('buyer-report-0001', 'report', v3.token_id).headers});
     assert.notEqual(named.status, 200, 'the public buyer account id was enough to spend');
     assert.notEqual(stolen.status, 200, 'API served a paid report to a caller who never proved they are the buyer');
     assert.equal(victim.status, 200, `the buyer lost the paid use (status ${victim.status})`);
@@ -61,7 +67,7 @@ test('redteam_r2 RT2-06 concurrent reports on one single-use entitlement must se
   const q = queryChain(record(v3), {redeemDelayMs: 50});
   q.buy('buyer.testnet', 'buyer-report-0002', 'report', v3.token_id);
   await serve(q.chain, async (url) => {
-    const headers = {'x-truenav-entitlement': 'buyer-report-0002', 'x-truenav-buyer': 'buyer.testnet', 'x-truenav-buyer-sig': buyerSig('buyer-report-0002', 'report', v3.token_id)};
+    const headers = buyerProof('buyer-report-0002', 'report', v3.token_id).headers;
     const rs = await Promise.all(Array.from({length: 25}, () => fetch(`${url}/fund/${v3.token_id}/report`, {headers})));
     const ok = rs.filter((r) => r.status === 200).length;
     assert.equal(ok, 1);
@@ -85,10 +91,53 @@ test('redteam_r2 RT2-11 a stored verification_failed receipt must not be reporte
 test('redteam_r2 RT2-08 the agent must not approve a receipt whose TEE attestation was never checked', async () => {
   const {decide} = await import('../../agent/agent.mjs');
   const e = structuredClone(v3);
-  e.valuation_time = new Date().toISOString().replace(/\.\d+Z$/, 'Z'); e.holds = [];
+  e.valuation_time = new Date().toISOString().replace(/\.\d+Z$/, 'Z'); e.holds = []; e.caps = [];
   const {receipt_sha256, ...pre} = e; e.receipt_sha256 = sha(canonical(pre));
   const d = decide(e.token_id, record(e));
-  assert.notEqual(d.action, 'approve', `approved on the receipt hash alone (${JSON.stringify(d)}); attestation_ref is null and no proof was matched`);
+  assert.equal(d.action, 'review');
+  assert.equal(d.reason, 'unattested');
+  assert.match(d.detail, /unattested/);
+  e.attestation_ref = 'https://testnet-api.outlayer.ai/attestations/by-request/9';
+  const {receipt_sha256: _drop, ...pre2} = e; e.receipt_sha256 = sha(canonical(pre2));
+  const named = decide(e.token_id, record(e));
+  assert.notEqual(named.action, 'approve', `a non-empty unverified ref was treated as a pass (${JSON.stringify(named)})`);
+  assert.equal(named.reason, 'unattested');
+});
+
+test('redteam_r2 N6 spend proof rejects expiry, wrong audience, replay and buyer rate', async () => {
+  const q = queryChain(record(v3));
+  const file = join(mkdtempSync(join(tmpdir(), 'truenav-n6-')), 'nonces.json');
+  q.buy('buyer.testnet', 'buyer-report-0003', 'report', v3.token_id);
+  const replay = buyerProof('buyer-report-0003', 'report', v3.token_id);
+  await serve(q.chain, async (url) => {
+    const expired = buyerProof('buyer-report-0003', 'report', v3.token_id, {exp: '0'});
+    const old = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: expired.headers});
+    assert.equal(old.status, 403, `expired proof was accepted (${old.status})`);
+    const foreign = buyerProof('buyer-report-0003', 'report', v3.token_id, {audience: 'other.near'});
+    const wrong = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: foreign.headers});
+    assert.notEqual(wrong.status, 200, 'a proof for another audience was accepted');
+    const first = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: replay.headers});
+    assert.equal(first.status, 200, await first.text());
+  }, file);
+  q.buy('buyer.testnet', 'buyer-report-0003', 'report', v3.token_id);
+  await serve(q.chain, async (url) => {
+    const again = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: replay.headers});
+    assert.equal(again.status, 403, `a reused nonce survived a new process (${again.status})`);
+    const body = await again.json();
+    assert.equal(body.error, 'spend nonce reused');
+  }, file);
+  const limited = queryChain(record(v3));
+  for (let i = 0; i < BUYER_LIMIT + 1; i++) limited.buy('buyer.testnet', `buyer-rate-${String(i).padStart(4, '0')}`, 'report', v3.token_id);
+  await serve(limited.chain, async (url) => {
+    const statuses = [];
+    for (let i = 0; i < BUYER_LIMIT + 1; i++) {
+      const id = `buyer-rate-${String(i).padStart(4, '0')}`;
+      const res = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: buyerProof(id, 'report', v3.token_id).headers});
+      statuses.push(res.status);
+    }
+    assert.equal(statuses.filter((s) => s === 200).length, BUYER_LIMIT);
+    assert.equal(statuses[BUYER_LIMIT], 429);
+  });
 });
 
 test('redteam_r2 RT2-14 a malformed percent-escape is a client error, not a chain failure', async () => {

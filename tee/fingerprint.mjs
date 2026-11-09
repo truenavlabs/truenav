@@ -61,14 +61,22 @@ export function taskHash(att) {
   return createHash("sha256").update(Buffer.concat(parts)).digest("hex");
 }
 
-/** One fingerprint over HTTPS. Returns what the verifier needs; the payment key is never returned or logged. */
-export async function fingerprint(assetType, documentId, collateralNamespace, paymentKey = process.env.PAYMENT_KEY) {
+const MIXED_ID = /^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/;
+/** One fingerprint over HTTPS. Returns what the verifier needs; the payment key is never returned or logged.
+ * `version_key` is the pinned fingerprint wasm. Without it OutLayer runs the project's active version, which is the engine.
+ * `caseSensitive` keeps the namespace and document case so the MAC matches an engine lookup for that namespace. */
+export async function fingerprint(assetType, documentId, collateralNamespace, paymentKey = process.env.PAYMENT_KEY, caseSensitive = false) {
   if (!paymentKey) throw new Error("PAYMENT_KEY (the servicer's OutLayer payment key) is not set");
   if (assetType !== "real_estate" && assetType !== "invoices") throw new Error("asset type must be real_estate or invoices");
-  if (typeof collateralNamespace !== "string" || !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(collateralNamespace)) throw new Error("collateral namespace must be lowercase");
-  if (!isCanonicalId(documentId)) throw new Error(`document id ${JSON.stringify(documentId)} is not canonical (A-Z, 0-9, hyphen)`);
-  const input = { asset_type: assetType, collateral_namespace: collateralNamespace, document_id: documentId, nonce: randomBytes(16).toString("hex") };
-  const r = await fetch(`${FP_API}/call/${FP_PROJECT}`, { method: "POST", headers: { "Content-Type": "application/json", "X-Payment-Key": paymentKey }, body: JSON.stringify({ input, async: false }) });
+  if (caseSensitive) {
+    if (typeof collateralNamespace !== "string" || !MIXED_ID.test(collateralNamespace)) throw new Error("case-sensitive namespace must be ASCII letters, digits and hyphens");
+    if (!MIXED_ID.test(documentId)) throw new Error(`document id ${JSON.stringify(documentId)} is not an ASCII id`);
+  } else {
+    if (typeof collateralNamespace !== "string" || !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(collateralNamespace)) throw new Error("collateral namespace must be lowercase");
+    if (!isCanonicalId(documentId)) throw new Error(`document id ${JSON.stringify(documentId)} is not canonical (A-Z, 0-9, hyphen)`);
+  }
+  const input = { asset_type: assetType, collateral_namespace: collateralNamespace, document_id: documentId, nonce: randomBytes(16).toString("hex"), case_sensitive: caseSensitive };
+  const r = await fetch(`${FP_API}/call/${FP_PROJECT}`, { method: "POST", headers: { "Content-Type": "application/json", "X-Payment-Key": paymentKey }, body: JSON.stringify({ input, async: false, version_key: FP_WASM_SHA256 }) });
   const j = await r.json();
   if (!r.ok || !j.output || !j.output.loan_hash) throw new Error(`fingerprint failed: ${r.status} ${JSON.stringify(j.error || j).slice(0, 200)}`);
   return { asset_type: assetType, document_id: documentId, loan_hash: j.output.loan_hash, call_id: j.call_id, input: JSON.stringify(input), output: JSON.stringify(j.output) };

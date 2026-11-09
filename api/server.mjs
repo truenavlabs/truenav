@@ -12,6 +12,10 @@
 //
 // Without a usable entitlement the API answers 402 with exactly what to buy (contract, method, args, fee).
 import { createServer as httpServer } from "node:http";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {verifyRecord} from "../agent/agent.mjs";
 import { createHash } from "node:crypto";
 import { PublicKey } from "near-api-js";
@@ -31,7 +35,25 @@ function buyerProofOk(keys, message, sigB64) {
   return false;
 }
 const REQUEST_ID = /^[A-Za-z0-9_-]{8,64}$/;
+const NONCE = /^[A-Za-z0-9_-]{16,64}$/;
 const MAX_BODY = 4096;
+const SPEND_TTL_MS = 5 * 60 * 1000;
+const BUYER_LIMIT = 8;
+const BUYER_WINDOW_MS = 60 * 1000;
+export { SPEND_TTL_MS, BUYER_LIMIT, BUYER_WINDOW_MS };
+
+function readStore(path) {
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8"));
+    return { nonces: parsed.nonces && typeof parsed.nonces === "object" ? parsed.nonces : {}, buyers: parsed.buyers && typeof parsed.buyers === "object" ? parsed.buyers : {} };
+  } catch {
+    return { nonces: {}, buyers: {} };
+  }
+}
+function writeStore(path, store) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, JSON.stringify(store), { mode: 0o600 });
+}
 
 const send = (res, status, body) => {
   res.writeHead(status, { "Content-Type": "application/json", "Cache-Control": "no-store" });
@@ -42,9 +64,16 @@ const send = (res, status, body) => {
  * chain: { view(contractId, method, args) -> value, redeem(requestId, queryHash) -> uses_left (throws on refusal),
  * nowNs() -> current chain time in ns as BigInt }. receipts, query: contract account ids. fee: yoctoNEAR string.
  */
-export function handler({ chain, receipts, query, fee }) {
+export function handler({ chain, receipts, query, fee, spendStore }) {
   const latest = (token) => chain.view(receipts, "get_latest", { token_id: token });
   const toBuy = (kind, token, why) => ({ error: "payment_required", reason: why, buy: { contract: query, method: "buy_query", args: { request_id: "<your unique id, 8 to 64 of [A-Za-z0-9_-]>", query_hash: queryHash(kind, token), kind }, attach_yocto: fee } });
+  const storePath = spendStore || join(tmpdir(), "truenav-spend-store.json");
+  let storeQueue = Promise.resolve();
+  function withStore(fn) {
+    const run = storeQueue.then(fn, fn);
+    storeQueue = run.then(() => {}, () => {});
+    return run;
+  }
   const inflight = new Map();
   // One redeem at a time per request id. The next caller re-reads uses_left after the first redeem settles.
   function singleFlight(key, fn) {
@@ -64,12 +93,32 @@ export function handler({ chain, receipts, query, fee }) {
     if (!e) return { status: 402, body: toBuy(kind, token, "unknown entitlement") };
     if (req.headers["x-truenav-buyer"] !== String(e.buyer)) return { status: 403, body: { error: "entitlement is bound to another buyer" } };
     const sig = req.headers["x-truenav-buyer-sig"];
-    if (typeof sig !== "string" || sig.length === 0 || typeof chain.accessKeys !== "function") return { status: 403, body: { error: "buyer proof required" } };
+    const nonce = req.headers["x-truenav-buyer-nonce"];
+    const expRaw = req.headers["x-truenav-buyer-exp"];
+    if (typeof sig !== "string" || sig.length === 0 || typeof nonce !== "string" || !NONCE.test(nonce) || typeof expRaw !== "string" || !/^[0-9]{1,16}$/.test(expRaw) || typeof chain.accessKeys !== "function") return { status: 403, body: { error: "buyer proof required" } };
+    const exp = Number(expRaw);
+    const nowMs = Number((await chain.nowNs()) / 1_000_000n);
+    if (!Number.isSafeInteger(exp) || exp <= nowMs) return { status: 403, body: { error: "spend proof expired" } };
+    if (exp > nowMs + SPEND_TTL_MS) return { status: 403, body: { error: "spend proof expiry is too far" } };
     const keys = await chain.accessKeys(String(e.buyer));
-    if (!buyerProofOk(keys, spendMessage(id, kind, token), sig)) return { status: 403, body: { error: "buyer proof does not match the entitlement" } };
+    if (!buyerProofOk(keys, spendMessage({ audience: query, id, kind, token, nonce, exp: expRaw }), sig)) return { status: 403, body: { error: "buyer proof does not match the entitlement" } };
     if (e.kind !== kind || e.query_hash !== queryHash(kind, token)) return { status: 403, body: { error: "entitlement is for another query" } };
     if (BigInt(e.expires_ns) <= (await chain.nowNs())) return { status: 402, body: toBuy(kind, token, "entitlement expired") };
     if (e.uses_left < 1) return { status: 402, body: toBuy(kind, token, "entitlement already used") };
+    const reserved = await withStore(async () => {
+      const store = readStore(storePath);
+      for (const [seen, until] of Object.entries(store.nonces)) if (until < nowMs) delete store.nonces[seen];
+      const nonceKey = `${query}|${nonce}`;
+      if (store.nonces[nonceKey]) return { status: 403, body: { error: "spend nonce reused" } };
+      const stamps = (Array.isArray(store.buyers[e.buyer]) ? store.buyers[e.buyer] : []).filter((t) => nowMs - t < BUYER_WINDOW_MS);
+      if (stamps.length >= BUYER_LIMIT) return { status: 429, body: { error: "buyer rate limit" } };
+      stamps.push(nowMs);
+      store.buyers[String(e.buyer)] = stamps;
+      store.nonces[nonceKey] = exp;
+      writeStore(storePath, store);
+      return null;
+    });
+    if (reserved) return reserved;
     return { id, e };
   }
 
@@ -94,7 +143,7 @@ export function handler({ chain, receipts, query, fee }) {
       r = decoded.record;
       const rec = decoded.receipt;
       if (m[2] === "score") {
-        if (decoded.version === "3") return send(res, 200, publicV3(rec));
+        if (decoded.version === "3") return send(res, 200, { ...publicV3(rec), attestation: "unattested" });
         const allowed = new Set(["receipt_version","token_id","seq","method_version","engine_version_key","score","band","caps","holds","synthetic","receipt_sha256"]);
         const body = {
           receipt_version: "2",
@@ -122,7 +171,7 @@ export function handler({ chain, receipts, query, fee }) {
         } catch (e) {
           return { status: 402, body: { error: "redeem refused", reason: String(e.message || e).slice(0, 200) } };
         }
-        const receipt = decoded.version === "3" ? publicV3(rec) : {
+        const receipt = decoded.version === "3" ? { ...publicV3(rec), attestation: "unattested" } : {
           receipt_version: "2", token_id: token, seq: r.seq, method_version: r.method, engine_version_key: r.version_key,
           score: r.score, band: r.band,
           caps: Array.isArray(rec.caps) ? rec.caps.map((c) => (c && typeof c === "object" ? c.code : c)) : [],

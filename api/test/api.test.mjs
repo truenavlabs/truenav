@@ -3,7 +3,10 @@
 // never changes what /score returns.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomBytes } from "node:crypto";
 import { KeyPair } from "near-api-js";
 import { createServer, queryHash, spendMessage } from "../server.mjs";
 
@@ -16,7 +19,13 @@ const stored = (token, seq = 1) => {
 };
 const NOW = 5_000_000_000n;
 const buyerKey = KeyPair.fromRandom("ed25519");
-const buyerSig = (id, kind, token) => Buffer.from(buyerKey.sign(spendMessage(id, kind, token)).signature).toString("base64");
+const EXP = "60000";
+const spendStore = join(mkdtempSync(join(tmpdir(), "truenav-api-spend-")), "nonces.json");
+const buyerProof = (id, kind, token, audience = "query.test") => {
+  const nonce = randomBytes(16).toString("hex");
+  const sig = Buffer.from(buyerKey.sign(spendMessage({ audience, id, kind, token, nonce, exp: EXP })).signature).toString("base64");
+  return { nonce, exp: EXP, sig };
+};
 const ents = new Map();
 const redeems = [];
 const chain = {
@@ -44,12 +53,16 @@ const buy = (id, kind, token, extra = {}) => ents.set(id, { request_id: id, buye
 let server;
 let base;
 before(async () => {
-  server = createServer({ chain, receipts: "receipts.test", query: "query.test", fee: "10000000000000000000000" });
+  server = createServer({ chain, receipts: "receipts.test", query: "query.test", fee: "10000000000000000000000", spendStore });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
 after(() => server.close());
-const auth = (id, kind, token) => (id ? { "x-truenav-entitlement": id, "x-truenav-buyer": "agent.test", "x-truenav-buyer-sig": buyerSig(id, kind, token) } : {});
+const auth = (id, kind, token) => {
+  if (!id) return {};
+  const proof = buyerProof(id, kind, token);
+  return { "x-truenav-entitlement": id, "x-truenav-buyer": "agent.test", "x-truenav-buyer-sig": proof.sig, "x-truenav-buyer-nonce": proof.nonce, "x-truenav-buyer-exp": proof.exp };
+};
 const get = (p, id) => fetch(base + p, { headers: auth(id, p.endsWith("/report") ? "report" : "ask", p.split("/")[2]) });
 const ask = (body, id) => fetch(base + "/ask", { method: "POST", headers: { "content-type": "application/json", ...auth(id, "ask", body.token_id) }, body: JSON.stringify(body) });
 
@@ -136,7 +149,7 @@ const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-deriv
 const v3Record = () => ({token_id:v3.token_id,seq:Number(v3.seq),method:v3.method_version,version_key:v3.engine_version_key,score:v3.score,band:v3.band,caps:v3.caps,holds:v3.holds,period:`${v3.period_start}/${v3.period_end}`,as_of:v3.valuation_time,receipt_sha256:v3.receipt_sha256,receipt:JSON.stringify(v3),block_height:100});
 async function withRecord(record, fn) {
   let spent=0;
-  const local=createServer({chain:{...chain,async view(c,m,a){if(m==='get_latest')return record;return chain.view(c,m,a);},async redeem(){spent++;return 0;}},receipts:'receipts.test',query:'query.test',fee:'10000000000000000000000'});
+  const local=createServer({chain:{...chain,async view(c,m,a){if(m==='get_latest')return record;return chain.view(c,m,a);},async redeem(){spent++;return 0;}},receipts:'receipts.test',query:'query.test',fee:'10000000000000000000000',spendStore});
   await new Promise(resolve=>local.listen(0,'127.0.0.1',resolve));
   try {await fn(`http://127.0.0.1:${local.address().port}`,()=>spent);} finally {await new Promise(resolve=>local.close(resolve));}
 }
@@ -147,7 +160,7 @@ test('v3 score and report use public bands and rounded NAV, including lowercase 
     for(const key of ['trueval','truerange_low','truerange_high','reported_nav','parts_band','pledge_result','collection_rate_band'])assert.deepEqual(score[key],v3[key]);
     for(const key of ['uncapped_score','raw_score','score_x100','parts_x100','metrics'])assert.equal(Object.hasOwn(score,key),false);
     buy('v3-report-test','report',v3.token_id);
-    const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test','x-truenav-buyer':'agent.test','x-truenav-buyer-sig':buyerSig('v3-report-test','report',v3.token_id)}});assert.equal(report.status,200);const shown=(await report.json()).receipt;assert.equal(shown.score,v3.score);assert.equal(shown.receipt_sha256,v3.receipt_sha256);assert.equal(shown.uncapped_score,undefined);
+    const proof=buyerProof('v3-report-test','report',v3.token_id);const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test','x-truenav-buyer':'agent.test','x-truenav-buyer-sig':proof.sig,'x-truenav-buyer-nonce':proof.nonce,'x-truenav-buyer-exp':proof.exp}});assert.equal(report.status,200);const shown=(await report.json()).receipt;assert.equal(shown.score,v3.score);assert.equal(shown.receipt_sha256,v3.receipt_sha256);assert.equal(shown.uncapped_score,undefined);
   });
 });
 test('corrupt v3 is an explicit 502 and never consumes an entitlement',async()=>{
@@ -160,7 +173,7 @@ test('explicit v2 wrapper tag keeps score and report response bytes identical',a
   const bytes=[];
   for(const record of [stored('DEMO-CREDIT'),{...stored('DEMO-CREDIT'),receipt_version:'2'}])await withRecord(record,async url=>{
     buy('v2-byte-test','report','DEMO-CREDIT');
-    bytes.push([await (await fetch(url+'/fund/DEMO-CREDIT/score')).text(),await (await fetch(url+'/fund/DEMO-CREDIT/report',{headers:{'x-truenav-entitlement':'v2-byte-test','x-truenav-buyer':'agent.test','x-truenav-buyer-sig':buyerSig('v2-byte-test','report','DEMO-CREDIT')}})).text()]);
+    const proof=buyerProof('v2-byte-test','report','DEMO-CREDIT');bytes.push([await (await fetch(url+'/fund/DEMO-CREDIT/score')).text(),await (await fetch(url+'/fund/DEMO-CREDIT/report',{headers:{'x-truenav-entitlement':'v2-byte-test','x-truenav-buyer':'agent.test','x-truenav-buyer-sig':proof.sig,'x-truenav-buyer-nonce':proof.nonce,'x-truenav-buyer-exp':proof.exp}})).text()]);
   });
   assert.deepEqual(bytes[1],bytes[0]);
   assert.equal(bytes[0][0].includes('uncapped_score'), false);

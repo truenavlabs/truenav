@@ -20,6 +20,32 @@ pub mod mirror;
 pub mod v3;
 pub mod validate;
 
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: lol_alloc::AssumeSingleThreaded<lol_alloc::FreeListAllocator> =
+    unsafe { lol_alloc::AssumeSingleThreaded::new(lol_alloc::FreeListAllocator::new()) };
+
+/// Testnet builds accept only this worker. `set_config` cannot change it later.
+pub const TESTNET_OUTLAYER: &str = "outlayer.testnet";
+/// Allowed only when the crate is built with `--features sandbox`. Not a runtime setting.
+#[cfg(feature = "sandbox")]
+pub const SANDBOX_OUTLAYER: &str = "outlayer.test.near";
+
+fn outlayer_allowed(account: &str) -> bool {
+    if account == TESTNET_OUTLAYER {
+        return true;
+    }
+    #[cfg(feature = "sandbox")]
+    {
+        return account == SANDBOX_OUTLAYER;
+    }
+    #[cfg(not(feature = "sandbox"))]
+    {
+        let _ = account;
+        false
+    }
+}
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::{self, json, Value};
@@ -321,7 +347,7 @@ fn check_config(c: &Config) {
         "bad secrets_profile"
     );
     require!(
-        c.outlayer.as_str() == "outlayer.testnet",
+        outlayer_allowed(c.outlayer.as_str()),
         "outlayer account is not the allowlisted worker"
     );
     require!(
@@ -432,6 +458,10 @@ impl Receipts {
     #[payable]
     pub fn set_config(&mut self, config: Config) {
         self.only_admin();
+        require!(
+            config.outlayer == self.config.outlayer,
+            "outlayer account is fixed at init"
+        );
         check_config(&config);
         require!(
             !v3::enabled() || config.method == truenav_v3_core::wire::CURRENT_METHOD,

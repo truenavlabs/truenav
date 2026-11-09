@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { taskHash, quoteFields, checkFingerprint, isCanonicalId, FP_WASM_SHA256 } from "../fingerprint.mjs";
+import { taskHash, quoteFields, checkFingerprint, isCanonicalId, fingerprint, FP_WASM_SHA256 } from "../fingerprint.mjs";
 
 const att = JSON.parse(readFileSync(new URL("../fixtures/fingerprint-attestation-sample.json", import.meta.url), "utf8"));
 const rec = JSON.parse(readFileSync(new URL("../fixtures/fingerprints.json", import.meta.url), "utf8")).records.find((r) => r.call_id === att.call_id);
@@ -27,6 +27,28 @@ test("an attestation edited after the fact no longer matches its quote", async (
 test("a record whose loan_hash or input differs from the attested run fails", async () => {
   assert.ok((await failing({ ...rec, loan_hash: "f".repeat(64), output: rec.output.replace(rec.loan_hash, "f".repeat(64)) }, att)).some((l) => l.includes("output")));
   assert.ok((await failing({ ...rec, input: rec.input.replace(rec.document_id, "TITLE-DEMO-OTHER") }, att)).some((l) => l.includes("input")));
+});
+
+test("the HTTPS call pins version_key to the fingerprint wasm", async () => {
+  const seen = [];
+  const prev = globalThis.fetch;
+  globalThis.fetch = async (_url, opts) => {
+    seen.push(JSON.parse(opts.body));
+    return { ok: true, async json() { return { output: { loan_hash: "ab".repeat(32) }, call_id: "c1" }; } };
+  };
+  try {
+    await fingerprint("real_estate", "TITLE-1", "county-a", "payment-key");
+    await fingerprint("real_estate", "Ab-1", "Deeds", "payment-key", true);
+  } finally {
+    globalThis.fetch = prev;
+  }
+  assert.equal(seen[0].version_key, FP_WASM_SHA256);
+  assert.equal(seen[0].input.collateral_namespace, "county-a");
+  assert.equal(seen[0].input.case_sensitive, false);
+  assert.equal(seen[1].version_key, FP_WASM_SHA256);
+  assert.equal(seen[1].input.collateral_namespace, "Deeds");
+  assert.equal(seen[1].input.document_id, "Ab-1");
+  assert.equal(seen[1].input.case_sensitive, true);
 });
 
 test("only canonical document ids are accepted", () => {

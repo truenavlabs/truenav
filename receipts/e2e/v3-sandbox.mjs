@@ -9,7 +9,7 @@ import {Account,JsonRpcProvider,actions,nearToYocto,teraToGas,baseEncode} from '
 const root=new URL('../../',import.meta.url);
 const read=p=>JSON.parse(readFileSync(new URL(p,root)));
 const receiptId='receipts.tnlab-718ca9.testnet';
-const ids={receipts:receiptId,admin:'admin.ci.testnet',pauser:'pauser.ci.testnet',runner:'runner.ci.testnet',outlayer:'outlayer.ci.testnet',worker:'worker.ci.testnet',relayer:'relayer.ci.testnet'};
+const ids={receipts:receiptId,admin:'admin.ci.testnet',pauser:'pauser.ci.testnet',runner:'runner.ci.testnet',outlayer:'outlayer.test.near',worker:'worker.ci.testnet',relayer:'relayer.ci.testnet'};
 const genesis=Object.values(ids).map(id=>GenesisAccount.createDefault(id));
 const sandbox=await Sandbox.start({config:{additionalAccounts:genesis}});
 try{

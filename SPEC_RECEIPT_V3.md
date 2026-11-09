@@ -1,5 +1,7 @@
 # TrueNav receipt v3 specification
 
+Status: FROZEN v3.0.0-rc1, pending the owner's final read (9 Nov 2026 Bangkok).
+
 Design only, the owner decisions of 9 Nov 2026 Bangkok. No implementation, deployment or transaction is authorized by
 this document. Option A is LOCKED: one combined receipt per credit fund per reporting period on receipts.
 Corrections append a sequence referencing the superseded entry; old entries remain immutable. Credit is the main
@@ -22,7 +24,7 @@ Dates are real Gregorian UTC dates, ISO 8601 seconds with Z, no ambiguous local 
 plus an enum/status, never zero. Reject unknown keys, duplicate JSON keys, non-finite numbers, overflows and ext
 entries. Bounds, size limits, enum lists and golden serialization vectors are part of the frozen method spec.
 P = public on chain, callback, event, HTTP feed and Base-verifiable record; H = hidden in the private full report;
-O = OPEN disclosure decision. Hidden means absent from public JSON, not merely a null field beside a leaked metric.
+Hidden means absent from public JSON, not merely a null field beside a leaked metric.
 
 ## 2. Identity fields
 
@@ -69,7 +71,8 @@ Define H(label, value) = SHA256(length-prefixed encoding of "truenav-v3", label,
 canonical(value)). Publish H for each commitment. registry_state_root commits to the private root with its block
 reference; it is not misrepresented as a NEAR consensus state root or a Merkle proof. input_sha256 = H("inputs",
 canonical input manifest). Record units/field schema in every committed object. Randomness is never derived from
-public data. Public synthetic replay vectors may use a clearly labeled fixed fixture salt, never a live salt.
+public data. Unit tests may inject synthetic entropy in memory, but no salt is exported in public receipt/proof
+fixtures. Salt and exact values are released only within the buyer's private full report.
 
 No self-reference: TEE produces a redacted public body and commits to the private report, which excludes future
 seq/issued_at/receipt hash. Its attestation binds the canonical body and reserved request context. The contract
@@ -92,10 +95,11 @@ only the redacted body; any provider input/output evidence containing private so
 | pledge_scope | {registry_account, block_height, block_hash, scope_id, coverage_status} | P, finalized read references; private roster stays H | State the guarantee boundary |
 | fingerprint_scheme | string "loan-terms-v2" | P, exact version | Identity semantics changed |
 | pledge_result | enum clear / conflict / incomplete / unknown | P, clear only with all required checks | No missing-data pass |
-| pledge_coverage_bps | u16 0..10000 or null | O1, round DOWN to 100 or 500 bps | Conservative public coverage |
+| pledge_coverage_bps | u16 0..10000 or null | P, floor(exact_bps / 100) * 100, never round up | Locked conservative coverage |
 | loans_checked | count band string or null | P, 0 / <5 / 5-9 / 10-19 / 20-49 / 50+; suppress with cohorts where needed | Avoid exposing small roster size |
-| blocked_attempts | nonnegative integer or enum | O3, exact OR 0 / 1 / 2+ | Balance observability and disclosure |
-| lien_rank | positive integer per position | H, signed grant; public aggregate lien_support="ranked" | Legitimate liens without position disclosure |
+| blocked_attempts | enum string "0", "1", "2+" | P, counts >=2 map to "2+" | Locked disclosure |
+| lien_rank | positive integer per position | H, signed grant | Legitimate liens without position disclosure |
+| lien_support | enum "ranked" | P, exact capability marker, not per-loan ranks | Describe rank-aware policy |
 | pledge details / fingerprint list / holder identities | typed private records | H, no raw loan IDs or per-loan fingerprints in receipt | Registry itself remains publicly observable |
 
 ### Renamed-document bypass: LOCKED FIX NOW
@@ -131,28 +135,37 @@ Current registry's single lock per hash does not implement this: plan an explici
 separate compatible v2 registry, with migration/legacy adapter and no reset of history. Never treat an off-chain
 receipt declaration as lien enforcement. This is separate from the ONE receipts-contract upgrade.
 
-Identity work: 7-10 hours, including normalization/signatures/vectors 2-3, OutLayer fingerprint change and build
-2-3, registry rank/lineage integration and migration tests 3-4. Includes renamed-file, forged terms, amendment,
-same-rank duplicate and legitimate second-lien attack tests. Source authenticity/canonical identifiers remain trust
+Codex identity work: 4-6 hours, including normalization/signatures/vectors 2-3 and OutLayer fingerprint change
+and build 2-3. Registry rank/lineage implementation and migration belong to an external owner and are excluded.
+Use minimal owned tests for renamed-file, forged terms, amendment and lien input validation; external scenarios
+exercise same-rank refusal and legitimate second liens against the registry. Source authenticity/canonical identifiers remain trust
 assumptions; identity scope is the participating registry, not a global legal lien search.
 
 ## 5. NAV fields
 
 | Field | Type | Visibility / rule | Why |
 | --- | --- | --- | --- |
-| reported_nav / trueval | integer-cent decimal string or rounded display object | O2, exact OR rounded with salted commitment | the owner's disclosure choice |
-| truerange_low / truerange_high | integer-cent decimal strings | H, exact endpoints in buyer report; public NAV result/bands only | Endpoints can reconstruct valuation/variance |
+| reported_nav / trueval / truerange_low / truerange_high | rounded integer-cent decimal strings or null | P, round each to max($10,000, 0.1% of its absolute value); exact values H | Locked rounded NAV projection |
+| exact.reported_nav / trueval / truerange_low / truerange_high | exact integer-cent decimal strings or null | H, never in public payloads; signed bounds allowed | Authoritative private arithmetic |
+| commitments.reported_nav / trueval / truerange_low / truerange_high | hex32 each | P, separately domain-separated commitment to each exact value | Bind all four exact figures |
 | nav_result | enum inside / outside_low / outside_high / unknown | P, compare exact inputs; endpoints inclusive | Useful assessment without endpoints |
 | nav_gap_band | enum inside / <=5pct / 5-10pct / >10pct / unknown | P, outside gap as fraction of exact TrueVal; zero TrueVal => unknown | Coarse explanation |
 | unverified_share_band | enum 0 / <=10pct / 10-25pct / 25-50pct / >50pct / unknown | P, exact internal R13 test before bucketing | Eligibility explanation |
 
-O2 rounded candidate: for each value x cents choose step=max(1,000,000 cents, ceil(abs(x)*0.001)); round half up
-to that step. Publicly disclose rounding policy and uncertainty; exact x, selected adaptive step and residual stay
-private. Because value-dependent steps may themselves leak, CI MUST evaluate this formula before approval; a
-fixed denomination ladder would require the owner's approval as a revised policy. Each exact value remains bound by
-the salted nav_report/full_report commitments. Exact-public option explicitly overrides the earlier private-NAV
-plan ONLY if the owner chooses it. Until O2 is resolved, publication/deployment of this schema is blocked; no implicit
-exact-public default. Private-report access remains restricted in either case.
+LOCKED rounding: for each exact x cents, step = max(1,000,000, ceil(abs(x)/1000)) cents;
+rounded = sign(x) * floor(abs(x)/step + 0.5) * step. Use integer arithmetic (ties away from zero), not binary
+floating point. Round all FOUR fields independently; compare NAV to range on the private exact inputs. Unknown
+stays null. Public bounds are rounded display figures, not recomputed decision boundaries. Add no public adaptive
+step, residual or hidden amount. The private full report contains exact values and the fresh 32-byte TEE salt.
+Each commitments.<field> = H("nav_exact:<field>", {currency:"USD", cents:exact_value}), using the commitment
+construction above. Domain separation prevents swapping values; null has a distinct canonical representation.
+Never export salt/exact values in events, transaction arguments, HTTP, attestation exports or errors.
+
+Privacy gate: a value-derived step can reveal much more than its nominal width. Above $10M, step is approximately
+x/1000, so the rounded value can remain extremely close to x. This is a locked-rule risk to TEST, not an alternative
+policy silently chosen here. CI must attempt reconstruction jointly with every cash band, score and rounded bound,
+for one receipt and consecutive receipts. A failure blocks publication/upgrade readiness and is reported to the owner;
+FROZEN rc1 is not a claim that this rounding policy has passed leak tests. Salt protects commitments, not arithmetic.
 
 ## 6. Cash fields
 
@@ -182,6 +195,7 @@ only when it cannot expose a hidden complement. Suppression applies to derived H
 
 | Field | Type | Visibility / rule | Why |
 | --- | --- | --- | --- |
+| status | enum scored / disclaimed / verification_failed / invalid_fund_fields / not_rated | P, preserve legacy eligibility order and no-number rules | Explicit score availability |
 | score_x100 | u16 0..10000 or null | P, half-up to 0.01 from exact final legacy score after penalties/caps | Preserve 9917 and 4284 |
 | band | enum green / yellow / red / grey | P, existing legacy whole-score rounding then 85/60 thresholds | Preserve old boundary semantics |
 | raw_score | signed fixed-decimal string | H, exact uncapped internal result | Public raw score could undo caps and reveal components |
@@ -253,10 +267,15 @@ protects commitments from guessing; it cannot hide information already disclosed
    cents ($1.5M). With the equal-size $500k loan fixture knowledge (or remaining total/cohort count constraints),
    recover 3 loans despite primary suppression. Pin the precise source fields and full derivation in CI; 850M is
    the non-late sum, not the total denominator. Inspect all cohort sums and claimed_not_settled_cents too.
-2. One-receipt reconstruction: attacker enumerates known synthetic tapes, solves ratio/denominator and score-part
+2. Required cash/NAV matrix: test all four rounded NAV fields against EACH cash_evidence_status, cash_match_band,
+   yield_gap_band, collection_rate_band, late_share_band, each cohort/suppression output and each exception band.
+   Include every valid boundary and joint combination with score, coverage and public registry knowledge. Repeat
+   this matrix for consecutive receipts and corrections, including transitions across NAV rounding steps and cash
+   bands. Inconsistent combinations are schema-negative cases, not silently skipped privacy cases.
+   One-receipt reconstruction: attacker enumerates known synthetic tapes, solves ratio/denominator and score-part
    equations, tests NAV rounding residuals, and uses totals to recover suppressed cohorts. Compare public-policy
    permissible intervals with recovered candidates; a unique hidden amount/count below the intended granularity
-   fails. Keep exact-public O2 as an explicit allowed disclosure, not a failed promise of hiding it.
+   fails. All four exact NAV values and their salt remain hidden under the locked rule.
 3. Two consecutive receipts: difference counts/bands, unchanged roster and known single-payment/default events;
    use corrections, stable fund IDs and known registry events to solve changes. Independent salts must defeat
    commitment comparison. Complementary suppression is temporal as well as within one receipt; previously public
@@ -264,7 +283,7 @@ protects commitments from guessing; it cannot hide information already disclosed
 4. Multi-output attacks: public score plus NAV result plus coverage, cash bands, public registry locks/attempts,
    source timestamps and method changes. Test boundary queries and many analyst questions as a single budget.
    Existing registry visibility is declared attacker knowledge, not privacy credited to the receipt.
-5. Reject hidden keys and canaries in all nested objects/errors/logs; claimed_not_settled_cents, dollar totals,
+5. Reject hidden keys and canaries in all nested objects/errors/logs; claimed_not_settled_cents, cash dollar totals,
    denominator amounts, arbitrary ext and raw source hashes must be absent. Test unauthorized buyer/key replay.
 6. Network view leak test: aggregate outputs across a small roster, exclude one fund and difference over time.
    It must not reveal tighter per-fund values than permitted by the receipt. Every aggregate is public-field-only;
@@ -278,12 +297,19 @@ attack recovered, v3 protected values unrecoverable beyond approved policy, unkn
 Exact scores and public registry knowledge may expose inference tradeoffs; unresolved failures block publication
 until the owner approves a concrete disclosure change. No test waivers disguised as salt-based privacy claims.
 
-## 11. OPEN decisions, the owner only
+## 11. Frozen interface and lane ownership
 
-1. pledge_coverage_bps: round DOWN to 100 bps (more precision) OR 500 bps (less inference surface).
-2. reported_nav and trueval: exact public values OR rounded by max($10k, 0.1%) with salted exact commitments.
-   Exact values always exist privately; proposed rounded formula and its residual leakage require leak tests.
-3. blocked_attempts: exact public count OR buckets 0 / 1 / 2+. Existing registry counts remain attacker knowledge.
+No disclosure decisions remain open. Coverage rounds down to 100 bps, all four NAV figures are rounded with
+separate salted exact commitments, and blocked attempts are "0" / "1" / "2+". The signed-terms fingerprint fix and
+bounded conditional buyer analyst remain locked. the owner's final read is pending; changes after this rc1 need an
+explicit revision and coordination with consuming lanes.
 
-Former split 4 is LOCKED FIX NOW: signed canonical loan terms, loan-terms-v2 fingerprint and authorized lien ranks.
-Former split 5 is LOCKED KEEP SMALL with the Thu 12 Nov drop condition. Neither is an open vote in this spec.
+Codex owns lab/ci-green and lab/receipt-v3-spec, receipts v3 contract/views and Wed upgrade preparation,
+engine v3, new pledge fingerprint, source signature checks INSIDE the TEE, and receipt leak tests. Only small
+fixtures necessary for these tests belong here. Contract views are in this lane; the HTTP feed and reusable
+verifier are not. No generator/attack-scenario dataset, judge command, dashboard, landing, demo token or external
+adapter implementation is assigned here. External agents on lab/sim-data and lab/verifier consume this frozen
+interface and own their assigned implementations. Registry ranked-lock changes, paid-report service and analyst
+need explicit external ownership; the identity interface does not grant ownership of the registry contract.
+Root package.json/README changes require task necessity and must be reported. Keep skills/ out. Live upgrade,
+configuration and every transaction remain gated on the owner's specific yes; this local freeze authorizes none.

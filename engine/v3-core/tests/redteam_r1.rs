@@ -127,8 +127,13 @@ fn redteam_r1_v1_document_fingerprint_and_v2_terms_must_collide() {
         "another namespace is not this collateral"
     );
     let doc = document_root("PARCEL-1").unwrap();
+    let mut framed = Vec::new();
+    truenav_v3_core::source::lp(&mut framed, b"truenav-fp-v1").unwrap();
+    truenav_v3_core::source::lp(&mut framed, b"real_estate").unwrap();
+    truenav_v3_core::source::lp(&mut framed, b"county-a").unwrap();
+    truenav_v3_core::source::lp(&mut framed, doc.as_bytes()).unwrap();
     let legacy = mac
-        .mac(format!("truenav-fp-v1|real_estate|{doc}").as_bytes())
+        .mac(&framed)
         .unwrap()
         .iter()
         .map(|x| format!("{x:02x}"))

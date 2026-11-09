@@ -252,6 +252,7 @@ impl Receipts {
             "network",
             "receipts_contract",
             "token_id",
+            "fund_id",
             "fund_account",
             "period_start",
             "period_end",
@@ -975,5 +976,81 @@ mod tests {
         assert!(c.pending.get("DEMO-CREDIT").is_none());
         let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
         assert_ne!(shown.band, "green");
+    }
+    #[test]
+    fn redteam_r1b_guest_cannot_swap_fund_id() {
+        let mut c = migrated();
+        let mut e = golden();
+        e["method_version"] = json!(truenav_v3_core::wire::CURRENT_METHOD);
+        e["fund_id"] = e["token_id"].clone();
+        e["method_spec_sha256"] = json!(truenav_v3_core::wire::method_hash_for(
+            truenav_v3_core::wire::CURRENT_METHOD
+        )
+        .unwrap());
+        truenav_v3_core::wire::seal_envelope(&mut e).unwrap();
+        let p = pending(&mut c, &e);
+        let mut swapped = body(&e);
+        swapped["fund_id"] = json!("victim-credit-fund");
+        context(
+            "receipts.tnlab-718ca9.testnet",
+            timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
+        );
+        match c.accept_v3(&p, &swapped) {
+            Ok(seq) => {
+                let got = c.get_latest_receipt(p.token_id).unwrap();
+                panic!("stored seq {seq} with fund_id {}", got["fund_id"]);
+            }
+            Err(code) => assert_eq!(code, "v3_context_mismatch", "unexpected refusal {code}"),
+        }
+    }
+    #[test]
+    fn redteam_r1b_corrupt_green_head_is_marked_failed() {
+        let mut c = setup();
+        c.set_runner(account("runner.testnet"), true);
+        c.register_token("DEMO-CREDIT".into(), "credit".into());
+        c.receipts.insert(
+            ("DEMO-CREDIT".into(), 1),
+            StoredReceipt {
+                token_id: "DEMO-CREDIT".into(),
+                seq: 1,
+                request_id: 1,
+                method: "truenav-v3.0.1".into(),
+                version_key: "0".repeat(64),
+                score: 99,
+                band: "green".into(),
+                period: "2026-10".into(),
+                as_of: "2026-11-09T00:00:00Z".into(),
+                caps: vec![],
+                holds: vec![],
+                receipt_sha256: "ab".repeat(32),
+                receipt: "null".into(),
+                requested_ns: 1,
+                stored_ns: 2,
+                block_height: 3,
+            },
+        );
+        c.tokens.get_mut("DEMO-CREDIT").unwrap().receipts = 1;
+        let mut b = VMContextBuilder::new();
+        b.current_account_id(account("receipts.tnlab-718ca9.testnet"))
+            .predecessor_account_id(account("runner.testnet"))
+            .signer_account_id(account("runner.testnet"))
+            .attached_deposit(NearToken::from_near(2))
+            .prepaid_gas(Gas::from_tgas(300))
+            .account_balance(NearToken::from_near(100));
+        testing_env!(b.build());
+        match c.request_run("DEMO-CREDIT".into()) {
+            PromiseOrValue::Value(v) => {
+                assert_eq!(v["error"], "v3_receipt_corrupt");
+                assert_eq!(v["head_status"], "failed");
+            }
+            PromiseOrValue::Promise(_) => panic!("corrupt head started a run"),
+        }
+        assert!(
+            c.head_failed("DEMO-CREDIT"),
+            "corrupt head was not stored as failed"
+        );
+        let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
+        assert_eq!(shown.band, "red");
+        assert_ne!(shown.score, 99);
     }
 }

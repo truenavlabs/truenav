@@ -540,7 +540,7 @@ fn temporal_setup() -> (Context, Vec<SignedSource>, Policy, Read) {
             collateral_ref: format!("TEST TEMPORAL {i}"),
         };
         let tv = canonical_terms(&t, &[]).unwrap();
-        loans.push(json!({"id":id,"principal":100000,"accrued":0,"repaid":0,"asset":"real_estate","bucket":"current","servicer_asof":"2026-11-09T06:00:00Z","terms":tv,"lien_rank":1}));
+        loans.push(json!({"id":id,"principal":100000,"accrued":0,"repaid":0,"asset":"real_estate","bucket":"current","servicer_asof":"2026-11-09T06:00:00Z","origination_date":"2026-01-01","terms":tv,"lien_rank":1}));
         terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
         locks.push(LockRead {
             fingerprint: fingerprint(&t, "real_estate", &[], &TestMac).unwrap(),
@@ -892,4 +892,116 @@ fn collateral_namespace_scopes_pledge_conflict() {
         .contains(&json!("pledge_conflict")));
     assert!(hit.envelope["score"].as_u64().unwrap() <= 59);
     assert_eq!(hit.envelope["band"], "red");
+}
+
+/// A lock whose hash is the pledge module's v4 message is the lock the NAV check reads.
+#[test]
+fn redteam_r1d_pledge_path_lock_is_seen_by_the_nav_check() {
+    let (c, sources, p, mut r) = temporal_setup();
+    let t: LoanTerms =
+        serde_json::from_value(sources[3].payload["loan_terms"][5]["terms"].clone()).unwrap();
+    let message =
+        pledge_message("real_estate", &t.collateral_namespace, &t.collateral_ref).unwrap();
+    let lock = hex::encode(TestMac.mac(&message).unwrap());
+    assert_eq!(lock, r.snapshot.locks[5].fingerprint);
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(
+        out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")),
+        "pledge_result={} score={}",
+        out.envelope["pledge_result"],
+        out.envelope["score"]
+    );
+    assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
+    assert_eq!(out.envelope["band"], "red");
+}
+
+#[test]
+fn redteam_r1b_signed_origination_change_must_cap() {
+    let (c, mut sources, p, r) = temporal_setup();
+    let mut terms = sources[3].payload["loan_terms"][5]["terms"].clone();
+    terms["origination_date"] = json!("2020-06-01");
+    sources[0].payload["loans"][5]["terms"] = terms.clone();
+    sources[3].payload["loan_terms"][5]["terms"] = terms;
+    sign(&mut sources[0]);
+    sign(&mut sources[3]);
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(
+        out.envelope["exceptions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|x| x["code"] == "terms_mismatch"),
+        "score {} band {} exceptions {}",
+        out.envelope["score"],
+        out.envelope["band"],
+        out.envelope["exceptions"]
+    );
+    assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
+    assert_eq!(out.envelope["band"], "red");
+}
+
+#[test]
+fn redteam_r1b_repaid_tape_must_not_hide_a_foreign_lock() {
+    let (c, mut sources, p, mut r) = temporal_setup();
+    sources[0].payload["loans"][5]["repaid"] = json!(100000.0);
+    r.snapshot.locks[5].owner = Some("other.sim.testnet".into());
+    r.snapshot.locks[5].fund_token_id = Some("other-simulated-fund".into());
+    sign(&mut sources[0]);
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(
+        out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")),
+        "pledge_result={} score={}",
+        out.envelope["pledge_result"],
+        out.envelope["score"]
+    );
+    assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
+    assert_eq!(out.envelope["band"], "red");
+}
+
+#[test]
+fn redteam_r1b_engine_must_read_the_migration_alias() {
+    let (c, sources, p, r) = temporal_setup();
+    let t: LoanTerms =
+        serde_json::from_value(sources[3].payload["loan_terms"][5]["terms"].clone()).unwrap();
+    let alias = pledge_lookup_hashes(&t, "real_estate", &[], &TestMac).unwrap()[1].clone();
+    struct Spy {
+        inner: Read,
+        alias: String,
+    }
+    impl RegistryReader for Spy {
+        fn read(
+            &self,
+            scope: &Scope,
+            fps: &[String],
+            at: &str,
+        ) -> truenav_v3_core::Result<Snapshot> {
+            if !fps.iter().any(|h| h == &self.alias) {
+                return Err("migration_alias_not_queried");
+            }
+            self.inner.read(scope, fps, at)
+        }
+    }
+    let out = evaluate(
+        &c,
+        &sources,
+        &p,
+        &Spy { inner: r, alias },
+        &TestMac,
+        &salt(),
+    );
+    match out {
+        Err("migration_alias_not_queried") => {
+            panic!("engine did not query the v1 migration alias")
+        }
+        Ok(_) => {}
+        Err(other) => panic!("engine failed before the alias check: {other}"),
+    }
 }

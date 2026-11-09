@@ -614,3 +614,39 @@ fn redteam_r1_public_v2_views_must_not_expose_exact_cents() {
         "exact cents are on the public view"
     );
 }
+
+#[test]
+fn redteam_r1b_public_history_and_receipt_must_not_expose_exact_money() {
+    let mut c = setup();
+    assert_eq!(
+        run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |_| {}))),
+        "stored:1"
+    );
+    assert_eq!(
+        run_with(&mut c, "DEMO-CREDIT", |n| Some(engine_output("DEMO-CREDIT", n, |_| {}))),
+        "stored:1"
+    );
+    let history = c.get_history("HONEST-CREDIT".into(), None, Some(1));
+    let history_text = &history[0].receipt;
+    let wrapped = c.get_receipt("HONEST-CREDIT".into(), 1).unwrap();
+    let receipt_text = wrapped["receipt"].as_str().unwrap();
+    let demo = c.get_receipt("DEMO-CREDIT".into(), 1).unwrap();
+    let demo_text = demo["receipt"].as_str().unwrap();
+    let mut leaked = Vec::new();
+    for (where_, text, needle) in [
+        ("get_history", history_text.as_str(), "uncapped_score"),
+        ("get_history", history_text.as_str(), "parts_x100"),
+        ("get_history", history_text.as_str(), "outstanding_cents"),
+        ("get_history", history_text.as_str(), "rate_bps"),
+        ("get_history", history_text.as_str(), "9166660"),
+        ("get_receipt", receipt_text, "outstanding_cents"),
+        ("get_receipt", receipt_text, "rate_bps"),
+        ("get_receipt", receipt_text, "1000000000"),
+        ("get_receipt", demo_text, "78.57"),
+    ] {
+        if text.contains(needle) {
+            leaked.push(format!("{where_} contains {needle}"));
+        }
+    }
+    assert!(leaked.is_empty(), "public views still expose exact figures: {leaked:?}");
+}

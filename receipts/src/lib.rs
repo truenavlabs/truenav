@@ -175,45 +175,62 @@ fn emit(event: &str, data: Value) {
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
-const PRIVATE_RECEIPT_KEYS: &[&str] = &[
-    "parts_x100",
-    "raw_x100",
-    "uncapped_score",
-    "cash_received_cents",
-    "claimed_cash_cents",
-    "cash_interest_cents",
-    "accrued_interest_cents",
-    "capitalized_interest_cents",
-    "rent_due_cents",
-    "rent_collected_cents",
-    "expenses_cents",
-    "reserves_cents",
-    "net_operating_cash_cents",
-    "distributions_cents",
-    "dues_cents",
-    "verified_cents",
+const PUBLIC_RECEIPT_KEYS: &[&str] = &[
+    "as_of",
+    "band",
+    "caps",
+    "checks_run",
+    "evidence_hashes",
+    "exceptions",
+    "head_status",
+    "holds",
+    "kind",
+    "method",
+    "passport",
+    "method_version",
+    "engine_version_key",
+    "period",
+    "receipt_sha256",
+    "receipt_version",
+    "run_nonce",
+    "score",
+    "seq",
+    "synthetic",
+    "token_id",
+    "version_key",
 ];
-fn redact_value(v: &mut Value) -> bool {
-    let mut changed = false;
-    match v {
-        Value::Array(xs) => {
-            for x in xs {
-                changed |= redact_value(x);
-            }
-        }
-        Value::Object(m) => {
-            for key in PRIVATE_RECEIPT_KEYS {
-                if m.remove(*key).is_some() {
-                    changed = true;
-                }
-            }
-            for x in m.values_mut() {
-                changed |= redact_value(x);
-            }
-        }
-        _ => {}
+fn public_codes(v: &Value) -> Value {
+    let Some(xs) = v.as_array() else {
+        return Value::Array(vec![]);
+    };
+    Value::Array(
+        xs.iter()
+            .filter_map(|x| {
+                x.get("code")
+                    .and_then(Value::as_str)
+                    .map(|s| Value::String(s.to_string()))
+                    .or_else(|| x.as_str().map(|s| Value::String(s.to_string())))
+            })
+            .collect(),
+    )
+}
+fn project_public(v: &Value) -> Value {
+    let Some(obj) = v.as_object() else {
+        return v.clone();
+    };
+    let mut out = serde_json::Map::new();
+    for key in PUBLIC_RECEIPT_KEYS {
+        let Some(value) = obj.get(*key) else {
+            continue;
+        };
+        let next = if *key == "caps" || *key == "holds" || *key == "exceptions" {
+            public_codes(value)
+        } else {
+            value.clone()
+        };
+        out.insert((*key).to_string(), next);
     }
-    changed
+    Value::Object(out)
 }
 impl Receipts {
     pub(crate) fn latest_raw(&self, token_id: &str) -> Option<StoredReceipt> {
@@ -228,14 +245,13 @@ impl Receipts {
     }
 }
 fn redact_public_receipt(raw: &str) -> String {
-    let Ok(mut v) = serde_json::from_str::<Value>(raw) else {
+    let Ok(v) = serde_json::from_str::<Value>(raw) else {
         return raw.to_string();
     };
-    if redact_value(&mut v) {
-        v.to_string()
-    } else {
-        raw.to_string()
+    if !v.is_object() {
+        return raw.to_string();
     }
+    project_public(&v).to_string()
 }
 fn check_config(c: &Config) {
     require!(
@@ -383,7 +399,12 @@ impl Receipts {
             is_token_id(&token_id),
             "token_id must match ASCII kebab segments, 1 to 64 characters"
         );
-        require!(self.tokens.values().all(|t| t.token_id == token_id || !t.token_id.eq_ignore_ascii_case(&token_id)), "token_id case collision");
+        require!(
+            self.tokens
+                .values()
+                .all(|t| t.token_id == token_id || !t.token_id.eq_ignore_ascii_case(&token_id)),
+            "token_id case collision"
+        );
         require!(
             kind == "credit" || kind == "rental",
             "kind must be credit or rental"
@@ -483,17 +504,26 @@ impl Receipts {
                 serde_json::from_str::<Value>(&last.receipt),
                 Ok(Value::Object(_))
             ) {
+                let code = if truenav_v3_core::wire::is_v3_method(&last.method) {
+                    "v3_receipt_corrupt"
+                } else {
+                    "v2_receipt_corrupt"
+                };
+                self.failures.insert(
+                    token_id.clone(),
+                    Failure {
+                        request_id: self.next_request,
+                        code: code.into(),
+                        at_ns: env::block_timestamp(),
+                    },
+                );
                 if attached > 0 {
                     Promise::new(requester)
                         .transfer(NearToken::from_yoctonear(attached))
                         .detach();
                 }
                 return PromiseOrValue::Value(json!({
-                    "error": if truenav_v3_core::wire::is_v3_method(&last.method) {
-                        "v3_receipt_corrupt"
-                    } else {
-                        "v2_receipt_corrupt"
-                    },
+                    "error": code,
                     "head_status": "failed"
                 }));
             }
@@ -842,7 +872,11 @@ impl Receipts {
         (1..=top)
             .rev()
             .take(n as usize)
-            .filter_map(|seq| self.receipts.get(&(token_id.clone(), seq)).cloned())
+            .filter_map(|seq| {
+                let mut r = self.receipts.get(&(token_id.clone(), seq))?.clone();
+                r.receipt = redact_public_receipt(&r.receipt);
+                Some(r)
+            })
             .collect()
     }
 }

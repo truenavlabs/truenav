@@ -1,5 +1,5 @@
 {
   "encryption_keys": [
-    {"path": "loan-fingerprint"}
+    {"path": "loan-terms-v2"}
   ]
 }

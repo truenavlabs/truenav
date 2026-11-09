@@ -433,7 +433,18 @@ pub fn evaluate(
         fingerprints.push(fp);
         ranks.push(rank);
     }
-    let snapshot = reader.read(&c.scope, &fingerprints, &c.valuation_time)?;
+    let mut queried = fingerprints.clone();
+    for loan in &prepared {
+        let t: LoanTerms =
+            serde_json::from_value(loan["terms"].clone()).map_err(|_| "loan_terms_invalid")?;
+        let asset = loan["asset"].as_str().ok_or("loan_terms_invalid")?;
+        for h in pledge_lookup_hashes(&t, asset, &policy.case_sensitive_namespaces, mac)? {
+            if !queried.contains(&h) {
+                queried.push(h);
+            }
+        }
+    }
+    let snapshot = reader.read(&c.scope, &queried, &c.valuation_time)?;
     if !snapshot.finalized
         || snapshot.registry_account != "registry.tnlab-718ca9.testnet"
         || snapshot.block_height.parse::<u64>().is_err()
@@ -476,6 +487,10 @@ pub fn evaluate(
         let own = done
             && owner == Some(c.scope.fund_account.as_str())
             && read.is_some_and(|r| r.fund_token_id.as_deref() == Some(&c.scope.token_id));
+        // A foreign lock is a double pledge even when the tape balance is zero.
+        if done && owner.is_some() && !own {
+            conflict = true
+        }
         if open {
             total += 1;
             if done {
@@ -483,10 +498,6 @@ pub fn evaluate(
             }
             if ranks[i] >= 2 {
                 second = true
-            }
-            // Every lien rank. A second lien on another fund's lock is still a conflict.
-            if done && owner.is_some() && !own {
-                conflict = true
             }
             let signed: Option<LoanTerms> = serde_json::from_value(loan["terms"].clone()).ok();
             let tape_cents = tape_principal_cents(&loan["principal"]);

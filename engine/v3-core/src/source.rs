@@ -283,45 +283,94 @@ pub struct LoanTerms {
     pub collateral_namespace: String,
     pub collateral_ref: String,
 }
-fn is_dropped_char(c: char) -> bool {
-    c.is_whitespace()
-        || c.is_control()
-        || matches!(
-            c,
-            '\u{00ad}'
-                | '\u{034f}'
-                | '\u{061c}'
-                | '\u{180e}'
-                | '\u{200b}'..='\u{200f}'
-                | '\u{202a}'..='\u{202e}'
-                | '\u{2060}'..='\u{206f}'
-                | '\u{feff}'
-                | '\u{115f}'
-                | '\u{1160}'
-                | '\u{17b4}'
-                | '\u{17b5}'
-                | '\u{3164}'
-                | '\u{ffa0}'
-        )
+/// Unicode Default_Ignorable_Code_Point, plus variation selectors and tag characters.
+/// These are removed so they cannot mint a second pledge id.
+pub fn is_default_ignorable(c: char) -> bool {
+    matches!(
+        c,
+        '\u{00ad}'
+            | '\u{034f}'
+            | '\u{061c}'
+            | '\u{115f}'
+            | '\u{1160}'
+            | '\u{17b4}'
+            | '\u{17b5}'
+            | '\u{180b}'..='\u{180e}'
+            | '\u{200b}'..='\u{200f}'
+            | '\u{202a}'..='\u{202e}'
+            | '\u{2060}'..='\u{2064}'
+            | '\u{2066}'..='\u{206f}'
+            | '\u{3164}'
+            | '\u{fe00}'..='\u{fe0f}'
+            | '\u{feff}'
+            | '\u{ffa0}'
+            | '\u{fff9}'..='\u{fffb}'
+            | '\u{13430}'..='\u{13438}'
+            | '\u{1bca0}'..='\u{1bca3}'
+            | '\u{1d173}'..='\u{1d17a}'
+            | '\u{e0001}'
+            | '\u{e0020}'..='\u{e007f}'
+            | '\u{e0100}'..='\u{e01ef}'
+    )
 }
-/// NFKC, drop Unicode whitespace and invisible characters, then Unicode lowercase unless the namespace is case sensitive.
-/// Confusable skeletons are not applied: no vetted skeleton crate is linked, and accented ids must still compare equal.
+fn is_dropped_char(c: char) -> bool {
+    c.is_whitespace() || c.is_control() || is_default_ignorable(c)
+}
+/// Letters that copy a Latin shape and that NFKC does not fold. Not a full confusable skeleton.
+fn latin_lookalike(c: char) -> char {
+    match c {
+        'А' | 'а' | 'Α' | 'α' => 'a',
+        'В' | 'в' | 'Β' | 'β' => 'b',
+        'Е' | 'е' | 'Ε' => 'e',
+        'К' | 'к' | 'Κ' | 'κ' => 'k',
+        'М' | 'м' | 'Μ' => 'm',
+        'Н' | 'н' | 'Η' => 'h',
+        'О' | 'о' | 'Ο' | 'ο' => 'o',
+        'Р' | 'р' | 'Ρ' => 'p',
+        'С' | 'с' | 'Ϲ' => 'c',
+        'Т' | 'т' | 'Τ' | 'τ' => 't',
+        'У' | 'у' => 'y',
+        'Х' | 'х' | 'Χ' | 'χ' => 'x',
+        'І' | 'і' | 'Ι' | 'ι' => 'i',
+        'Ј' | 'ј' => 'j',
+        'Ѕ' | 'ѕ' => 's',
+        _ => c,
+    }
+}
+/// NFKC, drop whitespace and default-ignorable characters, fold a short Latin lookalike set,
+/// then Unicode lowercase plus the casefold pairs the ASCII lowercase table misses.
+/// A full confusable skeleton crate is not linked.
 pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
     let nfkc: String = s.nfkc().collect();
     let mut n = String::new();
     for c in nfkc.chars() {
         if !is_dropped_char(c) {
-            n.push(c);
+            n.push(latin_lookalike(c));
         }
     }
     if n.is_empty() || n.len() > 512 {
         return Err("loan_terms_invalid");
     }
     if case_sensitive {
-        Ok(n)
-    } else {
-        Ok(n.to_lowercase())
+        return Ok(n);
     }
+    let lower = n.to_lowercase();
+    let mut out = String::new();
+    let mut chars = lower.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\u{0307}' && out.ends_with('i') {
+            continue;
+        }
+        match c {
+            'ς' => out.push('σ'),
+            'ß' => out.push_str("ss"),
+            other => out.push(other),
+        }
+    }
+    if out.is_empty() || out.len() > 512 {
+        return Err("loan_terms_invalid");
+    }
+    Ok(out)
 }
 /// Document identity: NFKC, Unicode lowercase, whitespace and invisible characters removed.
 /// Suffixes such as `-copy` or `-v2` are not stripped. A fund that controls its own ids can rename
@@ -365,8 +414,39 @@ pub fn loan_terms_message(t: &LoanTerms, case_sensitive_namespaces: &[String]) -
 pub trait Fingerprinter {
     fn mac(&self, message: &[u8]) -> Result<[u8; 32]>;
 }
-/// Pledge identity is domain `truenav-fp-v4`, length-prefixed:
-/// asset class, normalized collateral namespace, and `document_root(collateral_ref)`.
+/// Shared pledge preimage. Producers and the NAV check MAC these bytes under key path `loan-terms-v2`.
+/// Domain `truenav-fp-v4`, length-prefixed: asset class, collateral namespace, document root.
+pub fn pledge_message(
+    asset_class: &str,
+    collateral_namespace: &str,
+    collateral_ref: &str,
+) -> Result<Vec<u8>> {
+    let asset = normalized_id(asset_class, false)?;
+    let ns = normalized_id(collateral_namespace, false)?;
+    let doc = document_root(collateral_ref)?;
+    let mut framed = Vec::new();
+    lp(&mut framed, b"truenav-fp-v4")?;
+    lp(&mut framed, asset.as_bytes())?;
+    lp(&mut framed, ns.as_bytes())?;
+    lp(&mut framed, doc.as_bytes())?;
+    Ok(framed)
+}
+fn legacy_alias_message(
+    asset_class: &str,
+    collateral_namespace: &str,
+    collateral_ref: &str,
+) -> Result<Vec<u8>> {
+    let asset = normalized_id(asset_class, false)?;
+    let ns = normalized_id(collateral_namespace, false)?;
+    let doc = document_root(collateral_ref)?;
+    let mut framed = Vec::new();
+    lp(&mut framed, b"truenav-fp-v1")?;
+    lp(&mut framed, asset.as_bytes())?;
+    lp(&mut framed, ns.as_bytes())?;
+    lp(&mut framed, doc.as_bytes())?;
+    Ok(framed)
+}
+/// Pledge identity is `pledge_message` under the caller's MAC.
 /// Principal, dates, and borrower are not in the hash.
 /// The same ref in two namespaces is two loans.
 pub fn fingerprint(
@@ -375,32 +455,27 @@ pub fn fingerprint(
     case_sensitive_namespaces: &[String],
     mac: &dyn Fingerprinter,
 ) -> Result<String> {
-    let asset = normalized_id(asset_class, false)?;
-    let ns = normalized_id(
+    let _ = case_sensitive_namespaces;
+    Ok(hex::encode(mac.mac(&pledge_message(
+        asset_class,
         &t.collateral_namespace,
-        case_sensitive_namespaces.contains(&t.collateral_namespace),
-    )?;
-    let doc = document_root(&t.collateral_ref)?;
-    let mut framed = Vec::new();
-    lp(&mut framed, b"truenav-fp-v4")?;
-    lp(&mut framed, asset.as_bytes())?;
-    lp(&mut framed, ns.as_bytes())?;
-    lp(&mut framed, doc.as_bytes())?;
-    Ok(hex::encode(mac.mac(&framed)?))
+        &t.collateral_ref,
+    )?)?))
 }
-/// Migration lookup. Index 0 is the v4 identity.
-/// Index 1 is the pre-v4 string `truenav-fp-v1|{asset}|{document root}` for this asset class only.
-/// That string has no namespace, so it is an alias only after the caller already knows the
-/// namespace and asset class match. It is not a conflict key.
+/// Lookup hashes. Index 0 is the v4 identity.
+/// Index 1 is a length-prefixed `truenav-fp-v1` alias for the same asset, namespace, and document.
+/// The pipe form is not used, so `a|b` plus `c` does not collide with `a` plus `b|c`.
 pub fn pledge_lookup_hashes(
     t: &LoanTerms,
     asset_class: &str,
-    case_sensitive_namespaces: &[String],
+    _case_sensitive_namespaces: &[String],
     mac: &dyn Fingerprinter,
 ) -> Result<Vec<String>> {
-    let primary = fingerprint(t, asset_class, case_sensitive_namespaces, mac)?;
-    let asset = normalized_id(asset_class, false)?;
-    let doc = document_root(&t.collateral_ref)?;
-    let legacy = hex::encode(mac.mac(format!("truenav-fp-v1|{asset}|{doc}").as_bytes())?);
+    let primary = fingerprint(t, asset_class, &[], mac)?;
+    let legacy = hex::encode(mac.mac(&legacy_alias_message(
+        asset_class,
+        &t.collateral_namespace,
+        &t.collateral_ref,
+    )?)?);
     Ok(vec![primary, legacy])
 }

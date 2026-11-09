@@ -16,7 +16,8 @@ export const FP_PROJECT = "servicer.tnlab-718ca9.testnet/truenav-fingerprint";
 export const FP_CALLER = "servicer.tnlab-718ca9.testnet";
 /** sha256 of the deployed outlayer/fingerprint wasm (FastFS); `cargo build --release --target wasm32-wasip2` */
 export const FP_WASM_SHA256 = "4a7c0e4ed5007ac6720b30906db4105bc302e35fb495003692225f630d1f07e3";
-export const FP_DOMAIN = "truenav-fp-v1";
+export const FP_DOMAIN = "truenav-fp-v4";
+export const FP_KEY_PATH = "loan-terms-v2";
 const sha = (s) => createHash("sha256").update(Buffer.from(s, "utf8")).digest("hex");
 /**
  * A document id must already be canonical (uppercase letters, digits and hyphens): the module hashes it as given,
@@ -51,11 +52,12 @@ export function taskHash(att) {
 }
 
 /** One fingerprint over HTTPS. Returns what the verifier needs; the payment key is never returned or logged. */
-export async function fingerprint(assetType, documentId, paymentKey = process.env.PAYMENT_KEY) {
+export async function fingerprint(assetType, documentId, collateralNamespace, paymentKey = process.env.PAYMENT_KEY) {
   if (!paymentKey) throw new Error("PAYMENT_KEY (the servicer's OutLayer payment key) is not set");
   if (assetType !== "real_estate" && assetType !== "invoices") throw new Error("asset type must be real_estate or invoices");
+  if (typeof collateralNamespace !== "string" || !/^[a-z0-9][a-z0-9_-]{0,31}$/.test(collateralNamespace)) throw new Error("collateral namespace must be lowercase");
   if (!isCanonicalId(documentId)) throw new Error(`document id ${JSON.stringify(documentId)} is not canonical (A-Z, 0-9, hyphen)`);
-  const input = { asset_type: assetType, document_id: documentId, nonce: randomBytes(16).toString("hex") };
+  const input = { asset_type: assetType, collateral_namespace: collateralNamespace, document_id: documentId, nonce: randomBytes(16).toString("hex") };
   const r = await fetch(`${FP_API}/call/${FP_PROJECT}`, { method: "POST", headers: { "Content-Type": "application/json", "X-Payment-Key": paymentKey }, body: JSON.stringify({ input, async: false }) });
   const j = await r.json();
   if (!r.ok || !j.output || !j.output.loan_hash) throw new Error(`fingerprint failed: ${r.status} ${JSON.stringify(j.error || j).slice(0, 200)}`);
@@ -88,7 +90,7 @@ export async function checkFingerprint(rec, att, verifyQuote) {
     [att.executed_wasm_sha256 === FP_WASM_SHA256 && att.wasm_hash === FP_WASM_SHA256, "the pinned fingerprint wasm ran"],
     [att.project_id === FP_PROJECT && att.caller_account_id === FP_CALLER, `project ${FP_PROJECT}, caller ${FP_CALLER}`],
     [att.input_hash === sha(rec.input) && input.asset_type === rec.asset_type && input.document_id === rec.document_id, "input hash matches the recorded input"],
-    [att.output_hash === sha(rec.output) && out.loan_hash === rec.loan_hash && out.domain === FP_DOMAIN, "output hash matches the recorded loan_hash"],
+    [att.output_hash === sha(rec.output) && out.loan_hash === rec.loan_hash && (out.domain === FP_DOMAIN || out.domain === "truenav-fp-v1"), "output hash matches the recorded loan_hash"],
   ];
   if (verifyQuote) {
     try {
@@ -111,7 +113,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   want.push(["real_estate", "TITLE-DEMO-HRE09"]);
   const records = [];
   for (const [asset, id] of want) {
-    const rec = await fingerprint(asset, id);
+    const rec = await fingerprint(asset, id, "demo");
     records.push(rec);
     console.log(`${id}: ${rec.loan_hash.slice(0, 16)}... call ${rec.call_id}`);
   }

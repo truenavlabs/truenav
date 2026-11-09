@@ -178,7 +178,8 @@ impl Receipts {
         }
         let count_key = storage_key(b"count:", &id);
         let count = read::<u64>(&count_key).unwrap_or(0);
-        let next = count.checked_add(1).expect("attestation index exhausted");
+        require!(count < 3, "attestation record limit reached");
+        let next = count + 1;
         let mut indexed = id.clone();
         indexed.extend_from_slice(&count.to_be_bytes());
         let index_key = storage_key(b"item:", &indexed);
@@ -417,6 +418,21 @@ mod tests {
         assert_eq!(publish(&mut c, &b, 1), first);
         assert_eq!(before, env::storage_usage());
         assert_eq!(c.get_attestations(b.token_id, b.seq, None, None).len(), 1);
+    }
+    #[test]
+    fn at_most_three_proofs_but_retries_remain_idempotent() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        let first = publish(&mut c, &b, 1);
+        publish(&mut c, &b, 2);
+        publish(&mut c, &b, 3);
+        let before = env::storage_usage();
+        fails(|| {
+            publish(&mut c, &b, 4);
+        });
+        assert_eq!(env::storage_usage(), before);
+        assert_eq!(publish(&mut c, &b, 1), first);
+        assert_eq!(c.get_attestations(b.token_id, b.seq, None, None).len(), 3);
     }
     #[test]
     fn different_proofs_append_and_cannot_overwrite_each_other() {

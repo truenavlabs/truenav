@@ -104,7 +104,7 @@ test("POST /ask checks an ask entitlement and spends nothing until Q&A is built 
   const r = await ask({ token_id: "DEMO-CREDIT", question: "what is the collection rate?" }, "req-ask-0001");
   assert.equal(r.status, 501);
   assert.equal(ents.get("req-ask-0001").uses_left, 20);
-  assert.equal((await ask({ token_id: "lower" }, "req-ask-0001")).status, 400);
+  assert.equal((await ask({ token_id: "bad_token" }, "req-ask-0001")).status, 400);
 });
 
 test("a purchase never changes the score response", async () => {
@@ -120,4 +120,43 @@ test("unknown token 404, malformed token 400, wrong method 405, unknown path 404
   assert.equal((await get("/fund/bad%20token/score")).status, 400);
   assert.equal((await fetch(base + "/fund/DEMO-CREDIT/score", { method: "POST" })).status, 405);
   assert.equal((await get("/nope")).status, 404);
+});
+
+const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json',import.meta.url))).vectors[0].envelope;
+const v3Record = () => ({token_id:v3.token_id,seq:Number(v3.seq),method:v3.method_version,version_key:v3.engine_version_key,score:v3.score,band:v3.band,caps:v3.caps,holds:v3.holds,period:`${v3.period_start}/${v3.period_end}`,as_of:v3.valuation_time,receipt_sha256:v3.receipt_sha256,receipt:JSON.stringify(v3),block_height:100});
+async function withRecord(record, fn) {
+  let spent=0;
+  const local=createServer({chain:{...chain,async view(c,m,a){if(m==='get_latest')return record;return chain.view(c,m,a);},async redeem(){spent++;return 0;}},receipts:'receipts.test',query:'query.test',fee:'10000000000000000000000'});
+  await new Promise(resolve=>local.listen(0,'127.0.0.1',resolve));
+  try {await fn(`http://127.0.0.1:${local.address().port}`,()=>spent);} finally {await new Promise(resolve=>local.close(resolve));}
+}
+test('v3 score and report use public bands and rounded NAV, including lowercase vector ids',async()=>{
+  for(const record of [v3Record(),v3]) await withRecord(record,async url=>{
+    const response=await fetch(`${url}/fund/${v3.token_id}/score`);assert.equal(response.status,200);
+    const score=await response.json();assert.equal(score.receipt_version,'3');assert.equal(score.score,99);assert.equal(score.receipt_sha256,v3.receipt_sha256);
+    for(const key of ['trueval','truerange_low','truerange_high','reported_nav','parts_band','pledge_result','collection_rate_band'])assert.deepEqual(score[key],v3[key]);
+    for(const key of ['uncapped_score','raw_score','score_x100','parts_x100','metrics'])assert.equal(Object.hasOwn(score,key),false);
+    buy('v3-report-test','report',v3.token_id);
+    const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test'}});assert.equal(report.status,200);assert.deepEqual((await report.json()).receipt,v3);
+  });
+});
+test('corrupt v3 is an explicit 502 and never consumes an entitlement',async()=>{
+  for(const record of [{receipt_version:'3',error:'v3_receipt_corrupt'},{...v3Record(),receipt:'{'}])await withRecord(record,async(url,spent)=>{
+    for(const path of ['score','report']){const response=await fetch(`${url}/fund/${v3.token_id}/${path}`);assert.equal(response.status,502);assert.deepEqual(await response.json(),{error:'v3_receipt_corrupt'});}
+    assert.equal(spent(),0);
+  });
+});
+test('explicit v2 wrapper tag keeps score and report response bytes identical',async()=>{
+  const bytes=[];
+  for(const record of [stored('DEMO-CREDIT'),{...stored('DEMO-CREDIT'),receipt_version:'2'}])await withRecord(record,async url=>{
+    buy('v2-byte-test','report','DEMO-CREDIT');
+    bytes.push([await (await fetch(url+'/fund/DEMO-CREDIT/score')).text(),await (await fetch(url+'/fund/DEMO-CREDIT/report',{headers:{'x-truenav-entitlement':'v2-byte-test'}})).text()]);
+  });
+  assert.deepEqual(bytes[1],bytes[0]);
+  assert.deepEqual(bytes[0],JSON.parse(readFileSync(new URL("./fixtures/v2-response-bytes.json",import.meta.url))));
+});
+test('API token grammar matches case-sensitive contract kebab segments',async()=>{
+ const {validToken}=await import('../receipt.mjs');
+ for(const id of [v3.token_id,'DEMO-CREDIT','A1-b2'])assert.equal(validToken(id),true);
+ for(const id of ['', '-fund','fund-','fund--id','bad_token','fund\n','fúnd','a'.repeat(65)])assert.equal(validToken(id),false);
 });

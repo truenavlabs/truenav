@@ -762,15 +762,93 @@ mod tests {
     #[test]
     fn configure_fund_uses_registration_token_rule() {
         let mut c = migrated();
-        let ctx = FundContext { fund_account: account("fund.testnet"), period_start: "2026-10-01".into(), period_end: "2026-11-01".into(), judge_valuation_time: None, source_registry_sha256: "a".repeat(64), supersedes_seq: None, correction_reason_code: None };
-        for token in ["", "lowercase", "BAD_TOKEN", &"A".repeat(65)] {
+        let ctx = FundContext {
+            fund_account: account("fund.testnet"),
+            period_start: "2026-10-01".into(),
+            period_end: "2026-11-01".into(),
+            judge_valuation_time: None,
+            source_registry_sha256: "a".repeat(64),
+            supersedes_seq: None,
+            correction_reason_code: None,
+        };
+        for token in [
+            "",
+            "-fund",
+            "fund-",
+            "fund--id",
+            "BAD_TOKEN",
+            &"A".repeat(65),
+        ] {
             context("admin.testnet", 1);
-            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.configure_v3_fund(token.into(), ctx.clone()))).is_err());
-            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.register_token(token.into(), "credit".into()))).is_err());
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                || c.configure_v3_fund(token.into(), ctx.clone())
+            ))
+            .is_err());
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                || c.register_token(token.into(), "credit".into())
+            ))
+            .is_err());
         }
         context("admin.testnet", 1);
-        c.configure_v3_fund("FUND-1".into(),ctx);
+        c.configure_v3_fund("FUND-1".into(), ctx.clone());
         assert!(c.get_token("FUND-1".into()).is_some());
+        let vectors: Value =
+            serde_json::from_str(include_str!("../../schema/vectors/receipt-v3-golden.json"))
+                .unwrap();
+        for e in vectors["vectors"].as_array().unwrap() {
+            let token = e["envelope"]["token_id"].as_str().unwrap();
+            if c.get_token(token.into()).is_none() {
+                c.register_token(token.into(), "credit".into());
+            }
+            c.configure_v3_fund(token.into(), ctx.clone());
+            assert!(c.get_token(token.into()).is_some());
+        }
+    }
+    #[test]
+    fn corrupt_head_returns_error_refunds_and_never_reserves_run() {
+        let mut c = migrated();
+        let e = golden();
+        let p = pending(&mut c, &e);
+        context(
+            "receipts.tnlab-718ca9.testnet",
+            timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
+        );
+        c.accept_v3(&p, &body(&e)).unwrap();
+        c.receipts
+            .get_mut(&(p.token_id.clone(), 1))
+            .unwrap()
+            .receipt = "{".into();
+        c.paused = false;
+        c.runners.insert(account("runner.testnet"));
+        c.config.method = truenav_v3_core::wire::CURRENT_METHOD.into();
+        let next = c.next_request;
+        let deposit = c.config.storage_deposit.0 + c.config.outlayer_deposit.0;
+        let mut ctx = VMContextBuilder::new();
+        ctx.current_account_id(account("receipts.tnlab-718ca9.testnet"))
+            .predecessor_account_id(account("runner.testnet"))
+            .attached_deposit(NearToken::from_yoctonear(deposit))
+            .prepaid_gas(Gas::from_tgas(300));
+        testing_env!(ctx.build());
+        match c.request_run(p.token_id.clone()) {
+            PromiseOrValue::Value(v) => assert_eq!(v["error"], "v3_receipt_corrupt"),
+            _ => panic!("must not request execution"),
+        }
+        assert_eq!(c.next_request, next);
+        assert!(c.pending.get(&p.token_id).is_none());
+        let actions = near_sdk::test_utils::get_created_receipts();
+        let refunds: u128 = actions
+            .iter()
+            .flat_map(|r| r.actions.iter())
+            .filter_map(|a| {
+                if let near_sdk::mock::MockAction::Transfer { deposit, .. } = a {
+                    Some(deposit.as_yoctonear())
+                } else {
+                    None
+                }
+            })
+            .sum();
+        assert_eq!(refunds, deposit);
+        assert_eq!(actions.len(), 1);
     }
     #[test]
     fn corrupt_v3_is_distinct_from_unknown_sequence() {

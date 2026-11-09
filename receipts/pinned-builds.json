@@ -1,10 +1,10 @@
 {
   "note": "Local receipts v3 candidate: migration, combined receipts, existing mirror fixes, canonical body binding and append-only attestation metadata. No hardware quote validated on-chain. Not deployed; round-1 audit and separate approvals required. Query unchanged.",
-  "receipts": "bdcffe959e9c3487e5d40515e2a38ed9d4971c606b151601aeae4068a393230d",
+  "receipts": "1f8e7e38ddd8a0269f1a11fe01b2b48d614179ac95d5f7c3916cd66abcac26f5",
   "query": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156",
   "dist": {
     "note": "Local candidate bytes, not a deployed-code claim. Normal v3 artifact only, no dry-run feature. Prior c19fc647 bytes remain in frozen ecf179c history for CI state migration replay.",
-    "receipts/dist/truenav_receipts.wasm": "bdcffe959e9c3487e5d40515e2a38ed9d4971c606b151601aeae4068a393230d",
+    "receipts/dist/truenav_receipts.wasm": "1f8e7e38ddd8a0269f1a11fe01b2b48d614179ac95d5f7c3916cd66abcac26f5",
     "receipts/dist/truenav_query.wasm": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
   }
 }

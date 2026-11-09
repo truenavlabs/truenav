@@ -12,9 +12,9 @@
 // Without a usable entitlement the API answers 402 with exactly what to buy (contract, method, args, fee).
 import { createServer as httpServer } from "node:http";
 import { createHash } from "node:crypto";
+import {validToken, decodeReceipt, publicV3} from "./receipt.mjs";
 
 export const queryHash = (kind, token) => createHash("sha256").update(`${kind}|${token}`).digest("hex");
-const TOKEN = /^[A-Z0-9-]{1,64}$/;
 const REQUEST_ID = /^[A-Za-z0-9_-]{8,64}$/;
 const MAX_BODY = 4096;
 
@@ -50,11 +50,15 @@ export function handler({ chain, receipts, query, fee }) {
     if (m) {
       if (req.method !== "GET") return send(res, 405, { error: "GET only" });
       const token = decodeURIComponent(m[1]);
-      if (!TOKEN.test(token)) return send(res, 400, { error: "token must match [A-Z0-9-]{1,64}" });
-      const r = await latest(token);
+      if (!validToken(token)) return send(res, 400, { error: "token must be an ASCII kebab id of 1 to 64 characters" });
+      let r = await latest(token);
       if (!r) return send(res, 404, { error: "no receipt for this token" });
-      const rec = JSON.parse(r.receipt);
+      let decoded;
+      try { decoded = decodeReceipt(r); } catch (error) { return send(res, 502, {error:error.code ?? "receipt_invalid"}); }
+      r = decoded.record;
+      const rec = decoded.receipt;
       if (m[2] === "score") {
+        if (decoded.version === "3") return send(res, 200, {...publicV3(rec), stored_block:r.block_height});
         const c = rec.metrics.collection;
         return send(res, 200, {
           token_id: token, seq: r.seq, method: r.method, version_key: r.version_key, period: r.period, as_of: r.as_of,
@@ -87,7 +91,7 @@ export function handler({ chain, receipts, query, fee }) {
         return send(res, 400, { error: "body must be JSON" });
       }
       const token = body.token_id;
-      if (typeof token !== "string" || !TOKEN.test(token)) return send(res, 400, { error: "token_id must match [A-Z0-9-]{1,64}" });
+      if (typeof token !== "string" || !validToken(token)) return send(res, 400, { error: "token_id must be an ASCII kebab id of 1 to 64 characters" });
       const ent = await entitlement(req, "ask", token);
       if (!ent.e) return send(res, ent.status, ent.body);
       return send(res, 501, { error: "qa_not_built", note: "private Q&A arrives in build step 6; nothing was spent", uses_left: ent.e.uses_left });

@@ -151,3 +151,38 @@ test("runAgent buys nothing unless execute: true is passed", async () => {
   assert.equal(out.entitlement.would_buy.deposit, FEE.toString());
   assert.equal(out.decision.action, "approve");
 });
+
+const v3Envelope=JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json',import.meta.url))).vectors[0].envelope;
+function v3Record(){const e=v3Envelope;return {token_id:e.token_id,seq:Number(e.seq),score:e.score,band:e.band,caps:e.caps,holds:e.holds,period:`${e.period_start}/${e.period_end}`,as_of:e.valuation_time,method:e.method_version,version_key:e.engine_version_key,receipt_sha256:e.receipt_sha256,receipt:JSON.stringify(e),block_height:100};}
+test('v3 verifies envelope digest, not hash of the self-containing stored string',()=>{
+ const r=v3Record();assert.equal(verifyRecord(r.token_id,r),null);assert.equal(verifyRecord(r.token_id,v3Envelope),null);
+ const bad=structuredClone(v3Envelope);bad.trueval='999';assert.equal(verifyRecord(r.token_id,{...r,receipt:JSON.stringify(bad)}),'receipt_sha256_mismatch');
+});
+test('v3 report path returns public facts and never exact private score parts',async()=>{
+ const r=v3Record(), oldFetch=globalThis.fetch;
+ globalThis.fetch=async()=>({status:200,json:async()=>({seq:r.seq,receipt_sha256:r.receipt_sha256,entitlement:{uses_left:0},receipt:v3Envelope})});
+ try {const out=await run(fakeChain({latest:{[r.token_id]:r}}),r.token_id,{apiUrl:'http://local.test',nowMs:Date.parse(r.as_of)});assert.equal(out.report.score,99);assert.equal(out.report.trueval,v3Envelope.trueval);assert.deepEqual(out.report.parts_band,v3Envelope.parts_band);assert.equal(out.report.receipt_version,'3');assert.equal('uncapped_score' in out.report,false);assert.equal('parts_x100' in out.report,false);}finally{globalThis.fetch=oldFetch;}
+});
+test('corrupt v3 view is refused before buying',async()=>{
+ const chain=fakeChain({latest:{[v3Envelope.token_id]:{receipt_version:'3',error:'v3_receipt_corrupt'}}});const out=await run(chain,v3Envelope.token_id);assert.equal(out.decision.detail,'v3_receipt_corrupt');assert.equal(chain.bought.length,0);assert.equal(out.receipt,null);
+});
+test('explicit v2 tag leaves agent output bytes identical',async()=>{
+ const r=stored('HONEST-CREDIT');const a=await run(fakeChain({latest:{[r.token_id]:r}}),r.token_id);const b=await run(fakeChain({latest:{[r.token_id]:{...r,receipt_version:'2'}}}),r.token_id);assert.equal(JSON.stringify(a),JSON.stringify(b));
+});
+test('v2 report path preserves the legacy output bytes',async()=>{
+ const r=stored('HONEST-CREDIT'), rec=JSON.parse(r.receipt), oldFetch=globalThis.fetch;
+ globalThis.fetch=async()=>({status:200,json:async()=>({seq:r.seq,receipt_sha256:r.receipt_sha256,entitlement:{uses_left:0},receipt:rec})});
+ try {const out=await run(fakeChain({latest:{[r.token_id]:{...r,receipt_version:'2'}}}),r.token_id,{apiUrl:'http://local.test'});assert.equal(JSON.stringify(out.report),JSON.stringify({status:200,seq:r.seq,receipt_sha256:r.receipt_sha256,uncapped_score:rec.uncapped_score,collection:rec.metrics.collection}));}finally{globalThis.fetch=oldFetch;}
+});
+test('v3 substituted or corrupt report cannot pass the report path',async()=>{
+ const r=v3Record(), oldFetch=globalThis.fetch;
+ try {for(const rec of [{...v3Envelope,trueval:'999'},{receipt_version:'3',error:'v3_receipt_corrupt'}]){
+ globalThis.fetch=async()=>({status:200,json:async()=>({seq:r.seq,receipt_sha256:r.receipt_sha256,entitlement:{uses_left:0},receipt:rec})});
+ await assert.rejects(()=>run(fakeChain({latest:{[r.token_id]:r}}),r.token_id,{apiUrl:'http://local.test'}),/receipt_sha256_mismatch|v3_receipt_corrupt/);
+ }}finally{globalThis.fetch=oldFetch;}
+});
+test('v3 null score is unknown, never a fabricated zero score',async()=>{
+ const {canonical}=await import('../../api/receipt.mjs');const rec={...v3Envelope,score:null,band:'grey'};const {receipt_sha256,...preimage}=rec;rec.receipt_sha256=createHash('sha256').update(canonical(preimage)).digest('hex');
+ const r={...v3Record(),score:0,band:'grey',receipt:JSON.stringify(rec),receipt_sha256:rec.receipt_sha256};
+ assert.equal(verifyRecord(r.token_id,r),null);const out=await run(fakeChain({latest:{[r.token_id]:r}}),r.token_id,{execute:false});assert.equal(out.decision.reason,'unknown');assert.equal(out.receipt.score,null);
+});

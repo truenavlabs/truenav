@@ -161,7 +161,8 @@ pub fn is_utc_ts(s: &str) -> bool {
         && (b[14] - b'0') * 10 + (b[15] - b'0') <= 59 && (b[17] - b'0') * 10 + (b[18] - b'0') <= 59
 }
 pub fn is_token_id(s: &str) -> bool {
-    !s.is_empty() && s.len() <= 64 && s.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'-')
+    !s.is_empty() && s.len() <= 64
+        && s.split('-').all(|part| !part.is_empty() && part.bytes().all(|c| c.is_ascii_alphanumeric()))
 }
 fn band_for(score: u64) -> &'static str {
     if score >= 85 {

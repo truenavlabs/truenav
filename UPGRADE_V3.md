@@ -121,7 +121,7 @@ V3 configuration reserves at least (2 * 10000 + 8000) bytes, 0.28 testnet NEAR a
 
 Validation, malformed fields, missing context, duplicate body binding and insufficient deposit return errors, clear pending state and refund the unused budget. An underfunded legacy pending record emits failure without creating a persistent failure entry. Tests cover successful and failed callback storage plus proof publication refunds. The 80 Tgas callback budget is unchanged. Local wasm-metered execution remains blocked by the host's 16384 hard nofile limit and denied Docker rlimit increase; CI gas measurement is still required. See GET_RECEIPT_CALLERS.md for versioned-view compatibility. Unknown seq returns null; corrupt stored v3 JSON returns {"receipt_version":"3","error":"v3_receipt_corrupt"}.
 
-configure_v3_fund now enforces register_token's existing [A-Z0-9-]{1,64} rule. Frozen lowercase serialization fixtures are unchanged; deployment inputs must use valid registered token IDs. No caller or frozen schema was edited to disguise this distinction.
+configure_v3_fund and register_token share one case-sensitive ASCII kebab rule: [A-Za-z0-9]+(-[A-Za-z0-9]+)*, total 1 to 64 bytes. Lowercase vector/sim IDs are accepted; existing uppercase v2 IDs remain valid. There is no case folding or aliasing. Empty segments, underscores and non-ASCII characters are rejected. New fund naming should use the vector's lowercase spelling. The API uses the same grammar.
 
 ## Yield admission gas: step-1 CI fix
 
@@ -130,3 +130,11 @@ The local mock previously reserved 200 Tgas for promise_yield_create from a 200 
 Pinned real OutLayer source at 3079d756a0be19e09d1c81f52336528d2603c11b reserves response_gas(input_len) for its own on_execution_response yield callback: 50 Tgas + max(0, input_bytes - 32768) * 25000000 gas, plus unused gas through GasWeight::default(). Sources: [execution.rs lines319-328](https://github.com/out-layer/outlayer/blob/3079d756a0be19e09d1c81f52336528d2603c11b/contract/src/execution.rs#L319) and [lib.rs lines27-59](https://github.com/out-layer/outlayer/blob/3079d756a0be19e09d1c81f52336528d2603c11b/contract/src/lib.rs#L27). That is OutLayer's settlement callback, not TrueNav's downstream on_run_result callback, which receives its separately attached 80 Tgas.
 
 UNVERIFIED: deployed OutLayer code parity with that source, real admission/settlement gas and v3 receipt callback gas. The separately approved isolated testnet dry run must measure every receipt, confirm real OutLayer completes admission and settlement within its actual allocation, and confirm on_run_result fits its 80 Tgas budget. No increase to 230+80 is permitted by this plan. The current local hard nofile limit is 16384; no local per-receipt gas measurement can be claimed until sandbox executes successfully. Native gas-allocation tests verify arithmetic only, not WASM-metered execution.
+
+## Post-CI compatibility gates
+
+the owner reported CI run 92 green at 43bdd5e; this is sandbox evidence, not a live upgrade or dry run. The new candidate caps detached attestation records at three per receipt. Exact canonicalized retries still return the existing record and refund the deposit even at the cap; a fourth distinct request reference is rejected before any write.
+
+request_run now returns an error object for a corrupt JSON receipt head (v3_receipt_corrupt or v2_receipt_corrupt), with a full attached-deposit refund and no nonce allocation, pending state or OutLayer request. Successful runs retain the existing asynchronous callback result. Authorization and configuration preconditions still reject as before.
+
+The API /score and agent report path dispatch by receipt version. V3 uses public rounded NAV, pledge facts, cash bands and parts_band, without v2 metrics.collection or private score precision. The agent checks the v3 canonical envelope digest excluding receipt_sha256, rather than hashing the self-containing stored JSON. Explicit v2 wrappers preserve legacy output bytes. Corrupt v3 results are rejected before report redemption or purchase. API byte baselines were recorded from the 43bdd5e server. No verifier/ or sim/ files changed.

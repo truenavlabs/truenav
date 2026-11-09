@@ -12,6 +12,7 @@
 //   as_of older than 45 days            review   (stale)
 //   green (85 and up), no caps, no hold approve
 import { createHash } from "node:crypto";
+import {decodeReceipt, publicV3, canonical} from "../api/receipt.mjs";
 
 export const MAX_AGE_DAYS = 45;
 export const DEFAULT_MAX_FEE = 10n ** 22n; // 0.01 NEAR: the agent refuses to pay more
@@ -21,6 +22,20 @@ const sha256 = (s) => createHash("sha256").update(s).digest("hex");
 /** Check a stored receipt record against its own bytes (score, band, method, caps, holds and as_of must all match
  * the receipt they index); returns null when consistent, else a short code. */
 export function verifyRecord(token, r) {
+  if(r?.error) return r.error === 'v3_receipt_corrupt' ? r.error : 'receipt_invalid';
+  if(r?.receipt_version && !['2','3'].includes(r.receipt_version)) return 'receipt_version_unsupported';
+  if(r?.receipt_version === '3' || r?.method?.startsWith('truenav-v3.')) {
+    let decoded;
+    try { decoded=decodeReceipt(r); } catch(error) { return error.code ?? "receipt_invalid"; }
+    if(decoded.version!=='3') return 'receipt_version_mismatch';
+    r=decoded.record;
+    const rec=decoded.receipt;
+    const {receipt_sha256,...preimage}=rec;
+    if(sha256(canonical(preimage))!==receipt_sha256 || receipt_sha256!==r.receipt_sha256) return 'receipt_sha256_mismatch';
+    if(rec.token_id!==token || r.token_id!==token) return 'receipt_token_mismatch';
+    if(!(rec.score===r.score || (rec.score===null && r.score===0)) || rec.band!==r.band || rec.method_version!==r.method || rec.engine_version_key!==r.version_key || rec.seq!==String(r.seq) || rec.valuation_time!==r.as_of || canonical(rec.caps)!==canonical(r.caps) || canonical(rec.holds)!==canonical(r.holds)) return 'receipt_index_mismatch';
+    return null;
+  }
   if (sha256(r.receipt) !== r.receipt_sha256) return "receipt_sha256_mismatch";
   let rec;
   try {
@@ -42,6 +57,9 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   if (!r) return { action: "decline", reason: "no_receipt", detail: `no receipt stored for ${token}` };
   const bad = verifyRecord(token, r);
   if (bad) return { action: "decline", reason: "receipt_mismatch", detail: bad };
+  const decoded=decodeReceipt(r);
+  r=decoded.record;
+  if(decoded.version==='3' && decoded.receipt.score===null) return {action:'review',reason:'unknown',detail:'score unknown; no numeric score in this receipt'};
   if (r.band === "red" || r.score < 60) return { action: "decline", reason: "red", detail: `score ${r.score} red${r.caps.length ? `: ${r.caps.join(", ")}` : ""}` };
   if (r.holds.length) return { action: "review", reason: "hold", detail: `score ${r.score} ${r.band}, held: ${r.holds.join(", ")}` };
   if (r.band !== "green") return { action: "review", reason: "yellow", detail: `score ${r.score} ${r.band}${r.caps.length ? `: ${r.caps.join(", ")}` : ""}` };
@@ -62,14 +80,15 @@ export const newRequestId = (token, rand) => `agent-${token}-${rand}`.slice(0, 6
 export async function runAgent({ chain, token, receipts, query, requestId, execute = false, apiUrl = null, maxFee = DEFAULT_MAX_FEE, nowMs }) {
   const now = nowMs ?? (chain.nowMs ? await chain.nowMs() : Date.now());
   // 1. the free public score
-  const latest = await chain.view(receipts, "get_latest", { token_id: token });
+  let latest = await chain.view(receipts, "get_latest", { token_id: token });
   const tokenInfo = await chain.view(receipts, "get_token", { token_id: token });
   const decision = decide(token, latest, { nowMs: now });
+  if(latest && decision.reason!=="receipt_mismatch") { const decoded=decodeReceipt(latest); latest=decoded.version==='3'?{...decoded.record,score:decoded.receipt.score}:decoded.record; }
   const out = {
     token_id: token,
     registered: !!tokenInfo,
     decision,
-    receipt: latest ? { contract: receipts, seq: latest.seq, score: latest.score, band: latest.band, caps: latest.caps, holds: latest.holds, period: latest.period, as_of: latest.as_of, method: latest.method, version_key: latest.version_key, receipt_sha256: latest.receipt_sha256, stored_block: latest.block_height } : null,
+    receipt: latest && !latest.error ? { contract: receipts, seq: latest.seq, score: latest.score, band: latest.band, caps: latest.caps, holds: latest.holds, period: latest.period, as_of: latest.as_of, method: latest.method, version_key: latest.version_key, receipt_sha256: latest.receipt_sha256, stored_block: latest.block_height } : null,
     entitlement: null,
   };
   // nothing to buy when there is no (valid) receipt
@@ -97,7 +116,14 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
     if (res.status !== 200) throw new Error(`report refused (${res.status}): ${body.error}`);
     if (body.receipt_sha256 !== latest.receipt_sha256 || body.seq !== latest.seq) throw new Error("the report is not the receipt the score came from");
     out.entitlement.uses_left = body.entitlement.uses_left;
-    out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, uncapped_score: body.receipt.uncapped_score, collection: body.receipt.metrics.collection };
+    if(body.receipt?.error === 'v3_receipt_corrupt') throw new Error('v3_receipt_corrupt');
+    if(latest.method?.startsWith('truenav-v3.')) {
+      const decoded=decodeReceipt({...latest,receipt:JSON.stringify(body.receipt)});
+      const mismatch=verifyRecord(token,decoded.record);
+      if(mismatch) throw new Error(mismatch);
+      out.report={status:200,...publicV3(decoded.receipt)};
+    }
+    else out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, uncapped_score: body.receipt.uncapped_score, collection: body.receipt.metrics.collection };
   }
   return out;
 }

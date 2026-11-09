@@ -26,7 +26,7 @@ use near_sdk::serde_json::{self, json, Value};
 use near_sdk::store::{IterableMap, IterableSet, LookupMap};
 use near_sdk::{
     assert_one_yocto, env, near, require, AccountId, BorshStorageKey, Gas, NearToken,
-    PanicOnDefault, Promise, PromiseError,
+    PanicOnDefault, Promise, PromiseError, PromiseOrValue,
 };
 use validate::{check, is_stage, is_token_id, Expect, MAX_RECEIPT_BYTES};
 
@@ -317,7 +317,7 @@ impl Receipts {
         self.only_admin();
         require!(
             is_token_id(&token_id),
-            "token_id must match [A-Z0-9-]{1,64}"
+            "token_id must match ASCII kebab segments, 1 to 64 characters"
         );
         require!(
             kind == "credit" || kind == "rental",
@@ -385,7 +385,7 @@ impl Receipts {
 
     // ---- runs --------------------------------------------------------------------------------------------------
     #[payable]
-    pub fn request_run(&mut self, token_id: String) -> Promise {
+    pub fn request_run(&mut self, token_id: String) -> PromiseOrValue<Value> {
         require!(!self.paused, "paused");
         let requester = env::predecessor_account_id();
         require!(self.runners.contains(&requester), "runner only");
@@ -409,6 +409,24 @@ impl Receipts {
             env::prepaid_gas().as_tgas() >= c.outlayer_tgas + c.callback_tgas + 10,
             "not enough gas"
         );
+
+        // Validate before reserving a nonce or pending state. Return the entire deposit
+        // on a corrupt stored head; no OutLayer request is created.
+        if let Some(last) = self.get_latest(token_id.clone()) {
+            if !matches!(
+                serde_json::from_str::<Value>(&last.receipt),
+                Ok(Value::Object(_))
+            ) {
+                if attached > 0 {
+                    Promise::new(requester)
+                        .transfer(NearToken::from_yoctonear(attached))
+                        .detach();
+                }
+                return PromiseOrValue::Value(
+                    json!({"error": if truenav_v3_core::wire::is_v3_method(&last.method) {"v3_receipt_corrupt"} else {"v2_receipt_corrupt"}}),
+                );
+            }
+        }
 
         let request_id = self.next_request;
         self.next_request += 1;
@@ -462,23 +480,25 @@ impl Receipts {
                 .transfer(NearToken::from_yoctonear(attached - need))
                 .detach();
         }
-        Promise::new(c.outlayer.clone())
-            .function_call(
-                "request_execution",
-                args.to_string().into_bytes(),
-                NearToken::from_yoctonear(c.outlayer_deposit.0),
-                Gas::from_tgas(c.outlayer_tgas),
-            )
-            .then(
-                Promise::new(env::current_account_id()).function_call(
-                    "on_run_result",
-                    json!({ "token_id": token_id, "request_id": request_id })
-                        .to_string()
-                        .into_bytes(),
-                    NearToken::from_yoctonear(0),
-                    Gas::from_tgas(c.callback_tgas),
+        PromiseOrValue::Promise(
+            Promise::new(c.outlayer.clone())
+                .function_call(
+                    "request_execution",
+                    args.to_string().into_bytes(),
+                    NearToken::from_yoctonear(c.outlayer_deposit.0),
+                    Gas::from_tgas(c.outlayer_tgas),
+                )
+                .then(
+                    Promise::new(env::current_account_id()).function_call(
+                        "on_run_result",
+                        json!({ "token_id": token_id, "request_id": request_id })
+                            .to_string()
+                            .into_bytes(),
+                        NearToken::from_yoctonear(0),
+                        Gas::from_tgas(c.callback_tgas),
+                    ),
                 ),
-            )
+        )
     }
 
     fn run_input(&self, token_id: &str, run_nonce: &str) -> Value {

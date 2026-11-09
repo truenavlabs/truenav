@@ -246,7 +246,7 @@ fn roles_pause_deposit_and_config_are_enforced() {
     let mut cheap = config();
     cheap.storage_deposit = U128(1);
     assert!(panics(|| c.set_config(cheap)).contains("storage_deposit too low"));
-    assert!(panics(|| c.register_token("lower-case".into(), "credit".into())).contains("token_id must match"));
+    assert!(panics(|| c.register_token("bad_token".into(), "credit".into())).contains("token_id must match"));
     // admin hand-over is two-step
     c.propose_admin(acc("new-admin.testnet"));
     set("someone.testnet", NearToken::from_yoctonear(0), vec![]);

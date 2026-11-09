@@ -7,8 +7,8 @@ export function decodeReceipt(record) {
   let receipt;
   try { receipt = typeof record?.receipt === 'string' ? JSON.parse(record.receipt) : record; }
   catch { failure(record?.method?.startsWith('truenav-v3.') ? 'v3_receipt_corrupt' : 'receipt_invalid'); }
-  if (!receipt || !['2','3'].includes(receipt.receipt_version)) failure('receipt_version_unsupported');
-  if (receipt.receipt_version === '2') {
+  if (!receipt || !['2','3',undefined].includes(receipt.receipt_version)) failure('receipt_version_unsupported');
+  if (receipt.receipt_version === '2' || (receipt.receipt_version === undefined && record.method?.startsWith('cashflow-v2.'))) {
     if (record.receipt_version && record.receipt_version !== '2') failure('receipt_version_mismatch');
     return {record, receipt, version:'2'};
   }

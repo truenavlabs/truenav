@@ -186,3 +186,7 @@ test('v3 null score is unknown, never a fabricated zero score',async()=>{
  const r={...v3Record(),score:0,band:'grey',receipt:JSON.stringify(rec),receipt_sha256:rec.receipt_sha256};
  assert.equal(verifyRecord(r.token_id,r),null);const out=await run(fakeChain({latest:{[r.token_id]:r}}),r.token_id,{execute:false});assert.equal(out.decision.reason,'unknown');assert.equal(out.receipt.score,null);
 });
+test('legacy v2 without receipt_version remains readable',()=>{
+ const r=withReceipt('HONEST-CREDIT',rec=>{delete rec.receipt_version;});
+ assert.equal(decide(r.token_id,r,{nowMs:NOW}).action,'approve');
+});

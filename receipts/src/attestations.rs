@@ -178,7 +178,12 @@ impl Receipts {
         }
         let count_key = storage_key(b"count:", &id);
         let count = read::<u64>(&count_key).unwrap_or(0);
-        require!(count < 3, "attestation record limit reached");
+        let written_by_current = (0..count).filter(|i| {
+            let mut indexed=id.clone(); indexed.extend_from_slice(&i.to_be_bytes());
+            let k=env::storage_read(&storage_key(b"item:",&indexed)).expect("attestation index missing");
+            read::<AttestationRecord>(&k).expect("attestation record missing").attester == writer
+        }).count();
+        require!(written_by_current < 3, "attestation record limit reached");
         let next = count + 1;
         let mut indexed = id.clone();
         indexed.extend_from_slice(&count.to_be_bytes());
@@ -433,6 +438,16 @@ mod tests {
         assert_eq!(env::storage_usage(), before);
         assert_eq!(publish(&mut c, &b, 1), first);
         assert_eq!(c.get_attestations(b.token_id, b.seq, None, None).len(), 3);
+    }
+    #[test]
+    fn rotated_attester_has_its_own_three_record_budget() {
+        let (mut c,_,b)=setup();ctx("relayer.testnet",NearToken::from_near(1).as_yoctonear(),4);
+        for n in 1..=3 {publish(&mut c,&b,n);}
+        ctx("admin.testnet",1,5);c.pause();c.set_attester(Some(acc("new-relayer.testnet")));c.unpause();
+        ctx("new-relayer.testnet",NearToken::from_near(1).as_yoctonear(),6);
+        for n in 4..=6 {publish(&mut c,&b,n);}
+        fails(||{publish(&mut c,&b,7);});
+        assert_eq!(c.get_attestations(b.token_id,b.seq,None,None).len(),6);
     }
     #[test]
     fn different_proofs_append_and_cannot_overwrite_each_other() {

@@ -76,6 +76,7 @@ impl Receipts {
         require!(enabled(), "migrate first");
         require!(self.paused, "pause before changing run context");
         require!(is_token_id(&token_id), "invalid token_id");
+        require!(self.tokens.values().all(|t| t.token_id == token_id || !t.token_id.eq_ignore_ascii_case(&token_id)), "token_id case collision");
         require!(self.pending.get(&token_id).is_none(), "run pending");
         require!(
             context.source_registry_sha256.len() == 64
@@ -803,6 +804,12 @@ mod tests {
             c.configure_v3_fund(token.into(), ctx.clone());
             assert!(c.get_token(token.into()).is_some());
         }
+    }
+    #[test]
+    fn token_case_aliases_are_rejected() {
+        let mut c=migrated();context("admin.testnet",1);
+        c.register_token("HARBOR-CREDIT-FUND".into(),"credit".into());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(||c.register_token("harbor-credit-fund".into(),"credit".into()))).is_err());
     }
     #[test]
     fn corrupt_head_returns_error_refunds_and_never_reserves_run() {

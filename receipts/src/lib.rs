@@ -319,6 +319,7 @@ impl Receipts {
             is_token_id(&token_id),
             "token_id must match ASCII kebab segments, 1 to 64 characters"
         );
+        require!(self.tokens.values().all(|t| t.token_id == token_id || !t.token_id.eq_ignore_ascii_case(&token_id)), "token_id case collision");
         require!(
             kind == "credit" || kind == "rental",
             "kind must be credit or rental"

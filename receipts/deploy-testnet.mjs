@@ -30,9 +30,9 @@ const root = new URL("../", import.meta.url).pathname;
 const SIGNER_KEYFILE = process.env.TRUENAV_SIGNER_KEYFILE || join(KEYS, `${MASTER}.json`);
 const ids = { receipts: `receipts.${MASTER}`, query: `query.${MASTER}`, runner: `runner.${MASTER}`, api: `api.${MASTER}` };
 // receipts and query hold their code storage (about 1 NEAR per 100 KB: about 540 KB for the v3.0.1 candidate and 155,543 bytes for query;
-// the initial code/state plus 0.1 NEAR margin must fit the 5.5 testnet NEAR budget, checked by the e2e); a run's receipt
+// the initial code/state plus 0.1 NEAR margin must fit the 6 testnet NEAR budget, checked by the e2e); a run's receipt
 // storage is paid by the runner's deposit; the runner needs one run's deposit (0.26 NEAR, mostly refunded)
-const FUND = { receipts: "5.5", query: "1.7", runner: "0.4", api: "0.1" };
+const FUND = { receipts: "6", query: "1.7", runner: "0.4", api: "0.1" };
 const GAS_MARGIN = nearToYocto("0.05");
 const FUND_TOTAL = Object.values(FUND).reduce((a, b) => a + Number(b), 0).toFixed(1);
 const ENGINE_PIN = readFileSync(join(root, "outlayer/engine-v2/BUILD.md"), "utf8").match(/^\| wasm sha256 \| `([0-9a-f]{64})`/m)[1];

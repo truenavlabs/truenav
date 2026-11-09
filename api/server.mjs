@@ -11,6 +11,7 @@
 //
 // Without a usable entitlement the API answers 402 with exactly what to buy (contract, method, args, fee).
 import { createServer as httpServer } from "node:http";
+import {verifyRecord} from "../agent/agent.mjs";
 import { createHash } from "node:crypto";
 import {validToken, decodeReceipt, publicV3} from "./receipt.mjs";
 
@@ -55,6 +56,7 @@ export function handler({ chain, receipts, query, fee }) {
       if (!r) return send(res, 404, { error: "no receipt for this token" });
       let decoded;
       try { decoded = decodeReceipt(r); } catch (error) { return send(res, 502, {error:error.code ?? "receipt_invalid"}); }
+      if(decoded.version === "3") { const bad=verifyRecord(token,r); if(bad) return send(res,502,{error:bad}); }
       r = decoded.record;
       const rec = decoded.receipt;
       if (m[2] === "score") {

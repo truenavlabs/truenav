@@ -3,8 +3,8 @@
   "source_base": "ecf179c03a658f3c8353687f215dd7006568c096",
   "method_version": "truenav-v3.0.1",
   "receipts": {
-    "sha256": "1f8e7e38ddd8a0269f1a11fe01b2b48d614179ac95d5f7c3916cd66abcac26f5",
-    "bytes": 539070,
+    "sha256": "b7fb827ac4d51cd2d92090fa5caea88b1e3a3a99c63103411303aa78eb7d1f47",
+    "bytes": 539952,
     "image": "sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e",
     "workdir": "/home/near/code/receipts",
     "image_user": "0",

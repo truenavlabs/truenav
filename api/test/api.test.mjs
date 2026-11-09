@@ -160,3 +160,9 @@ test('API token grammar matches case-sensitive contract kebab segments',async()=
  for(const id of [v3.token_id,'DEMO-CREDIT','A1-b2'])assert.equal(validToken(id),true);
  for(const id of ['', '-fund','fund-','fund--id','bad_token','fund\n','fúnd','a'.repeat(65)])assert.equal(validToken(id),false);
 });
+test('v3 score rejects changed hash and wrong token',async()=>{
+ for(const record of [{...v3Record(),receipt:JSON.stringify({...v3,score:98})},v3Record()])await withRecord(record,async url=>{
+ const token=record.receipt===JSON.stringify(v3)?'other-fund':v3.token_id;
+ const response=await fetch(`${url}/fund/${token}/score`);assert.equal(response.status,502);assert.match((await response.json()).error,/receipt_sha256_mismatch|receipt_token_mismatch/);
+ });
+});

@@ -190,7 +190,7 @@ fn cohorts(nav: &Nav) -> Value {
 fn blank(c: &Context) -> Value {
     json!({
      "receipt_version":"3","method_version":truenav_v3_core::wire::CURRENT_METHOD,"method_spec_sha256":truenav_v3_core::wire::method_hash_for(truenav_v3_core::wire::CURRENT_METHOD).expect("current artifact"),"network":c.scope.network,"receipts_contract":c.scope.receipts_contract,"currency":"USD","engine_version_key":c.engine_version_key,"engine_code_sha256":c.engine_code_sha256,
-     "token_id":c.scope.token_id,"fund_account":c.scope.fund_account,"kind":"credit","period_start":c.period.period_start,"period_end":c.period.period_end,"seq":c.seq,"prev_receipt_sha256":c.prev_receipt_sha256,"supersedes_seq":c.supersedes_seq,"correction_reason_code":c.correction_reason_code,"issued_at":c.issued_at,"data_as_of":null,"valuation_time":c.valuation_time,"request_id":c.request_id,"request_nonce":c.request_nonce,"synthetic":true,"input_sha256":"","receipt_sha256":"","attestation_ref":null,"source_key_ids":[],"commitments":{},
+     "token_id":c.scope.token_id,"fund_id":if c.scope.fund_id.is_empty(){c.scope.token_id.clone()}else{c.scope.fund_id.clone()},"fund_account":c.scope.fund_account,"kind":"credit","period_start":c.period.period_start,"period_end":c.period.period_end,"seq":c.seq,"prev_receipt_sha256":c.prev_receipt_sha256,"supersedes_seq":c.supersedes_seq,"correction_reason_code":c.correction_reason_code,"issued_at":c.issued_at,"data_as_of":null,"valuation_time":c.valuation_time,"request_id":c.request_id,"request_nonce":c.request_nonce,"synthetic":true,"input_sha256":"","receipt_sha256":"","attestation_ref":null,"source_key_ids":[],"commitments":{},
      "pledge_scope":{"registry_account":"registry.tnlab-718ca9.testnet","block_height":"0","block_hash":"unavailable","scope_id":"loan-terms-v2:first-lien","coverage_status":"unknown"},"fingerprint_scheme":"loan-terms-v2","pledge_result":"unknown","pledge_coverage_bps":null,"loans_checked":"unknown","blocked_attempts":"unknown","blocked_attempts_window":"period_to_valuation","lien_support":"first_lien_only",
      "reported_nav":null,"trueval":null,"truerange_low":null,"truerange_high":null,"nav_result":"unknown","nav_gap_band":"unknown","unverified_share_band":"unknown","cash_evidence_status":"invalid","cash_match_band":"unknown","yield_gap_band":"unknown","collection_rate_band":"unknown","late_share_band":"unknown","late_loan_cohorts":{"dpd_1_30":"unknown","dpd_31_60":"unknown","dpd_61_90":"unknown","dpd_91_plus":"unknown"},"exceptions":[],"status":"verification_failed","score":null,"band":"red","parts_band":{"coverage":"unknown","nav_gap":"unknown","freshness":"unknown","penalty":"unknown"},"caps":[],"holds":[],"freshness_band":"unknown","ext":{}
     })
@@ -435,8 +435,34 @@ pub fn evaluate(
             if ranks[i] >= 2 {
                 second = true
             }
-            if ranks[i] == 1 && done && owner.is_some() && !own {
+            // Every lien rank. A second lien on another fund's lock is still a conflict.
+            if done && owner.is_some() && !own {
                 conflict = true
+            }
+            let signed: Option<LoanTerms> = serde_json::from_value(loan["terms"].clone()).ok();
+            let tape_cents = loan["principal"].as_f64().map(|d| (d * 100.0).round() as i128);
+            let signed_cents = signed.as_ref().and_then(|t| t.principal_cents.parse::<i128>().ok());
+            if tape_cents != signed_cents {
+                conflict = true
+            }
+            if let Some(t) = signed.as_ref() {
+                if loan["origination_date"].as_str().is_some_and(|d| d != t.origination_date) {
+                    conflict = true
+                }
+            }
+            if let Some(t) = signed.as_ref() {
+            if let Ok(aliases) = pledge_lookup_hashes(t, &policy.case_sensitive_namespaces, mac) {
+                for h in aliases {
+                    if let Some(lock) = reads.get(&h) {
+                        if lock.completed
+                            && lock.owner.as_deref().is_some()
+                            && lock.owner.as_deref() != Some(c.scope.fund_account.as_str())
+                        {
+                            conflict = true
+                        }
+                    }
+                }
+            }
             }
             if !done || owner.is_none() || dup {
                 incomplete = true

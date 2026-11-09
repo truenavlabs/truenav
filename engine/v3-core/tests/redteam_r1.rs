@@ -56,14 +56,13 @@ fn redteam_r1_one_cent_and_split_must_keep_one_pledge_identity() {
 fn redteam_r1_v1_document_fingerprint_and_v2_terms_must_collide() {
     let mac = Mac;
     let hex_of = |b: [u8; 32]| b.iter().map(|x| format!("{x:02x}")).collect::<String>();
-    let v1 = hex_of(mac.mac(b"truenav-fp-v1|real_estate|TITLE-1").unwrap());
-    let renamed = hex_of(mac.mac(b"truenav-fp-v1|real_estate|TITLE-1-COPY").unwrap());
-    let v2 = fingerprint(
-        &terms("BORROWER", "100", "TITLE-1"),
-        &[],
-        &mac,
-    )
-    .unwrap();
+    let canonical = truenav_v3_core::source::document_root("TITLE-1").unwrap();
+    let v1 = hex_of(
+        mac.mac(format!("truenav-fp-v1|real_estate|{canonical}").as_bytes())
+            .unwrap(),
+    );
+    let v2 = fingerprint(&terms("BORROWER", "100", "TITLE-1"), &[], &mac).unwrap();
+    let renamed = fingerprint(&terms("BORROWER", "100", "TITLE-1-COPY"), &[], &mac).unwrap();
     assert_eq!(
         v1, v2,
         "fingerprint scheme change lets the same loan be pledged twice"
@@ -72,4 +71,11 @@ fn redteam_r1_v1_document_fingerprint_and_v2_terms_must_collide() {
         v1, renamed,
         "renaming the document id lets the same v1 loan be pledged twice"
     );
+    let lookups = truenav_v3_core::source::pledge_lookup_hashes(
+        &terms("OTHER", "999", "TITLE-1-COPY"),
+        &[],
+        &mac,
+    )
+    .unwrap();
+    assert!(lookups.contains(&v1), "lookup must still see the v1 domain");
 }

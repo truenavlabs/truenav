@@ -29,7 +29,7 @@
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
         "input_sha256": "d26ef37480ebf413b1a97c931e1be4cd3c9b45b88bfeee450e59af22ee1dab8a",
-        "receipt_sha256": "40e161da951a840ff796aaf81cb4f2fb38b47489bfa4927495dfdf23fad62c73",
+        "receipt_sha256": "5a11addce99cdcd2ca58da7bcd95537fb070314fca2a8699749bcf1821d0761f",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -116,7 +116,8 @@
           "concentration_top_five"
         ],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "harbor-credit-fund"
       },
       "private_TEST_report": {
         "currency": "USD",
@@ -128,19 +129,19 @@
         },
         "nav_diagnostics": {
           "status": "scored",
-          "reported_nav": 9500000.0,
-          "trueval": 9665110.0,
+          "reported_nav": 9500000,
+          "trueval": 9665110,
           "truerange_low": 9319555.760408008,
           "truerange_high": 10010664.239591992,
-          "policy_nav": 9500000.0,
+          "policy_nav": 9500000,
           "parts": {
-            "gap": 40.0,
-            "coverage": 40.0,
+            "gap": 40,
+            "coverage": 40,
             "freshness": 19.166666666666668,
-            "penalty": -0.0
+            "penalty": 0
           },
           "raw": 99.16666666666667,
-          "unverified_share": 0.0,
+          "unverified_share": 0,
           "data_as_of": "2026-11-09T06:00:00Z"
         },
         "tape": {
@@ -783,10 +784,6 @@
             "claimed_cash_cents": 11,
             "cash_match_bps": 10000,
             "cohorts": {
-              "current": {
-                "units": 11,
-                "outstanding_cents": 11
-              },
               "30": {
                 "units": 0,
                 "outstanding_cents": 0
@@ -794,6 +791,10 @@
               "60": {
                 "units": 0,
                 "outstanding_cents": 0
+              },
+              "current": {
+                "units": 11,
+                "outstanding_cents": 11
               },
               "90+": {
                 "units": 0,
@@ -3526,7 +3527,7 @@
         "request_nonce": "59d4e991ac98c991bed5b0c39d8cb0d11ede44bebe852be9abe49596a1098667",
         "synthetic": true,
         "input_sha256": "a705a4737879bc4398b08321b2c45197f8ff4d3c6be662c8afa1851abd2f4a99",
-        "receipt_sha256": "e48b633c6299e19b6aa23068db58d0151ab4603ae31401ece282bc45976a66c8",
+        "receipt_sha256": "053c2489c3c0ced76e20e905827ae7fd94f6b92a0a8e6df79b352c91044c663d",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -3614,7 +3615,8 @@
           "concentration_top_five"
         ],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "meridian-yield-fund"
       },
       "private_TEST_report": {
         "currency": "USD",
@@ -3626,11 +3628,11 @@
         },
         "nav_diagnostics": {
           "status": "scored",
-          "reported_nav": 3735000.0,
-          "trueval": 3092970.0,
+          "reported_nav": 3735000,
+          "trueval": 3092970,
           "truerange_low": 2731535.416261255,
           "truerange_high": 3454404.583738745,
-          "policy_nav": 3435000.0,
+          "policy_nav": 3435000,
           "parts": {
             "gap": 3.71184767246306,
             "coverage": 36.78714859437751,
@@ -3945,10 +3947,6 @@
             "claimed_cash_cents": 5,
             "cash_match_bps": 10000,
             "cohorts": {
-              "current": {
-                "units": 5,
-                "outstanding_cents": 5
-              },
               "30": {
                 "units": 0,
                 "outstanding_cents": 0
@@ -3956,6 +3954,10 @@
               "60": {
                 "units": 0,
                 "outstanding_cents": 0
+              },
+              "current": {
+                "units": 5,
+                "outstanding_cents": 5
               },
               "90+": {
                 "units": 0,
@@ -5569,7 +5571,7 @@
         "request_nonce": "472d53dcf3ea90e90226226a520cdb559cfab7d4658dcf2b65c5eb1014ec3689",
         "synthetic": true,
         "input_sha256": "c8197c26a6a70682f22766764968078b8ca023d72b518cec474d09d31fca4d91",
-        "receipt_sha256": "dc2cf45dd618cd784a2177237bdafd41789a52c3a6a8102060b0ba207e89bf53",
+        "receipt_sha256": "96893f1711b552255293b79cf9d29ec76ac36f6004e00c88ad5b386dd01f9bf6",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -5656,7 +5658,8 @@
           "concentration_top_five"
         ],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "harbor-credit-fund"
       },
       "private_TEST_report": {
         "currency": "USD",
@@ -5668,19 +5671,19 @@
         },
         "nav_diagnostics": {
           "status": "scored",
-          "reported_nav": 9500000.0,
-          "trueval": 9665110.0,
+          "reported_nav": 9500000,
+          "trueval": 9665110,
           "truerange_low": 9319555.760408008,
           "truerange_high": 10010664.239591992,
-          "policy_nav": 9500000.0,
+          "policy_nav": 9500000,
           "parts": {
-            "gap": 40.0,
-            "coverage": 40.0,
+            "gap": 40,
+            "coverage": 40,
             "freshness": 19.166666666666668,
-            "penalty": -0.0
+            "penalty": 0
           },
           "raw": 99.16666666666667,
-          "unverified_share": 0.0,
+          "unverified_share": 0,
           "data_as_of": "2026-11-09T06:00:00Z"
         },
         "tape": {
@@ -6323,10 +6326,6 @@
             "claimed_cash_cents": 11,
             "cash_match_bps": 10000,
             "cohorts": {
-              "current": {
-                "units": 11,
-                "outstanding_cents": 11
-              },
               "30": {
                 "units": 0,
                 "outstanding_cents": 0
@@ -6334,6 +6333,10 @@
               "60": {
                 "units": 0,
                 "outstanding_cents": 0
+              },
+              "current": {
+                "units": 11,
+                "outstanding_cents": 11
               },
               "90+": {
                 "units": 0,
@@ -9066,7 +9069,7 @@
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
         "input_sha256": "8d1582379286fdf874d745c1176ba0b86cb4ab3c7c1669f09368f44abc512984",
-        "receipt_sha256": "5c2554f59e79cd51b193fa278bc4fde3bf2397231ed6f935ace0c04f481fe727",
+        "receipt_sha256": "85d5177c0f00ace30f5429905a2c623eff56c45b49f2d15215d95998c658e4f5",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -9155,7 +9158,8 @@
           "concentration_top_five"
         ],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "harbor-credit-fund"
       },
       "private_TEST_report": {
         "currency": "USD",
@@ -9167,19 +9171,19 @@
         },
         "nav_diagnostics": {
           "status": "scored",
-          "reported_nav": 9500000.0,
-          "trueval": 9665110.0,
+          "reported_nav": 9500000,
+          "trueval": 9665110,
           "truerange_low": 9319555.760408008,
           "truerange_high": 10010664.239591992,
-          "policy_nav": 9500000.0,
+          "policy_nav": 9500000,
           "parts": {
-            "gap": 40.0,
-            "coverage": 40.0,
+            "gap": 40,
+            "coverage": 40,
             "freshness": 19.166666666666668,
-            "penalty": -0.0
+            "penalty": 0
           },
           "raw": 99.16666666666667,
-          "unverified_share": 0.0,
+          "unverified_share": 0,
           "data_as_of": "2026-11-09T06:00:00Z"
         },
         "tape": {
@@ -9822,10 +9826,6 @@
             "claimed_cash_cents": 11,
             "cash_match_bps": 10000,
             "cohorts": {
-              "current": {
-                "units": 11,
-                "outstanding_cents": 11
-              },
               "30": {
                 "units": 0,
                 "outstanding_cents": 0
@@ -9833,6 +9833,10 @@
               "60": {
                 "units": 0,
                 "outstanding_cents": 0
+              },
+              "current": {
+                "units": 11,
+                "outstanding_cents": 11
               },
               "90+": {
                 "units": 0,
@@ -12567,7 +12571,7 @@
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
         "input_sha256": "56849575c698a4ef35e3fdb2d71649e971752bdbccd5a6ad7bf9decb1448df71",
-        "receipt_sha256": "ad13770ecc0e6b13deb4b7ad1f35ca71f3ecf99ef65debc6311fc9be74df5f8f",
+        "receipt_sha256": "e27b5e3f2d2825d46b0e5d70a73af1f5a343f15fa530158fc3e8f0927cdb4e29",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12651,7 +12655,8 @@
         "caps": [],
         "holds": [],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "harbor-credit-fund"
       },
       "after": {
         "receipt_version": "3",
@@ -12678,7 +12683,7 @@
         "request_nonce": "885a6462a6e63f2374d4390313cd54554842324130ecd5d05f2226a8dc594e90",
         "synthetic": true,
         "input_sha256": "779b71110e0b039c435891add97e06291d40110de521eab4aa42d302855225fc",
-        "receipt_sha256": "232dc842e062628b78ddc61487d051c6319de7a7af06124d759a94ea0765087b",
+        "receipt_sha256": "12341237628b042e03a34d7be63a88044c20865e3b1956bb12f90b08b89cc403",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12762,7 +12767,8 @@
         "caps": [],
         "holds": [],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "harbor-credit-fund"
       },
       "known_side_information": {
         "coverage_loss_points": "0.4",
@@ -12798,7 +12804,7 @@
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
         "input_sha256": "9dd563fb86a6887dbe8dc1be957dbcceb5bf4333f80915bc97dd5c2c1b8cfd69",
-        "receipt_sha256": "5d28f41744b9286c67351f4e65f309b8187acfc1fc94a82d06b4fbc2c6aa299d",
+        "receipt_sha256": "c5bf200bb3c122b5b187be8a955d09434fd7eae244f1db1d723ed1f126730e9e",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12884,7 +12890,8 @@
         ],
         "holds": [],
         "freshness_band": "gt_24_lte_72h",
-        "ext": {}
+        "ext": {},
+        "fund_id": "harbor-credit-fund"
       },
       "private_TEST_report": {
         "score_x100": 5900,

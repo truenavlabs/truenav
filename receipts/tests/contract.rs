@@ -589,10 +589,11 @@ fn utc_timestamps_reject_impossible_civil_dates_and_unrepresentable_clock_values
 fn redteam_r1_token_registration_is_bounded() {
     let mut c = setup();
     set("admin.testnet", NearToken::from_yoctonear(1), vec![]);
-    for i in 0..40 {
+    let room = truenav_receipts::MAX_TOKENS as usize - 4;
+    for i in 0..room {
         c.register_token(format!("CAP-{i}"), "credit".into());
     }
-    let err = panics(|| c.register_token("CAP-40".into(), "credit".into()));
+    let err = panics(|| c.register_token("CAP-OVERFLOW".into(), "credit".into()));
     assert!(err.contains("token limit"), "unbounded registration returned: {err}");
 }
 

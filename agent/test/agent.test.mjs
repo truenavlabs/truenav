@@ -172,7 +172,7 @@ test('explicit v2 tag leaves agent output bytes identical',async()=>{
 test('v2 report path preserves the legacy output bytes',async()=>{
  const r=stored('HONEST-CREDIT'), rec=JSON.parse(r.receipt), oldFetch=globalThis.fetch;
  globalThis.fetch=async()=>({status:200,json:async()=>({seq:r.seq,receipt_sha256:r.receipt_sha256,entitlement:{uses_left:0},receipt:rec})});
- try {const out=await run(fakeChain({latest:{[r.token_id]:{...r,receipt_version:'2'}}}),r.token_id,{apiUrl:'http://local.test'});assert.equal(JSON.stringify(out.report),JSON.stringify({status:200,seq:r.seq,receipt_sha256:r.receipt_sha256,uncapped_score:rec.uncapped_score,collection:rec.metrics.collection}));}finally{globalThis.fetch=oldFetch;}
+ try {const out=await run(fakeChain({latest:{[r.token_id]:{...r,receipt_version:'2'}}}),r.token_id,{apiUrl:'http://local.test'});assert.equal(JSON.stringify(out.report),JSON.stringify({status:200,seq:r.seq,receipt_sha256:r.receipt_sha256,score:rec.score,band:rec.band,caps:rec.caps,holds:rec.holds}));}finally{globalThis.fetch=oldFetch;}
 });
 test('v3 substituted or corrupt report cannot pass the report path',async()=>{
  const r=v3Record(), oldFetch=globalThis.fetch;

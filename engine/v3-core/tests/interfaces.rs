@@ -138,6 +138,7 @@ fn reject_unknown_forged_revoked_expired_scope_and_revision() {
         receipts_contract: "receipts.tnlab-718ca9.testnet".into(),
         fund_account: "harbor.sim.testnet".into(),
         token_id: "harbor-credit-fund".into(),
+        fund_id: "harbor-credit-fund".into(),
     };
     let period = Period {
         period_start: "2026-10-01".into(),
@@ -226,7 +227,10 @@ fn fingerprint_normalization_resists_renamed_document() {
     assert_ne!(a, loan_terms_message(&other, &[]).unwrap());
     other.origination_date = "2026-02-30".into();
     assert!(loan_terms_message(&other, &[]).is_err());
-    assert!(normalized_id("A\u{200b}B", false).is_err());
+    assert_eq!(
+        normalized_id("A\u{200b}B", false).unwrap(),
+        normalized_id("AB", false).unwrap()
+    );
     assert_eq!(normalized_id("e\u{301}", false).unwrap(), "é");
 }
 

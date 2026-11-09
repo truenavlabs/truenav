@@ -123,7 +123,7 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
       if(mismatch) throw new Error(mismatch);
       out.report={status:200,...publicV3(decoded.receipt)};
     }
-    else out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, uncapped_score: body.receipt.uncapped_score, collection: body.receipt.metrics.collection };
+    else out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, score: body.receipt.score, band: body.receipt.band, caps: body.receipt.caps, holds: body.receipt.holds };
   }
   return out;
 }

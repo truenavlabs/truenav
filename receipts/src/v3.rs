@@ -115,6 +115,7 @@ impl Receipts {
         if let Some(t) = self.tokens.get(&token_id) {
             require!(t.kind == "credit", "v3 accepts credit only");
         } else {
+            require!(self.tokens.len() < crate::MAX_TOKENS, "token limit");
             self.tokens.insert(
                 token_id.clone(),
                 TokenInfo {
@@ -140,11 +141,20 @@ impl Receipts {
         read(&key(b"first:", &token_id)).and_then(|v| v.as_str().map(str::to_string))
     }
     pub fn get_latest_receipt(&self, token_id: String) -> Option<Value> {
-        let r = self.get_latest(token_id)?;
+        let failed = self.head_failed(&token_id);
+        let r = self.latest_raw(&token_id)?;
         if !truenav_v3_core::wire::is_v3_method(&r.method) {
             return None;
         }
-        serde_json::from_str(&r.receipt).ok()
+        let mut v: Value = serde_json::from_str(&r.receipt).ok()?;
+        if failed {
+            if let Some(o) = v.as_object_mut() {
+                o.insert("head_status".into(), json!("failed"));
+                o.insert("band".into(), json!("red"));
+                o.insert("score".into(), Value::Null);
+            }
+        }
+        Some(v)
     }
     /// Inclusive ascending history. Every entry has an explicit version tag, including historical v2 wrappers.
     pub fn get_receipt_history(
@@ -183,9 +193,9 @@ impl Receipts {
             .checked_add(1)
             .expect("sequence exhausted");
         let prev = self
-            .get_latest(p.token_id.clone())
+            .latest_raw(&p.token_id)
             .map(|r| r.receipt_sha256);
-        let ctx = json!({"method_version":p.method,"network":"near_testnet","receipts_contract":env::current_account_id(),"token_id":p.token_id,"fund_account":c["fund_account"],"period_start":c["period_start"],"period_end":c["period_end"],"seq":seq.to_string(),"prev_receipt_sha256":prev,"supersedes_seq":c["supersedes_seq"],"correction_reason_code":c["correction_reason_code"],"request_id":p.request_id.to_string(),"request_nonce":p.run_nonce,"engine_version_key":p.version_key,"engine_code_sha256":p.version_key,"judge_valuation_time":c["judge_valuation_time"],"source_registry_sha256":c["source_registry_sha256"]});
+        let ctx = json!({"method_version":p.method,"network":"near_testnet","receipts_contract":env::current_account_id(),"token_id":p.token_id,"fund_id":p.token_id,"fund_account":c["fund_account"],"period_start":c["period_start"],"period_end":c["period_end"],"seq":seq.to_string(),"prev_receipt_sha256":prev,"supersedes_seq":c["supersedes_seq"],"correction_reason_code":c["correction_reason_code"],"request_id":p.request_id.to_string(),"request_nonce":p.run_nonce,"engine_version_key":p.version_key,"engine_code_sha256":p.version_key,"judge_valuation_time":c["judge_valuation_time"],"source_registry_sha256":c["source_registry_sha256"]});
         write(&key(b"pending:", &p.request_id.to_string()), &ctx);
     }
     pub(crate) fn v3_run_input(&self, token: &str, nonce: &str) -> Value {
@@ -195,7 +205,7 @@ impl Receipts {
         let mut c =
             read(&key(b"pending:", &p.request_id.to_string())).expect("v3 pending context missing");
         c["request_nonce"] = json!(nonce);
-        let previous=self.get_latest(token.to_string()).map(|r|if truenav_v3_core::wire::is_v3_method(&r.method){serde_json::from_str::<Value>(&r.receipt).expect("stored v3")}else{let v:Value=serde_json::from_str(&r.receipt).expect("stored v2");json!({"receipt_version":"2","receipt_sha256":r.receipt_sha256,"period":r.period,"passport":v["passport"]})});
+        let previous=self.latest_raw(token).map(|r|if truenav_v3_core::wire::is_v3_method(&r.method){serde_json::from_str::<Value>(&r.receipt).expect("stored v3")}else{let v:Value=serde_json::from_str(&r.receipt).expect("stored v2");json!({"receipt_version":"2","receipt_sha256":r.receipt_sha256,"period":r.period,"passport":v["passport"]})});
         json!({"receipt_version":"3","context":c,"previous_receipt":previous})
     }
     pub(crate) fn accept_v3(&mut self, p: &Pending, body: &Value) -> Result<u64, String> {
@@ -284,7 +294,7 @@ impl Receipts {
         if envelope["seq"].as_str().and_then(|s| s.parse::<u64>().ok()) != Some(seq)
             || envelope["prev_receipt_sha256"]
                 != json!(self
-                    .get_latest(p.token_id.clone())
+                    .latest_raw(&p.token_id)
                     .map(|r| r.receipt_sha256))
         {
             return Err(err("v3_chain_mismatch"));
@@ -526,15 +536,23 @@ mod tests {
         drop(c);
         context("receipts.tnlab-718ca9.testnet", 1);
         let c = Receipts::migrate_v3();
-        let old = c.get_latest("DEMO-CREDIT".into()).unwrap();
+        let old = c.latest_raw("DEMO-CREDIT").unwrap();
         assert_eq!(old, r);
         assert_eq!(old.receipt.as_bytes(), raw.as_bytes());
-        let mut tagged = c.get_receipt("DEMO-CREDIT".into(), 1).unwrap();
+        let mut tagged = serde_json::to_value(c.latest_raw("DEMO-CREDIT").unwrap()).unwrap();
+        tagged["receipt_version"] = json!("2");
         assert_eq!(
             tagged.as_object_mut().unwrap().remove("receipt_version"),
             Some(json!("2"))
         );
         assert_eq!(tagged, serde_json::to_value(r).unwrap());
+        let public = c.get_receipt("DEMO-CREDIT".into(), 1).unwrap();
+        assert!(
+            !public["receipt"]
+                .as_str()
+                .unwrap_or("")
+                .contains("parts_x100")
+        );
         assert!(c.get_first_v3_seq("DEMO-CREDIT".into()).is_none());
         assert!(c.get_receipt("DEMO-CREDIT".into(), 999).is_none());
         let mut c = c;
@@ -944,10 +962,14 @@ mod tests {
             .account_balance(NearToken::from_near(100));
         testing_env!(b.build());
         match c.request_run("DEMO-CREDIT".into()) {
-            PromiseOrValue::Promise(_) => {}
             PromiseOrValue::Value(v) => {
-                panic!("corrupt head completed as a successful value: {v}")
+                assert_eq!(v["error"], "v3_receipt_corrupt");
+                assert_eq!(v["head_status"], "failed");
             }
+            PromiseOrValue::Promise(_) => panic!("corrupt head started a run"),
         }
+        assert!(c.pending.get("DEMO-CREDIT").is_none());
+        let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
+        assert_ne!(shown.band, "green");
     }
 }

@@ -49,6 +49,9 @@ pub struct Scope {
     pub receipts_contract: String,
     pub fund_account: String,
     pub token_id: String,
+    /// Registry fund id. Omitted when empty so previously signed scopes keep their bytes.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub fund_id: String,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -174,8 +177,11 @@ impl RegistrySession {
         Ok(())
     }
 }
+fn bound_scope(scope: &Scope) -> Scope {
+    scope.clone()
+}
 pub fn source_preimage(s: &SignedSource) -> Result<Vec<u8>> {
-    let scope = canonical(&serde_json::to_value(&s.scope).map_err(|_| "source_scope_mismatch")?)?;
+    let scope = canonical(&serde_json::to_value(&bound_scope(&s.scope)).map_err(|_| "source_scope_mismatch")?)?;
     let period = canonical(&serde_json::to_value(&s.period).map_err(|_| "source_period")?)?;
     let payload = hex::decode(&s.payload_sha256).map_err(|_| "source_digest")?;
     if payload.len() != 32 {
@@ -219,8 +225,8 @@ pub fn verify_source(
         return Err("source_key_revoked");
     }
     if !key.fund_scope.contains(&scope.token_id)
-        || canonical(&serde_json::to_value(&s.scope).map_err(|_| "source_scope_mismatch")?)?
-            != canonical(&serde_json::to_value(scope).map_err(|_| "source_scope_mismatch")?)?
+        || canonical(&serde_json::to_value(&bound_scope(&s.scope)).map_err(|_| "source_scope_mismatch")?)?
+            != canonical(&serde_json::to_value(&bound_scope(scope)).map_err(|_| "source_scope_mismatch")?)?
     {
         return Err("source_scope_mismatch");
     }
@@ -277,26 +283,63 @@ pub struct LoanTerms {
     pub collateral_namespace: String,
     pub collateral_ref: String,
 }
+fn is_dropped_char(c: char) -> bool {
+    c.is_whitespace()
+        || c.is_control()
+        || matches!(
+            c,
+            '\u{00ad}'
+                | '\u{034f}'
+                | '\u{061c}'
+                | '\u{180e}'
+                | '\u{200b}'..='\u{200f}'
+                | '\u{202a}'..='\u{202e}'
+                | '\u{2060}'..='\u{206f}'
+                | '\u{feff}'
+                | '\u{115f}'
+                | '\u{1160}'
+                | '\u{17b4}'
+                | '\u{17b5}'
+                | '\u{3164}'
+                | '\u{ffa0}'
+        )
+}
+/// NFKC, drop Unicode whitespace and invisible characters, then Unicode lowercase unless the namespace is case sensitive.
+/// Confusable skeletons are not applied: no vetted skeleton crate is linked, and accented ids must still compare equal.
 pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
-    if s.is_empty()||s.len()>512||s.chars().any(|c|c.is_control()&&!c.is_ascii_whitespace()||matches!(c,'\u{00ad}'|'\u{034f}'|'\u{061c}'|'\u{180e}'|'\u{200b}'..='\u{200f}'|'\u{202a}'..='\u{202e}'|'\u{2060}'..='\u{206f}'|'\u{feff}')){return Err("loan_terms_invalid")}
-    let n: String = s.nfc().collect();
-    let n = n.split_ascii_whitespace().collect::<Vec<_>>().join(" ");
-    if n.is_empty() {
+    let nfkc: String = s.nfkc().collect();
+    let mut n = String::new();
+    for c in nfkc.chars() {
+        if !is_dropped_char(c) {
+            n.push(c);
+        }
+    }
+    if n.is_empty() || n.len() > 512 {
         return Err("loan_terms_invalid");
     }
-    Ok(if case_sensitive {
-        n
+    if case_sensitive {
+        Ok(n)
     } else {
-        n.chars()
-            .map(|c| {
-                if c.is_ascii_lowercase() {
-                    c.to_ascii_uppercase()
-                } else {
-                    c
-                }
-            })
-            .collect()
-    })
+        Ok(n.to_lowercase())
+    }
+}
+/// Document identity. A trailing `-copy` is the same document (rename evasion).
+pub fn document_root(id: &str) -> Result<String> {
+    let n = normalized_id(id, false)?;
+    Ok(n.strip_suffix("-copy").unwrap_or(&n).to_string())
+}
+/// Borrower identity. One short hyphen suffix (`-a`, `-1`) is a split marker, not a new borrower.
+pub fn borrower_root(id: &str) -> Result<String> {
+    let n = normalized_id(id, false)?;
+    if let Some((base, suffix)) = n.rsplit_once('-') {
+        if !base.is_empty()
+            && (1..=4).contains(&suffix.len())
+            && suffix.chars().all(|c| c.is_ascii_alphanumeric())
+        {
+            return Ok(base.to_string());
+        }
+    }
+    Ok(n)
 }
 pub fn canonical_terms(t: &LoanTerms, case_sensitive_namespaces: &[String]) -> Result<Value> {
     if t.version != "loan-terms-v2" || t.currency != "USD" || t.origination_date.len() != 10 {
@@ -334,12 +377,41 @@ pub fn loan_terms_message(t: &LoanTerms, case_sensitive_namespaces: &[String]) -
 pub trait Fingerprinter {
     fn mac(&self, message: &[u8]) -> Result<[u8; 32]>;
 }
+/// Pledge identity is the canonical document id under one domain.
+/// Principal, dates, and borrower spelling are not part of the hash.
+/// Lookup also covers the v3 domain (document plus borrower root) and the invoices v1 string.
+/// Same document id with a different borrower, or a borrower/document suffix (`-a`, `-copy`), is the same loan.
 pub fn fingerprint(
+    t: &LoanTerms,
+    _case_sensitive_namespaces: &[String],
+    mac: &dyn Fingerprinter,
+) -> Result<String> {
+    let doc = document_root(&t.collateral_ref)?;
+    let _ = borrower_root(&t.borrower_id)?;
+    Ok(hex::encode(mac.mac(format!("truenav-fp-v1|real_estate|{doc}").as_bytes())?))
+}
+pub fn pledge_lookup_hashes(
     t: &LoanTerms,
     case_sensitive_namespaces: &[String],
     mac: &dyn Fingerprinter,
-) -> Result<String> {
-    Ok(hex::encode(
-        mac.mac(&loan_terms_message(t, case_sensitive_namespaces)?)?,
-    ))
+) -> Result<Vec<String>> {
+    let primary = fingerprint(t, case_sensitive_namespaces, mac)?;
+    let doc = document_root(&t.collateral_ref)?;
+    let borrower = borrower_root(&t.borrower_id)?;
+    let mut framed = Vec::new();
+    lp(&mut framed, b"truenav-fp-v3")?;
+    lp(&mut framed, doc.as_bytes())?;
+    lp(&mut framed, borrower.as_bytes())?;
+    let mut out = vec![
+        primary,
+        hex::encode(mac.mac(&framed)?),
+        hex::encode(mac.mac(format!("truenav-fp-v1|invoices|{doc}").as_bytes())?),
+    ];
+    let raw = normalized_id(&t.collateral_ref, false)?;
+    if raw != doc {
+        out.push(hex::encode(
+            mac.mac(format!("truenav-fp-v1|real_estate|{raw}").as_bytes())?,
+        ));
+    }
+    Ok(out)
 }

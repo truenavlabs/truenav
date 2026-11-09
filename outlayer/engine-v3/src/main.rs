@@ -176,6 +176,7 @@ mod tee {
                     .into(),
                 fund_account: v["fund_account"].as_str().ok_or("request_context")?.into(),
                 token_id: v["token_id"].as_str().ok_or("request_context")?.into(),
+                fund_id: v["fund_id"].as_str().filter(|s| !s.is_empty()).unwrap_or(v["token_id"].as_str().ok_or("request_context")?).into(),
             },
             period: Period {
                 period_start: v["period_start"].as_str().ok_or("request_context")?.into(),
@@ -392,6 +393,7 @@ mod tee {
             }
             let mut sibling = c.clone();
             sibling.scope.token_id = id.clone();
+            sibling.scope.fund_id = id.clone();
             sibling.scope.fund_account = fund["account_id"].as_str().ok_or("registry_fund")?.into();
             let src = docs.fetch(&sibling.scope, &sibling.period)?;
             let fps = fingerprints(&src, &sibling, &policy)?;

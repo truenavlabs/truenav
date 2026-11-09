@@ -48,9 +48,8 @@ function fixture() {
 
 test('redteam_r1 caller fund_id must match the attested token', async () => {
   const f = fixture();
-  assert.equal(Object.hasOwn(f.args.envelope, 'fund_id'), false);
   f.args.context.fund_id = 'victim-credit-fund';
-  assert.notEqual(f.args.context.fund_id, f.args.envelope.token_id);
+  assert.notEqual(f.args.context.fund_id, f.args.envelope.fund_id || f.args.envelope.token_id);
   const out = await matchWithCapabilities(f.args, f.caps);
   assert.equal(out.status, 'invalid');
   assert.equal(out.reason, 'fund_id_unbound');

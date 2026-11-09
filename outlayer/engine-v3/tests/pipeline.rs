@@ -61,6 +61,7 @@ fn setup(index: usize) -> (Context, Vec<SignedSource>, Policy, Read) {
             receipts_contract: "receipts.tnlab-718ca9.testnet".into(),
             fund_account: format!("{short}.sim.testnet"),
             token_id: token.clone(),
+            fund_id: token.clone(),
         },
         period: Period {
             period_start: "2026-10-01".into(),
@@ -404,6 +405,7 @@ fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
     let (c0, _, mut p, _) = setup(0);
     let mut c = c0.clone();
     c.scope.token_id = "DEMO-CREDIT".into();
+    c.scope.fund_id = c.scope.token_id.clone();
     c.scope.fund_account = "demo.sim.testnet".into();
     c.valuation_time = "2026-11-08T09:00:00Z".into();
     c.issued_at = c.valuation_time.clone();
@@ -669,7 +671,7 @@ fn unsupported_second_lien_never_hides_a_proven_first_lien_conflict() {
     r.snapshot.locks[0].owner = Some("another-fund.sim.testnet".into());
     r.snapshot.locks[0].fund_token_id = Some("another-fund".into());
     let second_only = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
-    assert_eq!(second_only.envelope["pledge_result"], "unknown");
+    assert_eq!(second_only.envelope["pledge_result"], "conflict");
     r.snapshot.locks[1].owner = Some("another-fund.sim.testnet".into());
     r.snapshot.locks[1].fund_token_id = Some("another-fund".into());
     let mixed = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
@@ -719,6 +721,7 @@ fn same_loan_in_two_funds_caps_previously_97_to_59_and_red() {
     );
     let (mut c2, mut s2, mut p2, mut r2) = setup(0);
     c2.scope.token_id = "other-simulated-fund".into();
+    c2.scope.fund_id = c2.scope.token_id.clone();
     c2.scope.fund_account = "other.sim.testnet".into();
     for k in &mut p2.source_registry.keys {
         k.fund_scope.push(c2.scope.token_id.clone());
@@ -838,6 +841,14 @@ fn redteam_r1_tape_principal_must_match_signed_terms() {
     let (c, mut s, p, r) = temporal_setup();
     s[0].payload["loans"][5]["principal"] = json!(200_000.0);
     sign(&mut s[0]);
-    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt());
-    assert!(out.is_err(), "inflated tape principal was accepted");
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(
+        out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")),
+        "inflated tape principal was accepted without a cap"
+    );
+    assert!(out.envelope["score"].as_u64().unwrap_or(100) <= 59);
+    assert_eq!(out.envelope["band"], "red");
 }

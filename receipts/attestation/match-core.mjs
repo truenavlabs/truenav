@@ -37,6 +37,8 @@ export async function matchWithCapabilities({envelope:e,record:r,context:c},caps
   if(!c||!hash(c.engine_code_sha256)||!hash(c.input_hash)||typeof c.caller_account_id!=='string'||!c.caller_account_id||typeof c.project_id!=='string'||!c.project_id||!Array.isArray(c.approved_measurements)||!c.approved_measurements.length)return result('unavailable','evidence_unavailable');
   if(e.engine_code_sha256!==c.engine_code_sha256||e.engine_version_key!==c.engine_code_sha256)return result('invalid','engine_mismatch');
   let proof;try{proof=await caps.fetchProof(r.proof_ref);}catch{return result('unavailable','evidence_unavailable');}
+  const attestedFund=e.fund_id||e.token_id;
+  if(typeof c.fund_id==='string'&&c.fund_id!==attestedFund)return result('invalid','fund_id_unbound');
   if(!proof||proof.task_type!=='execute'||proof.build_target!=='wasm32-wasip2'||proof.output_hash!==bodyHash||proof.input_hash!==c.input_hash||proof.wasm_hash!==c.engine_code_sha256||proof.executed_wasm_sha256!==c.engine_code_sha256||proof.caller_account_id!==c.caller_account_id||proof.project_id!==c.project_id)return result('invalid','attestation_unbound');
   for(const k of ['task_id','timestamp','block_height'])if(proof[k]!==null&&proof[k]!==undefined&&(!Number.isSafeInteger(proof[k])||proof[k]<0))return result('invalid','attestation_invalid');
   if(typeof proof.tdx_quote!=='string'||proof.tdx_quote.length>100000)return result('invalid','attestation_invalid');
@@ -45,6 +47,12 @@ export async function matchWithCapabilities({envelope:e,record:r,context:c},caps
   if(!c.approved_measurements.some(a=>['mrtd','rtmr0','rtmr1','rtmr2','rtmr3'].every(k=>typeof a[k]==='string'&&a[k].toLowerCase()===measurement[k])))return result('invalid','attestation_invalid');
   let verified;try{verified=await caps.verifyQuote(quote);}catch{return result('invalid','attestation_invalid');}
   if(verified?.status!=='UpToDate')return result('invalid','attestation_invalid');
-  return {status:'attested',reason:'ok',token_id:e.token_id,seq:e.seq,receipt_sha256,body_sha256:bodyHash,proof_ref:r.proof_ref};
+  // 30 days. UpToDate does not by itself mean the quote is fresh.
+  const QUOTE_MAX_AGE_MS=30*24*60*60*1000;
+  const ts=proof.timestamp;
+  if(typeof ts!=='number'||!Number.isSafeInteger(ts)||ts<0)return result('invalid','attestation_expired');
+  const ms=ts<1e12?ts*1000:ts;
+  if(Math.abs(Date.now()-ms)>QUOTE_MAX_AGE_MS)return result('invalid','attestation_expired');
+  return {status:'attested',reason:'ok',token_id:e.token_id,fund_id:attestedFund,seq:e.seq,receipt_sha256,body_sha256:bodyHash,proof_ref:r.proof_ref};
  }catch{return result('invalid','attestation_invalid');}
 }

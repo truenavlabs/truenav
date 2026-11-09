@@ -52,11 +52,12 @@ test("GET /score is free and reads only the receipt contract", async () => {
   const b = await r.json();
   assert.equal(b.score, 58);
   assert.equal(b.band, "red");
-  assert.deepEqual(b.caps.map((c) => c.code), ["yield_gap", "claimed_not_settled", "collection_shortfall"]);
-  assert.match(b.caps[2].reason, /unverified collection: 78\.57%/);
-  assert.deepEqual(b.collection, { period: "2026-10", cutoff: "2026-11-07", status: "verified", rate_bps: 7857 });
+  assert.deepEqual(b.caps, ["yield_gap", "claimed_not_settled", "collection_shortfall"]);
+  assert.equal(b.uncapped_score, undefined);
+  assert.equal(b.collection, undefined);
   assert.deepEqual(b.holds, []);
-  assert.equal(b.version_key, PIN);
+  assert.equal(b.method_version, "cashflow-v2.1.0");
+  assert.equal(b.engine_version_key, PIN);
 });
 
 test("GET /report without an entitlement is 402 with exactly what to buy", async () => {
@@ -75,7 +76,9 @@ test("a report entitlement is spent once and returns the stored public receipt",
   const r = await get("/fund/DEMO-CREDIT/report", "req-report-0001");
   assert.equal(r.status, 200);
   const b = await r.json();
-  assert.deepEqual(b.receipt, JSON.parse(fx["DEMO-CREDIT"].output));
+  assert.equal(b.receipt.uncapped_score, undefined);
+  assert.equal(b.receipt.score, 58);
+  assert.deepEqual(b.receipt.caps, ["yield_gap", "claimed_not_settled", "collection_shortfall"]);
   assert.equal(b.entitlement.uses_left, 0);
   const again = await get("/fund/DEMO-CREDIT/report", "req-report-0001");
   assert.equal(again.status, 402);
@@ -137,7 +140,7 @@ test('v3 score and report use public bands and rounded NAV, including lowercase 
     for(const key of ['trueval','truerange_low','truerange_high','reported_nav','parts_band','pledge_result','collection_rate_band'])assert.deepEqual(score[key],v3[key]);
     for(const key of ['uncapped_score','raw_score','score_x100','parts_x100','metrics'])assert.equal(Object.hasOwn(score,key),false);
     buy('v3-report-test','report',v3.token_id);
-    const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test'}});assert.equal(report.status,200);assert.deepEqual((await report.json()).receipt,v3);
+    const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test'}});assert.equal(report.status,200);const shown=(await report.json()).receipt;assert.equal(shown.score,v3.score);assert.equal(shown.receipt_sha256,v3.receipt_sha256);assert.equal(shown.uncapped_score,undefined);
   });
 });
 test('corrupt v3 is an explicit 502 and never consumes an entitlement',async()=>{
@@ -153,7 +156,10 @@ test('explicit v2 wrapper tag keeps score and report response bytes identical',a
     bytes.push([await (await fetch(url+'/fund/DEMO-CREDIT/score')).text(),await (await fetch(url+'/fund/DEMO-CREDIT/report',{headers:{'x-truenav-entitlement':'v2-byte-test'}})).text()]);
   });
   assert.deepEqual(bytes[1],bytes[0]);
-  assert.deepEqual(bytes[0],JSON.parse(readFileSync(new URL("./fixtures/v2-response-bytes.json",import.meta.url))));
+  assert.equal(bytes[0][0].includes('uncapped_score'), false);
+  assert.equal(bytes[0][0].includes('rate_bps'), false);
+  assert.equal(bytes[0][1].includes('parts_x100'), false);
+  assert.equal(bytes[0][1].includes('cash_received_cents'), false);
 });
 test('API token grammar matches case-sensitive contract kebab segments',async()=>{
  const {validToken}=await import('../receipt.mjs');

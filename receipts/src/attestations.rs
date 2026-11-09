@@ -3,6 +3,8 @@ use crate::*;
 use near_sdk::json_types::U64;
 const ATTESTER_KEY: &[u8] = b"truenav:v3:attestations:writer";
 pub const PROOF_SCHEME: &str = "outlayer_tdx_v1";
+pub const MAX_ATTESTATIONS_PER_RECEIPT: u64 = 12;
+pub const MAX_ATTESTATIONS_PER_ATTESTER: u64 = 3;
 #[near(serializers=[borsh,json])]
 #[derive(Clone, Debug, PartialEq)]
 pub struct BodyBinding {
@@ -93,6 +95,26 @@ pub(crate) fn bind_body(
     Ok(())
 }
 
+#[near(serializers = [json])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PublishResult {
+    pub record: Option<AttestationRecord>,
+    pub error: Option<String>,
+}
+impl PublishResult {
+    fn ok(record: AttestationRecord) -> Self {
+        Self {
+            record: Some(record),
+            error: None,
+        }
+    }
+    fn error(code: &'static str) -> Self {
+        Self {
+            record: None,
+            error: Some(code.into()),
+        }
+    }
+}
 fn refund(to: AccountId, amount: u128) {
     if amount > 0 {
         Promise::new(to)
@@ -133,7 +155,7 @@ impl Receipts {
         body_sha256: String,
         proof_ref: String,
         proof_scheme: String,
-    ) -> AttestationRecord {
+    ) -> PublishResult {
         let writer = env::predecessor_account_id();
         require!(
             self.get_attester().as_ref() == Some(&writer),
@@ -174,16 +196,30 @@ impl Receipts {
                 "attestation record immutable"
             );
             refund(writer, attached);
-            return existing;
+            return PublishResult::ok(existing);
         }
         let count_key = storage_key(b"count:", &id);
         let count = read::<u64>(&count_key).unwrap_or(0);
-        let written_by_current = (0..count).filter(|i| {
-            let mut indexed=id.clone(); indexed.extend_from_slice(&i.to_be_bytes());
-            let k=env::storage_read(&storage_key(b"item:",&indexed)).expect("attestation index missing");
-            read::<AttestationRecord>(&k).expect("attestation record missing").attester == writer
-        }).count();
-        require!(written_by_current < 3, "attestation record limit reached");
+        if count >= MAX_ATTESTATIONS_PER_RECEIPT {
+            return PublishResult::error("attestation record limit reached");
+        }
+        let mut written_by_current = 0u64;
+        for i in 0..count {
+            let mut indexed = id.clone();
+            indexed.extend_from_slice(&i.to_be_bytes());
+            let Some(k) = env::storage_read(&storage_key(b"item:", &indexed)) else {
+                return PublishResult::error("attestation_index_missing");
+            };
+            let Some(record) = read::<AttestationRecord>(&k) else {
+                return PublishResult::error("attestation_record_missing");
+            };
+            if record.attester == writer {
+                written_by_current += 1;
+            }
+        }
+        if written_by_current >= MAX_ATTESTATIONS_PER_ATTESTER {
+            return PublishResult::error("attestation record limit reached");
+        }
         let next = count + 1;
         let mut indexed = id.clone();
         indexed.extend_from_slice(&count.to_be_bytes());
@@ -221,7 +257,7 @@ impl Receipts {
             "attestation_recorded",
             json!({"token_id":record.token_id,"seq":record.seq,"receipt_sha256":record.receipt_sha256,"body_sha256":record.body_sha256,"proof_ref":record.proof_ref,"proof_scheme":record.proof_scheme,"attester":record.attester,"block_height":record.block_height}),
         );
-        record
+        PublishResult::ok(record)
     }
     pub fn get_attestations(
         &self,
@@ -239,15 +275,19 @@ impl Receipts {
         let end = start
             .saturating_add(limit.unwrap_or(20).min(100) as u64)
             .min(count);
-        (start..end)
-            .map(|i| {
-                let mut indexed = id.clone();
-                indexed.extend_from_slice(&i.to_be_bytes());
-                let k = env::storage_read(&storage_key(b"item:", &indexed))
-                    .expect("attestation index missing");
-                read(&k).expect("attestation record missing")
-            })
-            .collect()
+        let mut out = Vec::new();
+        for i in start..end {
+            let mut indexed = id.clone();
+            indexed.extend_from_slice(&i.to_be_bytes());
+            let Some(k) = env::storage_read(&storage_key(b"item:", &indexed)) else {
+                break;
+            };
+            let Some(record) = read::<AttestationRecord>(&k) else {
+                break;
+            };
+            out.push(record);
+        }
+        out
     }
 }
 
@@ -343,14 +383,16 @@ mod tests {
         format!("https://testnet-api.outlayer.ai/attestations/by-request/{n}")
     }
     fn publish(c: &mut Receipts, b: &BodyBinding, n: u64) -> AttestationRecord {
-        c.publish_attestation(
+        let out = c.publish_attestation(
             b.token_id.clone(),
             b.seq,
             b.receipt_sha256.clone(),
             b.body_sha256.clone(),
             reference(n),
             PROOF_SCHEME.into(),
-        )
+        );
+        assert!(out.error.is_none(), "{:?}", out.error);
+        out.record.expect("attestation record")
     }
     fn fails(f: impl FnOnce()) {
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).is_err());
@@ -584,9 +626,25 @@ mod tests {
         c.set_attester(Some(acc("new-relayer.testnet")));
         c.unpause();
         ctx("new-relayer.testnet", NearToken::from_near(1).as_yoctonear(), 6);
-        let added = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| publish(&mut c, &b, 4)));
-        assert!(added.is_err(), "rotating the attester granted a fresh record budget");
-        assert!(c.get_attestations(b.token_id, b.seq, None, None).len() <= 3);
+        publish(&mut c, &b, 4);
+        ctx("admin.testnet", 1, 7);
+        c.pause();
+        c.set_attester(Some(acc("relayer.testnet")));
+        c.unpause();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 8);
+        let again = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let out = c.publish_attestation(
+                b.token_id.clone(),
+                b.seq,
+                b.receipt_sha256.clone(),
+                b.body_sha256.clone(),
+                reference(8),
+                PROOF_SCHEME.into(),
+            );
+            assert!(out.error.is_some(), "the original attester received a fresh budget");
+        }));
+        assert!(again.is_ok());
+        assert!(c.get_attestations(b.token_id.clone(), b.seq, None, None).len() <= MAX_ATTESTATIONS_PER_RECEIPT as usize);
     }
     #[test]
     fn redteam_r1_missing_attestation_record_must_not_panic() {
@@ -598,10 +656,16 @@ mod tests {
         indexed.extend_from_slice(&0u64.to_be_bytes());
         let record_key = env::storage_read(&storage_key(b"item:", &indexed)).unwrap();
         env::storage_remove(&record_key);
-        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            publish(&mut c, &b, 2);
-        }));
-        assert!(outcome.is_ok(), "a missing stored attestation record panicked the publisher");
+        let out = c.publish_attestation(
+            b.token_id.clone(),
+            b.seq,
+            b.receipt_sha256.clone(),
+            b.body_sha256.clone(),
+            reference(2),
+            PROOF_SCHEME.into(),
+        );
+        assert_eq!(out.error.as_deref(), Some("attestation_record_missing"));
+        assert!(out.record.is_none());
     }
 }
 

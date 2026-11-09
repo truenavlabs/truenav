@@ -27,6 +27,31 @@ Repro tests assert the property that should hold. They fail on the current code.
 | RT-17 | info | keys | `TRUST_MODEL.md:18` | The contract account is documented to hold the owner's full-access key and an operator backup key. Either key can upgrade the wasm, call `migrate_v3` (`#[private]`), and replace the callback, pledge, and disclosure checks. Admin, registrar, and pauser sit on the owner account. The servicer is a separate operator account. | no key action taken | Remove the backup key and move upgrades to a multisig before any real value. |
 | RT-18 | info | supply | `.github/workflows/ci.yml:222`, `.github/workflows/ci.yml:26` | Actions are SHA-pinned, the build image digest is pinned, Cargo.toml uses `=` versions, and both lockfiles are present. `gitleaks` is installed with `go install ...@v8.30.1` (module checksum, not a binary digest). `jsonschema==4.23.0` is installed from PyPI without a hash pin. `npm audit --omit=dev` reports the known low `elliptic` advisory through `@phala/dcap-qvl`, already accepted in `SECURITY.md`. | `npm audit --omit=dev --audit-level=high` exits 0 | Pin the gitleaks binary digest and the pip hash. |
 
+## Fix pass status
+
+Branch `lab/fix-r1`. Status after the approved fix pass.
+
+| id | status | reason |
+| --- | --- | --- |
+| RT-01 | fixed | A completed foreign lock sets `pledge_conflict` at every lien rank. The second-lien hold remains. |
+| RT-02 | fixed | The pledge hash is the canonical document id. Principal is not included. `BORROWER` and `BORROWER-A` on that document are one loan. |
+| RT-03 | fixed | Tape principal must match signed `principal_cents`. A mismatch is the capped `pledge_conflict` anomaly from the approved rule, not a hard run failure. |
+| RT-04 | fixed | NFKC, Unicode lowercase, and stripped whitespace and invisible characters. No confusable-skeleton crate is linked. |
+| RT-05 | fixed | `fund_id` is in the signed scope when set, in the execution body, and the matcher rejects a different caller `fund_id`. |
+| RT-06 | fixed | One pledge domain over the canonical document id. Lookup also checks the v3 domain and the invoices v1 string. A `-copy` rename collapses to the same id. Raw equality of two different preimages is impossible, so the repro now checks the canonical id. |
+| RT-07 | fixed | `UpToDate` quotes older than 30 days are `attestation_expired`. |
+| RT-08 | fixed | 12 records per receipt and 3 per attester, counted across rotation. The repro matches those approved caps. |
+| RT-09 | fixed | Missing index or record returns `attestation_record_missing` or `attestation_index_missing`. |
+| RT-10 | fixed | Corrupt head returns the typed error and `head_status: failed`, refunds, and does not start a run. A failed run marks the live head failed. |
+| RT-11 | fixed | Public score, report, and v2 `get_receipt` text drop exact cents and `uncapped_score`. |
+| RT-12 | fixed | Token registration stops at 64, which bounds the case-collision scan. |
+| RT-13 | accepted | A failed promise is both an admission failure and a possible later panic. The admission refund test still requires the deposit to be returned. |
+| RT-14 | deferred | Stored `score` is a `u64`. The envelope still has JSON null, and changing the column rewrites state. |
+| RT-15 | accepted | `request_run` and `publish_attestation` already require a positive deposit, which a function-call key cannot attach. Exactly 1 yocto would reject the storage deposit. |
+| RT-16 | fixed | `redeem` now refuses while paused. |
+| RT-17 | deferred | Removing the backup full-access key is an operator step. |
+| RT-18 | deferred | Gitleaks and pip digest pins are supply-chain hygiene, not a runtime defect. Production `npm audit --omit=dev` is still the known low advisory only. |
+
 ## What was attacked and held
 
 - Receipts admin, pauser, propose/accept admin, and `set_config` require the predecessor role and exactly 1 yoctoNEAR. Pause blocks `request_run` and `publish_attestation`.

@@ -63,6 +63,8 @@ struct Late {
 /// callback, more for storing a 10 KB receipt), with room to spare, so a huge result can never exhaust the gas and
 /// roll back the removal of the pending or late record. The deployed config uses 50.
 pub const MIN_CALLBACK_TGAS: u64 = 40;
+/// Bound on registered tokens. The case-collision scan walks this set.
+pub const MAX_TOKENS: u32 = 64;
 
 fn late_key(request_id: u64) -> Vec<u8> {
     [b"late:".as_slice(), &request_id.to_le_bytes()].concat()
@@ -172,6 +174,68 @@ fn emit(event: &str, data: Value) {
 }
 fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+const PRIVATE_RECEIPT_KEYS: &[&str] = &[
+    "parts_x100",
+    "raw_x100",
+    "uncapped_score",
+    "cash_received_cents",
+    "claimed_cash_cents",
+    "cash_interest_cents",
+    "accrued_interest_cents",
+    "capitalized_interest_cents",
+    "rent_due_cents",
+    "rent_collected_cents",
+    "expenses_cents",
+    "reserves_cents",
+    "net_operating_cash_cents",
+    "distributions_cents",
+    "dues_cents",
+    "verified_cents",
+];
+fn redact_value(v: &mut Value) -> bool {
+    let mut changed = false;
+    match v {
+        Value::Array(xs) => {
+            for x in xs {
+                changed |= redact_value(x);
+            }
+        }
+        Value::Object(m) => {
+            for key in PRIVATE_RECEIPT_KEYS {
+                if m.remove(*key).is_some() {
+                    changed = true;
+                }
+            }
+            for x in m.values_mut() {
+                changed |= redact_value(x);
+            }
+        }
+        _ => {}
+    }
+    changed
+}
+impl Receipts {
+    pub(crate) fn latest_raw(&self, token_id: &str) -> Option<StoredReceipt> {
+        let n = self.tokens.get(token_id)?.receipts;
+        if n == 0 {
+            return None;
+        }
+        self.receipts.get(&(token_id.to_string(), n)).cloned()
+    }
+    pub(crate) fn head_failed(&self, token_id: &str) -> bool {
+        self.failures.get(token_id).is_some()
+    }
+}
+fn redact_public_receipt(raw: &str) -> String {
+    let Ok(mut v) = serde_json::from_str::<Value>(raw) else {
+        return raw.to_string();
+    };
+    if redact_value(&mut v) {
+        v.to_string()
+    } else {
+        raw.to_string()
+    }
 }
 fn check_config(c: &Config) {
     require!(
@@ -328,6 +392,7 @@ impl Receipts {
             self.tokens.get(&token_id).is_none(),
             "token already registered"
         );
+        require!(self.tokens.len() < MAX_TOKENS, "token limit");
         self.tokens.insert(
             token_id.clone(),
             TokenInfo {
@@ -413,7 +478,7 @@ impl Receipts {
 
         // Validate before reserving a nonce or pending state. Return the entire deposit
         // on a corrupt stored head; no OutLayer request is created.
-        if let Some(last) = self.get_latest(token_id.clone()) {
+        if let Some(last) = self.latest_raw(&token_id) {
             if !matches!(
                 serde_json::from_str::<Value>(&last.receipt),
                 Ok(Value::Object(_))
@@ -423,9 +488,14 @@ impl Receipts {
                         .transfer(NearToken::from_yoctonear(attached))
                         .detach();
                 }
-                return PromiseOrValue::Value(
-                    json!({"error": if truenav_v3_core::wire::is_v3_method(&last.method) {"v3_receipt_corrupt"} else {"v2_receipt_corrupt"}}),
-                );
+                return PromiseOrValue::Value(json!({
+                    "error": if truenav_v3_core::wire::is_v3_method(&last.method) {
+                        "v3_receipt_corrupt"
+                    } else {
+                        "v2_receipt_corrupt"
+                    },
+                    "head_status": "failed"
+                }));
             }
         }
 
@@ -507,7 +577,7 @@ impl Receipts {
             return self.v3_run_input(token_id, run_nonce);
         }
         let mut input = json!({ "token_id": token_id, "run_nonce": run_nonce });
-        if let Some(last) = self.get_latest(token_id.to_string()) {
+        if let Some(last) = self.latest_raw(token_id) {
             // stored receipts passed validate.rs, so the passport entries have these fields
             let rec: Value = serde_json::from_str(&last.receipt).unwrap_or(Value::Null);
             let previous: Vec<Value> = rec["passport"].as_array().map(|ps| ps.iter().map(|p| json!({ "source": p["source"], "snapshot_sha256": p["snapshot_sha256"], "as_of": p["as_of"] })).collect()).unwrap_or_default();
@@ -732,11 +802,13 @@ impl Receipts {
             .collect()
     }
     pub fn get_latest(&self, token_id: String) -> Option<StoredReceipt> {
-        let n = self.tokens.get(&token_id)?.receipts;
-        if n == 0 {
-            return None;
+        let mut r = self.latest_raw(&token_id)?;
+        if self.head_failed(&token_id) {
+            r.band = "red".into();
+            r.score = 0;
         }
-        self.receipts.get(&(token_id, n)).cloned()
+        r.receipt = redact_public_receipt(&r.receipt);
+        Some(r)
     }
     /// Explicit version tag. Historical v2 wrapper fields are unchanged; v3 is the complete envelope.
     pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<Value> {
@@ -749,6 +821,9 @@ impl Receipts {
             );
         }
         let mut v = serde_json::to_value(r).ok()?;
+        if let Some(raw) = v.get("receipt").and_then(Value::as_str) {
+            v["receipt"] = json!(redact_public_receipt(raw));
+        }
         v["receipt_version"] = json!("2");
         Some(v)
     }

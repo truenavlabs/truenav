@@ -107,6 +107,7 @@ impl Query {
 
     /// The API spends one use of an entitlement for the query it is about to serve. Returns the uses left.
     pub fn redeem(&mut self, request_id: String, query_hash: String) -> u32 {
+        require!(!self.paused, "paused");
         require!(env::predecessor_account_id() == self.redeemer, "redeemer only");
         let e = self.entitlements.get_mut(&request_id).unwrap_or_else(|| env::panic_str("unknown entitlement"));
         require!(env::block_timestamp() < e.expires_ns.0, "entitlement expired");

@@ -60,14 +60,26 @@ export function handler({ chain, receipts, query, fee }) {
       r = decoded.record;
       const rec = decoded.receipt;
       if (m[2] === "score") {
-        if (decoded.version === "3") return send(res, 200, {...publicV3(rec), stored_block:r.block_height});
-        const c = rec.metrics.collection;
-        return send(res, 200, {
-          token_id: token, seq: r.seq, method: r.method, version_key: r.version_key, period: r.period, as_of: r.as_of,
-          score: r.score, band: r.band, uncapped_score: rec.uncapped_score, caps: rec.caps, holds: rec.holds,
-          collection: { period: c.period, cutoff: c.cutoff, status: c.status, rate_bps: c.rate_bps },
-          synthetic: rec.synthetic, receipt_sha256: r.receipt_sha256, stored_block: r.block_height,
-        });
+        if (r.band === "red" && r.score === 0 && decoded.receipt?.head_status === "failed") {
+          return send(res, 409, {error: "run_failed"});
+        }
+        if (decoded.version === "3") return send(res, 200, publicV3(rec));
+        const allowed = new Set(["receipt_version","token_id","seq","method_version","engine_version_key","score","band","caps","holds","synthetic","receipt_sha256"]);
+        const body = {
+          receipt_version: "2",
+          token_id: token,
+          seq: r.seq,
+          method_version: r.method,
+          engine_version_key: r.version_key,
+          score: r.score,
+          band: r.band,
+          caps: Array.isArray(rec.caps) ? rec.caps.map((c) => (c && typeof c === "object" ? c.code : c)) : [],
+          holds: Array.isArray(rec.holds) ? rec.holds.map((h) => (h && typeof h === "object" ? h.code : h)) : [],
+          synthetic: rec.synthetic,
+          receipt_sha256: r.receipt_sha256,
+        };
+        for (const key of Object.keys(body)) if (!allowed.has(key)) delete body[key];
+        return send(res, 200, body);
       }
       const ent = await entitlement(req, "report", token);
       if (!ent.e) return send(res, ent.status, ent.body);
@@ -77,7 +89,14 @@ export function handler({ chain, receipts, query, fee }) {
       } catch (e) {
         return send(res, 402, { error: "redeem refused", reason: String(e.message || e).slice(0, 200) });
       }
-      return send(res, 200, { token_id: token, seq: r.seq, version_key: r.version_key, receipt_sha256: r.receipt_sha256, stored_block: r.block_height, entitlement: { request_id: ent.id, uses_left: usesLeft }, receipt: rec });
+      const receipt = decoded.version === "3" ? publicV3(rec) : {
+        receipt_version: "2", token_id: token, seq: r.seq, method_version: r.method, engine_version_key: r.version_key,
+        score: r.score, band: r.band,
+        caps: Array.isArray(rec.caps) ? rec.caps.map((c) => (c && typeof c === "object" ? c.code : c)) : [],
+        holds: Array.isArray(rec.holds) ? rec.holds.map((h) => (h && typeof h === "object" ? h.code : h)) : [],
+        synthetic: rec.synthetic, receipt_sha256: r.receipt_sha256,
+      };
+      return send(res, 200, { token_id: token, seq: r.seq, engine_version_key: r.version_key, receipt_sha256: r.receipt_sha256, entitlement: { request_id: ent.id, uses_left: usesLeft }, receipt });
     }
     if (url.pathname === "/ask") {
       if (req.method !== "POST") return send(res, 405, { error: "POST only" });

@@ -120,9 +120,9 @@ fn sequence_numbers_grow_and_history_pages_newest_first() {
     let h = c.get_history("HONEST-CREDIT".into(), None, Some(2));
     assert_eq!(h.iter().map(|r| r.seq).collect::<Vec<_>>(), vec![3, 2]);
     assert_eq!(c.get_history("HONEST-CREDIT".into(), Some(1), None).len(), 1);
-    assert_eq!(c.get_receipt("HONEST-CREDIT".into(), 2).unwrap().seq, 2);
+    assert_eq!(c.get_receipt("HONEST-CREDIT".into(), 2).unwrap()["seq"], 2);
     // a different nonce per request, even under one fixed random seed
-    let nonces: std::collections::HashSet<String> = (1..=3).map(|s| serde_json::from_str::<Value>(&c.get_receipt("HONEST-CREDIT".into(), s).unwrap().receipt).unwrap()["run_nonce"].as_str().unwrap().to_string()).collect();
+    let nonces: std::collections::HashSet<String> = (1..=3).map(|s| serde_json::from_str::<Value>(c.get_receipt("HONEST-CREDIT".into(), s).unwrap()["receipt"].as_str().unwrap()).unwrap()["run_nonce"].as_str().unwrap().to_string()).collect();
     assert_eq!(nonces.len(), 3, "each request gets its own nonce (the seed also covers request_id)");
 }
 

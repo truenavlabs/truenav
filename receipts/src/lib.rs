@@ -17,6 +17,7 @@
 //! refunded to the requester in the callback). Everything stored here is public chain state.
 pub mod validate;
 pub mod mirror;
+pub mod v3;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::json_types::U128;
@@ -168,7 +169,7 @@ fn hex(bytes: &[u8]) -> String {
 fn check_config(c: &Config) {
     require!(!c.project_id.is_empty() && c.project_id.len() <= 128, "bad project_id");
     require!(c.version_key.len() == 64 && c.version_key.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)), "version_key must be a 64-hex wasm hash, never latest");
-    require!(c.method.starts_with("cashflow-v2."), "unknown method");
+    require!(c.method.starts_with("cashflow-v2.") || c.method == "truenav-v3.0.0", "unknown method");
     require!(!c.secrets_profile.is_empty() && c.secrets_profile.len() <= 64, "bad secrets_profile");
     require!(c.outlayer_tgas + c.callback_tgas <= 290, "gas above 290 Tgas");
     require!(c.callback_tgas >= MIN_CALLBACK_TGAS && c.outlayer_tgas >= 50, "gas too low");
@@ -256,6 +257,7 @@ impl Receipts {
     pub fn set_config(&mut self, config: Config) {
         self.only_admin();
         check_config(&config);
+        require!(!v3::enabled() || config.method == "truenav-v3.0.0", "v3 migration forbids v2 writes");
         emit("config_changed", json!({ "old_version_key": self.config.version_key, "new_version_key": config.version_key, "method": config.method }));
         self.config = config;
     }
@@ -278,6 +280,7 @@ impl Receipts {
         self.only_admin();
         let p = self.pending.remove(&token_id).unwrap_or_else(|| env::panic_str("no pending request"));
         self.pending.flush();
+        v3::clear_context(p.request_id);
         let s0 = env::storage_usage();
         let mut late = Late { requester: p.requester.clone(), outlayer_deposit: p.outlayer_deposit, held: U128(0) };
         env::storage_write(&late_key(p.request_id), &borsh::to_vec(&late).unwrap_or_default());
@@ -297,6 +300,7 @@ impl Receipts {
         require!(self.tokens.get(&token_id).is_some(), "unknown token");
         require!(self.pending.get(&token_id).is_none(), "a run is already pending for this token");
         let c = self.config.clone();
+        require!(!v3::enabled() || c.method == "truenav-v3.0.0", "v3 migration forbids v2 writes");
         let need = c.outlayer_deposit.0 + c.storage_deposit.0;
         let attached = env::attached_deposit().as_yoctonear();
         require!(attached >= need, format!("attach at least {need} yoctoNEAR"));
@@ -326,6 +330,7 @@ impl Receipts {
         };
         self.pending.insert(token_id.clone(), pending.clone());
         self.pending.flush();
+        if c.method == "truenav-v3.0.0" { self.reserve_v3(&pending); }
         pending.pending_bytes = env::storage_usage().saturating_sub(s0);
         self.pending.insert(token_id.clone(), pending);
         // The whole input is built here, never taken from the caller: token_id (checked as registered above), this
@@ -357,6 +362,7 @@ impl Receipts {
     }
 
     fn run_input(&self, token_id: &str, run_nonce: &str) -> Value {
+        if self.config.method == "truenav-v3.0.0" { return self.v3_run_input(token_id, run_nonce); }
         let mut input = json!({ "token_id": token_id, "run_nonce": run_nonce });
         if let Some(last) = self.get_latest(token_id.to_string()) {
             // stored receipts passed validate.rs, so the passport entries have these fields
@@ -426,6 +432,7 @@ impl Receipts {
                 Err("outlayer_admission_failed".to_string())
             }
         };
+        v3::clear_context(p.request_id);
         let code = match outcome {
             Ok(seq) => format!("stored:{seq}"),
             Err(code) => {
@@ -454,7 +461,9 @@ impl Receipts {
         if bytes.len() > MAX_RECEIPT_BYTES {
             return Err("receipt_too_large".into());
         }
-        let v: Value = serde_json::from_slice(bytes).map_err(|_| "receipt_not_json".to_string())?;
+        let v: Value = truenav_v3_core::parse(bytes).map_err(|_| "receipt_not_json".to_string())?;
+        if p.method == "truenav-v3.0.0" { return self.accept_v3(p, &v); }
+        if v3::enabled() { return Err("v2_writes_disabled".into()); }
         match &v {
             // OutLayer's answer for an admitted run that failed or timed out; it already refunded the payer
             Value::Null => return Err("outlayer_run_failed".into()),
@@ -526,8 +535,13 @@ impl Receipts {
         }
         self.receipts.get(&(token_id, n)).cloned()
     }
-    pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<StoredReceipt> {
-        self.receipts.get(&(token_id, seq)).cloned()
+    /// Explicit version tag. Historical v2 wrapper fields are unchanged; v3 is the complete envelope.
+    pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<Value> {
+        let r = self.receipts.get(&(token_id, seq))?;
+        if r.method == "truenav-v3.0.0" { return serde_json::from_str(&r.receipt).ok(); }
+        let mut v = serde_json::to_value(r).ok()?;
+        v["receipt_version"] = json!("2");
+        Some(v)
     }
     /// Newest first, from `from_seq` (default the latest) down, at most 10 per page.
     pub fn get_history(&self, token_id: String, from_seq: Option<u64>, limit: Option<u64>) -> Vec<StoredReceipt> {

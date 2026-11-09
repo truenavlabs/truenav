@@ -82,6 +82,33 @@ jobs:
           echo "built $got, BUILD.md $want"
           test -n "$want" && test "$got" = "$want"
 
+  engine-v3:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Rust 1.99.0 and WASI component target
+        run: rustup toolchain install 1.99.0 --profile minimal --component clippy --target wasm32-wasip2
+      - name: Python schema validator
+        run: |
+          python3 -m venv "$RUNNER_TEMP/engine-v3-schema"
+          "$RUNNER_TEMP/engine-v3-schema/bin/pip" install jsonschema==4.23.0
+          echo "$RUNNER_TEMP/engine-v3-schema/bin" >> "$GITHUB_PATH"
+      - run: npm ci
+      - name: Frozen conformance and fresh engine output privacy gates
+        # Only the NEW derived TEST file is regenerated for this build's actual code hash.
+        # Frozen goldens, method, schema, observer and disclosure bounds remain unchanged.
+        run: node outlayer/engine-v3/check-local.mjs --regenerate-test-vectors
+      - name: Backend Clippy
+        run: |
+          cargo +1.99.0 clippy --locked --all-targets --manifest-path engine/v3-core/Cargo.toml -- -D warnings
+          cargo +1.99.0 clippy --locked --all-targets --manifest-path outlayer/engine-v3/Cargo.toml -- -D warnings
+          cargo +1.99.0 clippy --locked --target wasm32-wasip2 --manifest-path outlayer/engine-v3/Cargo.toml -- -D warnings
+
   receipts:
     # Build step 4: receipt contract and paid query contract unit tests and clippy, their wasm (and the test-only mock
     # OutLayer) built in the pinned image, then the full flow on a local NEAR sandbox: request_run, the engine run
@@ -92,6 +119,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
@@ -106,9 +134,16 @@ jobs:
       - name: Contract wasm in the pinned image (receipts, query, mock OutLayer, mock signer)
         run: |
           for d in receipts query receipts/mock-outlayer mirror/mock-signer; do
-            docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/$d \
-              sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
-              cargo near build non-reproducible-wasm --locked
+            if [ "$d" = receipts ]; then
+              # Match the candidate's canonical image user, workdir and target paths.
+              docker run --rm -u 0 -v "$PWD:/home/near/code" -w /home/near/code/receipts \
+                sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
+                bash -c 'cargo near build non-reproducible-wasm --locked && chmod -R a+rX target/near'
+            else
+              docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/$d \
+                sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e \
+                cargo near build non-reproducible-wasm --locked
+            fi
           done
       - name: Built contract wasm matches receipts/pinned-builds.json
         run: |
@@ -123,6 +158,8 @@ jobs:
         run: cargo +1.99.0 build --locked --example native
       - name: End to end on the sandbox
         run: ulimit -n 65535 && npm run e2e:receipts
+      - name: V3 migration and metered callback from the retained v2 wasm
+        run: ulimit -n 65535 && node receipts/e2e/v3-sandbox.mjs
       - name: Mirror with a mocked signer on the local sandbox
         run: ulimit -n 65535 && npm run e2e:mirror
 

@@ -1,0 +1,26 @@
+{
+  "classification": "LOCAL ONLY build candidate, no live deployment or attestation",
+  "source_base": "ecf179c03a658f3c8353687f215dd7006568c096",
+  "method_version": "truenav-v3.0.0",
+  "receipts": {
+    "sha256": "ece3cde2f08c8216590bd61f1803a762ac4e555065509cab1049bc842c8e5fb9",
+    "bytes": 469966,
+    "image": "sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e",
+    "workdir": "/home/near/code/receipts",
+    "image_user": "0",
+    "target_directory": "default receipts/target",
+    "command": "cargo near build non-reproducible-wasm --locked",
+    "features": []
+  },
+  "engine": {
+    "sha256": "c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2",
+    "bytes": 1096776,
+    "toolchain": "1.99.0",
+    "target": "wasm32-wasip2",
+    "command": "cargo +1.99.0 build --release --locked --target wasm32-wasip2",
+    "features": [],
+    "note": "Actual local WASI build hash. Fresh engine-derived CI evidence uses the actual hash of that CI build; this is not an image reproducibility claim."
+  },
+  "dry_run_artifacts": "not built, never substitute for normal deployment",
+  "sandbox": "not run locally due the authorized nofile skip; CI includes a retained-v2-wasm migration/callback test"
+}

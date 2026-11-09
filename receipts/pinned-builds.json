@@ -1,10 +1,10 @@
 {
-  "note": "sha256 of contract wasm built in the pinned image (sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef..., cargo near build non-reproducible-wasm --locked). Receipts source is the mirror signing recovery and civil-date validation fix based on 65c3ce0, including the gas-cap fix. Query source 4d472e1 is unchanged. Build pins, not deployed-code claims. receipts/deploy-testnet.mjs refuses other bytes.",
-  "receipts": "c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1",
+  "note": "Pinned-image build candidate for receipts v3 migration plus the existing mirror recovery/date fixes. Not deployed. Use UPGRADE_V3.md for approval gates; the legacy fresh-deploy helper is not a v3 upgrade path. Query is unchanged.",
+  "receipts": "ece3cde2f08c8216590bd61f1803a762ac4e555065509cab1049bc842c8e5fb9",
   "query": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156",
   "dist": {
-    "note": "Pinned-image builds for a machine without Docker: TRUENAV_WASM_DIR=receipts/dist. Receipts is the undeployed mirror recovery/date-validation candidate based on 65c3ce0; query 4d472e1 is unchanged. The deploy script checks these sha256 values.",
-    "receipts/dist/truenav_receipts.wasm": "c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1",
+    "note": "Local candidate bytes, not a deployed-code claim. Normal v3 artifact only, no dry-run feature. Prior c19fc647 bytes remain in frozen ecf179c history for CI state migration replay.",
+    "receipts/dist/truenav_receipts.wasm": "ece3cde2f08c8216590bd61f1803a762ac4e555065509cab1049bc842c8e5fb9",
     "receipts/dist/truenav_query.wasm": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
   }
 }

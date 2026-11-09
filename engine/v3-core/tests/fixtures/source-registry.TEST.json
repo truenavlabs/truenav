@@ -1,0 +1,53 @@
+{
+  "registry_version": "truenav-src-v1",
+  "keys": [
+    {
+      "key_id": "servicer:sim:v1",
+      "role": "servicer",
+      "fund_scope": [
+        "harbor-credit-fund",
+        "meridian-yield-fund"
+      ],
+      "public_key": "ed25519:00f31ecb148988f5ee6f0eaaa471bd52b287cbcd2edbce0580af6713b5762151",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2027-01-01T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "key_id": "bank:sim:v1",
+      "role": "bank",
+      "fund_scope": [
+        "harbor-credit-fund",
+        "meridian-yield-fund"
+      ],
+      "public_key": "ed25519:38985e94f3bd13d3f9d474aae8245f41698c4816492fdd4bcea5c98ce3de42b4",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2027-01-01T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "key_id": "fund_admin:sim:v1",
+      "role": "fund_admin",
+      "fund_scope": [
+        "harbor-credit-fund",
+        "meridian-yield-fund"
+      ],
+      "public_key": "ed25519:753d822c5fd40ffc113c2a588ef4c560c366b15c33698903311b1b0c138cf25b",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2027-01-01T00:00:00Z",
+      "revoked": false
+    },
+    {
+      "key_id": "custodian:sim:v1",
+      "role": "custodian",
+      "fund_scope": [
+        "harbor-credit-fund",
+        "meridian-yield-fund"
+      ],
+      "public_key": "ed25519:a96bd551ac83e3fa14cb704453efea956f17c1b5bc8c02989231d8db00722f5c",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_until": "2027-01-01T00:00:00Z",
+      "revoked": false
+    }
+  ]
+}

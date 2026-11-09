@@ -1,0 +1,586 @@
+//! TEST ONLY runtime-generated signing material, minimal financial inputs for backend tests.
+use ed25519_dalek::{Signer, SigningKey};
+use serde_json::{json, Value};
+use std::collections::BTreeMap;
+use truenav_engine_v3::{engine::*, nav};
+use truenav_v3_core::source::*;
+use truenav_v3_core::{canonical, hash, validate};
+struct TestMac;
+impl Fingerprinter for TestMac {
+    fn mac(&self, m: &[u8]) -> truenav_v3_core::Result<[u8; 32]> {
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+        let mut h =
+            Hmac::<Sha256>::new_from_slice(b"TrueNav TEST ONLY fingerprint key v1").unwrap();
+        h.update(m);
+        Ok(h.finalize().into_bytes().into())
+    }
+}
+#[derive(Clone)]
+struct Read {
+    snapshot: Snapshot,
+}
+impl RegistryReader for Read {
+    fn read(&self, _: &Scope, _: &[String], _: &str) -> truenav_v3_core::Result<Snapshot> {
+        Ok(self.snapshot.clone())
+    }
+}
+fn test_key(role: &str) -> SigningKey {
+    SigningKey::from_bytes(&sha2_bytes(
+        format!("TrueNav engine-v3 TEST ONLY seed v1:{role}").as_bytes(),
+    ))
+}
+fn sign(s: &mut SignedSource) {
+    s.payload_sha256 = hash(canonical(&s.payload).unwrap().as_bytes());
+    s.signature = hex::encode(
+        test_key(&s.source)
+            .sign(&sha2_bytes(&source_preimage(s).unwrap()))
+            .to_bytes(),
+    );
+}
+fn setup(index: usize) -> (Context, Vec<SignedSource>, Policy, Read) {
+    let f: Value = serde_json::from_str(include_str!("../../../spec/nav/fixtures.json")).unwrap();
+    let mut fund = f["funds"][index].clone();
+    let token = fund["fund_id"].as_str().unwrap().to_string();
+    let short = if index == 0 { "harbor" } else { "meridian" };
+    let engine_hash = std::env::var("TRUENAV_TEST_ENGINE_SHA256")
+        .unwrap_or_else(|_| hash(b"TEST ONLY no WASI build provided"));
+    let c = Context {
+        scope: Scope {
+            network: "near_testnet".into(),
+            receipts_contract: "receipts.tnlab-718ca9.testnet".into(),
+            fund_account: format!("{short}.sim.testnet"),
+            token_id: token.clone(),
+        },
+        period: Period {
+            period_start: "2026-10-01".into(),
+            period_end: "2026-11-01".into(),
+        },
+        seq: "1".into(),
+        prev_receipt_sha256: None,
+        supersedes_seq: None,
+        correction_reason_code: None,
+        request_id: format!("TEST_{short}"),
+        request_nonce: hash(format!("TrueNav TEST ONLY nonce:{short}").as_bytes()),
+        engine_version_key: engine_hash.clone(),
+        engine_code_sha256: engine_hash,
+        valuation_time: f["valuation_time"].as_str().unwrap().into(),
+        issued_at: "2026-11-10T12:01:00Z".into(),
+    };
+    let registry: Registry = serde_json::from_str(include_str!(
+        "../../../engine/v3-core/tests/fixtures/source-registry.TEST.json"
+    ))
+    .unwrap();
+    let policy = Policy {
+        source_registry: registry,
+        minimum_revisions: ["servicer", "bank", "fund_admin", "custodian"]
+            .map(|r| (r.to_string(), 1))
+            .into_iter()
+            .collect(),
+        case_sensitive_namespaces: vec![],
+        previous_cash_passport: vec![],
+        previous_period: None,
+    };
+    let history = fund["certificate"]["history"].clone();
+    let blocked = fund["blocked_attempts"].clone();
+    let mut loans = fund["loans"].as_array().unwrap().clone();
+    let mut terms = Vec::new();
+    let mut locks = Vec::new();
+    let mut roster = Vec::new();
+    let mut schedule = Vec::new();
+    let mut payments = Vec::new();
+    let mut transactions = Vec::new();
+    for (i, l) in loans.iter_mut().enumerate() {
+        let id = l["id"].as_str().unwrap().to_string();
+        let t = LoanTerms {
+            version: "loan-terms-v2".into(),
+            borrower_namespace: "demo".into(),
+            borrower_id: format!("BORROWER {short} {i}").to_uppercase(),
+            origination_date: "2026-01-01".into(),
+            principal_cents: ((l["principal"].as_f64().unwrap() * 100.0).round() as i128)
+                .to_string(),
+            currency: "USD".into(),
+            collateral_namespace: "demo".into(),
+            collateral_ref: format!("COLLATERAL {short} {i}").to_uppercase(),
+        };
+        let tv = canonical_terms(&t, &[]).unwrap();
+        l["terms"] = tv.clone();
+        l["lien_rank"] = json!(1);
+        terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
+        locks.push(LockRead {
+            fingerprint: fingerprint(&t, &[], &TestMac).unwrap(),
+            completed: true,
+            owner: Some(c.scope.fund_account.clone()),
+            fund_token_id: Some(c.scope.token_id.clone()),
+        });
+        let open = l["principal"].as_f64().unwrap() + l["accrued"].as_f64().unwrap()
+            - l["repaid"].as_f64().unwrap()
+            != 0.0;
+        if !open {
+            continue;
+        }
+        // One-cent, fully settled dues isolate cash cap tests from the legacy NAV pin.
+        roster.push(json!({"loan_id":id,"borrower_payer":format!("TEST payer {i}"),"principal_cents":1,"dpd":0}));
+        schedule.push(
+            json!({"loan_id":id,"due_date":"2026-10-15","amount_cents":1,"component":"interest"}),
+        );
+        payments.push(json!({"payment_id":format!("p-{i}"),"loan_id":id,"payer":format!("TEST payer {i}"),"amount_cents":1,"paid_date":"2026-10-15","reference":format!("pay-{i}"),"component":"interest"}));
+        transactions.push(json!({"transaction_id":format!("b-{i}"),"date":"2026-10-15","amount_cents":-1,"counterparty":format!("TEST payer {i}"),"reference":format!("pay-{i}"),"category":"LOAN_PAYMENT"}));
+    }
+    fund.as_object_mut().unwrap().remove("loans");
+    fund.as_object_mut().unwrap().remove("blocked_attempts");
+    let servicer = json!({"loans":loans,"cashflow":{"as_of":c.valuation_time,"loans":roster,"schedule":schedule,"payments":payments}});
+    let bank = json!({"as_of":c.valuation_time,"synthetic":true,"transactions":transactions});
+    let admin = json!({"fund":fund,"issuer":{"as_of":c.valuation_time,"reported_yield_bps":0,"principal_outstanding_cents":1000000000,"distributions_paid_cents":0}});
+    let custodian = json!({"loan_terms":terms});
+    let mut sources = Vec::new();
+    for (role, payload) in [
+        ("servicer", servicer),
+        ("bank", bank),
+        ("fund_admin", admin),
+        ("custodian", custodian),
+    ] {
+        let mut s = SignedSource {
+            source: role.into(),
+            key_id: format!("{role}:sim:v1"),
+            scope: c.scope.clone(),
+            period: c.period.clone(),
+            revision: "1".into(),
+            data_as_of: c.valuation_time.clone(),
+            payload,
+            payload_sha256: String::new(),
+            signature: String::new(),
+        };
+        sign(&mut s);
+        sources.push(s);
+    }
+    let at = truenav_v3_core::timestamp(&c.valuation_time).unwrap();
+    let events: Vec<_> = blocked
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|b| {
+            let age = b["age_days"].as_f64().unwrap();
+            let t = at - (age * 86_400_000.0) as i64;
+            json!({"action_id":b["action_id"],"at":truenav_engine_v2::tee::iso_from_unix(t/1000)})
+        })
+        .collect();
+    let read = Read {
+        snapshot: Snapshot {
+            registry_account: "registry.tnlab-718ca9.testnet".into(),
+            block_height: "123456".into(),
+            block_hash: "TEST_ONLY_finalized_block".into(),
+            finalized: true,
+            manager_id: format!("mgr-{short}.demo"),
+            locks,
+            attempts: json!(events),
+            certificate_history: history,
+            manager_funds: vec![],
+            manager_attempt_log: json!({}),
+        },
+    };
+    (c, sources, policy, read)
+}
+fn salt() -> [u8; 32] {
+    sha2_bytes(b"TrueNav TEST ONLY salt v1")
+}
+#[test]
+fn private_report_pins_and_public_pins() {
+    for (i, score, private, band) in [(0, 99, 9917, "green"), (1, 43, 4284, "red")] {
+        let (c, s, p, r) = setup(i);
+        let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+        assert_eq!(out.envelope["score"], score, "{i}");
+        assert_eq!(out.private_report["score_x100"], private, "{i}");
+        assert_eq!(out.envelope["band"], band, "{i}");
+        validate(&out.envelope).unwrap();
+    }
+}
+#[test]
+fn ladder_boundaries_and_ties() {
+    for (x, y) in [
+        (999000000, 999000000),
+        (1000000000, 1000000000),
+        (1001000000, 1002000000),
+        (1235000000, 1236000000),
+        (2000000000, 2000000000),
+        (5000000000, 5000000000),
+        (12300000000, 12300000000),
+        (100500000, 101000000),
+        (-100500000, -101000000),
+    ] {
+        assert_eq!(round_nav(x).unwrap(), y)
+    }
+    assert!(round_nav(i128::MIN).is_err());
+}
+#[test]
+fn count_and_coverage_do_not_pin_small_positive_counts() {
+    let mut pairs: BTreeMap<(String, u64), BTreeMap<usize, ()>> = BTreeMap::new();
+    for total in 1..=10000 {
+        for completed in 0..=total.min(10) {
+            pairs
+                .entry((
+                    count_band(completed).into(),
+                    coverage_bps(completed, total).unwrap(),
+                ))
+                .or_default()
+                .insert(completed, ());
+        }
+    }
+    for ((band, bps), counts) in pairs {
+        if band == "lt_5" {
+            assert!(counts.len() >= 2, "{band}/{bps}")
+        }
+    }
+}
+#[test]
+fn invalid_signatures_close_the_receipt_before_private_values_are_used() {
+    for code in ["forged", "unknown"] {
+        let (c, mut s, p, r) = setup(0);
+        if code == "forged" {
+            s[0].payload = json!("malformed private input")
+        } else {
+            s[0].key_id = "servicer:unknown:v1".into()
+        }
+        let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+        assert_eq!(out.envelope["status"], "verification_failed");
+        assert!(out.envelope["score"].is_null());
+        assert!(out.envelope["reported_nav"].is_null());
+        assert!(out.private_report["rejected"] == true);
+    }
+}
+#[test]
+fn second_liens_are_unverified_and_unknown_and_missing_reads_reduce_coverage() {
+    let (c, mut s, p, mut r) = setup(0);
+    s[0].payload["loans"][0]["lien_rank"] = json!(2);
+    s[3].payload["loan_terms"][0]["lien_rank"] = json!(2);
+    sign(&mut s[0]);
+    sign(&mut s[3]);
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(out.envelope["pledge_result"], "unknown");
+    assert!(out.envelope["holds"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("second_lien_unsupported")));
+    r.snapshot.locks[0].completed = false;
+    let partial = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert!(partial.envelope["pledge_coverage_bps"].as_u64().unwrap() < 10000);
+}
+#[test]
+fn cashflow_caps_replace_no_legacy_weight() {
+    let (c, mut s, p, r) = setup(0);
+    s[2].payload["issuer"]["reported_yield_bps"] = json!(10000);
+    sign(&mut s[2]);
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(out.envelope["score"], 59);
+    assert_eq!(out.envelope["band"], "red");
+    assert_eq!(out.private_report["parts_x100"]["gap"], 4000);
+    assert_eq!(out.private_report["parts_x100"]["coverage"], 4000);
+}
+#[test]
+fn commitments_bind_exact_values_and_salt_never_public() {
+    let (c, s, p, r) = setup(0);
+    let a = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    let b = evaluate(&c, &s, &p, &r, &TestMac, &[7; 32]).unwrap();
+    assert_ne!(a.envelope["commitments"], b.envelope["commitments"]);
+    let private_bytes = canonical(&a.private_report).unwrap();
+    let decoded = truenav_v3_core::parse(private_bytes.as_bytes()).unwrap();
+    assert_eq!(private_bytes, canonical(&decoded).unwrap());
+    let public = canonical(&a.envelope).unwrap();
+    assert!(!public.contains(&hex::encode(salt())));
+    for k in [
+        "score_x100",
+        "parts_x100",
+        "raw_score",
+        "salt_hex",
+        "principal_cents",
+        "claimed_not_settled_cents",
+    ] {
+        assert!(a.envelope.get(k).is_none())
+    }
+    assert!(a.private_report["raw_score"].is_string());
+    assert_eq!(
+        a.private_report["private_registry_state_root"],
+        hash(
+            canonical(&a.private_report["registry_read_manifest"])
+                .unwrap()
+                .as_bytes()
+        )
+    );
+    let nonce = hex::decode(&c.request_nonce).unwrap().try_into().unwrap();
+    for key in ["reported_nav", "trueval", "truerange_low", "truerange_high"] {
+        let value = json!({"currency":"USD","cents":a.private_report["exact"][key]});
+        assert_eq!(
+            a.envelope["commitments"][key],
+            commitment(&format!("nav_exact:{key}"), &value, &nonce, &salt()).unwrap()
+        );
+    }
+    assert_eq!(
+        a.envelope["commitments"]["full_report"],
+        commitment("full_report", &a.private_report, &nonce, &salt()).unwrap()
+    );
+}
+#[test]
+fn legacy_nav_port_matches_benchmark_values() {
+    let f: Value = serde_json::from_str(include_str!("../../../spec/nav/fixtures.json")).unwrap();
+    let at = truenav_v3_core::timestamp(f["valuation_time"].as_str().unwrap()).unwrap();
+    for (i, pin) in [(0, 9917), (1, 4284)] {
+        let fund = &f["funds"][i];
+        let n = nav::score(fund, at, &fund["certificate"]["history"]);
+        assert_eq!(nav::half_up(n.raw * 100.0), pin)
+    }
+}
+#[test]
+fn engine_derived_vectors() {
+    let path = "../../schema/vectors/engine-v3-derived.json";
+    let mut vectors = Vec::new();
+    for i in 0..2 {
+        let (c, s, p, r) = setup(i);
+        let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+        vectors.push(json!({"name":if i==0{"harbor"}else{"meridian"},"envelope":out.envelope,"private_TEST_report":out.private_report}));
+    }
+    let (mut c, s, p, r) = setup(0);
+    c.seq = "2".into();
+    c.prev_receipt_sha256 = vectors[0]["envelope"]["receipt_sha256"]
+        .as_str()
+        .map(str::to_string);
+    c.supersedes_seq = Some("1".into());
+    c.correction_reason_code = Some("source_correction".into());
+    c.request_id = "TEST_correction".into();
+    c.request_nonce = hash(b"TrueNav TEST ONLY correction nonce");
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    vectors.push(json!({"name":"harbor_correction","envelope":out.envelope,"private_TEST_report":out.private_report}));
+    let (c, mut s, p, r) = setup(0);
+    s[2].payload["issuer"]["reported_yield_bps"] = json!(10000);
+    sign(&mut s[2]);
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    vectors.push(json!({"name":"harbor_capped","envelope":out.envelope,"private_TEST_report":out.private_report}));
+    let v = json!({"classification":"TEST ONLY runtime-derived synthetic evidence, public TEST salts, no live attestation","source_registry":"engine/v3-core/tests/fixtures/source-registry.TEST.json","vectors":vectors,"temporal_cases":[temporal_case()]});
+    if std::env::var_os("TRUENAV_WRITE_DERIVED_VECTORS").is_some() {
+        assert!(
+            std::env::var_os("TRUENAV_TEST_ENGINE_SHA256").is_some(),
+            "must use real built WASI hash"
+        );
+        std::fs::write(path, serde_json::to_string_pretty(&v).unwrap() + "\n").unwrap();
+    } else if std::path::Path::new(path).exists()
+        && std::env::var_os("TRUENAV_TEST_ENGINE_SHA256").is_some()
+    {
+        let want: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        assert!(v == want, "engine-derived artifact drift");
+    }
+}
+
+#[test]
+fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
+    let (c0, _, mut p, _) = setup(0);
+    let mut c = c0.clone();
+    c.scope.token_id = "DEMO-CREDIT".into();
+    c.scope.fund_account = "demo.sim.testnet".into();
+    c.valuation_time = "2026-11-08T09:00:00Z".into();
+    c.issued_at = c.valuation_time.clone();
+    for k in &mut p.source_registry.keys {
+        k.fund_scope.push(c.scope.token_id.clone())
+    }
+    let fx: Value = serde_json::from_str(include_str!(
+        "../../../cashflow/fixtures/parity/cashflow-parity-DEMO-CREDIT.json"
+    ))
+    .unwrap();
+    let ds = &fx["input"]["dataset"];
+    let mut loans = Vec::new();
+    let mut terms = Vec::new();
+    let mut locks = Vec::new();
+    for (i, l) in ds["servicer_tape"]["loans"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+    {
+        let id = l["loan_id"].as_str().unwrap();
+        let t = LoanTerms {
+            version: "loan-terms-v2".into(),
+            borrower_namespace: "demo".into(),
+            borrower_id: format!("DEMO TEST {i}"),
+            origination_date: "2026-01-01".into(),
+            principal_cents: l["principal_cents"].to_string(),
+            currency: "USD".into(),
+            collateral_namespace: "demo".into(),
+            collateral_ref: format!("DEMO TEST {i}"),
+        };
+        let tv = canonical_terms(&t, &[]).unwrap();
+        loans.push(json!({"id":id,"principal":500000,"accrued":0,"repaid":0,"asset":"invoices","bucket":if i<3{"dpd_61_90"}else{"current"},"servicer_asof":"2026-11-08T06:00:00Z","terms":tv,"lien_rank":1}));
+        terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
+        locks.push(LockRead {
+            fingerprint: fingerprint(&t, &[], &TestMac).unwrap(),
+            completed: true,
+            owner: Some(c.scope.fund_account.clone()),
+            fund_token_id: Some(c.scope.token_id.clone()),
+        });
+    }
+    let fund = json!({"fund_id":c.scope.token_id,"headline_nav":10000000,"cash":0,"liabilities":0,"nav_report_date":"2026-11-08T06:00:00Z","certificate":{"data_asof":"2026-11-08T06:00:00Z","signer":"demo.manager"}});
+    let mut sources = Vec::new();
+    for (role, payload) in [
+        (
+            "servicer",
+            json!({"loans":loans,"cashflow":ds["servicer_tape"]}),
+        ),
+        ("bank", ds["bank_feed"].clone()),
+        ("fund_admin", json!({"fund":fund,"issuer":ds["issuer"]})),
+        ("custodian", json!({"loan_terms":terms})),
+    ] {
+        let mut s = SignedSource {
+            source: role.into(),
+            key_id: format!("{role}:sim:v1"),
+            scope: c.scope.clone(),
+            period: c.period.clone(),
+            revision: "1".into(),
+            data_as_of: if role == "bank" {
+                "2026-11-08T08:30:00Z".into()
+            } else {
+                "2026-11-08T06:00:00Z".into()
+            },
+            payload,
+            payload_sha256: String::new(),
+            signature: String::new(),
+        };
+        sign(&mut s);
+        sources.push(s);
+    }
+    let r = Read {
+        snapshot: Snapshot {
+            registry_account: "registry.tnlab-718ca9.testnet".into(),
+            block_height: "123".into(),
+            block_hash: "TEST_ONLY_finalized".into(),
+            finalized: true,
+            manager_id: "demo.manager".into(),
+            locks,
+            attempts: json!([]),
+            certificate_history: json!([]),
+            manager_funds: vec![],
+            manager_attempt_log: json!({}),
+        },
+    };
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    let public = canonical(&out.envelope).unwrap();
+    for forbidden in [
+        "principal_cents",
+        "late_share_bps",
+        "850000000",
+        "claimed_not_settled_cents",
+        "cash_received_cents",
+    ] {
+        assert!(!public.contains(forbidden))
+    }
+    assert_eq!(out.envelope["late_share_band"], "gt_10_lte_25pct");
+    assert_eq!(out.envelope["late_loan_cohorts"]["dpd_61_90"], "lt_5");
+    assert!(out.envelope["late_loan_cohorts"]
+        .as_object()
+        .unwrap()
+        .values()
+        .all(|v| v == "lt_5" || v == "suppressed"));
+}
+
+// A narrowly scoped 100-position fixture is needed to exercise the accepted temporal disclosure window.
+fn temporal_case() -> Value {
+    let (c, mut sources, p, mut r) = setup(0);
+    let mut loans = Vec::new();
+    let mut terms = Vec::new();
+    let mut locks = Vec::new();
+    let mut roster = Vec::new();
+    let mut dues = Vec::new();
+    let mut payments = Vec::new();
+    let mut txs = Vec::new();
+    for i in 0..100 {
+        let id = format!("TEST-temporal-{i}");
+        let t = LoanTerms {
+            version: "loan-terms-v2".into(),
+            borrower_namespace: "demo".into(),
+            borrower_id: format!("TEST TEMPORAL {i}"),
+            origination_date: "2026-01-01".into(),
+            principal_cents: "10000000".into(),
+            currency: "USD".into(),
+            collateral_namespace: "demo".into(),
+            collateral_ref: format!("TEST TEMPORAL {i}"),
+        };
+        let tv = canonical_terms(&t, &[]).unwrap();
+        loans.push(json!({"id":id,"principal":100000,"accrued":0,"repaid":0,"asset":"real_estate","bucket":"current","servicer_asof":"2026-11-09T06:00:00Z","terms":tv,"lien_rank":1}));
+        terms.push(json!({"loan_id":id,"terms":tv,"lien_rank":1}));
+        locks.push(LockRead {
+            fingerprint: fingerprint(&t, &[], &TestMac).unwrap(),
+            completed: true,
+            owner: if i < 5 {
+                None
+            } else {
+                Some(c.scope.fund_account.clone())
+            },
+            fund_token_id: if i < 5 {
+                None
+            } else {
+                Some(c.scope.token_id.clone())
+            },
+        });
+        roster.push(
+            json!({"loan_id":id,"borrower_payer":format!("TEST TEMPORAL {i}"),"principal_cents":1}),
+        );
+        dues.push(
+            json!({"loan_id":id,"due_date":"2026-10-15","amount_cents":1,"component":"interest"}),
+        );
+        payments.push(json!({"payment_id":format!("p-{i}"),"loan_id":id,"paid_date":"2026-10-15","amount_cents":1}));
+        txs.push(json!({"transaction_id":format!("b-{i}"),"date":"2026-10-15","amount_cents":-1,"counterparty":format!("TEST TEMPORAL {i}"),"category":"LOAN_PAYMENT"}));
+    }
+    sources[0].payload = json!({"loans":loans,"cashflow":{"as_of":c.valuation_time,"loans":roster,"schedule":dues,"payments":payments}});
+    sources[1].payload["transactions"] = json!(txs);
+    sources[2].payload["fund"]["headline_nav"] = json!(9400000);
+    sources[2].payload["fund"]["policy_markdown"] = json!({});
+    sources[3].payload["loan_terms"] = json!(terms);
+    for s in &mut sources {
+        sign(s)
+    }
+    r.snapshot.locks = locks;
+    let before = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    r.snapshot.locks[5].owner = None;
+    r.snapshot.locks[5].fund_token_id = None;
+    let mut after_context = c.clone();
+    after_context.seq = "2".into();
+    after_context.prev_receipt_sha256 = before.envelope["receipt_sha256"]
+        .as_str()
+        .map(str::to_string);
+    after_context.supersedes_seq = Some("1".into());
+    after_context.correction_reason_code = Some("coverage_correction".into());
+    after_context.request_nonce = hash(b"TrueNav TEST ONLY temporal after nonce");
+    let after = evaluate(&after_context, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(before.envelope["score"], 97);
+    assert_eq!(after.envelope["score"], 97);
+    assert_eq!(before.envelope["nav_result"], "inside");
+    assert_eq!(after.envelope["nav_result"], "inside");
+    json!({"name":"loan_turns_unverified","before":before.envelope,"after":after.envelope,"known_side_information":{"coverage_loss_points":"0.4","money_values_unchanged":false}})
+}
+#[test]
+fn consecutive_engine_receipts_cover_a_loan_turning_unverified() {
+    let c = temporal_case();
+    assert_ne!(c["before"]["receipt_sha256"], c["after"]["receipt_sha256"]);
+}
+
+#[test]
+fn a_shared_wallet_does_not_make_another_funds_lock_ours() {
+    let (c, s, p, mut r) = setup(0);
+    r.snapshot.locks[0].fund_token_id = Some("another-simulated-fund".into());
+    let out = evaluate(&c, &s, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(out.envelope["pledge_result"], "conflict");
+    assert!(
+        out.private_report["parts_x100"]["coverage"]
+            .as_u64()
+            .unwrap()
+            < 4000
+    );
+}
+#[test]
+fn issuer_cannot_attest_cash_without_a_matching_signed_bank_balance() {
+    let (c, mut s, p, r) = setup(0);
+    s[2].payload["fund"]["cash"] = json!(1000000);
+    s[2].payload["fund"]["cash_attested"] = json!(true);
+    s[2].payload["fund"]["cash_asof"] = json!(c.valuation_time);
+    sign(&mut s[2]);
+    assert!(matches!(
+        evaluate(&c, &s, &p, &r, &TestMac, &salt()),
+        Err("cash_attestation_unbound")
+    ));
+}

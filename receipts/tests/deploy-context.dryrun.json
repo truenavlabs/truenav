@@ -1,0 +1,5 @@
+{
+  "classification": "TEST ONLY DRY_RUN deployment context, explicit dry-run-tests build flag required",
+  "receipts_contract": "receipts-v3-dryrun.codex.tnlab-718ca9.testnet",
+  "network": "near_testnet"
+}

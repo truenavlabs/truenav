@@ -203,7 +203,12 @@ fn check_config(c: &Config) {
     );
     // a receipt is at most MAX_RECEIPT_BYTES; the stored record roughly doubles it with its index fields, and the
     // pending record and a failure record come on top
-    let worst = (2 * MAX_RECEIPT_BYTES as u128 + 2_000) * env::storage_byte_cost().as_yoctonear();
+    let extra = if truenav_v3_core::wire::is_v3_method(&c.method) {
+        8_000
+    } else {
+        2_000
+    };
+    let worst = (2 * MAX_RECEIPT_BYTES as u128 + extra) * env::storage_byte_cost().as_yoctonear();
     require!(
         c.storage_deposit.0 >= worst,
         "storage_deposit too low for the largest receipt"
@@ -568,14 +573,16 @@ impl Receipts {
         let code = match outcome {
             Ok(seq) => format!("stored:{seq}"),
             Err(code) => {
-                self.failures.insert(
-                    token_id.clone(),
-                    Failure {
-                        request_id,
-                        code: code.clone(),
-                        at_ns: env::block_timestamp(),
-                    },
-                );
+                if p.storage_deposit.0 >= 4096 * env::storage_byte_cost().as_yoctonear() {
+                    self.failures.insert(
+                        token_id.clone(),
+                        Failure {
+                            request_id,
+                            code: code.clone(),
+                            at_ns: env::block_timestamp(),
+                        },
+                    );
+                }
                 emit(
                     "run_failed",
                     json!({ "token_id": token_id, "request_id": request_id, "code": code }),
@@ -714,7 +721,11 @@ impl Receipts {
     pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<Value> {
         let r = self.receipts.get(&(token_id, seq))?;
         if truenav_v3_core::wire::is_v3_method(&r.method) {
-            return serde_json::from_str(&r.receipt).ok();
+            return Some(
+                serde_json::from_str(&r.receipt).unwrap_or_else(
+                    |_| json!({"receipt_version":"3","error":"v3_receipt_corrupt"}),
+                ),
+            );
         }
         let mut v = serde_json::to_value(r).ok()?;
         v["receipt_version"] = json!("2");

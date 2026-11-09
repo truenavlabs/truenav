@@ -4,13 +4,13 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+if(process.env.CI&&process.argv.includes('--regenerate-test-vectors'))throw new Error('CI must not regenerate vectors');
 const root=fileURLToPath(new URL('../../',import.meta.url));
 function run(command,args,env={}){const r=spawnSync(command,args,{cwd:root,env:{...process.env,...env},stdio:'inherit'});if(r.error){console.error('Backend check could not start');process.exit(1);}if(r.status!==0)process.exit(r.status??1);}
 run('cargo',['+1.99.0','test','--locked','--manifest-path','engine/v3-core/Cargo.toml']);
 run('cargo',['+1.99.0','test','--locked','--manifest-path','engine/v3-core/Cargo.toml','--features','dry-run-tests']);
-run('cargo',['+1.99.0','build','--locked','--release','--target','wasm32-wasip2','--manifest-path','outlayer/engine-v3/Cargo.toml']);
-const m=spawnSync('cargo',['+1.99.0','metadata','--no-deps','--format-version','1','--manifest-path','outlayer/engine-v3/Cargo.toml'],{cwd:root,encoding:'utf8'});if(m.status!==0)process.exit(1);
-const wasm=path.join(JSON.parse(m.stdout).target_directory,'wasm32-wasip2/release/truenav-engine-v3.wasm');
+run('node',['outlayer/engine-v3/build-pinned.mjs']);
+const wasm=path.join(root,'outlayer/engine-v3/target/pinned/wasm32-wasip2/release/truenav-engine-v3.wasm');
 const engineHash=createHash('sha256').update(readFileSync(wasm)).digest('hex');
 run('cargo',['+1.99.0','test','--locked','--manifest-path','outlayer/engine-v3/Cargo.toml'],{TRUENAV_TEST_ENGINE_SHA256:engineHash,...(process.argv.includes('--regenerate-test-vectors')?{TRUENAV_WRITE_DERIVED_VECTORS:'1'}:{})});
 console.log('DRY_RUN: explicit dev-account engine tests; normal frozen validation must reject their envelopes');

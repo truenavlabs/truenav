@@ -4,7 +4,7 @@ Local implementation of `truenav-v3.0.1`, the approved pledge-conflict amendment
 
 ## Local gates
 
-Use Rust 1.99.0, its wasm32-wasip2 target, Node and Python jsonschema. From the repository root:
+Use Docker, Rust 1.99.0, its wasm32-wasip2 target, Node and Python jsonschema. From the repository root:
 
 ```sh
 npm ci
@@ -14,7 +14,7 @@ cargo +1.99.0 clippy --locked --all-targets --manifest-path outlayer/engine-v3/C
 cargo +1.99.0 clippy --locked --target wasm32-wasip2 --manifest-path outlayer/engine-v3/Cargo.toml -- -D warnings
 ```
 
-The gate builds the real WASI component and verifies its hash in `schema/vectors/engine-v3-derived.json`. A source change requires an explicit TEST-vector regeneration using the freshly built file's SHA256 as TRUENAV_TEST_ENGINE_SHA256 and TRUENAV_WRITE_DERIVED_VECTORS=1. Tests generate TEST signing material only in memory. No native production runner exists. The frozen four goldens are serialization conformance vectors; they are not regenerated.
+The gate builds the WASI component with the digest-pinned image and fixed paths in `build-pinned.mjs`, checks `receipts/v3-build.json`, then verifies committed `schema/vectors/engine-v3-derived.json`. CI never regenerates vectors. A second clean target can be checked with `node outlayer/engine-v3/build-pinned.mjs --recheck`. A source change requires an explicit TEST-vector regeneration using the freshly built file's SHA256 as TRUENAV_TEST_ENGINE_SHA256 and TRUENAV_WRITE_DERIVED_VECTORS=1. Tests generate TEST signing material only in memory. No native production runner exists. The frozen four goldens are serialization conformance vectors; they are not regenerated.
 
 ## Authenticated inputs
 

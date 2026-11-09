@@ -24,13 +24,13 @@ try{
  const oldBytes=execFileSync('git',['show','ecf179c03a658f3c8353687f215dd7006568c096:receipts/dist/truenav_receipts.wasm'],{cwd:root,stdio:['ignore','pipe','ignore'],maxBuffer:4*1024*1024});
  assert.equal(createHash('sha256').update(oldBytes).digest('hex'),'c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1');
  const v2pin='360cd47346db7060ffb213288e25a6d5e39050133bd4e20ad2f6f9280b1daa57';
- const config={outlayer:ids.outlayer,project_id:'CI_ONLY',version_key:v2pin,method:'cashflow-v2.1.0',secrets_profile:'CI_ONLY',secrets_owner:receiptId,max_instructions:10000000000,max_memory_mb:128,max_execution_seconds:180,outlayer_deposit:nearToYocto('0.01').toString(),storage_deposit:nearToYocto('0.25').toString(),outlayer_tgas:200,callback_tgas:80};
+ const config={outlayer:ids.outlayer,project_id:'CI_ONLY',version_key:v2pin,method:'cashflow-v2.1.0',secrets_profile:'CI_ONLY',secrets_owner:receiptId,max_instructions:10000000000,max_memory_mb:128,max_execution_seconds:180,outlayer_deposit:nearToYocto('0.01').toString(),storage_deposit:nearToYocto('0.35').toString(),outlayer_tgas:200,callback_tgas:80};
  await deploy('outlayer',readFileSync(new URL('receipts/mock-outlayer/target/near/mock_outlayer.wasm',root)),'new',{worker:ids.worker});
  await deploy('receipts',oldBytes,'new',{admin:ids.admin,pauser:ids.pauser,config});
  await call('admin','receipts','set_runner',{account:ids.runner,allowed:true},one);
  await call('admin','receipts','register_token',{token_id:'DEMO-CREDIT',kind:'credit'},one);
  async function run(make){
-  const signed=await accounts.runner.createSignedTransaction({receiverId:receiptId,actions:[actions.functionCall('request_run',{token_id:'DEMO-CREDIT'},teraToGas('300'),nearToYocto('0.26'))]});
+  const signed=await accounts.runner.createSignedTransaction({receiverId:receiptId,actions:[actions.functionCall('request_run',{token_id:'DEMO-CREDIT'},teraToGas('300'),nearToYocto('0.36'))]});
   const hash=baseEncode(createHash('sha256').update(signed.transaction.encode()).digest());await provider.sendTransactionAsync(signed);
   let request;
   for(let i=0;i<100;i++){const rows=await provider.callFunction({contractId:ids.outlayer,method:'get_requests',args:{},blockQuery:{finality:'final'}});if(rows.length){request=rows[0];break}await new Promise(r=>setTimeout(r,200));}

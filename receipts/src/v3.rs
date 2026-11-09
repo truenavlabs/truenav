@@ -75,14 +75,7 @@ impl Receipts {
         self.only_admin();
         require!(enabled(), "migrate first");
         require!(self.paused, "pause before changing run context");
-        require!(
-            !token_id.is_empty()
-                && token_id.len() <= 128
-                && token_id
-                    .bytes()
-                    .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_'),
-            "invalid token_id"
-        );
+        require!(is_token_id(&token_id), "invalid token_id");
         require!(self.pending.get(&token_id).is_none(), "run pending");
         require!(
             context.source_registry_sha256.len() == 64
@@ -300,8 +293,12 @@ impl Receipts {
             &format!(
                 "{}:{}:{}",
                 p.token_id,
-                envelope["period_start"].as_str().unwrap(),
-                envelope["period_end"].as_str().unwrap()
+                envelope["period_start"]
+                    .as_str()
+                    .ok_or_else(|| err("v3_field_type"))?,
+                envelope["period_end"]
+                    .as_str()
+                    .ok_or_else(|| err("v3_field_type"))?
             ),
         );
         let old_period = read(&period_key).and_then(|v| v.as_str().map(str::to_string));
@@ -314,16 +311,24 @@ impl Receipts {
         let receipt = canonical(&envelope).map_err(err)?;
         let caps = envelope["caps"]
             .as_array()
-            .unwrap()
+            .ok_or_else(|| err("v3_field_type"))?
             .iter()
-            .map(|v| v.as_str().unwrap().to_string())
-            .collect();
+            .map(|v| {
+                v.as_str()
+                    .map(str::to_string)
+                    .ok_or_else(|| err("v3_field_type"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let holds = envelope["holds"]
             .as_array()
-            .unwrap()
+            .ok_or_else(|| err("v3_field_type"))?
             .iter()
-            .map(|v| v.as_str().unwrap().to_string())
-            .collect();
+            .map(|v| {
+                v.as_str()
+                    .map(str::to_string)
+                    .ok_or_else(|| err("v3_field_type"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let r = StoredReceipt {
             token_id: p.token_id.clone(),
             seq,
@@ -331,34 +336,61 @@ impl Receipts {
             method: p.method.clone(),
             version_key: p.version_key.clone(),
             score: envelope["score"].as_u64().unwrap_or(0),
-            band: envelope["band"].as_str().unwrap().into(),
+            band: envelope["band"]
+                .as_str()
+                .ok_or_else(|| err("v3_field_type"))?
+                .into(),
             period: format!(
                 "{}/{}",
-                envelope["period_start"].as_str().unwrap(),
-                envelope["period_end"].as_str().unwrap()
+                envelope["period_start"]
+                    .as_str()
+                    .ok_or_else(|| err("v3_field_type"))?,
+                envelope["period_end"]
+                    .as_str()
+                    .ok_or_else(|| err("v3_field_type"))?
             ),
-            as_of: envelope["valuation_time"].as_str().unwrap().into(),
+            as_of: envelope["valuation_time"]
+                .as_str()
+                .ok_or_else(|| err("v3_field_type"))?
+                .into(),
             caps,
             holds,
-            receipt_sha256: envelope["receipt_sha256"].as_str().unwrap().into(),
+            receipt_sha256: envelope["receipt_sha256"]
+                .as_str()
+                .ok_or_else(|| err("v3_field_type"))?
+                .into(),
             receipt,
             requested_ns: p.requested_ns,
             stored_ns: env::block_timestamp(),
             block_height: env::block_height(),
         };
+        // Bound every permanent v3 write before changing any state. Proof publication's index
+        // is separately storage-funded by the attester, never by this run or contract balance.
+        let record_bytes = borsh::to_vec(&r).map_err(|_| err("v3_serialization"))?;
+        let reserve_bytes = record_bytes.len() as u128 + 4096 + p.pending_bytes as u128;
+        let required = reserve_bytes
+            .checked_mul(env::storage_byte_cost().as_yoctonear())
+            .ok_or_else(|| err("v3_storage_overflow"))?;
+        if required > p.storage_deposit.0 {
+            return Err(err("v3_storage_deposit"));
+        }
+        let first_bytes =
+            serde_json::to_vec(&json!(seq.to_string())).map_err(|_| err("v3_serialization"))?;
+        crate::attestations::bind_body(&p.token_id, seq, &r.receipt_sha256, &body_sha256)
+            .map_err(err)?;
         emit(
             "receipt_stored",
             json!({"receipt_version":"3","token_id":p.token_id,"seq":seq.to_string(),"receipt_sha256":r.receipt_sha256}),
         );
-        crate::attestations::bind_body(&p.token_id, seq, &r.receipt_sha256, &body_sha256);
+
         self.receipts.insert((p.token_id.clone(), seq), r);
         token.receipts = seq;
         self.tokens.insert(p.token_id.clone(), token);
         self.failures.remove(&p.token_id);
         if !env::storage_has_key(&key(b"first:", &p.token_id)) {
-            write(&key(b"first:", &p.token_id), &json!(seq.to_string()));
+            env::storage_write(&key(b"first:", &p.token_id), &first_bytes);
         }
-        write(&period_key, &json!(seq.to_string()));
+        env::storage_write(&period_key, &first_bytes);
         env::storage_remove(&key(b"pending:", &p.request_id.to_string()));
         Ok(seq)
     }
@@ -440,7 +472,7 @@ mod tests {
             requester: account("runner.testnet"),
             version_key: e["engine_version_key"].as_str().unwrap().into(),
             method: e["method_version"].as_str().unwrap().into(),
-            storage_deposit: U128(1),
+            storage_deposit: U128(NearToken::from_near(1).as_yoctonear()),
             outlayer_deposit: U128(0),
             pending_bytes: 0,
             requested_ns: 1,
@@ -645,6 +677,120 @@ mod tests {
         assert!(c
             .get_body_binding(p.token_id, near_sdk::json_types::U64(1))
             .is_some());
+    }
+    #[test]
+    fn callback_failures_clear_pending_and_never_overspend_storage() {
+        let mut c = migrated();
+        for scenario in [
+            "context", "shape", "method", "binding", "deposit", "field", "success",
+        ] {
+            let mut e = golden();
+            e["token_id"] = json!(format!("TEST-{}", scenario.to_uppercase()));
+            let mut p = pending(&mut c, &e);
+            let mut b = body(&e);
+            if scenario == "context" {
+                clear_context(p.request_id);
+            }
+            if scenario == "shape" {
+                b = json!([]);
+            }
+            if scenario == "field" {
+                b["caps"] = json!([42]);
+            }
+            if scenario == "method" {
+                b["method_spec_sha256"] = json!("0".repeat(64));
+            }
+            if scenario == "deposit" {
+                p.storage_deposit = U128(0);
+            }
+            let at = timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000;
+            context("receipts.tnlab-718ca9.testnet", at);
+            if scenario == "binding" {
+                truenav_v3_core::wire::seal_envelope(&mut e).unwrap();
+                crate::attestations::bind_body(
+                    &p.token_id,
+                    1,
+                    e["receipt_sha256"].as_str().unwrap(),
+                    &hash(canonical(&b).unwrap().as_bytes()),
+                )
+                .unwrap();
+            }
+            c.pending.insert(p.token_id.clone(), p.clone());
+            c.flush_all();
+            let initial = env::storage_usage();
+            let mut cb = VMContextBuilder::new();
+            cb.current_account_id(account("receipts.tnlab-718ca9.testnet"))
+                .predecessor_account_id(account("receipts.tnlab-718ca9.testnet"))
+                .block_timestamp(at)
+                .prepaid_gas(Gas::from_tgas(300))
+                .account_balance(NearToken::from_near(100))
+                .storage_usage(initial);
+            testing_env!(
+                cb.build(),
+                near_sdk::test_vm_config(),
+                near_sdk::RuntimeFeesConfig::test(),
+                Default::default(),
+                vec![near_sdk::PromiseResult::Successful(
+                    serde_json::to_vec(&b).unwrap()
+                )]
+            );
+            let code = c.on_run_result(p.token_id.clone(), p.request_id);
+            assert_eq!(
+                code.starts_with("stored:"),
+                scenario == "success",
+                "{scenario}: {code}"
+            );
+            assert!(c.pending.get(&p.token_id).is_none());
+            assert!(read(&key(b"pending:", &p.request_id.to_string())).is_none());
+            let refund: u128 = near_sdk::test_utils::get_created_receipts()
+                .iter()
+                .flat_map(|r| r.actions.iter())
+                .filter_map(|a| {
+                    if let near_sdk::mock::MockAction::Transfer { deposit, .. } = a {
+                        Some(deposit.as_yoctonear())
+                    } else {
+                        None
+                    }
+                })
+                .sum();
+            assert!(refund <= p.storage_deposit.0);
+            let growth = env::storage_usage().saturating_sub(initial) as u128
+                * env::storage_byte_cost().as_yoctonear();
+            assert!(growth + refund <= p.storage_deposit.0);
+        }
+    }
+    #[test]
+    fn configure_fund_uses_registration_token_rule() {
+        let mut c = migrated();
+        let ctx = FundContext { fund_account: account("fund.testnet"), period_start: "2026-10-01".into(), period_end: "2026-11-01".into(), judge_valuation_time: None, source_registry_sha256: "a".repeat(64), supersedes_seq: None, correction_reason_code: None };
+        for token in ["", "lowercase", "BAD_TOKEN", &"A".repeat(65)] {
+            context("admin.testnet", 1);
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.configure_v3_fund(token.into(), ctx.clone()))).is_err());
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| c.register_token(token.into(), "credit".into()))).is_err());
+        }
+        context("admin.testnet", 1);
+        c.configure_v3_fund("FUND-1".into(),ctx);
+        assert!(c.get_token("FUND-1".into()).is_some());
+    }
+    #[test]
+    fn corrupt_v3_is_distinct_from_unknown_sequence() {
+        let mut c = migrated();
+        let e = golden();
+        let p = pending(&mut c, &e);
+        context(
+            "receipts.tnlab-718ca9.testnet",
+            timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
+        );
+        c.accept_v3(&p, &body(&e)).unwrap();
+        c.receipts
+            .get_mut(&(p.token_id.clone(), 1))
+            .unwrap()
+            .receipt = "{".into();
+        assert_eq!(
+            c.get_receipt(p.token_id.clone(), 1).unwrap()["error"],
+            "v3_receipt_corrupt"
+        );
+        assert!(c.get_receipt(p.token_id, 999).is_none());
     }
     #[cfg(feature = "dry-run-tests")]
     #[test]

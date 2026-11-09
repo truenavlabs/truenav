@@ -3,8 +3,8 @@
   "source_base": "ecf179c03a658f3c8353687f215dd7006568c096",
   "method_version": "truenav-v3.0.1",
   "receipts": {
-    "sha256": "0b0e3aa7558073cf8ddea6151774ebfa8ac6e7815019fd296fa80a44538676a8",
-    "bytes": 535350,
+    "sha256": "bdcffe959e9c3487e5d40515e2a38ed9d4971c606b151601aeae4068a393230d",
+    "bytes": 538250,
     "image": "sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e",
     "workdir": "/home/near/code/receipts",
     "image_user": "0",
@@ -13,20 +13,23 @@
     "features": []
   },
   "engine": {
-    "sha256": "8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad",
-    "bytes": 1147341,
+    "sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+    "bytes": 1147741,
     "toolchain": "1.99.0",
     "target": "wasm32-wasip2",
-    "command": "cargo +1.99.0 build --release --locked --target wasm32-wasip2",
+    "command": "node outlayer/engine-v3/build-pinned.mjs",
     "features": [],
-    "note": "Actual local WASI build hash. Fresh engine-derived CI evidence uses the actual hash of that CI build; this is not an image reproducibility claim.",
+    "note": "Pinned-image WASI build; CI checks this hash and committed vectors without regeneration.",
     "key_scope": {
       "bind": "project",
       "caller": "predecessor"
-    }
+    },
+    "image": "sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e",
+    "workdir": "/home/near/code/outlayer/engine-v3",
+    "target_directory": "/engine-target"
   },
   "dry_run_artifacts": {
-    "classification": "TEST ONLY, never deploy as normal production artifacts",
+    "classification": "HISTORICAL TEST ONLY hashes, not rebuilt for this hardening revision; must rebuild before any approved rehearsal",
     "receipts_sha256": "9bf4539f74a02fa62564c3d418231cbcf3091ef08ec506ebdb199f1b04820895",
     "engine_sha256": "3a535b6d3caf40155d13219831c2a4d730eea6fbd9ccfb7b3084ea86944b2f11",
     "flag": "--features dry-run-tests",
@@ -34,7 +37,7 @@
     "local_engine_path": "/workspace/truenav-build/engine-v3-dryrun/wasm32-wasip2/release/truenav-engine-v3.wasm",
     "testnet_rehearsal": "not run"
   },
-  "sandbox": "not run locally due the authorized nofile skip; CI includes a retained-v2-wasm migration/callback test",
+  "sandbox": "Blocked locally: hard nofile 16384, Docker rlimit increase denied; CI root cause awaited; 80 Tgas unchanged",
   "attestations": {
     "receipt_ref": "always null; frozen receipts unchanged",
     "body_sha256": "sha256(canonical B), stored by callback",

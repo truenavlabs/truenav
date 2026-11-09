@@ -51,51 +51,48 @@ fn put<T: BorshSerialize>(key: &[u8], v: &T) {
     env::storage_write(key, &borsh::to_vec(v).expect("attestation serialization"));
 }
 /// Fixed public testnet API routes only. No query, credentials, fragment, port, redirect or alternate origin.
-pub fn valid_proof_ref(p: &str) -> bool {
+pub fn normalize_proof_ref(p: &str) -> Option<String> {
     if p.len() > 256 {
-        return false;
+        return None;
     }
-    let Some(tail) = p.strip_prefix("https://testnet-api.outlayer.ai/attestations/") else {
-        return false;
-    };
-    if let Some(s) = tail.strip_prefix("by-request/") {
-        return !s.is_empty()
-            && s.len() <= 20
-            && s.bytes().all(|b| b.is_ascii_digit())
-            && (s == "0" || !s.starts_with('0'))
-            && s.parse::<u64>().is_ok();
+    let tail = p.strip_prefix("https://testnet-api.outlayer.ai/attestations/by-request/")?;
+    let tail = tail.strip_suffix('/').unwrap_or(tail);
+    if tail.is_empty() || !tail.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
     }
-    if let Some(s) = tail.strip_prefix("by-tx/") {
-        return (32..=64).contains(&s.len())
-            && s.bytes().all(|b| {
-                b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".contains(&b)
-            });
-    }
-    if let Some(s) = tail.strip_prefix("by-call/") {
-        return s.len() == 36
-            && s.bytes().enumerate().all(|(i, b)| {
-                if [8, 13, 18, 23].contains(&i) {
-                    b == b'-'
-                } else {
-                    b.is_ascii_digit() || (b'a'..=b'f').contains(&b)
-                }
-            });
-    }
-    false
+    let id = tail.parse::<u64>().ok()?;
+    Some(format!(
+        "https://testnet-api.outlayer.ai/attestations/by-request/{id}"
+    ))
 }
-pub(crate) fn bind_body(token: &str, seq: u64, receipt_sha: &str, body_sha: &str) {
-    let k = body_key(token, seq, receipt_sha);
-    require!(!env::storage_has_key(&k), "body binding already exists");
-    put(
-        &k,
-        &BodyBinding {
-            token_id: token.into(),
-            seq: U64(seq),
-            receipt_sha256: receipt_sha.into(),
-            body_sha256: body_sha.into(),
-        },
-    );
+pub fn valid_proof_ref(p: &str) -> bool {
+    normalize_proof_ref(p).as_deref() == Some(p)
 }
+pub(crate) fn bind_body(
+    token: &str,
+    seq: u64,
+    receipt_sha: &str,
+    body_sha: &str,
+) -> Result<(), &'static str> {
+    let mut framed = Vec::new();
+    for part in [token.as_bytes(), &seq.to_be_bytes(), receipt_sha.as_bytes()] {
+        truenav_v3_core::source::lp(&mut framed, part).map_err(|_| "v3_body_identity")?;
+    }
+    let k = storage_key(b"body:", &env::sha256(&framed));
+    if env::storage_has_key(&k) {
+        return Err("v3_body_binding_exists");
+    }
+    let bytes = borsh::to_vec(&BodyBinding {
+        token_id: token.into(),
+        seq: U64(seq),
+        receipt_sha256: receipt_sha.into(),
+        body_sha256: body_sha.into(),
+    })
+    .map_err(|_| "v3_body_serialization")?;
+    env::storage_write(&k, &bytes);
+    Ok(())
+}
+
 fn refund(to: AccountId, amount: u128) {
     if amount > 0 {
         Promise::new(to)
@@ -149,6 +146,7 @@ impl Receipts {
             token_id.len() <= 128 && is_hash(&receipt_sha256) && is_hash(&body_sha256),
             "invalid binding"
         );
+        let proof_ref = normalize_proof_ref(&proof_ref).expect("unsupported proof reference");
         require!(
             proof_scheme == PROOF_SCHEME && valid_proof_ref(&proof_ref),
             "unsupported proof reference or scheme"
@@ -331,7 +329,7 @@ mod tests {
                 block_height: 1,
             },
         );
-        bind_body(&token, 1, &sha, &body);
+        bind_body(&token, 1, &sha, &body).unwrap();
         let binding = c.get_body_binding(token, U64(1)).unwrap();
         (c, e, binding)
     }
@@ -503,7 +501,7 @@ mod tests {
             assert!(!valid_proof_ref(bad));
         }
         assert!(valid_proof_ref(&reference(1)));
-        assert!(valid_proof_ref("https://testnet-api.outlayer.ai/attestations/by-call/018c52cc-8269-43a8-8f19-f67d6a6bb618"));
+        assert!(!valid_proof_ref("https://testnet-api.outlayer.ai/attestations/by-call/018c52cc-8269-43a8-8f19-f67d6a6bb618"));
     }
     #[test]
     fn writer_pays_measured_storage_and_exact_retries_refund_the_whole_deposit() {
@@ -542,5 +540,25 @@ mod tests {
             })
             .sum();
         assert_eq!(refunded, 1);
+    }
+}
+
+#[cfg(test)]
+mod normalization_tests {
+    use super::*;
+    #[test]
+    fn links_have_one_canonical_form() {
+        let canonical = "https://testnet-api.outlayer.ai/attestations/by-request/1";
+        assert_eq!(
+            normalize_proof_ref("https://testnet-api.outlayer.ai/attestations/by-request/0001/"),
+            Some(canonical.into())
+        );
+        assert!(
+            normalize_proof_ref("https://testnet-api.outlayer.ai/attestations/by-tx/abc").is_none()
+        );
+        assert!(normalize_proof_ref(
+            "https://testnet-api.outlayer.ai/attestations/by-request/1?x=y"
+        )
+        .is_none());
     }
 }

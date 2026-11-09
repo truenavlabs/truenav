@@ -99,10 +99,8 @@ jobs:
           "$RUNNER_TEMP/engine-v3-schema/bin/pip" install jsonschema==4.23.0
           echo "$RUNNER_TEMP/engine-v3-schema/bin" >> "$GITHUB_PATH"
       - run: npm ci
-      - name: Frozen conformance and fresh engine output privacy gates
-        # Only the NEW derived TEST file is regenerated for this build's actual code hash.
-        # Frozen goldens, method, schema, observer and disclosure bounds remain unchanged.
-        run: node outlayer/engine-v3/check-local.mjs --regenerate-test-vectors
+      - name: Pinned engine hash and committed vector conformance
+        run: node outlayer/engine-v3/check-local.mjs
       - name: Backend Clippy
         run: |
           cargo +1.99.0 clippy --locked --all-targets --manifest-path engine/v3-core/Cargo.toml -- -D warnings

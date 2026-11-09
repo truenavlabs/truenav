@@ -35,19 +35,6 @@ impl RegistryReader for Read {
         Ok(self.snapshot.clone())
     }
 }
-fn alias_gaps(t: &LoanTerms, asset: &str) -> Vec<LockRead> {
-    pledge_lookup_hashes(t, asset, &[], &TestMac)
-        .unwrap()
-        .into_iter()
-        .skip(1)
-        .map(|fingerprint| LockRead {
-            fingerprint,
-            completed: false,
-            owner: None,
-            fund_token_id: None,
-        })
-        .collect()
-}
 fn test_key(role: &str) -> SigningKey {
     // Public fixture seed only, matching lab/sim-data e6f45eb. Never used by the live host.
     let id = match role {
@@ -161,12 +148,6 @@ fn setup(index: usize) -> (Context, Vec<SignedSource>, Policy, Read) {
         payments.push(json!({"payment_id":format!("p-{i}"),"loan_id":id,"payer":format!("TEST payer {i}"),"amount_cents":1,"paid_date":"2026-10-15","reference":format!("pay-{i}"),"component":"interest"}));
         transactions.push(json!({"transaction_id":format!("b-{i}"),"date":"2026-10-15","amount_cents":-1,"counterparty":format!("TEST payer {i}"),"reference":format!("pay-{i}"),"category":"LOAN_PAYMENT"}));
     }
-    let mut gaps = Vec::new();
-    for l in &loans {
-        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
-        gaps.extend(alias_gaps(&t, l["asset"].as_str().unwrap()));
-    }
-    locks.extend(gaps);
     fund.as_object_mut().unwrap().remove("loans");
     fund.as_object_mut().unwrap().remove("blocked_attempts");
     let servicer = json!({"loans":loans,"cashflow":{"as_of":c.valuation_time,"loans":roster,"schedule":schedule,"payments":payments}});
@@ -476,12 +457,6 @@ fn demo_credit_reconstruction_inputs_are_absent_from_the_real_v3_projection() {
             fund_token_id: Some(c.scope.token_id.clone()),
         });
     }
-    let mut gaps = Vec::new();
-    for l in &loans {
-        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
-        gaps.extend(alias_gaps(&t, "invoices"));
-    }
-    locks.extend(gaps);
     let fund = json!({"fund_id":c.scope.token_id,"headline_nav":10000000,"cash":0,"liabilities":0,"nav_report_date":"2026-11-08T06:00:00Z","certificate":{"data_asof":"2026-11-08T06:00:00Z","signer":"demo.manager"}});
     let mut sources = Vec::new();
     for (role, payload) in [
@@ -600,12 +575,6 @@ fn temporal_setup() -> (Context, Vec<SignedSource>, Policy, Read) {
         payments.push(json!({"payment_id":format!("p-{i}"),"loan_id":id,"paid_date":"2026-10-15","amount_cents":1}));
         txs.push(json!({"transaction_id":format!("b-{i}"),"date":"2026-10-15","amount_cents":-1,"counterparty":format!("TEST TEMPORAL {i}"),"category":"LOAN_PAYMENT"}));
     }
-    let mut gaps = Vec::new();
-    for l in &loans {
-        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
-        gaps.extend(alias_gaps(&t, "real_estate"));
-    }
-    locks.extend(gaps);
     sources[0].payload = json!({"loans":loans,"cashflow":{"as_of":c.valuation_time,"loans":roster,"schedule":dues,"payments":payments}});
     sources[1].payload["transactions"] = json!(txs);
     sources[2].payload["fund"]["headline_nav"] = json!(9400000);
@@ -786,12 +755,6 @@ fn same_loan_in_two_funds_caps_previously_97_to_59_and_red() {
         lock.fund_token_id = Some(c2.scope.token_id.clone());
     }
     r2.snapshot.locks[0] = r.snapshot.locks[5].clone();
-    let n = s2[0].payload["loans"].as_array().unwrap().len();
-    let swapped: LoanTerms =
-        serde_json::from_value(s2[0].payload["loans"][0]["terms"].clone()).unwrap();
-    let swapped_asset = s2[0].payload["loans"][0]["asset"].as_str().unwrap();
-    r2.snapshot.locks[n].fingerprint =
-        pledge_lookup_hashes(&swapped, swapped_asset, &[], &TestMac).unwrap()[1].clone();
     let owner = evaluate(&c2, &s2, &p2, &r2, &TestMac, &salt()).unwrap();
     assert_ne!(owner.envelope["pledge_result"], "conflict");
     assert!(!owner.envelope["caps"]
@@ -1015,13 +978,15 @@ fn redteam_r1b_repaid_tape_must_not_hide_a_foreign_lock() {
 
 #[test]
 fn redteam_r1b_engine_must_read_the_migration_alias() {
+    // The v1 alias cannot match a historical lock (different key path and project). It is not queried.
     let (c, sources, p, r) = temporal_setup();
     let t: LoanTerms =
         serde_json::from_value(sources[3].payload["loan_terms"][5]["terms"].clone()).unwrap();
-    let alias = pledge_lookup_hashes(&t, "real_estate", &[], &TestMac).unwrap()[1].clone();
+    let hashes = pledge_lookup_hashes(&t, "real_estate", &[], &TestMac).unwrap();
+    assert_eq!(hashes.len(), 1, "a v1 alias is still in the lookup list");
     struct Spy {
         inner: Read,
-        alias: String,
+        primary: String,
     }
     impl RegistryReader for Spy {
         fn read(
@@ -1030,8 +995,11 @@ fn redteam_r1b_engine_must_read_the_migration_alias() {
             fps: &[String],
             at: &str,
         ) -> truenav_v3_core::Result<Snapshot> {
-            if !fps.iter().any(|h| h == &self.alias) {
-                return Err("migration_alias_not_queried");
+            if fps.len() != self.inner.snapshot.locks.len() {
+                return Err("alias_rows_still_queried");
+            }
+            if !fps.iter().any(|h| h == &self.primary) {
+                return Err("primary_not_queried");
             }
             self.inner.read(scope, fps, at)
         }
@@ -1040,16 +1008,17 @@ fn redteam_r1b_engine_must_read_the_migration_alias() {
         &c,
         &sources,
         &p,
-        &Spy { inner: r, alias },
+        &Spy {
+            inner: r,
+            primary: hashes[0].clone(),
+        },
         &TestMac,
         &salt(),
     );
     match out {
-        Err("migration_alias_not_queried") => {
-            panic!("engine did not query the v1 migration alias")
-        }
+        Err("alias_rows_still_queried") => panic!("engine still queries an alias row"),
         Ok(_) => {}
-        Err(other) => panic!("engine failed before the alias check: {other}"),
+        Err(other) => panic!("engine failed: {other}"),
     }
 }
 
@@ -1065,7 +1034,6 @@ fn rpc_shaped_lock_list_remaps_alias_hits() {
     let id = loans[0]["id"].clone();
     let hashes = pledge_lookup_hashes(&t, asset, &[], &TestMac).unwrap();
     let primary = hashes[0].clone();
-    let alias = hashes[1].clone();
     struct RpcRows {
         live: BTreeMap<String, (String, String)>,
         queried: Cell<usize>,
@@ -1119,8 +1087,8 @@ fn rpc_shaped_lock_list_remaps_alias_hits() {
         let out = evaluate(&c, &sources, &p, &reader, &TestMac, &salt()).unwrap();
         assert_eq!(
             reader.queried.get(),
-            n * 2,
-            "registry read was not the 2N rpc list"
+            n,
+            "registry read was not one row per loan"
         );
         out
     };
@@ -1136,15 +1104,6 @@ fn rpc_shaped_lock_list_remaps_alias_hits() {
     assert_ne!(owned.envelope["pledge_result"], "conflict");
     assert_eq!(detail(&owned, "completed"), json!(true));
     assert_eq!(detail(&owned, "owner"), json!(c.scope.fund_account));
-    let mut own_alias = BTreeMap::new();
-    own_alias.insert(
-        alias.clone(),
-        (c.scope.token_id.clone(), c.scope.fund_account.clone()),
-    );
-    let via_alias = run(own_alias);
-    assert_ne!(via_alias.envelope["pledge_result"], "conflict");
-    assert_eq!(detail(&via_alias, "completed"), json!(true));
-    assert_eq!(detail(&via_alias, "owner"), json!(c.scope.fund_account));
     let mut foreign_primary = BTreeMap::new();
     foreign_primary.insert(
         primary,
@@ -1153,17 +1112,129 @@ fn rpc_shaped_lock_list_remaps_alias_hits() {
     let foreign = run(foreign_primary);
     assert_eq!(foreign.envelope["pledge_result"], "conflict");
     assert_eq!(foreign.envelope["band"], "red");
-    assert!(foreign.envelope["score"].as_u64().map(|n| n <= 59).unwrap_or(true));
-    let mut foreign_alias = BTreeMap::new();
-    foreign_alias.insert(
-        alias,
-        ("other-simulated-fund".into(), "other.sim.testnet".into()),
-    );
-    let foreign_old = run(foreign_alias);
-    assert_eq!(foreign_old.envelope["pledge_result"], "conflict");
-    assert_eq!(foreign_old.envelope["band"], "red");
-    assert!(foreign_old.envelope["score"]
+    assert!(foreign.envelope["score"]
         .as_u64()
         .map(|n| n <= 59)
         .unwrap_or(true));
+}
+
+struct LiveRegistry {
+    live: BTreeMap<String, (String, String)>,
+}
+impl RegistryReader for LiveRegistry {
+    fn read(&self, _: &Scope, fps: &[String], _: &str) -> truenav_v3_core::Result<Snapshot> {
+        Ok(Snapshot {
+            registry_account: "registry.tnlab-718ca9.testnet".into(),
+            block_height: "123456".into(),
+            block_hash: "TEST_ONLY_finalized_block".into(),
+            finalized: true,
+            manager_id: "mgr-harbor.demo".into(),
+            locks: fps
+                .iter()
+                .map(|fp| match self.live.get(fp) {
+                    Some((f, a)) => registry_lock(fp, Some(f), Some(a)),
+                    None => registry_lock(fp, None, None),
+                })
+                .collect(),
+            attempts: json!([]),
+            certificate_history: json!([]),
+            manager_funds: vec![],
+            manager_attempt_log: json!({}),
+        })
+    }
+}
+
+#[test]
+fn redteam_r2_engine_must_see_a_double_pledge_locked_through_the_pledge_module() {
+    // The failing repro minted locks under a second HMAC key. After RT2-01 both sides use one
+    // derivation, so the engine's TestMac is the pledge module's key in this harness.
+    // tee/test/redteam-r2-keyscope.test.mjs proves the two manifests build that one string.
+    let (c, sources, p, _) = setup(0);
+    let loans = sources[0].payload["loans"].as_array().unwrap();
+    let mut live = BTreeMap::new();
+    for (i, l) in loans.iter().enumerate() {
+        let t: LoanTerms = serde_json::from_value(l["terms"].clone()).unwrap();
+        let h = fingerprint(&t, l["asset"].as_str().unwrap(), &[], &TestMac).unwrap();
+        let holder = if i == 0 {
+            (
+                "other-simulated-fund".to_string(),
+                "other.sim.testnet".to_string(),
+            )
+        } else {
+            (c.scope.token_id.clone(), c.scope.fund_account.clone())
+        };
+        live.insert(h, holder);
+    }
+    let out = evaluate(&c, &sources, &p, &LiveRegistry { live }, &TestMac, &salt()).unwrap();
+    assert_eq!(
+        out.envelope["pledge_result"], "conflict",
+        "loan 0 is pledged to another fund on chain, yet the NAV check reports pledge_result={} score={} band={} coverage_bps={}",
+        out.envelope["pledge_result"], out.envelope["score"], out.envelope["band"], out.envelope["pledge_coverage_bps"]
+    );
+}
+
+#[test]
+fn redteam_r2_case_sensitive_namespace_must_keep_distinct_refs_distinct() {
+    let t = |r: &str| LoanTerms {
+        version: "loan-terms-v2".into(),
+        borrower_namespace: "demo".into(),
+        borrower_id: "B1".into(),
+        origination_date: "2026-01-01".into(),
+        principal_cents: "100".into(),
+        currency: "USD".into(),
+        collateral_namespace: "deeds".into(),
+        collateral_ref: r.into(),
+    };
+    let ns = vec!["deeds".to_string()];
+    assert_ne!(
+        canonical_terms(&t("Ab-1"), &ns).unwrap()["collateral_ref"],
+        canonical_terms(&t("aB-1"), &ns).unwrap()["collateral_ref"]
+    );
+    assert_ne!(
+        fingerprint(&t("Ab-1"), "real_estate", &ns, &TestMac).unwrap(),
+        fingerprint(&t("aB-1"), "real_estate", &ns, &TestMac).unwrap(),
+        "fingerprint ignores case_sensitive_namespaces"
+    );
+}
+
+#[test]
+fn redteam_r2_migration_alias_must_be_able_to_match_a_historical_v1_lock() {
+    // The recorded v1 module MACed `truenav-fp-v1|{asset}|{DOCUMENT}` under path loan-fingerprint
+    // in the servicer project. That derivation is not loan-terms-v2 in the receipts engine project.
+    // A second hash under the new key cannot find those locks, so the alias path is removed.
+    // A historical lock has to be released and pledged again.
+    struct Plain;
+    impl Fingerprinter for Plain {
+        fn mac(&self, m: &[u8]) -> truenav_v3_core::Result<[u8; 32]> {
+            Ok(sha2_bytes(m))
+        }
+    }
+    let raw = include_str!("../../../tee/fixtures/fingerprints.json");
+    let v: Value = serde_json::from_str(raw).unwrap();
+    let rec = &v["records"][0];
+    let (asset, doc) = (
+        rec["asset_type"].as_str().unwrap(),
+        rec["document_id"].as_str().unwrap(),
+    );
+    let t = LoanTerms {
+        version: "loan-terms-v2".into(),
+        borrower_namespace: "demo".into(),
+        borrower_id: "B1".into(),
+        origination_date: "2026-01-01".into(),
+        principal_cents: "100".into(),
+        currency: "USD".into(),
+        collateral_namespace: "demo".into(),
+        collateral_ref: doc.into(),
+    };
+    let hashes = pledge_lookup_hashes(&t, asset, &[], &Plain).unwrap();
+    assert_eq!(hashes.len(), 1, "the unsound v1 alias is still queried");
+    let v1_module_message = format!("truenav-fp-v1|{asset}|{doc}");
+    let historical: String = sha2_bytes(v1_module_message.as_bytes())
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    assert!(
+        !hashes.iter().any(|h| h == &historical),
+        "lookup still pretends the historical v1 pipe string is a loan-terms-v2 hash"
+    );
 }

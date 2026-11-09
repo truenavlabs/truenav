@@ -150,9 +150,10 @@ fn redteam_r1_v1_document_fingerprint_and_v2_terms_must_collide() {
         "lookup must lead with the v4 identity"
     );
     assert!(
-        lookups.contains(&legacy),
-        "lookup keeps the pre-v4 hash for this asset class"
+        !lookups.contains(&legacy),
+        "the v1 alias was removed: a local hash cannot match a historical lock"
     );
+    assert_eq!(lookups.len(), 1);
     let invoices = pledge_lookup_hashes(
         &terms("county-a", "OTHER", "999", "PARCEL-1"),
         "invoices",

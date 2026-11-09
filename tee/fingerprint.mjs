@@ -1,10 +1,17 @@
 // Private loan fingerprints (owner decision D1, 7 Nov). A loan's on-chain loan_hash is
 //   HMAC under key path loan-terms-v2 of the length-prefixed truenav-fp-v4 preimage
-// computed by the OutLayer TEE module outlayer/fingerprint. The key is derived inside the TEE for the project and
-// the calling account (the servicer); the module never sees it and nobody holds it, so nobody can recompute a
-// fingerprint from a document id or test a guess against one. The servicer is the one place fingerprints come from
-// (TRUST_MODEL). Requests go over HTTPS only (on chain the input would be public), with a random nonce so the
-// run's public attestation (which carries sha256 of the input) cannot be matched against guesses either.
+// computed by the OutLayer TEE module outlayer/fingerprint. OutLayer derives that key as
+//   HMAC-SHA256(master, "encryption-key:v1:{project|wasm}:{project_uuid|wasm_sha256}:{caller}:{account_id}:{path}")
+// (skills.outlayer.ai encryption-keys, read 9 Nov 2026). The path is one of five inputs. This module and the NAV
+// engine therefore declare the same project, bind, caller mode, account and path: project
+// receipts.tnlab-718ca9.testnet/truenav-engine, bind project, caller predecessor, account the receipts contract.
+// Over HTTPS the predecessor is the payment key's owner, so that key must belong to the receipts account. A fund
+// payment key derives a different key and cannot mint a hash the engine will see. The module never sees the key.
+// Requests go over HTTPS only (on chain the input would be public), with a random nonce so the run's public
+// attestation (which carries sha256 of the input) cannot be matched against guesses either.
+// Historical records in tee/fixtures were produced by servicer.tnlab-718ca9.testnet/truenav-fingerprint. Those
+// attestations still verify. They are not the key new pledges use. A live OutLayer run is what binds the project
+// name to one on-chain uuid and confirms the payment-key owner.
 //
 //   PAYMENT_KEY=<servicer payment key> node tee/fingerprint.mjs     writes tee/fixtures/fingerprints.json
 //   npm run verify:fingerprints                                       re-checks every recorded fingerprint, no key
@@ -12,8 +19,11 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createHash, randomBytes } from "node:crypto";
 
 export const FP_API = process.env.TRUENAV_OUTLAYER_API || "https://testnet-api.outlayer.ai";
-export const FP_PROJECT = "servicer.tnlab-718ca9.testnet/truenav-fingerprint";
-export const FP_CALLER = "servicer.tnlab-718ca9.testnet";
+export const FP_PROJECT = "receipts.tnlab-718ca9.testnet/truenav-engine";
+export const FP_CALLER = "receipts.tnlab-718ca9.testnet";
+/** Recorded runs from before the shared engine project. Still accepted by checkFingerprint. Not used for new keys. */
+export const FP_RECORDED_PROJECT = "servicer.tnlab-718ca9.testnet/truenav-fingerprint";
+export const FP_RECORDED_CALLER = "servicer.tnlab-718ca9.testnet";
 /** sha256 of the deployed outlayer/fingerprint wasm (FastFS); `cargo build --release --target wasm32-wasip2` */
 export const FP_WASM_SHA256 = "4a7c0e4ed5007ac6720b30906db4105bc302e35fb495003692225f630d1f07e3";
 export const FP_DOMAIN = "truenav-fp-v4";
@@ -88,7 +98,7 @@ export async function checkFingerprint(rec, att, verifyQuote) {
     [isCanonicalId(rec.document_id), "document id is canonical"],
     [!!q && q.report_data === taskHash(att) + "0".repeat(64), "the TDX quote's report_data commits to this run (wasm, input, output, caller, project)"],
     [att.executed_wasm_sha256 === FP_WASM_SHA256 && att.wasm_hash === FP_WASM_SHA256, "the pinned fingerprint wasm ran"],
-    [att.project_id === FP_PROJECT && att.caller_account_id === FP_CALLER, `project ${FP_PROJECT}, caller ${FP_CALLER}`],
+    [(att.project_id === FP_PROJECT && att.caller_account_id === FP_CALLER) || (att.project_id === FP_RECORDED_PROJECT && att.caller_account_id === FP_RECORDED_CALLER), `project ${att.project_id}, caller ${att.caller_account_id}`],
     [att.input_hash === sha(rec.input) && input.asset_type === rec.asset_type && input.document_id === rec.document_id, "input hash matches the recorded input"],
     [att.output_hash === sha(rec.output) && out.loan_hash === rec.loan_hash && (out.domain === FP_DOMAIN || out.domain === "truenav-fp-v1"), "output hash matches the recorded loan_hash"],
   ];

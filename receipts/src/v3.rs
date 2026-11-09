@@ -1057,4 +1057,65 @@ mod tests {
         assert_eq!(shown.band, "red");
         assert_ne!(shown.score, 99);
     }
+
+    #[test]
+    fn redteam_r2_failed_head_get_latest_must_not_carry_the_old_inner_score() {
+        let mut c = setup();
+        c.register_token("DEMO-CREDIT".into(), "credit".into());
+        let fixture: Value =
+            serde_json::from_str(include_str!("../tests/fixtures/engine-receipts.json")).unwrap();
+        let raw = fixture["receipts"]["DEMO-CREDIT"]["output"]
+            .as_str()
+            .unwrap()
+            .to_string();
+        c.receipts.insert(
+            ("DEMO-CREDIT".into(), 1),
+            StoredReceipt {
+                token_id: "DEMO-CREDIT".into(),
+                seq: 1,
+                request_id: 1,
+                method: "cashflow-v2.1.0".into(),
+                version_key: "0".repeat(64),
+                score: 58,
+                band: "red".into(),
+                period: "2026-10".into(),
+                as_of: "2026-11-09T00:00:00Z".into(),
+                caps: vec!["yield_gap".into()],
+                holds: vec![],
+                receipt_sha256: hash(raw.as_bytes()),
+                receipt: raw,
+                requested_ns: 1,
+                stored_ns: 2,
+                block_height: 3,
+            },
+        );
+        c.tokens.get_mut("DEMO-CREDIT").unwrap().receipts = 1;
+        c.failures.insert(
+            "DEMO-CREDIT".into(),
+            Failure {
+                request_id: 2,
+                code: "outlayer_run_failed".into(),
+                at_ns: 3,
+            },
+        );
+        let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
+        let inner: Value = serde_json::from_str(&shown.receipt).unwrap();
+        assert_eq!(shown.score, 0);
+        assert!(
+            inner["score"].is_null() || inner["score"] == 0,
+            "wrapper score 0 / head_status failed, but the served receipt still says score {}",
+            inner["score"]
+        );
+        assert!(inner["caps"].as_array().unwrap().is_empty());
+        assert_eq!(inner["head_status"], "failed");
+    }
+
+    #[test]
+    #[should_panic]
+    fn redteam_r2_admin_must_not_point_runs_at_an_arbitrary_outlayer_account() {
+        let mut c = setup();
+        let mut cfg = c.config.clone();
+        cfg.outlayer = account("anything-the-admin-controls.testnet");
+        c.set_config(cfg);
+    }
 }

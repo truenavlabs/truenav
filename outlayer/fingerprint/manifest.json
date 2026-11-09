@@ -1,5 +1,9 @@
 {
   "encryption_keys": [
-    {"path": "loan-terms-v2"}
+    {
+      "path": "loan-terms-v2",
+      "bind": "project",
+      "caller": "predecessor"
+    }
   ]
 }

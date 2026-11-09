@@ -4,7 +4,8 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createServer, queryHash } from "../server.mjs";
+import { KeyPair } from "near-api-js";
+import { createServer, queryHash, spendMessage } from "../server.mjs";
 
 const fx = JSON.parse(readFileSync(new URL("../../receipts/tests/fixtures/engine-receipts.json", import.meta.url))).receipts;
 // the pinned engine build, read from BUILD.md (a public wasm sha256)
@@ -14,6 +15,8 @@ const stored = (token, seq = 1) => {
   return { token_id: token, seq, request_id: 1, method: rec.method, version_key: PIN, score: rec.score, band: rec.band, period: rec.period, as_of: rec.as_of, caps: rec.caps.map((c) => c.code), holds: rec.holds.map((h) => h.code), receipt_sha256: "ab".repeat(32), receipt: fx[token].output, requested_ns: 1, stored_ns: 2, block_height: 100 };
 };
 const NOW = 5_000_000_000n;
+const buyerKey = KeyPair.fromRandom("ed25519");
+const buyerSig = (id, kind, token) => Buffer.from(buyerKey.sign(spendMessage(id, kind, token)).signature).toString("base64");
 const ents = new Map();
 const redeems = [];
 const chain = {
@@ -24,6 +27,9 @@ const chain = {
   },
   async nowNs() {
     return NOW;
+  },
+  async accessKeys() {
+    return [{ public_key: buyerKey.getPublicKey().toString() }];
   },
   async redeem(id, hash) {
     const e = ents.get(id);
@@ -43,8 +49,9 @@ before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
 });
 after(() => server.close());
-const get = (p, id) => fetch(base + p, { headers: id ? { "x-truenav-entitlement": id } : {} });
-const ask = (body, id) => fetch(base + "/ask", { method: "POST", headers: { "content-type": "application/json", ...(id ? { "x-truenav-entitlement": id } : {}) }, body: JSON.stringify(body) });
+const auth = (id, kind, token) => (id ? { "x-truenav-entitlement": id, "x-truenav-buyer": "agent.test", "x-truenav-buyer-sig": buyerSig(id, kind, token) } : {});
+const get = (p, id) => fetch(base + p, { headers: auth(id, p.endsWith("/report") ? "report" : "ask", p.split("/")[2]) });
+const ask = (body, id) => fetch(base + "/ask", { method: "POST", headers: { "content-type": "application/json", ...auth(id, "ask", body.token_id) }, body: JSON.stringify(body) });
 
 test("GET /score is free and reads only the receipt contract", async () => {
   const r = await get("/fund/DEMO-CREDIT/score");
@@ -140,7 +147,7 @@ test('v3 score and report use public bands and rounded NAV, including lowercase 
     for(const key of ['trueval','truerange_low','truerange_high','reported_nav','parts_band','pledge_result','collection_rate_band'])assert.deepEqual(score[key],v3[key]);
     for(const key of ['uncapped_score','raw_score','score_x100','parts_x100','metrics'])assert.equal(Object.hasOwn(score,key),false);
     buy('v3-report-test','report',v3.token_id);
-    const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test'}});assert.equal(report.status,200);const shown=(await report.json()).receipt;assert.equal(shown.score,v3.score);assert.equal(shown.receipt_sha256,v3.receipt_sha256);assert.equal(shown.uncapped_score,undefined);
+    const report=await fetch(`${url}/fund/${v3.token_id}/report`,{headers:{'x-truenav-entitlement':'v3-report-test','x-truenav-buyer':'agent.test','x-truenav-buyer-sig':buyerSig('v3-report-test','report',v3.token_id)}});assert.equal(report.status,200);const shown=(await report.json()).receipt;assert.equal(shown.score,v3.score);assert.equal(shown.receipt_sha256,v3.receipt_sha256);assert.equal(shown.uncapped_score,undefined);
   });
 });
 test('corrupt v3 is an explicit 502 and never consumes an entitlement',async()=>{
@@ -153,7 +160,7 @@ test('explicit v2 wrapper tag keeps score and report response bytes identical',a
   const bytes=[];
   for(const record of [stored('DEMO-CREDIT'),{...stored('DEMO-CREDIT'),receipt_version:'2'}])await withRecord(record,async url=>{
     buy('v2-byte-test','report','DEMO-CREDIT');
-    bytes.push([await (await fetch(url+'/fund/DEMO-CREDIT/score')).text(),await (await fetch(url+'/fund/DEMO-CREDIT/report',{headers:{'x-truenav-entitlement':'v2-byte-test'}})).text()]);
+    bytes.push([await (await fetch(url+'/fund/DEMO-CREDIT/score')).text(),await (await fetch(url+'/fund/DEMO-CREDIT/report',{headers:{'x-truenav-entitlement':'v2-byte-test','x-truenav-buyer':'agent.test','x-truenav-buyer-sig':buyerSig('v2-byte-test','report','DEMO-CREDIT')}})).text()]);
   });
   assert.deepEqual(bytes[1],bytes[0]);
   assert.equal(bytes[0][0].includes('uncapped_score'), false);

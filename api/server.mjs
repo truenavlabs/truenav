@@ -4,8 +4,9 @@
 //
 //   GET  /health
 //   GET  /fund/{token}/score    free: score, band, caps and holds with reasons, collection status, receipt hash
-//   GET  /fund/{token}/report   needs header x-truenav-entitlement: <request_id> for a "report" entitlement bound to
-//                               queryHash("report", token); spends its one use, returns the stored public receipt
+//   GET  /fund/{token}/report   needs header x-truenav-entitlement: <request_id> and x-truenav-buyer: <account>
+//                               for a "report" entitlement bound to queryHash("report", token) and to that buyer;
+//                               spends its one use, returns the stored public receipt
 //   POST /ask                   needs a "ask" entitlement bound to queryHash("ask", token); Q&A is build step 6, so
 //                               this returns 501 after the check and spends nothing
 //
@@ -13,9 +14,22 @@
 import { createServer as httpServer } from "node:http";
 import {verifyRecord} from "../agent/agent.mjs";
 import { createHash } from "node:crypto";
-import {validToken, decodeReceipt, publicV3} from "./receipt.mjs";
+import { PublicKey } from "near-api-js";
+import {validToken, decodeReceipt, publicV3, spendMessage} from "./receipt.mjs";
 
 export const queryHash = (kind, token) => createHash("sha256").update(`${kind}|${token}`).digest("hex");
+export { spendMessage };
+function buyerProofOk(keys, message, sigB64) {
+  let sig;
+  try { sig = Buffer.from(String(sigB64), "base64"); } catch { return false; }
+  if (sig.length !== 64) return false;
+  for (const k of keys || []) {
+    try {
+      if (PublicKey.from(k.public_key || k).verify(message, sig)) return true;
+    } catch { /* skip a key this runtime cannot parse */ }
+  }
+  return false;
+}
 const REQUEST_ID = /^[A-Za-z0-9_-]{8,64}$/;
 const MAX_BODY = 4096;
 
@@ -31,6 +45,16 @@ const send = (res, status, body) => {
 export function handler({ chain, receipts, query, fee }) {
   const latest = (token) => chain.view(receipts, "get_latest", { token_id: token });
   const toBuy = (kind, token, why) => ({ error: "payment_required", reason: why, buy: { contract: query, method: "buy_query", args: { request_id: "<your unique id, 8 to 64 of [A-Za-z0-9_-]>", query_hash: queryHash(kind, token), kind }, attach_yocto: fee } });
+  const inflight = new Map();
+  // One redeem at a time per request id. The next caller re-reads uses_left after the first redeem settles.
+  function singleFlight(key, fn) {
+    const prev = inflight.get(key) || Promise.resolve();
+    const run = prev.then(fn, fn);
+    const settled = run.then(() => {}, () => {});
+    inflight.set(key, settled);
+    settled.then(() => { if (inflight.get(key) === settled) inflight.delete(key); });
+    return run;
+  }
 
   async function entitlement(req, kind, token) {
     const id = req.headers["x-truenav-entitlement"];
@@ -38,6 +62,11 @@ export function handler({ chain, receipts, query, fee }) {
     if (!REQUEST_ID.test(id)) return { status: 400, body: { error: "bad entitlement id" } };
     const e = await chain.view(query, "get_entitlement", { request_id: id });
     if (!e) return { status: 402, body: toBuy(kind, token, "unknown entitlement") };
+    if (req.headers["x-truenav-buyer"] !== String(e.buyer)) return { status: 403, body: { error: "entitlement is bound to another buyer" } };
+    const sig = req.headers["x-truenav-buyer-sig"];
+    if (typeof sig !== "string" || sig.length === 0 || typeof chain.accessKeys !== "function") return { status: 403, body: { error: "buyer proof required" } };
+    const keys = await chain.accessKeys(String(e.buyer));
+    if (!buyerProofOk(keys, spendMessage(id, kind, token), sig)) return { status: 403, body: { error: "buyer proof does not match the entitlement" } };
     if (e.kind !== kind || e.query_hash !== queryHash(kind, token)) return { status: 403, body: { error: "entitlement is for another query" } };
     if (BigInt(e.expires_ns) <= (await chain.nowNs())) return { status: 402, body: toBuy(kind, token, "entitlement expired") };
     if (e.uses_left < 1) return { status: 402, body: toBuy(kind, token, "entitlement already used") };
@@ -50,24 +79,21 @@ export function handler({ chain, receipts, query, fee }) {
     const m = url.pathname.match(/^\/fund\/([^/]+)\/(score|report)$/);
     if (m) {
       if (req.method !== "GET") return send(res, 405, { error: "GET only" });
-      const token = decodeURIComponent(m[1]);
+      let token;
+      try { token = decodeURIComponent(m[1]); }
+      catch { return send(res, 400, { error: "bad token encoding" }); }
       if (!validToken(token)) return send(res, 400, { error: "token must be an ASCII kebab id of 1 to 64 characters" });
       let r = await latest(token);
       if (!r) return send(res, 404, { error: "no receipt for this token" });
       let decoded;
       try { decoded = decodeReceipt(r); } catch (error) { return send(res, 502, {error:error.code ?? "receipt_invalid"}); }
-      if (m[2] === "score" && decoded.version === "3") {
-        const inner = decoded.receipt;
-        const failedHead = r.band === "red" && Number(r.score) === 0 && inner && (inner.head_status === "failed" || inner.score !== 0 || inner.band !== "red");
-        if (failedHead) return send(res, 409, {error: "run_failed"});
+      if (m[2] === "score" && decoded.version === "3" && decoded.receipt?.head_status === "failed") {
+        return send(res, 409, {error: "run_failed"});
       }
       if(decoded.version === "3") { const bad=verifyRecord(token,r); if(bad) return send(res,502,{error:bad}); }
       r = decoded.record;
       const rec = decoded.receipt;
       if (m[2] === "score") {
-        if (r.band === "red" && r.score === 0 && decoded.receipt?.head_status === "failed") {
-          return send(res, 409, {error: "run_failed"});
-        }
         if (decoded.version === "3") return send(res, 200, publicV3(rec));
         const allowed = new Set(["receipt_version","token_id","seq","method_version","engine_version_key","score","band","caps","holds","synthetic","receipt_sha256"]);
         const body = {
@@ -86,22 +112,27 @@ export function handler({ chain, receipts, query, fee }) {
         for (const key of Object.keys(body)) if (!allowed.has(key)) delete body[key];
         return send(res, 200, body);
       }
-      const ent = await entitlement(req, "report", token);
-      if (!ent.e) return send(res, ent.status, ent.body);
-      let usesLeft;
-      try {
-        usesLeft = await chain.redeem(ent.id, queryHash("report", token));
-      } catch (e) {
-        return send(res, 402, { error: "redeem refused", reason: String(e.message || e).slice(0, 200) });
-      }
-      const receipt = decoded.version === "3" ? publicV3(rec) : {
-        receipt_version: "2", token_id: token, seq: r.seq, method_version: r.method, engine_version_key: r.version_key,
-        score: r.score, band: r.band,
-        caps: Array.isArray(rec.caps) ? rec.caps.map((c) => (c && typeof c === "object" ? c.code : c)) : [],
-        holds: Array.isArray(rec.holds) ? rec.holds.map((h) => (h && typeof h === "object" ? h.code : h)) : [],
-        synthetic: rec.synthetic, receipt_sha256: r.receipt_sha256,
+      const reportId = req.headers["x-truenav-entitlement"];
+      const spend = async () => {
+        const ent = await entitlement(req, "report", token);
+        if (!ent.e) return { status: ent.status, body: ent.body };
+        let usesLeft;
+        try {
+          usesLeft = await chain.redeem(ent.id, queryHash("report", token));
+        } catch (e) {
+          return { status: 402, body: { error: "redeem refused", reason: String(e.message || e).slice(0, 200) } };
+        }
+        const receipt = decoded.version === "3" ? publicV3(rec) : {
+          receipt_version: "2", token_id: token, seq: r.seq, method_version: r.method, engine_version_key: r.version_key,
+          score: r.score, band: r.band,
+          caps: Array.isArray(rec.caps) ? rec.caps.map((c) => (c && typeof c === "object" ? c.code : c)) : [],
+          holds: Array.isArray(rec.holds) ? rec.holds.map((h) => (h && typeof h === "object" ? h.code : h)) : [],
+          synthetic: rec.synthetic, receipt_sha256: r.receipt_sha256,
+        };
+        return { status: 200, body: { token_id: token, seq: r.seq, engine_version_key: r.version_key, receipt_sha256: r.receipt_sha256, entitlement: { request_id: ent.id, uses_left: usesLeft }, receipt } };
       };
-      return send(res, 200, { token_id: token, seq: r.seq, engine_version_key: r.version_key, receipt_sha256: r.receipt_sha256, entitlement: { request_id: ent.id, uses_left: usesLeft }, receipt });
+      const spent = (typeof reportId === "string" && REQUEST_ID.test(reportId)) ? await singleFlight(reportId, spend) : await spend();
+      return send(res, spent.status, spent.body);
     }
     if (url.pathname === "/ask") {
       if (req.method !== "POST") return send(res, 405, { error: "POST only" });

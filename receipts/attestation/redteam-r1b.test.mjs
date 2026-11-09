@@ -119,6 +119,7 @@ test('redteam_r1b a failed head must not be served as the previous green score',
   const envelope = structuredClone(read('schema/vectors/engine-v3-derived.json').vectors[0].envelope);
   assert.equal(envelope.band, 'green');
   assert.ok(envelope.score >= 85);
+  envelope.head_status = 'failed';
   const record = {
     token_id: envelope.token_id,
     seq: Number(envelope.seq),

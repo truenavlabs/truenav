@@ -416,31 +416,29 @@ pub trait Fingerprinter {
 }
 /// Shared pledge preimage. Producers and the NAV check MAC these bytes under key path `loan-terms-v2`.
 /// Domain `truenav-fp-v4`, length-prefixed: asset class, collateral namespace, document root.
+/// `case_sensitive` keeps the namespace and the document root's case. The default folds case.
 pub fn pledge_message(
     asset_class: &str,
     collateral_namespace: &str,
     collateral_ref: &str,
 ) -> Result<Vec<u8>> {
-    let asset = normalized_id(asset_class, false)?;
-    let ns = normalized_id(collateral_namespace, false)?;
-    let doc = document_root(collateral_ref)?;
-    let mut framed = Vec::new();
-    lp(&mut framed, b"truenav-fp-v4")?;
-    lp(&mut framed, asset.as_bytes())?;
-    lp(&mut framed, ns.as_bytes())?;
-    lp(&mut framed, doc.as_bytes())?;
-    Ok(framed)
+    pledge_message_cased(asset_class, collateral_namespace, collateral_ref, false)
 }
-fn legacy_alias_message(
+pub fn pledge_message_cased(
     asset_class: &str,
     collateral_namespace: &str,
     collateral_ref: &str,
+    case_sensitive: bool,
 ) -> Result<Vec<u8>> {
     let asset = normalized_id(asset_class, false)?;
-    let ns = normalized_id(collateral_namespace, false)?;
-    let doc = document_root(collateral_ref)?;
+    let ns = normalized_id(collateral_namespace, case_sensitive)?;
+    let doc = if case_sensitive {
+        normalized_id(collateral_ref, true)?
+    } else {
+        document_root(collateral_ref)?
+    };
     let mut framed = Vec::new();
-    lp(&mut framed, b"truenav-fp-v1")?;
+    lp(&mut framed, b"truenav-fp-v4")?;
     lp(&mut framed, asset.as_bytes())?;
     lp(&mut framed, ns.as_bytes())?;
     lp(&mut framed, doc.as_bytes())?;
@@ -449,33 +447,38 @@ fn legacy_alias_message(
 /// Pledge identity is `pledge_message` under the caller's MAC.
 /// Principal, dates, and borrower are not in the hash.
 /// The same ref in two namespaces is two loans.
+/// A namespace listed in `case_sensitive_namespaces` does not casefold its document root.
 pub fn fingerprint(
     t: &LoanTerms,
     asset_class: &str,
     case_sensitive_namespaces: &[String],
     mac: &dyn Fingerprinter,
 ) -> Result<String> {
-    let _ = case_sensitive_namespaces;
-    Ok(hex::encode(mac.mac(&pledge_message(
+    let sensitive = case_sensitive_namespaces
+        .iter()
+        .any(|n| n == &t.collateral_namespace);
+    Ok(hex::encode(mac.mac(&pledge_message_cased(
         asset_class,
         &t.collateral_namespace,
         &t.collateral_ref,
+        sensitive,
     )?)?))
 }
-/// Lookup hashes. Index 0 is the v4 identity.
-/// Index 1 is a length-prefixed `truenav-fp-v1` alias for the same asset, namespace, and document.
-/// The pipe form is not used, so `a|b` plus `c` does not collide with `a` plus `b|c`.
+/// Lookup hashes. The only entry is the v4 identity.
+/// The v1 pipe alias is not queried. Historical locks were MACed as
+/// `truenav-fp-v1|{asset}|{DOCUMENT}` under path `loan-fingerprint` in the servicer project.
+/// That is a different OutLayer key. A second hash under `loan-terms-v2` cannot find them.
+/// Those locks have to be released and pledged again under v4.
 pub fn pledge_lookup_hashes(
     t: &LoanTerms,
     asset_class: &str,
-    _case_sensitive_namespaces: &[String],
+    case_sensitive_namespaces: &[String],
     mac: &dyn Fingerprinter,
 ) -> Result<Vec<String>> {
-    let primary = fingerprint(t, asset_class, &[], mac)?;
-    let legacy = hex::encode(mac.mac(&legacy_alias_message(
+    Ok(vec![fingerprint(
+        t,
         asset_class,
-        &t.collateral_namespace,
-        &t.collateral_ref,
-    )?)?);
-    Ok(vec![primary, legacy])
+        case_sensitive_namespaces,
+        mac,
+    )?])
 }

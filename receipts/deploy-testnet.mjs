@@ -42,6 +42,8 @@ const WASM = WASM_DIR
   : { receipts: join(root, "receipts/target/near/truenav_receipts.wasm"), query: join(root, "query/target/near/truenav_query.wasm") };
 const PINNED = JSON.parse(readFileSync(join(root, "receipts/pinned-builds.json"), "utf8"));
 const TOKENS = { "DEMO-CREDIT": "credit", "DEMO-RENTAL": "rental", "HONEST-CREDIT": "credit", "HONEST-RENTAL": "rental" };
+// project_id must stay receipts/truenav-engine. The pledge module derives loan-terms-v2 in this same project
+// with caller predecessor, so the receipts account is the account in both keys. Do not point this at another project.
 const CONFIG = {
   outlayer: "outlayer.testnet", project_id: `${ids.receipts}/truenav-engine`, version_key: ENGINE_PIN, method: "cashflow-v2.1.0", secrets_profile: "engine", secrets_owner: ids.receipts,
   max_instructions: 10_000_000_000, max_memory_mb: 128, max_execution_seconds: 30,

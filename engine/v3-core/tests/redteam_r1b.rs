@@ -112,9 +112,11 @@ fn redteam_r1b_v4_length_prefix_must_not_collide() {
 fn redteam_r1b_legacy_alias_must_not_collide_across_loans() {
     let left = pledge_lookup_hashes(&terms("county-a", "B", "1", "c"), "a|b", &[], &Mac).unwrap();
     let right = pledge_lookup_hashes(&terms("county-a", "B", "1", "b|c"), "a", &[], &Mac).unwrap();
+    assert_eq!(left.len(), 1);
+    assert_eq!(right.len(), 1);
     assert_ne!(
-        left[1], right[1],
-        "the v1 alias string collided for two different loans"
+        left[0], right[0],
+        "the v4 identity collided for two different loans"
     );
 }
 
@@ -170,14 +172,49 @@ fn hex_mac(message: &[u8]) -> String {
 
 #[test]
 fn redteam_r1b_pledge_module_and_engine_must_share_one_mac_key() {
-    let module_src = include_str!("../../../outlayer/fingerprint/src/main.rs");
-    let engine_src = include_str!("../../../outlayer/engine-v3/src/main.rs");
-    let module_key = module_src.contains("const KEY: &str = \"loan-fingerprint\"");
-    let engine_key = engine_src.contains("keys::mac(\"loan-terms-v2\"");
-    assert!(
-        !(module_key && engine_key),
-        "pledge creation and the NAV check use different MAC key paths"
+    // OutLayer: HMAC-SHA256(master, "encryption-key:v1:{bind}:{project_uuid}:{caller}:{account}:{path}").
+    // Project ids stand in for the on-chain uuid. Both sides must name the same five inputs.
+    let module: serde_json::Value =
+        serde_json::from_str(include_str!("../../../outlayer/fingerprint/manifest.json")).unwrap();
+    let engine: serde_json::Value =
+        serde_json::from_str(include_str!("../../../outlayer/engine-v3/manifest.json")).unwrap();
+    let fp = include_str!("../../../tee/fingerprint.mjs");
+    let project = between(fp, "export const FP_PROJECT = \"", "\"");
+    let account = between(fp, "export const FP_CALLER = \"", "\"");
+    let path = between(fp, "export const FP_KEY_PATH = \"", "\"");
+    let engine_key = engine["encryption_keys"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|k| k["path"] == path)
+        .unwrap();
+    let module_scope = derivation(&module["encryption_keys"][0], project, account, path);
+    let engine_scope = derivation(
+        engine_key,
+        "receipts.tnlab-718ca9.testnet/truenav-engine",
+        "receipts.tnlab-718ca9.testnet",
+        path,
     );
+    assert_eq!(
+        module_scope, engine_scope,
+        "pledge module and NAV engine derive different keys"
+    );
+    assert!(
+        module_scope.contains(":predecessor:receipts.tnlab-718ca9.testnet:loan-terms-v2"),
+        "the shared key must be the receipts predecessor, not a fund or the servicer"
+    );
+}
+
+fn derivation(k: &serde_json::Value, project: &str, account: &str, path: &str) -> String {
+    let bind = k["bind"].as_str().unwrap_or("project");
+    let caller = k["caller"].as_str().unwrap_or("signer");
+    format!("encryption-key:v1:{bind}:{project}:{caller}:{account}:{path}")
+}
+
+fn between<'a>(src: &'a str, start: &str, end: &str) -> &'a str {
+    let i = src.find(start).expect("start") + start.len();
+    let j = src[i..].find(end).expect("end");
+    &src[i..i + j]
 }
 
 #[test]

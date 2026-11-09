@@ -1,5 +1,6 @@
 // Public receipt compatibility only. Never infer private values from public bands.
 export const TOKEN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
+export const spendMessage = (id, kind, token) => Buffer.from(`truenav-spend|${id}|${kind}|${token}`);
 export const validToken = token => typeof token === 'string' && token.length <= 64 && TOKEN.exec(token)?.[0] === token;
 const failure = code => { throw Object.assign(new Error(code), {code}); };
 export function decodeReceipt(record) {

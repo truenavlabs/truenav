@@ -1,7 +1,10 @@
 //! TrueNav loan fingerprint (owner decision D1, 7 Nov): HMAC under key path `loan-terms-v2`
 //! of the length-prefixed `truenav-fp-v4` preimage (asset class, collateral namespace, document id).
-//! The key is derived inside the OutLayer TEE for this project and the calling account, never seen
-//! by the module, the operator or anyone else.
+//! The key is the same derivation the NAV engine uses: project `receipts.../truenav-engine`,
+//! bind `project`, caller `predecessor`, account the receipts contract, path `loan-terms-v2`.
+//! Deploy this wasm as a version of that project and call it with a payment key the receipts
+//! account owns. Over HTTPS the predecessor is that payment key's owner. A fund's key is a
+//! different derivation. The module never sees the key.
 //! Same input, same caller, same project: same fingerprint, so a second fund's pledge of the same loan still
 //! collides on chain. Runs over HTTPS only, so the document id never lands in public transaction data.
 use serde::Deserialize;

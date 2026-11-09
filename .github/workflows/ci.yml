@@ -51,9 +51,13 @@ jobs:
       - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
         with:
           tool: cargo-audit@0.22.2
-      - name: RustSec audit
-        working-directory: contract
-        run: cargo audit
+      - name: RustSec audit every Rust workspace
+        run: |
+          set -euo pipefail
+          for d in contract receipts query vault engine/v3-core outlayer/engine-v2 outlayer/engine-v3 outlayer/fingerprint outlayer/quote-check mirror/mock-signer receipts/mock-outlayer receipts/tests/outlayer-output-parity; do
+            echo "cargo audit in $d"
+            (cd "$d" && cargo audit)
+          done
 
   engine-v2:
     # outlayer/engine-v2 (the cashflow-v2.0.0 OutLayer module): native tests (raw-data parity on the 4 funds, edge

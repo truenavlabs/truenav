@@ -17,6 +17,10 @@ export function nearChain({ rpcUrl, query, redeemerId, keyFile }) {
   };
   return {
     view: (contractId, method, args = {}) => provider.callFunction({ contractId, method, args, blockQuery: { finality: "final" } }),
+    async accessKeys(accountId) {
+      const list = await provider.viewAccessKeyList({ accountId, blockQuery: { finality: "final" } });
+      return list.keys || [];
+    },
     async nowNs() {
       const b = await provider.viewBlock({ finality: "final" });
       return BigInt(b.header.timestamp_nanosec);

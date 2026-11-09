@@ -321,6 +321,10 @@ fn check_config(c: &Config) {
         "bad secrets_profile"
     );
     require!(
+        c.outlayer.as_str() == "outlayer.testnet",
+        "outlayer account is not the allowlisted worker"
+    );
+    require!(
         c.outlayer_tgas + c.callback_tgas <= 290,
         "gas above 290 Tgas"
     );
@@ -883,8 +887,32 @@ impl Receipts {
         if self.head_failed(&token_id) {
             r.band = "red".into();
             r.score = 0;
+            r.caps.clear();
+            r.holds.clear();
             if let Ok(mut v) = serde_json::from_str::<Value>(&r.receipt) {
                 if let Some(o) = v.as_object_mut() {
+                    for key in [
+                        "score",
+                        "uncapped_score",
+                        "raw_score",
+                        "score_x100",
+                        "parts_x100",
+                        "trueval",
+                        "reported_nav",
+                        "parts_band",
+                        "truerange_low",
+                        "truerange_high",
+                        "pledge_result",
+                        "pledge_coverage_bps",
+                        "collection_rate_band",
+                    ] {
+                        if o.contains_key(key) {
+                            o.insert(key.to_string(), Value::Null);
+                        }
+                    }
+                    o.insert("score".into(), Value::Null);
+                    o.insert("caps".into(), json!([]));
+                    o.insert("holds".into(), json!([]));
                     o.insert("head_status".into(), json!("failed"));
                     o.insert("band".into(), json!("red"));
                 }

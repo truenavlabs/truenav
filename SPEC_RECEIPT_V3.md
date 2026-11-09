@@ -1,6 +1,7 @@
 # TrueNav receipt v3 specification
 
 Status: FROZEN v3.0.0-rc1, pending the owner's final read (9 Nov 2026 Bangkok).
+Authorized 9 Nov amendment: public parts_band explanations; raw_score and exact parts remain hidden.
 
 Design only, the owner decisions of 9 Nov 2026 Bangkok. No implementation, deployment or transaction is authorized by
 this document. Option A is LOCKED: one combined receipt per credit fund per reporting period on receipts.
@@ -199,7 +200,9 @@ only when it cannot expose a hidden complement. Suppression applies to derived H
 | score_x100 | u16 0..10000 or null | P, half-up to 0.01 from exact final legacy score after penalties/caps | Preserve 9917 and 4284 |
 | band | enum green / yellow / red / grey | P, existing legacy whole-score rounding then 85/60 thresholds | Preserve old boundary semantics |
 | raw_score | signed fixed-decimal string | H, exact uncapped internal result | Public raw score could undo caps and reveal components |
-| parts | {pledge_coverage, nav_gap, freshness, penalty} fixed-decimal values | H; public explanations use closed codes | Keep 40/40/20 without exposing invertible contributions |
+| parts | {pledge_coverage, nav_gap, freshness, penalty} fixed-decimal values | H, never exported as public numbers | Preserve exact private 40/40/20 calculation |
+| parts_band | {coverage, nav_gap, freshness, penalty} | P, exactly four required enum fields; no additional keys | Coarse explanation of each existing score part |
+| parts_band.coverage / nav_gap / freshness / penalty | enum high / medium / low / none / unknown | P, thresholds below, using exact internal values | Explain contributions and penalty without publishing exact parts |
 | caps / holds | arrays of closed code strings | P, no interpolated money/ratios/loan IDs | Explain constraints without bypassing suppression |
 | freshness_band | enum <=24h / >24-72h / >72-168h / >168h / unknown | P, based on oldest required source | Honest age; issued_at cannot refresh inputs |
 | ext | object {} | P, MUST be empty; unknown extension keys rejected | Prevent disclosure through arbitrary metadata |
@@ -208,6 +211,30 @@ Exact public score is a deliberate disclosure. Score/band can still constrain hi
 not a proof of privacy. CI must expose any residual inference and require the owner's explicit disposition before schema
 freeze. No unsupported numerical score for disclaimed/not-rated/verification-failed status: score_x100=null,
 holds explain closed status, existing status/band semantics are maintained. Add status as a closed public enum.
+
+### Public score-part bands
+
+These are display-only classifications, not a fourth score weight, a new penalty or a change to caps. Compute
+them from the exact internal pre-cap contribution points and the total applicable penalty after existing
+manager/attempt scope rules, before flooring the final score. Do not derive them from rounded score_x100.
+Each contribution is bounded by its existing maximum: coverage 40, nav_gap 40, freshness 20 points.
+
+| Field | none | low | medium | high | unknown |
+| --- | --- | --- | --- | --- | --- |
+| parts_band.coverage | p = 0 | 0 < p < 20 | 20 <= p < 34 | 34 <= p <= 40 | Required input/part unavailable or invalid |
+| parts_band.nav_gap | p = 0 | 0 < p < 20 | 20 <= p < 34 | 34 <= p <= 40 | Required input/part unavailable or invalid |
+| parts_band.freshness | p = 0 | 0 < p < 10 | 10 <= p < 17 | 17 <= p <= 20 | Required input/part unavailable or invalid |
+| parts_band.penalty | d = 0 | 0 < d < 5 | 5 <= d < 15 | d >= 15 | Required penalty evidence unavailable or invalid |
+
+For contributions, 50% and 85% of the available points separate weak, partial and strong contributions while
+retaining broad intervals. They are explanatory thresholds, not claims that one strong part makes a fund safe.
+For penalties, 15 points is the existing initial cost of one distinct attempt; 5 points distinguishes smaller
+deductions from a material fraction of that cost. High penalty means MORE deduction and is adverse; high
+coverage/nav_gap/freshness means MORE positive contribution. Clients must preserve that direction.
+none means a verified exact zero, never missing evidence. unknown is not converted to none or a numeric score.
+Do not clamp invalid/out-of-range parts into a valid band. Compare exact fixed-point/rational values at each
+boundary, not rounded display numbers. Raw score and exact parts stay private even when a cap binds.
+Regenerate method_spec_sha256 for this amended canonical rules artifact; do not reuse the prior rules hash.
 
 ## 8. Market-data interfaces and track record
 
@@ -269,7 +296,8 @@ protects commitments from guessing; it cannot hide information already disclosed
    the non-late sum, not the total denominator. Inspect all cohort sums and claimed_not_settled_cents too.
 2. Required cash/NAV matrix: test all four rounded NAV fields against EACH cash_evidence_status, cash_match_band,
    yield_gap_band, collection_rate_band, late_share_band, each cohort/suppression output and each exception band.
-   Include every valid boundary and joint combination with score, coverage and public registry knowledge. Repeat
+   Cross these with EACH parts_band field and its high/medium/low/none/unknown states, the public score, coverage
+   and registry knowledge. Include every valid boundary and joint combination; repeat
    this matrix for consecutive receipts and corrections, including transitions across NAV rounding steps and cash
    bands. Inconsistent combinations are schema-negative cases, not silently skipped privacy cases.
    One-receipt reconstruction: attacker enumerates known synthetic tapes, solves ratio/denominator and score-part
@@ -281,7 +309,13 @@ protects commitments from guessing; it cannot hide information already disclosed
    commitment comparison. Complementary suppression is temporal as well as within one receipt; previously public
    facts cannot be re-hidden, so suppress new fields or withhold unsafe publication and record a private reason.
 4. Multi-output attacks: public score plus NAV result plus coverage, cash bands, public registry locks/attempts,
-   source timestamps and method changes. Test boundary queries and many analyst questions as a single budget.
+   all four parts_band fields, source timestamps and method changes. Try reconstructing an exact part or raw_score
+   by subtracting band constraints from the public total, including capped scores and known penalty events.
+   Test contribution boundaries at 0/20/34/40 and 0/10/17/20, penalty boundaries at 0/5/15, adjacent exact values,
+   and unknown-to-known transitions. For consecutive receipts, attack band crossings, unchanged parts, decaying
+   penalties and corrections. Public outputs must not expose hidden values beyond approved disclosure granularity;
+   unsafe combinations block publication rather than silently changing the locked thresholds or hiding a field.
+   Test boundary queries and many analyst questions as a single budget.
    Existing registry visibility is declared attacker knowledge, not privacy credited to the receipt.
 5. Reject hidden keys and canaries in all nested objects/errors/logs; claimed_not_settled_cents, cash dollar totals,
    denominator amounts, arbitrary ext and raw source hashes must be absent. Test unauthorized buyer/key replay.

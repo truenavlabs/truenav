@@ -74,7 +74,7 @@ R13 50% test. Unverified value = unverified open loans at max(floored mark, EAD)
 
 R14 Status, in order: invalid_fund_fields; verification_failed when previously certified and (no certificate, no headline, or data age over 30 days), or when a certificate is present and the data age is over 30 days or unknown (a missing as-of gives data age null); never certified and (no certificate or no headline) is not_rated; zero open loans is not_rated "no loans in book" at headline 0, disclaimed above 0; share_raw over 50% is disclaimed; otherwise scored. Disclaimed and verification_failed show red with no number and all pillars visible; not_rated shows grey with no number. Sort order: verification_failed and invalid_fund_fields (rank 0), disclaimed, red, yellow, green; not_rated is outside the order. A numeric filter never passes a no-number status.
 
-R15 Concentration is a flag only: largest obligor share and top five share of EAD on open listed loans against 15% and 50% (S&P AIF para 91, as cited by owner).
+R15 Concentration is a flag only: largest obligor share and top five share of EAD on open listed loans against 15% and 50% as concentration indicators: flag dependence on a single obligor or a small group; these do not change the score.
 
 R16 The 30 days, 50% and 10% thresholds are TrueNav's own policy, not agency figures.
 

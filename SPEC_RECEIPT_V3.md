@@ -1,10 +1,11 @@
 # TrueNav receipt v3 specification
 
-Status: FROZEN v3.0.0-rc2, pending the owner's final read (9 Nov 2026 Bangkok).
-the owner's 9 Nov rc2 review: fixed NAV ladder, public parts_x100, stable lane interfaces and first-lien-only policy.
+Status: FROZEN v3.0.0-rc3, pending the owner's final read (9 Nov 2026 Bangkok).
+the owner's 9 Nov rc3 review: whole public score, private committed precision fields, known-answer vectors and benchmark cohorts.
+READINESS BLOCKER: the requested universal +/-0.5 coverage-point disclosure bound fails the CI counterexamples below.
 
-Design only, the owner decisions of 9 Nov 2026 Bangkok. No implementation, deployment or transaction is authorized by
-this document. Option A is LOCKED: one combined receipt per credit fund per reporting period on receipts.
+Design only, the owner decisions of 9 Nov 2026 Bangkok. No engine deployment or transaction is authorized by
+this document. Schema and interface tests are local artifacts only. Option A is LOCKED: one combined receipt per credit fund per reporting period on receipts.
 Corrections append a sequence referencing the superseded entry; old entries remain immutable. Credit is the main
 demo. Rental and DEMO datasets remain regression fixtures through their existing methods, not v3 validation.
 
@@ -16,7 +17,8 @@ loan-count registry-read coverage metric. Rename the former pledge_coverage scor
 Cashflow-v2.1.0 contributes red-flag caps only: any applicable cap restricts the final score to at most 59.00.
 It adds no fourth weight and cannot raise a score. Use exact internal inputs for policy comparisons, never public
 rounded values. Retain its current cap triggers and closed codes, including the strict collection threshold.
-Harbor 99.17 green and Meridian 42.84 red must reproduce from their original inputs and pinned valuation time.
+Private benchmark precision 99.17 green for Harbor and 42.84 red for Meridian must reproduce from their
+original inputs and pinned valuation time; public scores are 99 and 43.
 Their combined benchmark cash fixtures must avoid adding a cap absent from the benchmark scenario; test new capped
 variants separately. No retuning or hardcoded score override. Judge valuation_time: 2026-11-10T12:00:00Z as in the
 existing NAV benchmark; distinguish replay time from actual issued_at. Synthetic=true is mandatory for this demo.
@@ -74,8 +76,8 @@ Define H(label, value) = SHA256(length-prefixed encoding of "truenav-v3", label,
 canonical(value)). Publish H for each commitment. registry_state_root commits to the private root with its block
 reference; it is not misrepresented as a NEAR consensus state root or a Merkle proof. input_sha256 = H("inputs",
 canonical input manifest). Record units/field schema in every committed object. Randomness is never derived from
-public data. Unit tests may inject synthetic entropy in memory, but no salt is exported in public receipt/proof
-fixtures. Salt and exact values are released only within the buyer's private full report.
+public data. Unit tests may inject synthetic entropy in memory, but no production salt is exported in public receipt/proof
+fixtures. Section 13 permits explicit all-zero TEST-only known-answer entropy. Salt and exact values are released only within the buyer's private full report.
 
 No self-reference: the TEE execution body B excludes receipt_sha256, attestation_ref and issued_at. It INCLUDES
 the reserved next seq and prev hash from the contract request. The attestation binds canonical B. Acceptance
@@ -110,7 +112,7 @@ See schema/source-key-registry.schema.json. No wildcard fund scopes. IDs unique,
 valid_from <= data_as_of < valid_until and key unrevoked at the pinned registry version. Fund, period, revision,
 network and contract must match the request. Backend TEE reads a trusted pinned public registry, not an issuer
 replacement. Signature acceptance does not prove source truth or completeness. Four source roles are required.
-Any sig_ok=false -> status=verification_failed, score_x100=null, band=red, raw_score=null and hold
+Any sig_ok=false -> status=verification_failed, score=null, band=red; private raw_score=null and hold
 source_signature_invalid; do not run normal scoring on rejected payloads. Invalid/unavailable/revoked/expired keys
 use the corresponding closed hold, also verification_failed; never downgrade them to an apparently successful run.
 
@@ -121,9 +123,9 @@ LP(raw_certificate_salt_32) || LP(UTF8(JCS(value)))). All LP lengths are u32 big
 Nonce/salt are raw bytes, not hex strings. Canonical null is the four UTF-8 bytes 6e756c6c; never an absent field,
 empty bytes or the JSON string "null". Reject labels outside: inputs, tape, cash, nav_report, pledge_detail,
 registry_state_root, full_report, nav_exact:reported_nav, nav_exact:trueval, nav_exact:truerange_low,
-nav_exact:truerange_high. Exact NAV value object is {currency:"USD",cents:<canonical integer-cent string>} or null.
+nav_exact:truerange_high, score_exact:score_x100, score_exact:parts_x100, score_exact:raw_score. Exact NAV value object is {currency:"USD",cents:<canonical integer-cent string>} or null.
 All other values use the versioned canonical source/report objects. Domain separation uses these literal labels.
-The salt and exact values occur only in the private full report, never public vectors or proof exports.
+The salt and exact values occur only in the private full report, never production public vectors or proof exports; section 13 defines the TEST-only exception.
 
 ## 4. Pledge fields
 
@@ -136,7 +138,7 @@ The salt and exact values occur only in the private full report, never public ve
 | loans_checked | closed count-band enum | P, tokens zero / lt_5 / from_5_to_9 / from_10_to_19 / from_20_to_49 / gte_50 / unknown / suppressed | Avoid exposing small roster size |
 | blocked_attempts | enum zero / one / two_plus / unknown | P, UI 0 / 1 / 2+; fixed window below | Locked disclosure |
 | lien_rank | positive integer per position | H, signed grant | Legitimate liens without position disclosure |
-| lien_support | enum first_lien_only | P, rank >=2 is unknown in rc2 | No unsupported lien assurance |
+| lien_support | enum first_lien_only | P, rank >=2 is unknown in rc3 | No unsupported lien assurance |
 | pledge details / fingerprint list / holder identities | typed private records | H, no raw loan IDs or per-loan fingerprints in receipt | Registry itself remains publicly observable |
 
 ### Renamed-document bypass: LOCKED FIX NOW
@@ -161,7 +163,7 @@ Normalization is deterministic and signed as part of loan-terms-v2:
   under a new principal/date must not silently create a clean history. Keep a collateral index to detect related
   claims even when different loan terms legitimately have different principal amounts.
 
-Second lien LOCKED rc2 policy: lien_rank >=2 -> pledge_result=unknown, hold=second_lien_unsupported; the
+Second lien LOCKED rc3 policy: lien_rank >=2 -> pledge_result=unknown, hold=second_lien_unsupported; the
 loan is unverified for R7/R13. Never flag it as a proven double pledge merely for having rank 2, and never clear
 it as a supported second lien. Record rank and signed terms privately. Rank 1 conflicts remain conflicts. Ranked
 registry locks/migration are unowned follow-up work, not a hidden backend lane task or a Wednesday prerequisite.
@@ -169,6 +171,12 @@ A conflicted OR unread loan becomes unverified and flows through R7 verified-val
 eligibility. Completed read does not mean verified ownership: a completed read showing a conflict still counts in
 read coverage. Result priority: known conflict first; otherwise unsupported rank => unknown; otherwise incomplete
 reads => incomplete; otherwise clear only with supported first liens and matching ownership.
+
+A refused pledge ATTEMPT is not an active lien or a conflict in the fund's current book. If the fund tried to
+pledge another holder's loan, the registry refused it, and that loan is absent from its current authenticated book,
+pledge_result is clear when all current first-lien positions read clean. blocked_attempts/penalty/R12 still apply.
+Only current in-scope ownership mismatches yield conflict. Meridian golden is clear with one refused attempt,
+its unchanged penalty and red score; its pre-existing valuation/anomaly exclusions still flow through R7/R13.
 
 Read coverage: N = distinct in-scope OPEN loans in the authenticated roster, C = those with a completed finalized
 registry read, including successful null/conflict results; timeouts/unread are not C. 0 <= C <= N <=10000. Denominator
@@ -222,6 +230,10 @@ The TrueRange midpoint (low+high)/2, range width and symmetry against TrueVal ar
 
 ## 6. Cash fields
 
+Operator-containing band labels in this table are DISPLAY ONLY. Exact snake_case wire tokens and interval ends
+are authoritative in schema/receipt-v3.schema.json. The same display-only convention applies to freshness_band
+and the point-threshold tables; no operator strings are serialized.
+
 | Field | Type | Visibility / rule | Why |
 | --- | --- | --- | --- |
 | cash_evidence_status | enum verified / partial / stale / missing / invalid | P, source and settlement coverage rules | Evidence quality |
@@ -249,45 +261,53 @@ only when it cannot expose a hidden complement. Suppression applies to derived H
 | Field | Type | Visibility / rule | Why |
 | --- | --- | --- | --- |
 | status | enum scored / disclaimed / verification_failed / invalid_fund_fields / not_rated | P, preserve legacy eligibility order and no-number rules | Explicit score availability |
-| score_x100 | u16 0..10000 or null | P, half-up to 0.01 from exact final legacy score after penalties/caps | Preserve 9917 and 4284 |
+| score | u8 0..100 or null | P, round_half_up of unrounded final | Legacy public pins 99 and 43 |
+| score_x100 | u16 0..10000 or null | H, round_half_up(final*100) | Private pins 9917 and 4284 |
 | band | enum green / yellow / red / grey | P, existing legacy whole-score rounding then 85/60 thresholds; R12 yellow ceiling | Preserve old boundary semantics |
-| parts_x100 | {gap,coverage,freshness,penalty} integers or null | P, each round_half_up(100*part), no privacy bucketing | Score decomposition is intentionally public |
-| raw_score | canonical decimal string or null | P when identical to public parts sum; otherwise null and exact total in private report | No claim of hiding an already published sum |
+| parts_x100 | {gap,coverage,freshness,penalty} integers or null | H, separately round_half_up(part*100) | Private score decomposition |
+| raw_score | canonical decimal string or null | H always, unrounded total | No public raw decomposition |
+| commitments.score_x100 / parts_x100 / raw_score | hex32 each | P, H with score_exact:<field> labels | Bind private score values |
 | parts_band | {coverage, nav_gap, freshness, penalty} | P, exactly four required enum fields; no additional keys | Coarse explanation of each existing score part |
 | parts_band.coverage / nav_gap / freshness / penalty | enum high / medium / low / none / unknown | P, thresholds below, using exact internal values | Explain contributions and penalty without publishing exact parts |
 | caps / holds | arrays of closed code strings | P, no interpolated money/ratios/loan IDs | Explain constraints without bypassing suppression |
 | freshness_band | enum <=24h / >24-72h / >72-168h / >168h / unknown | P, based on oldest required source | Honest age; issued_at cannot refresh inputs |
 | ext | object {} | P, MUST be empty; unknown extension keys rejected | Prevent disclosure through arbitrary metadata |
 
-LOCKED scoring formula (all arithmetic BEFORE display rounding):
+LOCKED scoring formula, unchanged internal precision:
 raw = gap + coverage + freshness - penalty;
 cap = 59.00 if any cash cap applies, otherwise 100.00;
 final = min(cap, max(0, raw));
-score_x100 = round_half_up(final * 100), from the UNROUNDED total, never the sum of rounded parts_x100.
-Each parts_x100 member is separately round_half_up(part*100); their sum can differ from score_x100.
-Band uses the legacy round_half_up(final) thresholds 85/60 to preserve boundary behavior. R12 emits closed hold
-recent_pledge_attempt for 30 days after an applicable attempt and caps the BAND at yellow, leaving the number
-unchanged. Concentration holds concentration_largest_obligor and concentration_top_five are flags only, NO score
-or band cap. Cash collection_pending/not_applicable holds also limit band to yellow without adding a fourth weight.
-R15 concentration triggers are largest share >15% and top-five >50%; exact boundaries do not trigger them.
+score = round_half_up(final), PUBLIC;
+score_x100 = round_half_up(final*100), PRIVATE;
+parts_x100.<part> = round_half_up(part*100), PRIVATE, never summed to calculate the final score.
+raw_score is PRIVATE regardless of whether another public field could constrain it. Commit to each of these three
+private fields with H("score_exact:score_x100", integer_or_null), H("score_exact:parts_x100", canonical_parts_object)
+and H("score_exact:raw_score", canonical_decimal_string_or_null). Fresh production salt stays in the full report.
 
-raw_score is public as a canonical decimal iff raw exactly equals
-(parts_x100.gap+parts_x100.coverage+parts_x100.freshness-parts_x100.penalty)/100; otherwise emit null and retain
-unrounded raw in the private report. Never publish a rounded raw masquerading as the exact value. This is an
-output rule, not a privacy guarantee: exact score plus public data_as_of and registry attempts can recover score
-parts, BY DESIGN. parts_x100 and parts_band are both public. No parts are claimed hidden. Use full precision
-internally for the final total; do not tune or independently round contributions to make the pins hold.
+Band thresholds are 85/60 on public whole score. R12 recent_pledge_attempt caps the BAND at yellow for 30 days
+without changing the number. Concentration flags remain non-capping holds. Cash caps remain <=59, no fourth weight.
+collection_pending/not_applicable limit band to yellow. R15 largest obligor >15% / top five >50% are flags only.
+Public pins: Harbor 99 green, Meridian 43 red. Private report pins: 9917/4284, independently computed from the
+unrounded final in receipt:v3:pins and lab/verifier's npm run judge -- --replay. Keep original benchmark as-of.
+Nonnumeric statuses have score=null, band per R14; source rejection nulls private precision fields and uses unknown
+parts_band. Missing values are not zero. No public score_x100, parts_x100 or raw_score keys are accepted.
 
-No numeric score for invalid_fund_fields/disclaimed/verification_failed/not_rated: score_x100=null; source rejection
-also nulls all parts_x100 and parts_band becomes unknown. Other unavailable individual parts are null/unknown,
-not zero. Band/status follow R14. receipt:v3:pins and external npm run judge -- --replay must reproduce 9917 green
-and 4284 red using the benchmark funds' original as-of timestamps, including the original Meridian attempt age.
+Residual disclosure: with an uncapped whole score s, public data_as_of (hence exact freshness F), an inside result
+(gap=40) and known penalty P, the score-only equation places coverage in [s-0.5-40-F+P, s+0.5-40-F+P), before
+clipping. This is nominally +/-0.5 score points, equivalent to +/-1.25 percentage points of R7 verified-value share.
+the owner's required acceptance bound is NOTHING FINER, for one receipt and two consecutive receipts, including a loan
+turning unverified. It is a requirement, not an established guarantee: clipping, parts_band, public share bands
+and temporal intersection can narrow it. The current locked envelope FAILS the strict bound. For Harbor, s=99,
+F=115/6, P=0 and coverage<=40 reduce the interval to [39+1/3,40], width 2/3 point, already finer than one point.
+A known 1%-of-book loan becoming unverified can narrow a two-receipt interval to width 0.6 point (test below).
+Backend CI asserts minimum feasible width >=1 point and FAILS on these cases; it must not pass by ignoring public
+constraints or calling these expected failures. No disclosure policy adjustment is authorized by this rc3 review.
 
 ### Public score-part bands
 
-These are display-only classifications, not a fourth score weight, a new penalty or a change to caps. Compute
+These are public coarse classifications, not a fourth score weight, a new penalty or a change to caps. Compute
 them from the exact internal pre-cap contribution points and the total applicable penalty after existing
-manager/attempt scope rules, before flooring the final score. Do not derive them from rounded score_x100.
+manager/attempt scope rules, before flooring the final score. Do not derive them from the rounded public score.
 Each contribution is bounded by its existing maximum: coverage 40, nav_gap 40, freshness 20 points.
 
 | Field | none | low | medium | high | unknown |
@@ -304,7 +324,7 @@ deductions from a material fraction of that cost. High penalty means MORE deduct
 coverage/nav_gap/freshness means MORE positive contribution. Clients must preserve that direction.
 none means a verified exact zero, never missing evidence. unknown is not converted to none or a numeric score.
 Do not clamp invalid/out-of-range parts into a valid band. Compare exact fixed-point/rational values at each
-boundary, not rounded display numbers. parts_x100 remain public even when a cap binds; raw_score follows its conditional publication rule.
+boundary, not rounded display numbers. score_x100, parts_x100 and raw_score remain private even when a cap binds; public parts_band remains.
 Regenerate method_spec_sha256 for this amended canonical rules artifact; do not reuse the prior rules hash.
 
 ## 8. Market-data interfaces and track record
@@ -391,17 +411,20 @@ protects commitments from guessing; it cannot hide information already disclosed
    use corrections, stable fund IDs and known registry events to solve changes. Independent salts must defeat
    commitment comparison. Complementary suppression is temporal as well as within one receipt; previously public
    facts cannot be re-hidden, so suppress new fields or withhold unsafe publication and record a private reason.
-4. Multi-output attacks: public score plus NAV result plus coverage, cash bands, public registry locks/attempts,
-   all four parts_band fields, source timestamps and method changes. Try reconstructing an exact part or raw_score
-   from public parts_x100/parts_band, data_as_of and registry attempts. Such score-part recovery is intentional
-   disclosure, not a failing privacy assertion. Separately attack hidden NAV/cash/loan values through those same
-   public equations, including capped scores and known penalty events; hidden financial reconstruction still fails.
-   Test contribution boundaries at 0/20/34/40 and 0/10/17/20, penalty boundaries at 0/5/15, adjacent exact values,
-   and unknown-to-known transitions. For consecutive receipts, attack band crossings, unchanged parts, decaying
-   penalties and corrections. Public outputs must not expose hidden values beyond approved disclosure granularity;
-   unsafe combinations block publication rather than silently changing the locked thresholds or hiding a field.
-   Test boundary queries and many analyst questions as a single budget.
-   Existing registry visibility is declared attacker knowledge, not privacy credited to the receipt.
+4. Score disclosure CI: intersect whole-score bins with public data_as_of, inside result, registry penalty,
+   parts_band and all other public constraints. Minimum allowed coverage interval width is exactly 1 score point
+   (nominal +/-0.5), equivalently 2.5 percentage points of verified-value share (nominal +/-1.25). FAIL anything
+   finer for one receipt and two receipts, including a loan becoming unverified. At saturation/caps use the true
+   preimage interval, not an invented symmetric bin. Do not exclude edge cases or suppress guard failures.
+   Current failures: Harbor boundary clips width to 2/3; a known 0.4-point coverage loss (one 1%-of-book loan) with
+   F=115/6, gap=40, penalty=0 and public scores 97/97 intersects to width 0.6. The second case explicitly gives
+   the attacker that loan-value side information, as permitted in synthetic red-team scenarios. Both must be
+   reported as privacy blockers; no claim of 'nothing finer' can be made while they persist.
+   Continue independent hidden NAV/cash/loan reconstruction, midpoint, cohort, small-group and temporal tests.
+   parts_band boundary crossings and a zero unverified_share_band can further narrow coverage. Those public facts
+   cannot be ignored to obtain a passing result. Removing precise public score fields improves disclosure but
+   is not proof of the requested universal bound. See receipts/tests/receipt-v3-privacy.test.py.
+
 5. Reject hidden keys and canaries in all nested objects/errors/logs; claimed_not_settled_cents, cash dollar totals,
    denominator amounts, arbitrary ext and raw source hashes must be absent. Test unauthorized buyer/key replay.
 6. Network view leak test: aggregate outputs across a small roster, exclude one fund and difference over time.
@@ -418,9 +441,11 @@ until the owner approves a concrete disclosure change. No test waivers disguised
 
 ## 11. Frozen interface and lane ownership
 
-No disclosure decisions remain open. Coverage rounds down to 100 bps, all four NAV figures are rounded with
-separate salted exact commitments, and blocked attempts are "0" / "1" / "2+". The signed-terms fingerprint fix and
-bounded conditional buyer analyst remain locked. the owner's final read is pending; changes after this rc2 need an
+No disclosure decisions remain open. Coverage floors to 100 bps, or 2500 bps for small checked-count bands
+lt_5/from_5_to_9 (also conservative unknown/suppressed). Attempts wire tokens are zero/one/two_plus, displayed
+as 0/1/2+. All four NAV figures retain ladder rounding and individual salted commitments. Public score is whole;
+precision fields are private with separate commitments. The strict disclosure guard is currently blocked. The signed-terms fingerprint fix and
+bounded conditional buyer analyst remain locked. the owner's final read is pending; changes after this rc3 need an
 explicit revision and coordination with consuming lanes.
 
 backend lane owns lab/ci-green and lab/receipt-v3-spec, receipts v3 contract/views and Wed upgrade preparation,
@@ -441,14 +466,32 @@ Machine schema: schema/receipt-v3.schema.json (Draft 2020-12), closed objects th
 snake_case tokens, never display operators. Human bands like <5/5-9/2+ are display labels only; use lt_5,
 from_5_to_9 and two_plus on wire. x-band-intervals declares lower/upper bounds and open/closed ends; missing upper
 bound means unbounded, not unknown. x-status-only-tokens and x-exception-policy cover nonnumeric states.
-Method artifact: schema/methods/truenav-v3.0.0-rc2.json. method_spec_sha256 = SHA256(JCS(artifact)), not this Markdown
+Method artifact: schema/methods/truenav-v3.0.0-rc3.json. method_spec_sha256 = SHA256(JCS(artifact)), not this Markdown
 file or a self-containing artifact. Artifact pins schema file bytes via receipt_schema_sha256. No circular hash.
 
 schema/vectors/receipt-v3-golden.json contains Harbor, Meridian, one Harbor correction and one capped Harbor
 variant, each with canonical execution/receipt preimage UTF-8/hex, receipt_sha256 and expected score. These are
 LOCAL SERIALIZATION/PIN vectors, not live receipts, real attestation or signed-source evidence. Synthetic engine
 hash, null proof reference and opaque commitment placeholders must never be passed off as a deployed build or
-mathematical commitment verification. No salt/private signing material is exported. Corrections preserve benchmark
+mathematical commitment verification. No production salt or private signing material is exported. Corrections preserve benchmark
 as-of; source_correction is illustrative metadata only. External full scenarios belong to lab/sim-data.
 The backend lane CI enumeration/vector tests run separately from root npm scripts; root package.json/README are
 unchanged. Do not implement external npm run judge here; its owner consumes these vectors and pins.
+
+
+## 13. Rc3 known-answer and benchmark fixtures
+
+schema/vectors/commitment-known-answers.json pins every H label with an all-zero 32-byte TEST salt AND nonce,
+explicitly TEST ONLY, including canonical null, exact NAV objects and private score label classes. This is the
+only public test-entropy exception; never use that entropy for a production report. Live salts remain private.
+schema/vectors/source-signature-known-answer.json uses the RFC 8032 section 7.1 TEST 1 public verification key
+for a new source-framing message. It contains only public verification key, framing inputs/preimage, digest and
+signature, no signing seed. The interface test verifies the frozen signature; it does not regenerate it randomly.
+
+Golden benchmark cohorts: Harbor 2 at 1-30 DPD and 1 over 90; Meridian 1 at 61-90 and 1 over 90. Those cells use
+lt_5. Other cohort cells are complementary suppressed, even when zero, to prevent subtraction from revealing the
+small cells. Private TEST-only expected counts accompany vectors so tests verify true tape counts, not invent them.
+Golden test_private_score_report is a public synthetic test projection of the PRIVATE report interface, not an
+extra public envelope field. It contains only already-published benchmark score information and TEST entropy.
+All four golden receipt/execution hashes are regenerated for rc3. No live proof, deployment or current TEE run
+is claimed. The former rc2 method artifact remains in git history; rc3 references the new artifact path.

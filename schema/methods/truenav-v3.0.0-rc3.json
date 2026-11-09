@@ -1,7 +1,7 @@
 {
-  "artifact_version": "rc2",
+  "artifact_version": "rc3",
   "method_version": "truenav-v3.0.0",
-  "receipt_schema_sha256": "de7d2357ee13c5a633b5d31ade4ef3a59200fcc03bc3be0bf65b8fcce7555323",
+  "receipt_schema_sha256": "bca1694674e7232fb53797a494ca84b0702bcf6908a14de9eb953061d5b114b2",
   "score": {
     "weights": {
       "gap": 40,
@@ -12,8 +12,11 @@
     "final": "min(cap, max(0, raw))",
     "cash_cap_points": 59,
     "no_cash_cap_points": 100,
-    "score_x100": "round_half_up(final * 100), from unrounded total",
-    "band": "legacy round_half_up(final), thresholds 85/60, R12 band ceiling yellow only"
+    "score_x100": "PRIVATE round_half_up(final*100), from unrounded total",
+    "band": "legacy round_half_up(final), thresholds 85/60, R12 band ceiling yellow only",
+    "score": "round_half_up(final), public whole number",
+    "parts_x100": "PRIVATE separately round_half_up(part*100)",
+    "raw_score": "PRIVATE unrounded total"
   },
   "nav_rounding": {
     "currency": "USD",
@@ -465,7 +468,10 @@
     "nav_exact:reported_nav",
     "nav_exact:trueval",
     "nav_exact:truerange_low",
-    "nav_exact:truerange_high"
+    "nav_exact:truerange_high",
+    "score_exact:score_x100",
+    "score_exact:parts_x100",
+    "score_exact:raw_score"
   ],
   "length_prefix": "u32_be_bytes",
   "canonical_null_utf8_hex": "6e756c6c",
@@ -498,5 +504,12 @@
     "correction_invalid",
     "evidence_unavailable"
   ],
-  "band_interval_basis": "legacy round_half_up(final), not score_x100/100"
+  "band_interval_basis": "public score, thresholds 85/60; R12 band ceiling only",
+  "score_privacy_requirement": {
+    "coverage_half_width_points": "0.5",
+    "verified_value_share_half_width": "0.0125",
+    "one_and_two_receipts": true,
+    "status": "blocked_counterexamples_in_privacy_guard",
+    "warning": "Whole-score bin is one point before clipping and auxiliary evidence; posterior can be narrower."
+  }
 }

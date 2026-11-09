@@ -1,4 +1,4 @@
-"""Rc2 interface validation, no live operations or private inputs."""
+"""Rc3 interface validation, no live operations or private inputs."""
 import copy
 import json
 from pathlib import Path
@@ -16,22 +16,22 @@ class Interfaces(unittest.TestCase):
    Draft202012Validator.check_schema(read(f))
   for g in GOLDEN: V.validate(g['envelope'])
  def test_unknown_fields_operator_tokens_and_reserved_kinds(self):
-  for field,value in [('kind','real_estate'),('kind','treasury'),('blocked_attempts','2+'),('loans_checked','<5'),('nav_gap_band','<=5pct'),('currency','EUR'),('attestation_status','verified'),('claimed_not_settled_cents','100')]:
+  for field,value in [('kind','real_estate'),('kind','treasury'),('blocked_attempts','2+'),('loans_checked','<5'),('nav_gap_band','<=5pct'),('currency','EUR'),('score_x100',9917),('parts_x100',{}),('raw_score','99'),('attestation_status','verified'),('claimed_not_settled_cents','100')]:
    e=copy.deepcopy(GOLDEN[0]['envelope']);e[field]=value
    self.assertTrue(list(V.iter_errors(e)),field)
  def test_nested_extensions_and_missing_fields(self):
   for field in SCHEMA['required']:
    e=copy.deepcopy(GOLDEN[0]['envelope']);del e[field]
    self.assertTrue(list(V.iter_errors(e)),field)
-  for field in ['ext','parts_x100','parts_band','commitments']:
+  for field in ['ext','late_loan_cohorts','parts_band','commitments']:
    e=copy.deepcopy(GOLDEN[0]['envelope']);e[field]['unexpected']=0
    self.assertTrue(list(V.iter_errors(e)),field)
  def test_source_failure_is_a_closed_failure(self):
   e=copy.deepcopy(GOLDEN[0]['envelope']);e['source_key_ids'][0]['sig_ok']=False
   self.assertTrue(list(V.iter_errors(e)))
-  e.update(status='verification_failed',band='red',score_x100=None,raw_score=None)
+  e.update(status='verification_failed',band='red',score=None)
   e['holds'].append('source_signature_invalid')
-  e['parts_x100']={k:None for k in e['parts_x100']};e['parts_band']={k:'unknown' for k in e['parts_band']}
+  e['parts_band']={k:'unknown' for k in e['parts_band']}
   V.validate(e)
   e['source_key_ids'][0]['source']='bank'
   self.assertTrue(list(V.iter_errors(e)))

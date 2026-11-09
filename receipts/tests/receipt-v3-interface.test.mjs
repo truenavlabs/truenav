@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createHash, generateKeyPairSync, sign, verify, randomBytes } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign, verify, randomBytes, createPublicKey } from 'node:crypto';
 import { scoreFund } from '../../engine/src/score.mjs';
 const read = p => JSON.parse(fs.readFileSync(new URL('../../'+p, import.meta.url)));
 const canonical = x => x===null||typeof x!=='object'?JSON.stringify(x):Array.isArray(x)?'['+x.map(canonical).join(',')+']':'{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';
@@ -22,27 +22,47 @@ test('golden receipt and execution preimages reproduce bytes and digests; status
  }
 });
 test('method artifact hash and schema pin are exact and independent of Markdown',()=>{
- const m=read('schema/methods/truenav-v3.0.0-rc2.json');
+ const m=read('schema/methods/truenav-v3.0.0-rc3.json');
  assert.equal(m.receipt_schema_sha256,digest(fs.readFileSync(new URL('../../schema/receipt-v3.schema.json',import.meta.url))));
  for(const v of vectors)assert.equal(v.envelope.method_spec_sha256,digest(canonical(m)));
 });
-test('public parts and unrounded totals preserve Harbor 9917 and Meridian 4284; caps never add weight',()=>{
+test('private report pins reproduce 9917 and 4284 while public scores are 99 and 43',()=>{
  const d=read('spec/nav/fixtures.json');
  for(const [i,f] of d.funds.entries()){
   const r=scoreFund(d,f,{now:d.valuation_time,certStore:d.cert_store});
-  const e=vectors[i].envelope;
+  const e=vectors[i].envelope,report=vectors[i].test_private_score_report;
   assert.equal(Math.floor(Math.max(0,r.raw)*100+.5),[9917,4284][i]);
-  assert.equal(e.score_x100,[9917,4284][i]);
-  for(const k of ['gap','coverage','freshness','penalty'])assert.equal(e.parts_x100[k],Math.floor(r.pillars[k]*100+.5));
-  assert.equal(e.data_as_of,f.nav_report_date);
-  const p=e.parts_x100;const sum=(p.gap+p.coverage+p.freshness-p.penalty)/100;
-  assert.equal(e.raw_score,r.raw===sum?String(sum):null);
+  assert.equal(report.score_x100,[9917,4284][i]);assert.equal(e.score,[99,43][i]);
+  assert.equal(e.score,Math.floor(r.raw+.5));
+  for(const k of ['score_x100','parts_x100','raw_score'])assert.ok(!Object.hasOwn(e,k));
+  for(const k of ['gap','coverage','freshness','penalty'])assert.equal(report.parts_x100[k],Math.floor(r.pillars[k]*100+.5));
+  assert.equal(report.raw_score,String(r.raw));assert.equal(e.data_as_of,f.nav_report_date);
  }
  const correction=vectors[2].envelope;
  assert.equal(correction.prev_receipt_sha256,vectors[0].envelope.receipt_sha256);
  assert.equal(correction.seq,'2');assert.equal(correction.supersedes_seq,'1');
- assert.equal(vectors[3].envelope.score_x100,5900);assert.deepEqual(vectors[3].envelope.caps,['yield_gap']);
- assert.equal(vectors[3].envelope.band,'red');
+ assert.equal(vectors[3].envelope.score,59);assert.equal(vectors[3].test_private_score_report.score_x100,5900);
+ assert.deepEqual(vectors[3].envelope.caps,['yield_gap']);assert.equal(vectors[3].envelope.band,'red');
+});
+test('benchmark late cohorts use primary and complementary suppression; refused attempt is not a book conflict',()=>{
+ const d=read('spec/nav/fixtures.json');
+ for(const [i,f] of d.funds.entries()){
+  const keys=['dpd_1_30','dpd_31_60','dpd_61_90','dpd_91_plus'];
+  const map={dpd_1_30:'dpd_1_30',dpd_31_60:'dpd_31_60',dpd_61_90:'dpd_61_90',dpd_91_plus:'dpd_over_90'};
+  const expected=Object.fromEntries(keys.map(k=>[k,f.loans.filter(l=>l.principal+l.accrued-l.repaid>0&&l.bucket===map[k]).length]));
+  assert.deepEqual(vectors[i].test_expected_private_cohorts,expected);
+  for(const k of keys)assert.equal(vectors[i].envelope.late_loan_cohorts[k],expected[k]>0?'lt_5':'suppressed');
+ }
+ assert.equal(vectors[1].envelope.pledge_result,'clear');assert.equal(vectors[1].envelope.blocked_attempts,'one');
+ assert.ok(vectors[1].envelope.holds.includes('recent_pledge_attempt'));
+});
+test('private score report commitments bind each precision field with TEST-only salt',()=>{
+ for(const v of vectors){const e=v.envelope,r=v.test_private_score_report;
+  for(const k of ['score_x100','parts_x100','raw_score']){
+   const pre=Buffer.concat([lp('truenav-v3'),lp('score_exact:'+k),lp(Buffer.from(e.request_nonce,'hex')),lp(Buffer.from(r.test_salt_hex,'hex')),lp(canonical(r[k]))]);
+   assert.equal(digest(pre),e.commitments[k]);
+  }
+ }
 });
 test('fixed ladder vectors include boundaries and positive/negative half ties',()=>{
  const cases=read('schema/vectors/nav-rounding.json').vectors;
@@ -81,4 +101,24 @@ test('H framing distinguishes canonical null, string null, labels and nonces wit
  const h=(label,value,n=nonce)=>digest(Buffer.concat([lp('truenav-v3'),lp(label),lp(n),lp(salt),lp(canonical(value))]));
  assert.equal(Buffer.from(canonical(null)).toString('hex'),'6e756c6c');
  assert.notEqual(h('inputs',null),h('inputs','null'));assert.notEqual(h('inputs',null),h('cash',null));assert.notEqual(h('inputs',null),h('inputs',null,Buffer.alloc(32,2)));
+});
+
+test('H known answers cover every label class with explicitly TEST-only zero salt and nonce',()=>{
+ const kat=read('schema/vectors/commitment-known-answers.json');
+ const labels=read('schema/methods/truenav-v3.0.0-rc3.json').commitment_labels;
+ assert.match(kat.classification,/TEST ONLY/);assert.equal(kat.test_salt_hex,'00'.repeat(32));assert.equal(kat.nonce_hex,'00'.repeat(32));
+ assert.deepEqual(kat.vectors.map(v=>v.label),labels);
+ for(const v of kat.vectors){
+  const pre=Buffer.concat([lp('truenav-v3'),lp(v.label),lp(Buffer.from(kat.nonce_hex,'hex')),lp(Buffer.from(kat.test_salt_hex,'hex')),lp(canonical(v.value))]);
+  assert.equal(pre.toString('hex'),v.preimage_hex);assert.equal(digest(pre),v.sha256);
+ }
+});
+test('public RFC 8032 verification key checks the frozen source framing signature known answer',()=>{
+ const v=read('schema/vectors/source-signature-known-answer.json');
+ const payloadDigest=digest(canonical(v.payload));assert.equal(payloadDigest,v.payload_sha256);
+ const fields=['truenav-src-v1',v.source,v.key_id,canonical(v.scope),canonical(v.period),v.revision,v.data_as_of,Buffer.from(payloadDigest,'hex')];
+ const pre=Buffer.concat(fields.map(lp));assert.equal(pre.toString('hex'),v.preimage_hex);assert.equal(digest(pre),v.digest_sha256);
+ const pub=createPublicKey({key:Buffer.concat([Buffer.from('302a300506032b6570032100','hex'),Buffer.from(v.public_key_hex,'hex')]),format:'der',type:'spki'});
+ assert.ok(verify(null,Buffer.from(v.digest_sha256,'hex'),pub,Buffer.from(v.signature_hex,'hex')));
+ assert.ok(!verify(null,Buffer.from(v.digest_sha256),pub,Buffer.from(v.signature_hex,'hex')));
 });

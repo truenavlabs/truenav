@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:truenav:receipt:v3:rc2",
+  "$id": "urn:truenav:receipt:v3:rc3",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -273,6 +273,18 @@
         "truerange_high": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
+        },
+        "score_x100": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parts_x100": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "raw_score": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         }
       },
       "required": [
@@ -285,7 +297,10 @@
         "reported_nav",
         "trueval",
         "truerange_low",
-        "truerange_high"
+        "truerange_high",
+        "score_x100",
+        "parts_x100",
+        "raw_score"
       ]
     },
     "pledge_scope": {
@@ -638,18 +653,6 @@
         "not_rated"
       ]
     },
-    "score_x100": {
-      "anyOf": [
-        {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 10000
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "band": {
       "type": "string",
       "enum": [
@@ -657,77 +660,6 @@
         "yellow",
         "red",
         "grey"
-      ]
-    },
-    "parts_x100": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "gap": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 4000
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "coverage": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 4000
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "freshness": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 2000
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "penalty": {
-          "anyOf": [
-            {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 1000000000
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "required": [
-        "gap",
-        "coverage",
-        "freshness",
-        "penalty"
-      ]
-    },
-    "raw_score": {
-      "anyOf": [
-        {
-          "type": "string",
-          "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]*[1-9])?$"
-        },
-        {
-          "type": "null"
-        }
       ]
     },
     "parts_band": {
@@ -841,6 +773,18 @@
       "additionalProperties": false,
       "properties": {},
       "required": []
+    },
+    "score": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [
@@ -895,15 +839,13 @@
     "late_loan_cohorts",
     "exceptions",
     "status",
-    "score_x100",
     "band",
-    "parts_x100",
-    "raw_score",
     "parts_band",
     "caps",
     "holds",
     "freshness_band",
-    "ext"
+    "ext",
+    "score"
   ],
   "description": "Public committed envelope only. attestation_status is reader-derived and is NOT a receipt field. Cross-field rules in SPEC_RECEIPT_V3.md and method artifact are mandatory.",
   "x-band-intervals": {
@@ -1309,7 +1251,7 @@
       },
       "then": {
         "properties": {
-          "score_x100": {
+          "score": {
             "type": "null"
           }
         }
@@ -1340,31 +1282,9 @@
           "band": {
             "const": "red"
           },
-          "score_x100": {
-            "type": "null"
-          },
-          "raw_score": {
-            "type": "null"
-          },
           "holds": {
             "contains": {
               "const": "source_signature_invalid"
-            }
-          },
-          "parts_x100": {
-            "properties": {
-              "gap": {
-                "type": "null"
-              },
-              "coverage": {
-                "type": "null"
-              },
-              "freshness": {
-                "type": "null"
-              },
-              "penalty": {
-                "type": "null"
-              }
             }
           },
           "parts_band": {
@@ -1382,6 +1302,9 @@
                 "const": "unknown"
               }
             }
+          },
+          "score": {
+            "type": "null"
           }
         }
       }

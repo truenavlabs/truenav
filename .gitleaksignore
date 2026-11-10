@@ -1,57 +1,9 @@
 # Reviewed false positives only. Each entry: the finding's fingerprint and why it is not a secret.
 # CI checks out every branch (fetch-depth 0), so each branch carries the full list.
-# The spike wasm's public sha256 used as a version_key in a test (generic-api-key rule), commit f7d6cf8.
-f7d6cf8ce54205d5f21dc787f648b0634c0feb10:outlayer/spike/smoke.mjs:generic-api-key:30
+# Public wasm build hashes (engine v3 pins, the OutLayer spike wasm) are allowlisted by exact value in
+# .gitleaks.toml instead, so they stay allowed when the code moves to a repo with new commit hashes.
+# The two entries below exist only in this repo's history, not in the current tree.
 # A fixed test pseudonym key in a test file (generic-api-key rule), commit 88ffe20.
 88ffe2057bfb20dc7fa8b1ccb3eb974e1035d227:cashflow/test/pipeline.test.mjs:generic-api-key:11
 # Prose describing verification-key administration, not a credential (rc2 review, generic-api-key).
 d0350988e45896c3ab06a41d2250551c5aa4ca7a:SPEC_RECEIPT_V3.md:generic-api-key:205
-
-# Reviewed public WASI build SHA256 in engine_version_key, not an authentication secret.
-# Exact findings only; source fields and all other history remain scanned.
-3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:14
-3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:3415
-3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:5362
-3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:8763
-3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:12168
-3ad9451c54dc023092c839ce06ee0107d8eb3839:schema/vectors/engine-v3-derived.json:generic-api-key:12279
-
-# Reviewed v3.0.1 public WASI build SHA256 in engine_version_key, not an authentication secret.
-# Exact implementation-commit findings only; all other fields and history remain scanned.
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:14
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:3511
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:5554
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:9051
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12552
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12663
-e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:generic-api-key:12783
-
-# Reviewed pinned-image public WASI SHA256 in engine_version_key, not a secret.
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:14
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:3511
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:5554
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:9051
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12552
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12663
-6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12783
-
-# Reviewed F5 pin refresh: the public engine v3 build SHA256 61fe33a0 (receipts/v3-build.json engine.sha256)
-# in engine_version_key, not a secret. Exact pin-commit findings only.
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:14
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:3520
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:5572
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:9078
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:12588
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:12700
-615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:12821
-
-# Reviewed web wireframe fixtures on lab/web-wireframe: version_key and engine_version_key hold the public
-# engine v3 build SHA256 0ffb3e31 (the earlier receipts/v3-build.json engine pin), not a secret. Exact findings only.
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-score.json:generic-api-key:6
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-score.json:generic-api-key:6
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-receipt.json:generic-api-key:8
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-receipt.json:generic-api-key:8
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-report.json:generic-api-key:4
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-report.json:generic-api-key:18
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-report.json:generic-api-key:4
-14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-report.json:generic-api-key:18

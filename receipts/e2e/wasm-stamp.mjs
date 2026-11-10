@@ -58,6 +58,11 @@ export function sourceStamp(crateDir, tag) {
     const rootTool = join(resolve(dir, ".."), "rust-toolchain.toml");
     if (existsSync(rootTool)) files.add(rootTool);
   }
+  // The sandbox wasm is defined by its build script (features, target dir, wasm-opt), so the script is an input.
+  if (tag === "sandbox") {
+    const script = join(crateDir, "build-sandbox-wasm.sh");
+    if (existsSync(script)) files.add(script);
+  }
   const list = [...files].sort();
   const hash = createHash("sha256");
   hash.update(String(tag));

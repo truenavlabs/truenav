@@ -6,6 +6,8 @@
 //   no receipt on chain                 decline  (no evidence; nothing is bought)
 //   receipt bytes do not match the hash decline  (receipt_mismatch; nothing is bought)
 //   latest run failed (failed head)     decline  (run_failed; nothing is bought)
+//   v3 engine hash not the repo pin     decline  (engine_hash; nothing is bought). The allowlist is
+//                                       receipts/v3-build.json engine.sha256, and engine_code_sha256 must match too
 //   red (score below 60)                decline  (the caps are the reasons)
 //   any hold                            review
 //   yellow (60 to 84)                   review
@@ -13,10 +15,25 @@
 //   as_of older than 45 days            review   (stale)
 //   green (85 and up), no caps, no hold approve
 //   v3 with no matched attestation_ref       review (unattested; a matching engine hash alone is not a pass)
-//   v3 engine hash other than the pinned key decline
 import { createHash } from "node:crypto";
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import {decodeReceipt, publicV3, canonical, spendMessage} from "../api/receipt.mjs";
+
+/** The v3 engine builds the agent treats as pinned: receipts/v3-build.json engine.sha256, the one source of truth.
+ * The contract stores whatever engine version_key its admin configured, so a receipt is only "pinned" if its
+ * index version_key and its body engine_version_key and engine_code_sha256 are all in this set. */
+export const PINNED_V3_ENGINES = Object.freeze(new Set([
+  JSON.parse(readFileSync(new URL("../receipts/v3-build.json", import.meta.url), "utf8")).engine.sha256,
+].filter((h) => typeof h === "string" && /^[0-9a-f]{64}$/.test(h))));
+if (PINNED_V3_ENGINES.size === 0) throw new Error("receipts/v3-build.json has no valid engine.sha256 pin");
+/** null when the v3 receipt's engine is a pinned build, else a short reason. */
+export function v3EngineNotPinned(receipt, versionKey, pins = PINNED_V3_ENGINES) {
+  if (!pins.has(versionKey)) return "the stored engine version_key is not a pinned build";
+  if (receipt.engine_version_key !== versionKey) return "engine_version_key differs from the stored version_key";
+  if (receipt.engine_code_sha256 !== undefined && receipt.engine_code_sha256 !== versionKey) return "engine_code_sha256 does not match the pinned build";
+  return null;
+}
 
 export const MAX_AGE_DAYS = 45;
 export const DEFAULT_MAX_FEE = 10n ** 22n; // 0.01 NEAR: the agent refuses to pay more
@@ -95,6 +112,11 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   const decoded=decodeReceipt(r);
   if (decoded.receipt?.head_status === "failed") return { action: "decline", reason: "run_failed", detail: `run failed: ${decoded.receipt.failure_code || "failed"}` };
   r=decoded.record;
+  // Before any score rule: a v3 score from an engine that is not the repo pin is not evidence (RT2-03).
+  if (decoded.version === "3") {
+    const notPinned = v3EngineNotPinned(decoded.receipt, r.version_key);
+    if (notPinned) return { action: "decline", reason: "engine_hash", detail: notPinned };
+  }
   if(decoded.version==='3' && decoded.receipt.score===null) return {action:'review',reason:'unknown',detail:'score unknown; no numeric score in this receipt'};
   if (r.band === "red" || r.score < 60) return { action: "decline", reason: "red", detail: `score ${r.score} red${r.caps.length ? `: ${r.caps.join(", ")}` : ""}` };
   if (r.holds.length) return { action: "review", reason: "hold", detail: `score ${r.score} ${r.band}, held: ${r.holds.join(", ")}` };
@@ -102,11 +124,7 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   if (r.caps.length) return { action: "review", reason: "capped", detail: `score ${r.score} green but capped: ${r.caps.join(", ")}` };
   const ageDays = (nowMs - Date.parse(r.as_of)) / 86_400_000;
   if (!(ageDays <= maxAgeDays)) return { action: "review", reason: "stale", detail: `receipt as of ${r.as_of} is ${Math.floor(ageDays)} days old` };
-  if (decoded.version === "3") {
-    const pinned = decoded.receipt.engine_code_sha256;
-    if (pinned && pinned !== r.version_key) return { action: "decline", reason: "engine_hash", detail: "engine hash does not match the pinned build" };
-    return { action: "review", reason: "unattested", detail: "unattested: no verified TEE attestation; a stored attestation_ref is not a pass" };
-  }
+  if (decoded.version === "3") return { action: "review", reason: "unattested", detail: "unattested: no verified TEE attestation; a stored attestation_ref is not a pass" };
   return { action: "approve", reason: "green", detail: `score ${r.score} green, no caps, no holds` };
 }
 
@@ -134,8 +152,9 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
     receipt: latest && !latest.error ? { contract: receipts, seq: latest.seq, score: latest.score, band: latest.band, caps: latest.caps, holds: latest.holds, period: latest.period, as_of: latest.as_of, method: latest.method, version_key: latest.version_key, receipt_sha256: latest.receipt_sha256, stored_block: latest.block_height } : null,
     entitlement: null,
   };
-  // nothing to buy when there is no (valid) receipt, or when the latest run failed (the API refuses the report)
-  if (!latest || decision.reason === "receipt_mismatch" || decision.reason === "run_failed") {
+  // nothing to buy when there is no (valid) receipt, when the latest run failed (the API refuses the report), or when
+  // a v3 receipt comes from an engine that is not the repo pin (its score is not evidence)
+  if (!latest || decision.reason === "receipt_mismatch" || decision.reason === "run_failed" || decision.reason === "engine_hash") {
     out.entitlement = { bought: false, why: decision.reason };
     return out;
   }

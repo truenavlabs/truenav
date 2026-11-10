@@ -1,7 +1,19 @@
-# gitleaks configuration: the default rules, plus one documented allowlist.
+# gitleaks configuration: the default rules, plus two documented allowlists.
 [extend]
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "Published NEAR AI Cloud attestation report (both encodings). Its signing_key fields are 32-byte public verification keys and its ohttp_key_config fields are public OHTTP key configurations (RFC 9458: key id, X25519 KEM 0x0020, public key, cipher suites), served by NEAR AI Cloud's public attestation endpoint. No private key is in these files."
 paths = ['''^tee/fixtures/attestation-report\.json(\.b64)?$''']
+
+[[allowlists]]
+description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 61fe33a0 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md). Add a new pin here when it is published, after checking it is a build hash."
+targetRules = ["generic-api-key"]
+regexTarget = "secret"
+regexes = [
+  '''^61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb$''',
+  '''^0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38$''',
+  '''^8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad$''',
+  '''^c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2$''',
+  '''^4e376db0cd17ef7f11f0d8602ed9367e66905c4cb4443bae881615a5cedf28eb$''',
+]

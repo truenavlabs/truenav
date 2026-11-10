@@ -140,7 +140,8 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
       if (!r) return send(res, 404, { error: "no receipt for this token" });
       let decoded;
       try { decoded = decodeReceipt(r); } catch (error) { return send(res, 502, {error:error.code ?? "receipt_invalid"}); }
-      if (m[2] === "score" && decoded.receipt?.head_status === "failed") {
+      // A failed head has no score to serve: both routes refuse it, so /report never redeems for it.
+      if (decoded.receipt?.head_status === "failed") {
         return send(res, 409, {error: "run_failed"});
       }
       if(decoded.version === "3") { const bad=verifyRecord(token,r); if(bad) return send(res,502,{error:bad}); }

@@ -266,6 +266,8 @@ const PUBLIC_RECEIPT_KEYS: &[&str] = &[
     "parts_band",
     "freshness_band",
     "ext",
+    "private_salt",
+    "private_commitment",
 ];
 fn public_codes(v: &Value) -> Value {
     let Some(xs) = v.as_array() else {
@@ -308,11 +310,15 @@ impl Receipts {
         }
         self.receipts.get(&(token_id.to_string(), n)).cloned()
     }
+    #[allow(dead_code)]
     pub(crate) fn head_failed(&self, token_id: &str) -> bool {
         self.failures.get(token_id).is_some()
     }
 }
-fn redact_public_receipt(raw: &str) -> String {
+fn view_body(raw: &str) -> String {
+    if raw.contains("\"private_commitment\"") {
+        return raw.to_string();
+    }
     let Ok(v) = serde_json::from_str::<Value>(raw) else {
         return raw.to_string();
     };
@@ -320,6 +326,46 @@ fn redact_public_receipt(raw: &str) -> String {
         return raw.to_string();
     }
     project_public(&v).to_string()
+}
+
+/// Write-time public record. The stored string is the canonical public projection plus a salt and a
+/// commitment to every other field. `public_sha256` is sha256 of that stored string. Views return the
+/// stored string unchanged. `head_status` is not part of this string: a later failure is the Failure
+/// record from `get_token`, outside the hashed body.
+pub(crate) fn public_record(v: &Value, token: &str, nonce: &str) -> (String, String, String) {
+    let mut private = serde_json::Map::new();
+    if let Some(obj) = v.as_object() {
+        for (k, val) in obj {
+            if k == "private" {
+                if let Some(inner) = val.as_object() {
+                    for (ik, iv) in inner {
+                        private.insert(ik.clone(), iv.clone());
+                    }
+                } else if !val.is_null() {
+                    private.insert("private".into(), val.clone());
+                }
+                continue;
+            }
+            if !PUBLIC_RECEIPT_KEYS.contains(&k.as_str()) {
+                private.insert(k.clone(), val.clone());
+            }
+        }
+    }
+    let mut public = project_public(v);
+    let salt = hex(&env::sha256(
+        format!("truenav-private-salt-v1|{token}|{nonce}").as_bytes(),
+    ));
+    let private_body = truenav_v3_core::canonical(&Value::Object(private)).unwrap_or_else(|_| "{}".into());
+    let commitment = hex(&env::sha256(
+        format!("truenav-private-v1|{salt}|{private_body}").as_bytes(),
+    ));
+    if let Some(obj) = public.as_object_mut() {
+        obj.insert("private_salt".into(), json!(salt));
+        obj.insert("private_commitment".into(), json!(commitment));
+    }
+    let stored = truenav_v3_core::canonical(&public).expect("public canonical");
+    let sha = hex(&env::sha256(stored.as_bytes()));
+    (stored, sha, commitment)
 }
 fn check_config(c: &Config) {
     require!(
@@ -810,19 +856,14 @@ impl Receipts {
             return Err("receipt_too_large".into());
         }
         let v: Value = truenav_v3_core::parse(bytes).map_err(|_| "receipt_not_json".to_string())?;
-        if truenav_v3_core::wire::is_v3_method(&p.method) {
-            return self.accept_v3(p, &v);
-        }
-        if v3::enabled() {
-            return Err("v2_writes_disabled".into());
-        }
         match &v {
-            // OutLayer's answer for an admitted run that failed or timed out; it already refunded the payer
             Value::Null => return Err("outlayer_run_failed".into()),
-            // response_format Json delivers the guest's JSON object; anything else (a JSON string holding JSON, an
-            // array, a number) is refused rather than reinterpreted, so a stored receipt is always the object
             Value::Object(_) => {}
-            _ => return Err("receipt_not_object".into()),
+            _ => return Err(if truenav_v3_core::wire::is_v3_method(&p.method) {
+                "v3_execution_shape".into()
+            } else {
+                "receipt_not_object".into()
+            }),
         }
         if let Some(stage) = v.get("error").and(v.get("stage")).and_then(Value::as_str) {
             return Err(if is_stage(stage) {
@@ -830,6 +871,12 @@ impl Receipts {
             } else {
                 "module_failed".into()
             });
+        }
+        if truenav_v3_core::wire::is_v3_method(&p.method) {
+            return self.accept_v3(p, &v);
+        }
+        if v3::enabled() {
+            return Err("v2_writes_disabled".into());
         }
         let token = self
             .tokens
@@ -846,12 +893,12 @@ impl Receipts {
             },
         )?;
         let seq = token.receipts + 1;
-        let receipt =
-            String::from_utf8(bytes.to_vec()).map_err(|_| "receipt_not_utf8".to_string())?;
-        let sha = hex(&env::sha256(bytes));
+        // Legacy v2 path. Demos use v3. This write still stores only the public projection, so a
+        // leftover v2 callback cannot put cent fields into chain state.
+        let (receipt, sha, commitment) = public_record(&v, &p.token_id, &p.run_nonce);
         emit(
             "receipt_stored",
-            json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": p.method, "version_key": p.version_key, "receipt_sha256": sha }),
+            json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": p.method, "version_key": p.version_key, "receipt_sha256": sha, "public_sha256": sha, "private_commitment": commitment }),
         );
         self.receipts.insert(
             (p.token_id.clone(), seq),
@@ -908,56 +955,25 @@ impl Receipts {
             .collect()
     }
     pub fn get_latest(&self, token_id: String) -> Option<StoredReceipt> {
+        // New rows include private_commitment and are returned unchanged, so the hash matches.
+        // A legacy row written before that commitment is projected here. head_status is not
+        // inserted into the body. It is the Failure record on get_token.
         let mut r = self.latest_raw(&token_id)?;
-        if self.head_failed(&token_id) {
-            r.band = "red".into();
-            r.score = 0;
-            r.caps.clear();
-            r.holds.clear();
-            if let Ok(mut v) = serde_json::from_str::<Value>(&r.receipt) {
-                if let Some(o) = v.as_object_mut() {
-                    for key in [
-                        "score",
-                        "uncapped_score",
-                        "raw_score",
-                        "score_x100",
-                        "parts_x100",
-                        "trueval",
-                        "reported_nav",
-                        "parts_band",
-                        "truerange_low",
-                        "truerange_high",
-                        "pledge_result",
-                        "pledge_coverage_bps",
-                        "collection_rate_band",
-                    ] {
-                        if o.contains_key(key) {
-                            o.insert(key.to_string(), Value::Null);
-                        }
-                    }
-                    o.insert("score".into(), Value::Null);
-                    o.insert("caps".into(), json!([]));
-                    o.insert("holds".into(), json!([]));
-                    o.insert("head_status".into(), json!("failed"));
-                    o.insert("band".into(), json!("red"));
-                }
-                r.receipt = v.to_string();
-            }
-        }
-        r.receipt = redact_public_receipt(&r.receipt);
+        r.receipt = view_body(&r.receipt);
         Some(r)
     }
     /// Explicit version tag. Historical v2 wrapper fields are unchanged; v3 is the complete envelope.
     pub fn get_receipt(&self, token_id: String, seq: u64) -> Option<Value> {
         let r = self.receipts.get(&(token_id, seq))?;
         if truenav_v3_core::wire::is_v3_method(&r.method) {
-            let v = serde_json::from_str::<Value>(&r.receipt)
+            let raw = view_body(&r.receipt);
+            let v = serde_json::from_str::<Value>(&raw)
                 .unwrap_or_else(|_| json!({"receipt_version":"3","error":"v3_receipt_corrupt"}));
-            return Some(if v.is_object() { project_public(&v) } else { v });
+            return Some(v);
         }
         let mut v = serde_json::to_value(r).ok()?;
         if let Some(raw) = v.get("receipt").and_then(Value::as_str) {
-            v["receipt"] = json!(redact_public_receipt(raw));
+            v["receipt"] = json!(view_body(raw));
         }
         v["receipt_version"] = json!("2");
         Some(v)
@@ -979,7 +995,7 @@ impl Receipts {
             .take(n as usize)
             .filter_map(|seq| {
                 let mut r = self.receipts.get(&(token_id.clone(), seq))?.clone();
-                r.receipt = redact_public_receipt(&r.receipt);
+                r.receipt = view_body(&r.receipt);
                 Some(r)
             })
             .collect()

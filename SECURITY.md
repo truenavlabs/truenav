@@ -24,14 +24,16 @@ See `TRUST_MODEL.md`, `THREAT_MODEL.md` and `AUDIT_FINDINGS.md`.
 
 The API keeps spent nonces and the buyer rate counter in one directory on one machine. Two machines, or two copies of the directory, can each accept the same nonce.
 
+- The host must provide util-linux `flock`. Startup runs `/usr/bin/flock -x -w 1` and refuses to continue if that fails. Busybox `flock` is not accepted. `node` is the current executable, not a PATH lookup.
+- One directory on one machine. Several API processes on that machine share the flock. Two machines, or two copies of the directory, do not.
 - Pick a persistent path, not `/tmp`. Example: `/var/lib/truenav/spend`.
 - `mkdir -m 700 /var/lib/truenav/spend`
-- Initialize once: `TRUENAV_SPEND_STORE=/var/lib/truenav/spend node api/spend-init.mjs` or start once with `TRUENAV_SPEND_STORE_INIT=1`. After `state.json` and `READY` exist, start without the init flag.
+- Initialize only with `node api/spend-init.mjs /var/lib/truenav/spend`. There is no environment flag that creates a store. Then set `TRUENAV_SPEND_STORE` to that directory and start the API.
 - `chmod 700` the directory. The process refuses a group-writable or world-writable directory, a symlink store path, and a `LOCK` that is a symlink or a directory.
-- Set `TRUENAV_SPEND_STORE` to that directory. The process exits if the variable is missing. It does not create an empty store on its own. A missing or corrupt `state.json` returns 503 and is not replaced.
+- The process exits if `TRUENAV_SPEND_STORE` is missing. It does not create an empty store on its own. A missing or corrupt `state.json` returns 503. The body is `{"error":"spend store closed"}`. The path is logged on the server only.
 - Recovery from "spend store corrupt": stop the API, restore `state.json` from backup, confirm `READY` is still there, and start again. Do not delete `state.json` to get a fresh store. Deleting it and initializing again starts a new nonce list, so a nonce can be replayed until its proof expires.
 - If the error says `LOCK` is a symlink or a directory: stop the API, remove that `LOCK` path only, leave `state.json` and `READY`, and start again.
-- The IP limiter reads the socket address. It does not trust `X-Forwarded-For` unless `TRUENAV_TRUST_PROXY=1`. Leave that unset behind an untrusted proxy, or every client shares the proxy address.
+- The IP limiter reads the socket address. It does not trust `X-Forwarded-For` unless `TRUENAV_TRUST_PROXY=1`. When that is set, the client address is `TRUENAV_PROXY_HOPS` from the right (default 1), never the leftmost. A client can prepend forged hops. Leave the flag unset unless the last hop is your proxy.
 
 ## Receipts v3 attestation records, local candidate
 

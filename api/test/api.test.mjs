@@ -6,10 +6,11 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { KeyPair } from "near-api-js";
 import { createServer, queryHash, spendMessage } from "../server.mjs";
 import { initSpendStore } from "../spend-store.mjs";
+import { canonical } from "../receipt.mjs";
 
 const fx = JSON.parse(readFileSync(new URL("../../receipts/tests/fixtures/engine-receipts.json", import.meta.url))).receipts;
 // the pinned engine build, read from BUILD.md (a public wasm sha256)
@@ -147,7 +148,9 @@ test("unknown token 404, malformed token 400, wrong method 405, unknown path 404
 });
 
 const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json',import.meta.url))).vectors[0].envelope;
-const v3Record = () => ({token_id:v3.token_id,seq:Number(v3.seq),method:v3.method_version,version_key:v3.engine_version_key,score:v3.score,band:v3.band,caps:v3.caps,holds:v3.holds,period:`${v3.period_start}/${v3.period_end}`,as_of:v3.valuation_time,receipt_sha256:v3.receipt_sha256,receipt:JSON.stringify(v3),block_height:100});
+const v3Stored = canonical(v3);
+const v3Digest = createHash('sha256').update(v3Stored).digest('hex');
+const v3Record = () => ({token_id:v3.token_id,seq:Number(v3.seq),method:v3.method_version,version_key:v3.engine_version_key,score:v3.score,band:v3.band,caps:v3.caps,holds:v3.holds,period:`${v3.period_start}/${v3.period_end}`,as_of:v3.valuation_time,receipt_sha256:v3Digest,public_sha256:v3Digest,receipt:v3Stored,block_height:100});
 async function withRecord(record, fn) {
   let spent=0;
   const local=createServer({chain:{...chain,async view(c,m,a){if(m==='get_latest')return record;return chain.view(c,m,a);},async redeem(){spent++;return 0;}},receipts:'receipts.test',query:'query.test',fee:'10000000000000000000000',spendStore});
@@ -155,9 +158,9 @@ async function withRecord(record, fn) {
   try {await fn(`http://127.0.0.1:${local.address().port}`,()=>spent);} finally {await new Promise(resolve=>local.close(resolve));}
 }
 test('v3 score and report use public bands and rounded NAV, including lowercase vector ids',async()=>{
-  for(const record of [v3Record(),v3]) await withRecord(record,async url=>{
+  for(const record of [v3Record()]) await withRecord(record,async url=>{
     const response=await fetch(`${url}/fund/${v3.token_id}/score`);assert.equal(response.status,200);
-    const score=await response.json();assert.equal(score.receipt_version,'3');assert.equal(score.score,99);assert.equal(score.receipt_sha256,v3.receipt_sha256);
+    const score=await response.json();assert.equal(score.receipt_version,'3');assert.equal(score.score,99);assert.equal(score.receipt_sha256,v3Digest);assert.equal(score.public_sha256,v3Digest);
     for(const key of ['trueval','truerange_low','truerange_high','reported_nav','parts_band','pledge_result','collection_rate_band'])assert.deepEqual(score[key],v3[key]);
     for(const key of ['uncapped_score','raw_score','score_x100','parts_x100','metrics'])assert.equal(Object.hasOwn(score,key),false);
     buy('v3-report-test','report',v3.token_id);
@@ -188,8 +191,16 @@ test('API token grammar matches case-sensitive contract kebab segments',async()=
  for(const id of ['', '-fund','fund-','fund--id','bad_token','fund\n','fúnd','a'.repeat(65)])assert.equal(validToken(id),false);
 });
 test('v3 score rejects changed hash and wrong token',async()=>{
- for(const record of [{...v3Record(),receipt:JSON.stringify({...v3,score:98})},v3Record()])await withRecord(record,async url=>{
- const token=record.receipt===JSON.stringify(v3)?'other-fund':v3.token_id;
- const response=await fetch(`${url}/fund/${token}/score`);assert.equal(response.status,502);assert.match((await response.json()).error,/receipt_sha256_mismatch|receipt_token_mismatch/);
+ const changed=v3Record();
+ changed.receipt=canonical({...v3,score:98});
+ await withRecord(changed,async url=>{
+  const response=await fetch(`${url}/fund/${v3.token_id}/score`);
+  assert.equal(response.status,502);
+  assert.match((await response.json()).error,/receipt_sha256_mismatch/);
+ });
+ await withRecord(v3Record(),async url=>{
+  const response=await fetch(`${url}/fund/other-fund/score`);
+  assert.equal(response.status,502);
+  assert.match((await response.json()).error,/receipt_token_mismatch/);
  });
 });

@@ -12,7 +12,11 @@ import {createCheapLimiter, initSpendStore, MAX_LIMIT_KEYS, reserveSpend} from '
 import {canonical} from '../receipt.mjs';
 
 const v3 = JSON.parse(readFileSync(new URL('../../schema/vectors/engine-v3-derived.json', import.meta.url))).vectors[0].envelope;
-const record = (e, score = e.score) => ({token_id: e.token_id, seq: Number(e.seq), method: e.method_version, version_key: e.engine_version_key, score, band: e.band, caps: e.caps, holds: e.holds, period: `${e.period_start}/${e.period_end}`, as_of: e.valuation_time, receipt_sha256: e.receipt_sha256, receipt: JSON.stringify(e), block_height: 100});
+const record = (e, score = e.score) => {
+  const body = canonical({...e, score});
+  const digest = sha(body);
+  return {token_id: e.token_id, seq: Number(e.seq), method: e.method_version, version_key: e.engine_version_key, score: score ?? 0, band: e.band, caps: e.caps, holds: e.holds, period: `${e.period_start}/${e.period_end}`, as_of: e.valuation_time, receipt_sha256: digest, public_sha256: digest, receipt: body, block_height: 100};
+};
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 
 const buyerKey = KeyPair.fromRandom('ed25519');
@@ -237,7 +241,7 @@ test('redteam_r2 N6 six processes breaking one stale lock accept a nonce once', 
 
 test('redteam_r2 N6 a missing store is not created unless init is explicit', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'truenav-uninit-'));
-  await assert.rejects(() => initSpendStore(dir), /TRUENAV_SPEND_STORE_INIT/);
+  await assert.rejects(() => initSpendStore(dir), /spend-init\.mjs/);
   assert.equal(existsSync(join(dir, 'state.json')), false);
   const created = await initSpendStore(dir, { create: true });
   assert.equal(created, dir);
@@ -284,6 +288,53 @@ test('redteam_r2 N6 the cheap limiter bounds keys and rejects a long key', () =>
     assert.throws(() => cheap.allow('ip', 'x'.repeat(8192), 1000), /rate limit key rejected/);
     assert.ok(cheap.size() <= 32);
   } finally { cheap.stop(); }
+});
+
+test('redteam_r2 N6 expired nonce files under used/ are removed', async () => {
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-used-')), { create: true });
+  const {createHash} = await import('node:crypto');
+  const {mkdirSync: mk} = await import('node:fs');
+  mk(join(dir, 'used'), {recursive: true});
+  writeFileSync(join(dir, 'used', createHash('sha256').update('gone').digest('hex')), '1');
+  writeFileSync(join(dir, 'state.json'), JSON.stringify({v: 1, nonces: {keep: 200000}, buyers: {}}));
+  await reserveSpend(dir, {buyer: 'stay', nonce: 'fresh', nowMs: 100000, exp: 160000, limit: 8, windowMs: 60000});
+  assert.equal(existsSync(join(dir, 'used', createHash('sha256').update('gone').digest('hex'))), false);
+});
+
+test('redteam_r2 N6 a 503 body does not include a path or mode', async () => {
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-503-')), { create: true });
+  writeFileSync(join(dir, 'state.json'), '{not json');
+  const body = JSON.stringify({token_id: v3.token_id, score: 58, band: 'red', method: 'cashflow-v2.1.0', caps: [], holds: [], as_of: '2026-11-08T12:00:00Z'});
+  const rec = {token_id: v3.token_id, seq: 1, method: 'cashflow-v2.1.0', version_key: 'ab'.repeat(32), score: 58, band: 'red', caps: [], holds: [], period: '2026-10', as_of: '2026-11-08T12:00:00Z', receipt_sha256: sha(body), receipt: body};
+  const q = queryChain(rec);
+  q.buy('buyer.testnet', 'buyer-503-00000001', 'report', v3.token_id);
+  await serve(q.chain, async (url) => {
+    const res = await fetch(`${url}/fund/${v3.token_id}/report`, {headers: buyerProof('buyer-503-00000001', 'report', v3.token_id).headers});
+    const body = await res.json();
+    assert.equal(res.status, 503);
+    assert.equal(body.detail, undefined);
+    assert.equal(JSON.stringify(body).includes('/'), false);
+    assert.equal(JSON.stringify(body).includes('mode'), false);
+  }, dir);
+});
+
+test('redteam_r2 N6 trust proxy takes the hop from the right', async () => {
+  const body = JSON.stringify({token_id: v3.token_id, score: 99, band: 'green', method: 'cashflow-v2.1.0', caps: [], holds: [], as_of: '2026-11-08T12:00:00Z'});
+  const rec = {token_id: v3.token_id, seq: 1, method: 'cashflow-v2.1.0', version_key: 'ab'.repeat(32), score: 99, band: 'green', caps: [], holds: [], period: '2026-10', as_of: '2026-11-08T12:00:00Z', receipt_sha256: sha(body), receipt: body};
+  const q = queryChain(rec);
+  let seen = [];
+  const inner = q.chain.view.bind(q.chain);
+  q.chain.view = async (...args) => { seen.push('view'); return inner(...args); };
+  await serve(q.chain, async (url) => {
+    const forged = Array.from({length: 100}, (_, i) => `10.0.0.${i % 50}`).join(', ');
+    const headers = {'x-forwarded-for': `${forged}, 203.0.113.9`};
+    const first = await fetch(`${url}/fund/${v3.token_id}/score`, {headers});
+    assert.equal(first.status, 200);
+    const flood = await Promise.all(Array.from({length: 8}, () => fetch(`${url}/fund/${v3.token_id}/score`, {headers: {'x-forwarded-for': `${forged}, 203.0.113.9`}})));
+    assert.ok(flood.some((r) => r.status === 429), 'the real right-hand client was limited');
+    const other = await fetch(`${url}/fund/${v3.token_id}/score`, {headers: {'x-forwarded-for': `${forged}, 198.51.100.7`}});
+    assert.equal(other.status, 200);
+  }, await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-proxy-')), { create: true }), {preIpLimit: 3, preBuyerLimit: 30, trustProxy: true, proxyHops: 1});
 });
 
 test('redteam_r2 N6 /score is rate limited before chain views', async () => {

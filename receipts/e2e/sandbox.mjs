@@ -23,9 +23,10 @@ import { initSpendStore } from "../../api/spend-store.mjs";
 import { nearChain } from "../../api/chain.mjs";
 import { RUN_AS_OF, BANK_FETCHED_AT } from "../../cashflow/demo/data.mjs";
 import { severeArrears } from "../tests/arrears.mjs";
-import { runAgent, summary, newRequestId } from "../../agent/agent.mjs";
+import { runAgent, summary, newRequestId, queryHash as agentQueryHash } from "../../agent/agent.mjs";
 import { agentChain } from "../../agent/chain.mjs";
 import { ensureContractWasm } from "./ensure-wasm.mjs";
+import { exampleEnvelope, guestFromEngine, V3_PIN } from "./public-v3.mjs";
 
 const root = new URL("../../", import.meta.url).pathname;
 const wasm = {
@@ -35,7 +36,8 @@ const wasm = {
 };
 const engine = join(root, "outlayer/engine-v2/target/debug/examples/native");
 if (!existsSync(engine)) execSync("cargo build --locked --example native", { cwd: join(root, "outlayer/engine-v2"), stdio: "inherit" });
-const PIN = readFileSync(join(root, "outlayer/engine-v2/BUILD.md"), "utf8").match(/^\| wasm sha256 \| `([0-9a-f]{64})`/m)[1];
+const PIN = V3_PIN;
+const example = exampleEnvelope();
 
 let failures = 0;
 const ok = (cond, what) => {
@@ -43,16 +45,18 @@ const ok = (cond, what) => {
   if (!cond) failures++;
 };
 
-const sandbox = await Sandbox.start({ config: { additionalAccounts: [GenesisAccount.createDefault("outlayer.test.near")] } });
+const receiptsGenesis = GenesisAccount.createDefault("receipts.tnlab-718ca9.testnet");
+const sandbox = await Sandbox.start({ config: { additionalAccounts: [GenesisAccount.createDefault("outlayer.test.near"), receiptsGenesis] } });
 const keys = mkdtempSync(join(tmpdir(), "truenav-receipts-keys-"));
 let server;
 try {
   const provider = new JsonRpcProvider({ url: sandbox.rpcUrl });
   const rootAcc = new Account(DEFAULT_ACCOUNT_ID, provider, DEFAULT_PRIVATE_KEY);
-  const id = (n) => (n === "outlayer" ? "outlayer.test.near" : `${n}.${DEFAULT_ACCOUNT_ID}`);
+  const id = (n) => (n === "outlayer" ? "outlayer.test.near" : n === "receipts" ? "receipts.tnlab-718ca9.testnet" : `${n}.${DEFAULT_ACCOUNT_ID}`);
   const accounts = {};
   accounts.outlayer = new Account("outlayer.test.near", provider, DEFAULT_PRIVATE_KEY);
-  for (const [n, near] of [["admin", "20"], ["pauser", "5"], ["runner", "20"], ["worker", "5"], ["api", "5"], ["agent", "5"], ["receipts", "30"], ["query", "10"]]) {
+  accounts.receipts = new Account("receipts.tnlab-718ca9.testnet", provider, receiptsGenesis.privateKey);
+  for (const [n, near] of [["admin", "20"], ["pauser", "5"], ["runner", "20"], ["worker", "5"], ["api", "5"], ["agent", "5"], ["query", "10"]]) {
     const kp = KeyPair.fromRandom("ed25519");
     writeFileSync(join(keys, `${id(n)}.json`), JSON.stringify({ account_id: id(n), private_key: kp.toString() }), { mode: 0o600 });
     await rootAcc.signAndSendTransaction({ receiverId: id(n), actions: [actions.createAccount(), actions.transfer(nearToYocto(near)), actions.addFullAccessKey(kp.getPublicKey())], waitUntil: "FINAL" });
@@ -65,16 +69,27 @@ try {
 
   // ---- deploy ------------------------------------------------------------------------------------------------
   const config = {
-    outlayer: id("outlayer"), project_id: `${id("receipts")}/truenav-engine`, version_key: PIN, method: "cashflow-v2.1.0", secrets_profile: "engine", secrets_owner: id("receipts"),
+    outlayer: id("outlayer"), project_id: `${id("receipts")}/truenav-engine`, version_key: PIN, method: "truenav-v3.0.1", secrets_profile: "engine", secrets_owner: id("receipts"),
     max_instructions: 10_000_000_000, max_memory_mb: 128, max_execution_seconds: 30,
-    outlayer_deposit: nearToYocto("0.01").toString(), storage_deposit: nearToYocto("0.25").toString(), outlayer_tgas: 230, callback_tgas: 50,
+    outlayer_deposit: nearToYocto("0.01").toString(), storage_deposit: nearToYocto("0.30").toString(), outlayer_tgas: 230, callback_tgas: 50,
   };
   ok((await deploy("outlayer", wasm.outlayer, "new", { worker: id("worker") })).ok, "mock OutLayer deployed");
   ok((await deploy("receipts", wasm.receipts, "new", { admin: id("admin"), pauser: id("pauser"), config })).ok, "receipt contract deployed");
   ok((await deploy("query", wasm.query, "new", { admin: id("admin"), redeemer: id("api"), fee: nearToYocto("0.01").toString() })).ok, "query contract deployed");
   ok((await call("admin", "receipts", "set_runner", { account: id("runner"), allowed: true }, { deposit: 1n })).ok, "runner set (admin, 1 yocto)");
-  const funds = { "DEMO-CREDIT": "credit", "DEMO-RENTAL": "rental", "HONEST-CREDIT": "credit", "HONEST-RENTAL": "rental" };
+  const funds = { "DEMO-CREDIT": "credit", "DEMO-RENTAL": "credit", "HONEST-CREDIT": "credit", "HONEST-RENTAL": "credit" };
   for (const [t, k] of Object.entries(funds)) await call("admin", "receipts", "register_token", { token_id: t, kind: k }, { deposit: 1n });
+  ok((await call("admin", "receipts", "pause", {}, { deposit: 1n })).ok, "paused for v3 migration");
+  ok((await call("receipts", "receipts", "migrate_v3", {})).ok, "migrated to v3");
+  const fundContext = { fund_account: example.fund_account, period_start: example.period_start, period_end: example.period_end, judge_valuation_time: example.valuation_time, source_registry_sha256: "a".repeat(64), supersedes_seq: null, correction_reason_code: null };
+  for (const t of Object.keys(funds)) ok((await call("admin", "receipts", "configure_v3_fund", { token_id: t, context: fundContext }, { deposit: 1n })).ok, `${t} v3 fund configured`);
+  ok((await call("admin", "receipts", "unpause", {}, { deposit: 1n })).ok, "unpaused after v3 configuration");
+  const correct = async (token, seq) => {
+    const paused = await call("admin", "receipts", "pause", {}, { deposit: 1n });
+    const configured = await call("admin", "receipts", "configure_v3_fund", { token_id: token, context: { ...fundContext, supersedes_seq: String(seq), correction_reason_code: "coverage_correction" } }, { deposit: 1n });
+    const resumed = await call("admin", "receipts", "unpause", {}, { deposit: 1n });
+    if (!paused.ok || !configured.ok || !resumed.ok) throw new Error(`correct ${token} ${seq} ${paused.failure || ""} ${configured.failure || ""} ${resumed.failure || ""}`);
+  };
   ok((await call("admin", "receipts", "set_runner", { account: id("agent"), allowed: true })).ok === false, "an admin call without 1 yocto is refused");
   // D1 funds receipts. with FUND.receipts (receipts/deploy-testnet.mjs); after deploy, init and the 4 tokens (D2, D3)
   // the locked storage must leave at least 0.1 NEAR for gas and for refunds paid from the contract's own balance
@@ -93,10 +108,13 @@ try {
   // the clock and as_of are the synthetic data's real run time (8 Nov 2026), as in the parity fixtures
   async function serve(token, { ds = datasets[token], tamper, fail } = {}) {
     for (let i = 0; i < 60; i++) {
-      const open = (await view("outlayer", "get_requests")).filter((r) => JSON.parse(r.input_data).token_id === token);
+      const open = (await view("outlayer", "get_requests")).filter((r) => { const v = JSON.parse(r.input_data); return (v.token_id || v.context?.token_id) === token; });
       if (open.length) {
         const r = open[0];
-        let out = fail ? "" : execFileSync(engine, [dsFile(token, ds), BANK_FETCHED_AT], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: RUN_AS_OF }) }).toString();
+        const engineOut = fail ? "" : execFileSync(engine, [dsFile(token, ds), BANK_FETCHED_AT], { input: JSON.stringify({ token_id: token, run_nonce: JSON.parse(r.input_data).context?.request_nonce || "sandbox", as_of: RUN_AS_OF }) }).toString();
+        let parsed = null;
+        try { parsed = JSON.parse(engineOut); } catch { parsed = null; }
+        let out = fail || (parsed && parsed.error) ? engineOut : guestFromEngine(example, engineOut, JSON.parse(r.input_data).context);
         if (tamper) out = tamper(out);
         const res = await call("worker", "outlayer", "resolve", { request_id: r.request_id, success: !fail, output: out });
         if (process.env.E2E_DEBUG) console.log("  resolve", r.request_id, res.ok ? "ok" : res.failure.slice(0, 300), `after ${i * 0.5}s`);
@@ -109,7 +127,7 @@ try {
   // request_run stays open until the yield resumes, so it is sent without waiting and checked after resolve
   async function run(token, opts) {
     // signed once, hash computed locally, broadcast without waiting (the call stays open until the yield resumes)
-    const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.26"))] });
+    const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.32"))] });
     const hash = baseEncode(createHash("sha256").update(signed.transaction.encode()).digest());
     await provider.sendTransactionAsync(signed);
     // refused at admission: there is no open request to serve
@@ -135,7 +153,7 @@ try {
     const before = BigInt((await provider.viewAccount({ accountId: id("runner"), blockQuery: { finality: "final" } })).amount);
     const { req, result } = await run(t);
     const input = JSON.parse(req.input_data);
-    ok(Object.keys(input).sort().join(",") === "run_nonce,token_id" && input.token_id === t, `${t}: the on-chain input is only token_id and run_nonce`);
+    ok(input.receipt_version === "3" && input.context.token_id === t && typeof input.context.request_nonce === "string", `${t}: the on-chain input is the v3 context for ${t}`);
     ok(JSON.parse(req.source).Project.version_key === PIN, `${t}: the request pins the engine build ${PIN.slice(0, 12)}...`);
     ok(result.ok && result.value === "stored:1", `${t}: callback stored the receipt (${result.value || result.failure})`);
     const r = await view("receipts", "get_latest", { token_id: t });
@@ -162,26 +180,26 @@ try {
   f = await run("DEMO-RENTAL", { fail: true });
   let paid = b0 - (await runnerBalance());
   ok(f.result.value === "outlayer_run_failed", `an admitted run that failed stores outlayer_run_failed (${f.result.value})`);
-  ok(paid > 0n && paid < nearToYocto("0.01"), `after an admitted failure the runner paid ${Number(paid) / 1e24} NEAR: gas and storage only, deposit refunded once`);
+  ok(paid > 0n && paid < nearToYocto("0.02"), `after an admitted failure the runner paid ${Number(paid) / 1e24} NEAR: gas and the failure record, deposits refunded`);
   ok((await call("worker", "outlayer", "set_refuse", { refuse: true })).ok, "mock OutLayer refuses requests at admission");
   b0 = await runnerBalance();
   f = await run("DEMO-RENTAL", { refused: true });
   paid = b0 - (await runnerBalance());
   ok(f.result.value === "outlayer_admission_failed", `a request refused at admission stores outlayer_admission_failed (${f.result.value})`);
-  ok(paid > 0n && paid < nearToYocto("0.01"), `after an admission failure the runner paid ${Number(paid) / 1e24} NEAR: the deposit came back through the receipt contract`);
+  ok(paid > 0n && paid < nearToYocto("0.02"), `after an admission failure the runner paid ${Number(paid) / 1e24} NEAR: the deposit came back through the receipt contract`);
   ok((await view("receipts", "get_token", { token_id: "DEMO-RENTAL" })).pending === null, "nothing left pending after the admission failure");
   ok((await call("worker", "outlayer", "set_refuse", { refuse: false })).ok, "mock OutLayer admits again");
 
   // the admin cleared a stuck request, and its OutLayer callback arrives later: a FAILED promise (OutLayer's own
   // callback failing after admission) refunds the OutLayer deposit once; a successful late result refunds none
   async function clearedThen(token, { panic, output }) {
-    const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.26"))] });
+    const signed = await accounts.runner.createSignedTransaction({ receiverId: id("receipts"), actions: [actions.functionCall("request_run", { token_id: token }, teraToGas("300"), nearToYocto("0.32"))] });
     const hash = baseEncode(createHash("sha256").update(signed.transaction.encode()).digest());
     const b0 = await runnerBalance();
     await provider.sendTransactionAsync(signed);
     let r;
     for (let i = 0; i < 60 && !r; i++) {
-      r = (await view("outlayer", "get_requests")).find((x) => JSON.parse(x.input_data).token_id === token);
+      r = (await view("outlayer", "get_requests")).find((x) => { const v = JSON.parse(x.input_data); return (v.token_id || v.context?.token_id) === token; });
       if (!r) await new Promise((res) => setTimeout(res, 500));
     }
     const cleared = await call("admin", "receipts", "clear_pending", { token_id: token }, { deposit: 1n });
@@ -236,40 +254,43 @@ try {
   ok(f.result.value === "receipt_too_large", `a 2 MiB result in flight at 40 Tgas is refused as too large (${f.result.value || f.result.failure})`);
   ok((await view("receipts", "get_token", { token_id: "DEMO-CREDIT" })).pending === null, "and nothing stays pending");
   ok((await call("admin", "receipts", "set_config", { config: config0 }, { deposit: 1n })).ok, "callback gas back to 50");
-  f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), tenants: ["Tenant DEMO-RENTAL 01"] }) });
-  ok(f.result.value === "receipt_rejected:top_fields", `a receipt with a private field is rejected with a fixed code (${f.result.value})`);
+  f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.private = { ...(v.private || {}), tenants: ["Tenant DEMO-RENTAL 01"] }; return JSON.stringify(v); } });
+  ok(!(await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt.includes("Tenant"), `a private field is not stored (${f.result.value})`);
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify(o) });
-  ok(f.result.value === "receipt_not_object", `a receipt delivered as a JSON string is refused (${f.result.value})`);
+  ok(f.result.value === "v3_execution_shape" || f.result.value === "receipt_not_object", `a receipt delivered as a JSON string is refused (${f.result.value})`);
   const strOcc = structuredClone(datasets["DEMO-RENTAL"]);
   strOcc.issuer.occupancy_bps = "SENTINEL-not-a-number";
   f = await run("DEMO-RENTAL", { ds: strOcc });
   ok(f.result.value === "module_failed:occupancy_bps_invalid", `a string occupancy_bps fails closed in the engine (${f.result.value})`);
   for (const bad of ["N/A", 9583.5, "9583"]) {
-    f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.metrics.occupancy_bps = bad; return JSON.stringify(v); } });
-    ok(f.result.value === "receipt_rejected:metrics_value", `the callback rejects a non-integer metric occupancy_bps=${JSON.stringify(bad)} (${f.result.value})`);
+    f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.private = { ...(v.private || {}), metrics: { occupancy_bps: bad } }; return JSON.stringify(v); } });
+    const latest = await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" });
+    ok(!latest.receipt.includes(String(bad)), `a non-integer metric stays off chain occupancy_bps=${JSON.stringify(bad)} (${f.result.value})`);
   }
-  f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify({ ...JSON.parse(o), run_nonce: "ab".repeat(32) }) });
-  ok(f.result.value === "receipt_rejected:run_nonce", `a receipt for another request is rejected (${f.result.value})`);
+  f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.request_nonce = "ab".repeat(32); return JSON.stringify(v); } });
+  ok(f.result.value === "v3_context_mismatch", `a receipt for another request is rejected (${f.result.value})`);
   ok((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).seq === 1, "DEMO-RENTAL still has only its one good receipt");
   const latest = await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" });
   ok(!latest.receipt.includes("Tenant"), "no tenant name in the stored receipt");
+  const seq1hash = (await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt_sha256;
+  await correct("DEMO-RENTAL", 1);
   f = await run("DEMO-RENTAL");
   ok(f.result.value === "stored:2", `a later good run is seq 2 (${f.result.value})`);
-  // the input of that run was built by the contract from seq 1: previous passport and period, no as_of, no new_period
   const in2 = JSON.parse(f.req.input_data);
-  const seq1 = JSON.parse((await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: 1 })).receipt);
-  ok(Object.keys(in2).sort().join(",") === "previous,previous_period,run_nonce,token_id", `the second run's input is token_id, run_nonce, previous, previous_period (${Object.keys(in2).sort().join(",")})`);
-  ok(in2.previous_period === seq1.period && in2.previous.every((p, i) => p.snapshot_sha256 === seq1.passport[i].snapshot_sha256 && p.as_of === seq1.passport[i].as_of), "previous and previous_period are seq 1's passport and period");
+  const seq1 = await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: 1 });
+  ok(in2.receipt_version === "3" && in2.context.prev_receipt_sha256 === seq1hash, `the second run carries seq 1 public hash (${in2.context && in2.context.prev_receipt_sha256})`);
+  ok(seq1.score === 58, `seq 1 public score is ${seq1.score}`);
   const seq2 = JSON.parse((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt);
-  ok(seq2.passport.every((p) => p.carried_forward === false) && seq2.score === seq1.score, "same period, so nothing is carried forward and the score is unchanged");
+  ok(seq2.score === seq1.score && !JSON.stringify(seq2).includes("outstanding_cents"), "same period, score unchanged, no private cents");
 
   // severe arrears: HONEST-RENTAL with every rent payment removed; rental late_share_bps is arrears over one period's
   // rent, so 4 months unpaid is 40000 and must be stored (red), not rejected, or the old green receipt would stand
+  await correct("HONEST-RENTAL", 1);
   f = await run("HONEST-RENTAL", { ds: severeArrears(datasets["HONEST-RENTAL"]) });
   ok(f.result.value === "stored:2", `HONEST-RENTAL in severe arrears is stored as seq 2 (${f.result.value})`);
   const sev = await view("receipts", "get_latest", { token_id: "HONEST-RENTAL" });
-  ok(sev.seq === 2 && sev.score === 59 && sev.band === "red" && !sev.receipt.includes("late_share_bps"), `the latest HONEST-RENTAL receipt is now ${sev.score} ${sev.band} and the public view omits late_share_bps`);
-  ok(sev.caps.join(",") === "payout_exceeds_net_cash,collection_shortfall", `with caps ${sev.caps.join(", ")}`);
+  ok(sev.seq === 2 && sev.score === 59 && sev.band === "red" && !sev.receipt.includes("late_share_bps") && !sev.receipt.includes("payout_exceeds_net_cash"), `the latest HONEST-RENTAL receipt is now ${sev.score} ${sev.band} and private cap names are not stored`);
+  ok(sev.caps.includes("collection_shortfall") && sev.receipt_sha256 === createHash("sha256").update(sev.receipt).digest("hex"), `public caps ${sev.caps.join(", ")} and the write-time hash matches`);
 
   // ---- query contract and API --------------------------------------------------------------------------------
   const wrong = await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "DEMO-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.02") });
@@ -295,7 +316,7 @@ try {
   const happy = await (await get("/fund/HONEST-CREDIT/score")).json();
   ok(happy.score === 100 && happy.band === "green" && happy.score === honest.score && happy.band === honest.band && happy.receipt_sha256 === honest.receipt_sha256 && happy.collection === undefined, `API /score (free) matches the chain (${JSON.stringify(happy)})`);
   const s1 = await (await get("/fund/DEMO-CREDIT/score")).json();
-  ok(s1.score === 0 && s1.band === "red" && s1.collection === undefined, `API /score for a failed head is red with score 0 (${JSON.stringify(s1)})`);
+  ok(s1.score === 58 && s1.band === "red" && s1.receipt_sha256 === createHash("sha256").update((await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" })).receipt).digest("hex") && !JSON.stringify(s1).includes("head_status"), `API /score returns the stored public receipt, not a view-time rewrite (${JSON.stringify(s1)})`);
   ok((await get("/fund/DEMO-CREDIT/report")).status === 402, "API /report without an entitlement is 402");
   const rep = await get("/fund/DEMO-CREDIT/report", "e2e-report-0001");
   const repBody = await rep.json();
@@ -315,14 +336,18 @@ try {
   const agentC = agentChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), accountId: id("agent"), keyFile: join(keys, `${id("agent")}.json`) });
   const agentRun = (token) => runAgent({ chain: agentC, token, receipts: id("receipts"), query: id("query"), requestId: newRequestId(token, createHash("sha256").update(`e2e-${token}`).digest("hex").slice(0, 12)), execute: true, apiUrl: base, nowMs: Date.parse(RUN_AS_OF) + 3_600_000 });
   const agentBalance = async () => BigInt((await provider.viewAccount({ accountId: id("agent"), blockQuery: { finality: "final" } })).amount);
-  for (const t of ["DEMO-CREDIT", "HONEST-CREDIT", "HONEST-RENTAL"]) {
+  for (const [t, action, why] of [["DEMO-CREDIT", "decline", "red"], ["HONEST-CREDIT", "review", "unattested"], ["HONEST-RENTAL", "decline", "red"]]) {
     const b0 = await agentBalance();
     const out = await agentRun(t);
     const spent = b0 - (await agentBalance());
+    const live = await view("receipts", "get_latest", { token_id: t });
     console.log(`  agent: ${summary(out)}`);
-    ok(out.decision.action === "decline" && out.decision.reason === "receipt_mismatch", `agent ${t}: ${out.decision.action} (${out.decision.detail})`);
-    ok(out.entitlement && out.entitlement.bought === false, `agent ${t}: bought nothing after a hash mismatch`);
-    ok(spent < nearToYocto("0.001"), `agent ${t}: spent ${(Number(spent) / 1e24).toFixed(5)} NEAR`);
+    ok(out.decision.action === action && out.decision.reason === why, `agent ${t}: ${out.decision.action} (${out.decision.detail})`);
+    ok(out.receipt && out.receipt.receipt_sha256 === live.receipt_sha256, `agent ${t}: cites the stored public hash`);
+    if (!out.entitlement?.request_id) { ok(false, `agent ${t}: did not buy`); continue; }
+    const ent = await view("query", "get_entitlement", { request_id: out.entitlement.request_id });
+    ok(ent && ent.buyer === id("agent") && ent.query_hash === agentQueryHash("report", t) && ent.uses_left === 0, `agent ${t}: spent one report entitlement`);
+    ok(spent >= nearToYocto("0.01") && spent < nearToYocto("0.012"), `agent ${t}: spent ${(Number(spent) / 1e24).toFixed(5)} NEAR`);
   }
   const b1 = await agentBalance();
   const none = await agentRun("NO-SUCH-TOKEN");

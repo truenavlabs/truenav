@@ -376,8 +376,9 @@ fn the_requester_pays_for_the_pending_record_and_everything_the_run_stores() {
     assert_eq!(c.on_run_result("DEMO-RENTAL".into(), p["request_id"].as_u64().unwrap()), "stored:1");
     let refund = transfers()[0].1;
     let charged = storage - refund;
-    // at least the pending record plus the receipt bytes; the record also stores its index fields
-    assert!(charged >= (pending_bytes + out.len() as u128) * BYTE, "charged {charged}");
+    let stored = c.get_latest("DEMO-RENTAL".into()).unwrap();
+    // at least the pending record plus the public projection; the private engine JSON is not stored
+    assert!(charged >= (pending_bytes + stored.receipt.len() as u128) * BYTE, "charged {charged}");
     assert!(charged < (pending_bytes + 2 * out.len() as u128 + 1_000) * BYTE, "charged {charged}");
 }
 
@@ -609,10 +610,7 @@ fn redteam_r1_public_v2_views_must_not_expose_exact_cents() {
     assert!(receipt.get("parts_x100").is_none(), "parts_x100 is on the public view");
     assert!(receipt.get("raw_x100").is_none(), "raw_x100 is on the public view");
     assert!(receipt.get("uncapped_score").is_none(), "uncapped_score is on the public view");
-    assert!(
-        receipt["metrics"].get("cash_received_cents").is_none(),
-        "exact cents are on the public view"
-    );
+    assert!(receipt.get("metrics").is_none(), "metrics are on the public view");
 }
 
 #[test]
@@ -649,4 +647,58 @@ fn redteam_r1b_public_history_and_receipt_must_not_expose_exact_money() {
         }
     }
     assert!(leaked.is_empty(), "public views still expose exact figures: {leaked:?}");
+}
+
+#[test]
+fn private_fields_never_reach_state_views_or_events() {
+    let mut c = setup();
+    assert_eq!(
+        run_with(&mut c, "DEMO-CREDIT", |n| Some(engine_output("DEMO-CREDIT", n, |_| {}))),
+        "stored:1"
+    );
+    let latest = c.get_latest("DEMO-CREDIT".into()).unwrap();
+    let wrapped = c.get_receipt("DEMO-CREDIT".into(), 1).unwrap().to_string();
+    let history = c.get_history("DEMO-CREDIT".into(), None, Some(1));
+    let logs = get_logs().join("\n");
+    let blobs = [latest.receipt.clone(), wrapped, history[0].receipt.clone(), logs];
+    let needles = [
+        "uncapped_score",
+        "outstanding_cents",
+        "cash_received_cents",
+        "parts_x100",
+        "raw_x100",
+        "metrics",
+        "916666",
+        "850000000",
+    ];
+    let mut leaked = Vec::new();
+    for needle in needles {
+        for (i, text) in blobs.iter().enumerate() {
+            if text.contains(needle) {
+                leaked.push(format!("blob {i} contains {needle}"));
+            }
+        }
+    }
+    assert!(leaked.is_empty(), "{leaked:?}");
+    assert_eq!(
+        latest.receipt_sha256,
+        hex_sha(&latest.receipt),
+        "public hash must be the write-time hash of the stored body"
+    );
+    let parsed: Value = serde_json::from_str(&latest.receipt).unwrap();
+    assert_eq!(parsed["private_commitment"].as_str().unwrap().len(), 64);
+    assert_eq!(parsed["private_salt"].as_str().unwrap().len(), 64);
+}
+
+fn hex_sha(s: &str) -> String {
+    truenav_v3_core::hash(s.as_bytes())
+}
+
+#[test]
+fn canonical_public_golden_matches_js() {
+    let v = json!({"b": 1, "a": "x", "nested": {"z": true, "m": [2, 1]}});
+    assert_eq!(
+        truenav_v3_core::canonical(&v).unwrap(),
+        "{\"a\":\"x\",\"b\":1,\"nested\":{\"m\":[2,1],\"z\":true}}"
+    );
 }

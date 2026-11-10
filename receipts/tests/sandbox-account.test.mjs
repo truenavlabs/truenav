@@ -5,6 +5,9 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { containsSandboxAccount, listWasm, scanRoot } from "../check-sandbox-account.mjs";
+import { sourceStamp } from "../e2e/wasm-stamp.mjs";
+import { canonical } from "../../api/receipt.mjs";
+import { writeFileSync as writeStamp } from "node:fs";
 
 const text = "outlayer.test.near";
 
@@ -47,4 +50,33 @@ test("sandbox account scan rejects case, utf16 and nul-split forms and skips the
   const child = spawnSync(process.execPath, [new URL("../check-sandbox-account.mjs", import.meta.url).pathname, "--expect"], { cwd: empty, encoding: "utf8" });
   assert.equal(child.status, 1);
   assert.match(child.stderr, /no wasm/);
+});
+
+test("canonical public form matches the rust golden", () => {
+  assert.equal(canonical({ b: 1, a: "x", nested: { z: true, m: [2, 1] } }), '{"a":"x","b":1,"nested":{"m":[2,1],"z":true}}');
+});
+
+test("wasm stamp changes when a path dep, schema, lock, or toolchain file changes", () => {
+  const root = mkdtempSync(join(tmpdir(), "truenav-stamp-"));
+  const crate = join(root, "receipts");
+  const core = join(root, "engine", "v3-core", "src");
+  mkdirSync(crate, { recursive: true });
+  mkdirSync(core, { recursive: true });
+  writeStamp(join(crate, "Cargo.toml"), 'truenav-v3-core = { path = "../engine/v3-core" }\n');
+  writeStamp(join(crate, "Cargo.lock"), "lock-a\n");
+  writeStamp(join(crate, "lib.rs"), 'const S: &str = include_str!("../engine/v3-core/src/schema.json");\n');
+  writeStamp(join(core, "schema.json"), '{"a":1}\n');
+  writeStamp(join(root, "rust-toolchain.toml"), "channel-a\n");
+  const base = sourceStamp(crate, "sandbox");
+  writeStamp(join(core, "schema.json"), '{"a":2}\n');
+  assert.notEqual(sourceStamp(crate, "sandbox"), base);
+  writeStamp(join(core, "schema.json"), '{"a":1}\n');
+  writeStamp(join(crate, "Cargo.lock"), "lock-b\n");
+  assert.notEqual(sourceStamp(crate, "sandbox"), base);
+  writeStamp(join(crate, "Cargo.lock"), "lock-a\n");
+  writeStamp(join(root, "rust-toolchain.toml"), "channel-b\n");
+  assert.notEqual(sourceStamp(crate, "sandbox"), base);
+  writeStamp(join(root, "rust-toolchain.toml"), "channel-a\n");
+  writeStamp(join(core, "lib.rs"), "fn changed() {}\n");
+  assert.notEqual(sourceStamp(crate, "sandbox"), base);
 });

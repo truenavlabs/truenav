@@ -144,7 +144,11 @@ impl Receipts {
         if !truenav_v3_core::wire::is_v3_method(&r.method) {
             return None;
         }
-        read(&body_key(&token_id, seq.0, &r.receipt_sha256))
+        let id = serde_json::from_str::<Value>(&r.receipt)
+            .ok()
+            .and_then(|v| v.get("receipt_sha256").and_then(|x| x.as_str().map(str::to_string)))
+            .unwrap_or_else(|| r.receipt_sha256.clone());
+        read(&body_key(&token_id, seq.0, &id))
     }
     #[payable]
     pub fn publish_attestation(

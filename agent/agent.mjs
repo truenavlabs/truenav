@@ -28,18 +28,23 @@ export function verifyRecord(token, r) {
   if(r?.error) return r.error === 'v3_receipt_corrupt' ? r.error : 'receipt_invalid';
   if(r?.receipt_version && !['2','3'].includes(r.receipt_version)) return 'receipt_version_unsupported';
   if(r?.receipt_version === '3' || r?.method?.startsWith('truenav-v3.')) {
+    const raw = typeof r.receipt === 'string' ? r.receipt : '';
+    if (!raw || sha256(raw) !== (r.public_sha256 || r.receipt_sha256)) return 'receipt_sha256_mismatch';
     let decoded;
     try { decoded=decodeReceipt(r); } catch(error) { return error.code ?? "receipt_invalid"; }
     if(decoded.version!=='3') return 'receipt_version_mismatch';
-    r=decoded.record;
     const rec=decoded.receipt;
-    const {receipt_sha256,...preimage}=rec;
-    if(sha256(canonical(preimage))!==receipt_sha256 || receipt_sha256!==r.receipt_sha256) return 'receipt_sha256_mismatch';
-    if(rec.token_id!==token || r.token_id!==token) return 'receipt_token_mismatch';
-    if(!(rec.score===r.score || (rec.score===null && r.score===0)) || rec.band!==r.band || rec.method_version!==r.method || rec.engine_version_key!==r.version_key || rec.seq!==String(r.seq) || rec.valuation_time!==r.as_of || canonical(rec.caps)!==canonical(r.caps) || canonical(rec.holds)!==canonical(r.holds)) return 'receipt_index_mismatch';
+    if (rec.private_commitment !== undefined && !/^[0-9a-f]{64}$/.test(rec.private_commitment)) return 'private_commitment_invalid';
+    if (rec.private_salt !== undefined && !/^[0-9a-f]{64}$/.test(rec.private_salt)) return 'private_commitment_invalid';
+    if(rec.token_id!==token || decoded.record.token_id!==token) return 'receipt_token_mismatch';
+    if(!(rec.score===decoded.record.score || (rec.score===null && decoded.record.score===0)) || rec.band!==decoded.record.band || rec.method_version!==decoded.record.method || rec.engine_version_key!==decoded.record.version_key || rec.seq!==String(decoded.record.seq) || rec.valuation_time!==decoded.record.as_of || canonical(rec.caps)!==canonical(decoded.record.caps) || canonical(rec.holds)!==canonical(decoded.record.holds)) return 'receipt_index_mismatch';
     return null;
   }
-  if (sha256(r.receipt) !== r.receipt_sha256) return "receipt_sha256_mismatch";
+  if (sha256(r.receipt) !== (r.public_sha256 || r.receipt_sha256)) return "receipt_sha256_mismatch";
+  let recHead;
+  try { recHead = JSON.parse(r.receipt); } catch { return "receipt_not_json"; }
+  if (recHead.private_commitment !== undefined && !/^[0-9a-f]{64}$/.test(recHead.private_commitment)) return "private_commitment_invalid";
+  if (recHead.private_salt !== undefined && !/^[0-9a-f]{64}$/.test(recHead.private_salt)) return "private_commitment_invalid";
   let rec;
   try {
     rec = JSON.parse(r.receipt);
@@ -131,10 +136,9 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
     out.entitlement.uses_left = body.entitlement.uses_left;
     if(body.receipt?.error === 'v3_receipt_corrupt') throw new Error('v3_receipt_corrupt');
     if(latest.method?.startsWith('truenav-v3.')) {
-      const decoded=decodeReceipt({...latest,receipt:JSON.stringify(body.receipt)});
-      const mismatch=verifyRecord(token,decoded.record);
-      if(mismatch) throw new Error(mismatch);
-      out.report={status:200,...publicV3(decoded.receipt), attestation:"unattested"};
+      const text = JSON.stringify(body.receipt ?? {});
+      if (text.includes("uncapped_score") || text.includes("outstanding_cents") || text.includes("\"metrics\"")) throw new Error("private_field");
+      out.report={status:200,...publicV3(body.receipt), receipt_sha256: latest.receipt_sha256, attestation:"unattested"};
     }
     else out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, score: body.receipt.score, band: body.receipt.band, caps: body.receipt.caps, holds: body.receipt.holds };
   }

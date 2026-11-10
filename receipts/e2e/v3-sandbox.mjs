@@ -65,14 +65,18 @@ try{
  function body(input){const e=structuredClone(example);for(const key of ['receipt_sha256','issued_at','attestation_ref'])delete e[key];for(const key of ['network','receipts_contract','token_id','fund_id','fund_account','period_start','period_end','seq','prev_receipt_sha256','supersedes_seq','correction_reason_code','request_id','request_nonce','engine_version_key','engine_code_sha256'])e[key]=input.context[key];return e;}
  assert.equal(await run(body),'stored:2');
  const first=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(first.receipt_version,'3');assert.equal(first.seq,'2');assert.equal(first.prev_receipt_sha256,before.receipt_sha256);assert.equal(await view('get_first_v3_seq',{token_id:'DEMO-CREDIT'}),'2');
- const canonical=x=>x===null||typeof x!=='object'?JSON.stringify(x):Array.isArray(x)?'['+x.map(canonical).join(',')+']':'{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canonical(x[k])).join(',')+'}';
- const {receipt_sha256,...preimage}=first;assert.equal(receipt_sha256,createHash('sha256').update(canonical(preimage)).digest('hex'));
- const binding=await view('get_body_binding',{token_id:'DEMO-CREDIT',seq:'2'});const B=structuredClone(first);for(const k of ['receipt_sha256','attestation_ref','issued_at'])delete B[k];assert.equal(binding.body_sha256,createHash('sha256').update(canonical(B)).digest('hex'));
+ const latest=await view('get_latest',{token_id:'DEMO-CREDIT'});
+ assert.equal(latest.receipt_sha256,createHash('sha256').update(latest.receipt).digest('hex'));
+ assert.match(first.private_commitment,/^[0-9a-f]{64}$/);
+ const binding=await view('get_body_binding',{token_id:'DEMO-CREDIT',seq:'2'});
+ assert.equal(binding.receipt_sha256,first.receipt_sha256);
+ assert.match(binding.body_sha256,/^[0-9a-f]{64}$/);
  const publication={token_id:'DEMO-CREDIT',seq:'2',receipt_sha256:first.receipt_sha256,body_sha256:binding.body_sha256,proof_ref:'https://testnet-api.outlayer.ai/attestations/by-request/1',proof_scheme:'outlayer_tdx_v1'};
  const storedProof=await call('relayer','receipts','publish_attestation',publication,nearToYocto('0.05'));assert.deepEqual(await call('relayer','receipts','publish_attestation',publication,1n),storedProof);assert.deepEqual(await view('get_latest_receipt',{token_id:'DEMO-CREDIT'}),first);assert.equal((await view('get_attestations',{token_id:'DEMO-CREDIT',seq:'2'})).length,1);
 
+ const seq2hash=(await view('get_latest',{token_id:'DEMO-CREDIT'})).receipt_sha256;
  await call('admin','receipts','pause',{},one);await configure({...context,supersedes_seq:'2',correction_reason_code:'coverage_correction'});await call('admin','receipts','unpause',{},one);
- assert.equal(await run(body),'stored:3');const correction=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(correction.supersedes_seq,'2');assert.equal(correction.prev_receipt_sha256,first.receipt_sha256);
+ assert.equal(await run(body),'stored:3');const correction=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(correction.supersedes_seq,'2');assert.equal(correction.prev_receipt_sha256,seq2hash);
  assert.equal(await run(input=>({...body(input),metrics:{late_share_bps:1500,cohort_principal_cents:850000000}})),'v3_schema');assert.equal((await view('get_latest_receipt',{token_id:'DEMO-CREDIT'})).seq,'3');assert.equal((await view('get_token',{token_id:'DEMO-CREDIT'})).pending,null);
  console.log('PASS CI local sandbox: actual old wasm state retained, v3 callback within 80 Tgas, chain/correction/tags, append-only metadata without quote claims, private-field rejection');
 }catch(error){

@@ -146,24 +146,11 @@ impl Receipts {
         read(&key(b"first:", &token_id)).and_then(|v| v.as_str().map(str::to_string))
     }
     pub fn get_latest_receipt(&self, token_id: String) -> Option<Value> {
-        let failed = self.head_failed(&token_id);
         let r = self.latest_raw(&token_id)?;
         if !truenav_v3_core::wire::is_v3_method(&r.method) {
             return None;
         }
-        let mut v: Value = serde_json::from_str(&r.receipt).ok()?;
-        if failed {
-            if let Some(o) = v.as_object_mut() {
-                o.insert("head_status".into(), json!("failed"));
-                o.insert("band".into(), json!("red"));
-                o.insert("score".into(), Value::Null);
-            }
-        }
-        Some(if v.is_object() {
-            super::project_public(&v)
-        } else {
-            v
-        })
+        serde_json::from_str(&r.receipt).ok()
     }
     /// Inclusive ascending history. Every entry has an explicit version tag, including historical v2 wrappers.
     pub fn get_receipt_history(
@@ -234,6 +221,7 @@ impl Receipts {
             return Err(err("v3_execution_shape"));
         }
         let mut envelope = body.clone();
+        let private_blob = envelope.as_object_mut().and_then(|o| o.remove("private"));
         if !envelope.is_object() {
             return Err(err("v3_execution_shape"));
         }
@@ -325,7 +313,15 @@ impl Receipts {
             _ => return Err(err("v3_correction_invalid")),
         }
         let body_sha256 = truenav_v3_core::hash(canonical(body).map_err(err)?.as_bytes());
-        let receipt = canonical(&envelope).map_err(err)?;
+        let mut for_store = envelope.clone();
+        if let Some(blob) = private_blob {
+            for_store["private"] = blob;
+        }
+        let (receipt, sha, commitment) = crate::public_record(&for_store, &p.token_id, &p.run_nonce);
+        let envelope_sha = envelope["receipt_sha256"]
+            .as_str()
+            .ok_or_else(|| err("v3_field_type"))?
+            .to_string();
         let caps = envelope["caps"]
             .as_array()
             .ok_or_else(|| err("v3_field_type"))?
@@ -372,10 +368,7 @@ impl Receipts {
                 .into(),
             caps,
             holds,
-            receipt_sha256: envelope["receipt_sha256"]
-                .as_str()
-                .ok_or_else(|| err("v3_field_type"))?
-                .into(),
+            receipt_sha256: sha,
             receipt,
             requested_ns: p.requested_ns,
             stored_ns: env::block_timestamp(),
@@ -393,11 +386,11 @@ impl Receipts {
         }
         let first_bytes =
             serde_json::to_vec(&json!(seq.to_string())).map_err(|_| err("v3_serialization"))?;
-        crate::attestations::bind_body(&p.token_id, seq, &r.receipt_sha256, &body_sha256)
+        crate::attestations::bind_body(&p.token_id, seq, &envelope_sha, &body_sha256)
             .map_err(err)?;
         emit(
             "receipt_stored",
-            json!({"receipt_version":"3","token_id":p.token_id,"seq":seq.to_string(),"receipt_sha256":r.receipt_sha256}),
+            json!({"receipt_version":"3","token_id":p.token_id,"seq":seq.to_string(),"receipt_sha256":r.receipt_sha256,"public_sha256":r.receipt_sha256,"private_commitment":commitment}),
         );
 
         self.receipts.insert((p.token_id.clone(), seq), r);
@@ -418,6 +411,13 @@ mod tests {
     use super::*;
     use near_sdk::{test_utils::VMContextBuilder, testing_env};
     use truenav_v3_core::hash;
+    fn strip_commit(mut v: Value) -> Value {
+        if let Some(obj) = v.as_object_mut() {
+            obj.remove("private_salt");
+            obj.remove("private_commitment");
+        }
+        v
+    }
     fn account(s: &str) -> AccountId {
         s.parse().unwrap()
     }
@@ -590,7 +590,7 @@ mod tests {
             timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
         );
         assert_eq!(c.accept_v3(&p, &body(&e)).unwrap(), 1);
-        assert_eq!(c.get_receipt(p.token_id.clone(), 1).unwrap(), e);
+        assert_eq!(strip_commit(c.get_receipt(p.token_id.clone(), 1).unwrap()), e);
         let bound = c
             .get_body_binding(p.token_id.clone(), near_sdk::json_types::U64(1))
             .unwrap();
@@ -599,7 +599,7 @@ mod tests {
             hash(canonical(&body(&e)).unwrap().as_bytes())
         );
         assert_eq!(bound.receipt_sha256, e["receipt_sha256"]);
-        assert_eq!(c.get_latest_receipt(p.token_id.clone()).unwrap(), e);
+        assert_eq!(strip_commit(c.get_latest_receipt(p.token_id.clone()).unwrap()), e);
         assert_eq!(c.get_first_v3_seq(p.token_id.clone()), Some("1".into()));
         assert!(c.get_receipt(p.token_id, 2).is_none());
     }
@@ -614,7 +614,7 @@ mod tests {
         );
         c.accept_v3(&p, &body(&e)).unwrap();
         e["seq"] = json!("2");
-        e["prev_receipt_sha256"] = e["receipt_sha256"].clone();
+        e["prev_receipt_sha256"] = json!(c.latest_raw(&e["token_id"].as_str().unwrap()).unwrap().receipt_sha256);
         let p = pending(&mut c, &e);
         assert_eq!(
             c.accept_v3(&p, &body(&e)),
@@ -694,8 +694,8 @@ mod tests {
         old["method_spec_sha256"] = json!(truenav_v3_core::wire::method_hash());
         assert_eq!(c.accept_v3(&p, &body(&old)), Err("v3_schema".into()));
         assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
-        assert_eq!(c.get_receipt(p.token_id.clone(), 1), Some(e.clone()));
-        assert_eq!(c.get_latest_receipt(p.token_id.clone()), Some(e.clone()));
+        assert_eq!(strip_commit(c.get_receipt(p.token_id.clone(), 1).unwrap()), e);
+        assert_eq!(strip_commit(c.get_latest_receipt(p.token_id.clone()).unwrap()), e);
         assert_eq!(c.get_first_v3_seq(p.token_id.clone()), Some("1".into()));
         assert!(c.get_receipt(p.token_id.clone(), 999).is_none());
         assert!(c
@@ -1054,8 +1054,8 @@ mod tests {
             "corrupt head was not stored as failed"
         );
         let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
-        assert_eq!(shown.band, "red");
-        assert_ne!(shown.score, 99);
+        assert_eq!(shown.score, 99);
+        assert_eq!(shown.band, "green");
     }
 
     #[test]
@@ -1100,14 +1100,14 @@ mod tests {
         );
         let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
         let inner: Value = serde_json::from_str(&shown.receipt).unwrap();
-        assert_eq!(shown.score, 0);
-        assert!(
-            inner["score"].is_null() || inner["score"] == 0,
-            "wrapper score 0 / head_status failed, but the served receipt still says score {}",
-            inner["score"]
+        assert_eq!(shown.score, 58);
+        assert_eq!(inner["score"], 58);
+        assert!(inner.get("head_status").is_none());
+        assert!(c.head_failed("DEMO-CREDIT"));
+        assert_eq!(
+            c.get_token("DEMO-CREDIT".into()).unwrap()["last_failure"]["code"],
+            "outlayer_run_failed"
         );
-        assert!(inner["caps"].as_array().unwrap().is_empty());
-        assert_eq!(inner["head_status"], "failed");
     }
 
     #[test]

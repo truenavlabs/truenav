@@ -46,7 +46,7 @@ const send = (res, status, body) => {
  * chain: { view(contractId, method, args) -> value, redeem(requestId, queryHash) -> uses_left (throws on refusal),
  * nowNs() -> current chain time in ns as BigInt }. receipts, query: contract account ids. fee: yoctoNEAR string.
  */
-export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, preBuyerLimit, trustProxy = false }) {
+export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, preBuyerLimit, trustProxy = false, proxyHops = 1 }) {
   const latest = (token) => chain.view(receipts, "get_latest", { token_id: token });
   const toBuy = (kind, token, why) => ({ error: "payment_required", reason: why, buy: { contract: query, method: "buy_query", args: { request_id: "<your unique id, 8 to 64 of [A-Za-z0-9_-]>", query_hash: queryHash(kind, token), kind }, attach_yocto: fee } });
   const cheap = createCheapLimiter({ ipLimit: preIpLimit, buyerLimit: preBuyerLimit });
@@ -64,7 +64,12 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
   function clientIp(req) {
     if (trustProxy) {
       const forwarded = req.headers["x-forwarded-for"];
-      if (typeof forwarded === "string" && forwarded.length > 0 && forwarded.length <= 128) return forwarded.split(",")[0].trim();
+      if (typeof forwarded === "string" && forwarded.length > 0 && forwarded.length <= 8192) {
+        const parts = forwarded.split(",").map((part) => part.trim()).filter(Boolean);
+        const hops = Number.isInteger(proxyHops) && proxyHops > 0 ? proxyHops : 1;
+        const index = parts.length - hops;
+        if (index >= 0 && parts[index].length <= 128) return parts[index];
+      }
     }
     return req.socket?.remoteAddress || "unknown";
   }
@@ -112,7 +117,8 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
     try {
       reserved = await reserveSpend(spendStore, { buyer: String(e.buyer), nonce: `${query}|${nonce}`, nowMs, exp, limit: BUYER_LIMIT, windowMs: BUYER_WINDOW_MS });
     } catch (error) {
-      return { status: 503, body: { error: error.code === "spend_store_closed" ? "spend store closed" : "spend store unavailable", detail: String(error.message || "").slice(0, 300) } };
+      console.error(`spend store closed: ${error.message}`);
+      return { status: 503, body: { error: "spend store closed" } };
     }
     if (!reserved.ok) return { status: reserved.error === "buyer rate limit" ? 429 : 403, body: { error: reserved.error } };
     return { id, e };
@@ -141,7 +147,7 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
       r = decoded.record;
       const rec = decoded.receipt;
       if (m[2] === "score") {
-        if (decoded.version === "3") return send(res, 200, { ...publicV3(rec), attestation: "unattested" });
+        if (decoded.version === "3") return send(res, 200, { ...publicV3(rec), receipt_sha256: r.receipt_sha256, public_sha256: r.receipt_sha256, attestation: "unattested" });
         const allowed = new Set(["receipt_version","token_id","seq","method_version","engine_version_key","score","band","caps","holds","synthetic","receipt_sha256"]);
         const body = {
           receipt_version: "2",

@@ -4,7 +4,7 @@
 // is explicit (TRUENAV_SPEND_STORE_INIT=1 or node api/spend-init.mjs). A corrupt state file fails closed.
 import { createHash, randomBytes } from "node:crypto";
 import { chmodSync, constants, existsSync } from "node:fs";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { lstat, mkdir, open, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -17,7 +17,9 @@ export const MAX_LIMIT_KEYS = 1024;
 export const MAX_LIMIT_KEY_LEN = 128;
 const LOCK_WAIT_MS = 3000;
 const STALE_LOCK_MS = 5000;
-const INIT_HINT = "spend store is not initialized. Set TRUENAV_SPEND_STORE_INIT=1 once, or run: node api/spend-init.mjs <dir>. Refusing to create an empty store.";
+const INIT_HINT = "spend store is not initialized. Run: node api/spend-init.mjs <dir>. Refusing to create an empty store.";
+const FLOCK = "/usr/bin/flock";
+const NODE = process.execPath;
 
 function fail(message) {
   const error = new Error(message);
@@ -104,7 +106,16 @@ async function writeState(dir, state) {
   finally { await dirHandle.close(); }
 }
 
+export function probeFlock() {
+  if (process.platform === "win32") fail("util-linux flock is required. This platform has no /usr/bin/flock.");
+  const probe = spawnSync(FLOCK, ["-x", "-w", "1", "/tmp/truenav-flock-probe", NODE, "-e", "process.exit(0)"], { encoding: "utf8" });
+  if (probe.error || probe.status !== 0) {
+    fail("util-linux flock is required (flock -x -w 1). Busybox flock is not enough. Install util-linux and retry.");
+  }
+}
+
 export async function initSpendStore(dir, { create = false } = {}) {
+  probeFlock();
   if (!dir || typeof dir !== "string") fail("spend store path is required");
   if (!existsSync(dir)) {
     if (!create) fail(INIT_HINT);
@@ -128,6 +139,15 @@ export async function initSpendStore(dir, { create = false } = {}) {
   if (!hasState || !hasReady) fail("spend store missing. Restore state.json and READY from backup. Refusing to recreate them.");
   await readState(dir);
   return dir;
+}
+
+async function pruneUsed(dir, state) {
+  const live = new Set(Object.keys(state.nonces).map((nonce) => createHash("sha256").update(nonce).digest("hex")));
+  let names = [];
+  try { names = await readdir(join(dir, "used")); } catch { return; }
+  for (const name of names) {
+    if (!live.has(name)) await unlink(join(dir, "used", name)).catch(() => {});
+  }
 }
 
 function prune(state, nowMs, windowMs) {
@@ -180,7 +200,7 @@ async function ownLock(dir, token) {
 
 function flockHeld(lockPath) {
   return new Promise((resolve, reject) => {
-    const child = spawn("flock", ["-x", "-w", "3", lockPath, "node", "-e", "process.stdout.write('ready\\n'); process.stdin.resume()"], { stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(FLOCK, ["-x", "-w", "3", lockPath, NODE, "-e", "process.stdout.write('ready\\n'); process.stdin.resume()"], { stdio: ["pipe", "pipe", "pipe"] });
     let buf = "";
     const timer = setTimeout(() => {
       child.kill();
@@ -204,9 +224,13 @@ function flockHeld(lockPath) {
 }
 
 async function releaseFlock(child) {
-  if (!child || child.killed) return;
-  child.stdin.end();
-  await new Promise((resolve) => child.on("exit", resolve));
+  if (!child) return;
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  try { child.stdin.end(); } catch { /* already closed */ }
+  await new Promise((resolve) => {
+    if (child.exitCode !== null || child.signalCode !== null) return resolve();
+    child.once("exit", () => resolve());
+  });
 }
 
 async function withLock(dir, fn) {
@@ -268,6 +292,7 @@ export async function reserveSpend(dir, { buyer, nonce, nowMs, exp, limit = BUYE
     if (!(await ownLock(dir, token))) return { ok: false, error: "spend store lock lost" };
     const state = await readState(dir);
     prune(state, nowMs, windowMs);
+    await pruneUsed(dir, state);
     if (state.nonces[nonce]) {
       await writeState(dir, state);
       return { ok: false, error: "spend nonce reused" };

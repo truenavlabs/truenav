@@ -1,5 +1,6 @@
-// Build the guest JSON for a v3 run. The chain payload is the public envelope plus private_commitment.
-// The salt and the private object stay off chain (buyerDeliveries). receipt_sha256 is left for the contract.
+// Build the guest JSON for a v3 run. The chain payload is the public envelope only, so it validates
+// against the frozen v3.0.1 schema. The commitment, the salt and the private object stay off chain
+// (buyerDeliveries). receipt_sha256 is left for the contract.
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { canonical } from "../../api/receipt.mjs";
@@ -38,7 +39,6 @@ export function guestFromEngine(example, engineText, context) {
   }
   const salt = randomBytes(32).toString("hex");
   const commitment = createHash("sha256").update(`truenav-private-v1|${salt}|${canonical(priv)}`).digest("hex");
-  e.private_commitment = commitment;
   buyerDeliveries.push({ token_id: e.token_id, commitment, salt, private_report: priv });
   return JSON.stringify(e);
 }

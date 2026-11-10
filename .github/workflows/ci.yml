@@ -25,6 +25,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/receipt-v3-schema"
           "$RUNNER_TEMP/receipt-v3-schema/bin/pip" install jsonschema==4.23.0
           "$RUNNER_TEMP/receipt-v3-schema/bin/python" receipts/tests/receipt-v3-schema.test.py
+          "$RUNNER_TEMP/receipt-v3-schema/bin/python" receipts/tests/receipt-v3.0.1-schema.test.py
           "$RUNNER_TEMP/receipt-v3-schema/bin/python" receipts/tests/receipt-v3-privacy.test.py
       - run: npm run tee:demo
       - run: npm run eval
@@ -139,6 +140,8 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/engine-privacy"
           "$RUNNER_TEMP/engine-privacy/bin/pip" install jsonschema==4.23.0
           "$RUNNER_TEMP/engine-privacy/bin/python" receipts/tests/engine-v3-privacy.test.py
+      - name: Attestation suite with Rust 1.99.0 (the output parity test runs here, not skipped)
+        run: node --test receipts/attestation/*.test.mjs
       - name: Contract wasm in the pinned image (receipts, query, mock OutLayer, mock signer)
         run: |
           for d in receipts query receipts/mock-outlayer mirror/mock-signer; do

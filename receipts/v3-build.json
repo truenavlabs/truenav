@@ -3,8 +3,8 @@
   "source_base": "ecf179c03a658f3c8353687f215dd7006568c096",
   "method_version": "truenav-v3.0.1",
   "receipts": {
-    "sha256": "b7fb827ac4d51cd2d92090fa5caea88b1e3a3a99c63103411303aa78eb7d1f47",
-    "bytes": 539952,
+    "sha256": "dcb46bd0645749948a72b42e5b35c670433a86e86a692e1947841c21129d2259",
+    "bytes": 555924,
     "image": "sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e",
     "workdir": "/home/near/code/receipts",
     "image_user": "0",
@@ -13,8 +13,9 @@
     "features": []
   },
   "engine": {
-    "sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-    "bytes": 1147741,
+    "sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+    "bytes": null,
+    "bytes_note": "Not printed by CI run 42770701832 attempt 2, which printed only the sha256; record it after the next pinned-image engine build.",
     "toolchain": "1.99.0",
     "target": "wasm32-wasip2",
     "command": "node outlayer/engine-v3/build-pinned.mjs",

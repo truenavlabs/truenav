@@ -11,8 +11,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "harbor-credit-fund",
         "fund_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
@@ -30,7 +30,7 @@
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
         "input_sha256": "e1dc0d161982f559b7ac5b5e475ce26e1806ad04a997ef03360a4b40d9eed414",
-        "receipt_sha256": "2a00bdbd8092546b83b1d9bb112efc4bdbf92f9845bff88b4b58291b2a98fb87",
+        "receipt_sha256": "8709d31bb9ba05a64dff2b0da178a43b945dea15e3f95f40e0749a6ac873df2c",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -3517,8 +3517,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "meridian-yield-fund",
         "fund_id": "meridian-yield-fund",
         "fund_account": "meridian.sim.testnet",
@@ -3536,7 +3536,7 @@
         "request_nonce": "59d4e991ac98c991bed5b0c39d8cb0d11ede44bebe852be9abe49596a1098667",
         "synthetic": true,
         "input_sha256": "c0a4753915c7388970b86ca645c2d61f720ea2f1552679f9c688f16ff6f58e70",
-        "receipt_sha256": "26ebc9313faf40c757517870b25bcd01d02b342722e5222dc645094fca1f78fd",
+        "receipt_sha256": "9b5d20367f04184c417d559a0e618df92f362aa4686a7ead313f871ed6d35554",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -5569,8 +5569,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "harbor-credit-fund",
         "fund_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
@@ -5578,7 +5578,7 @@
         "period_start": "2026-10-01",
         "period_end": "2026-11-01",
         "seq": "2",
-        "prev_receipt_sha256": "2a00bdbd8092546b83b1d9bb112efc4bdbf92f9845bff88b4b58291b2a98fb87",
+        "prev_receipt_sha256": "8709d31bb9ba05a64dff2b0da178a43b945dea15e3f95f40e0749a6ac873df2c",
         "supersedes_seq": "1",
         "correction_reason_code": "source_correction",
         "issued_at": "2026-11-10T12:01:00Z",
@@ -5588,7 +5588,7 @@
         "request_nonce": "472d53dcf3ea90e90226226a520cdb559cfab7d4658dcf2b65c5eb1014ec3689",
         "synthetic": true,
         "input_sha256": "a9530d21f27aa065c309478df407e337462981db333099c94eb3b9b52ff74566",
-        "receipt_sha256": "020859478ee9e9b4c706a1759be362cdc7a19cfc3bc959dd3e763e8b3ac5cf65",
+        "receipt_sha256": "aaa01b964ab1efd36b0c90ef7305548c47705f8f33b23e894287ad051c051492",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -9075,8 +9075,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "harbor-credit-fund",
         "fund_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
@@ -9094,7 +9094,7 @@
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
         "input_sha256": "fd564fb735ce6af1cc0111c54a6800f556a618c8d08c028dad5ce3362a47b04c",
-        "receipt_sha256": "680f86f9570d4859016f97260d70fa255bac1fb51f441f18d398a22852c73995",
+        "receipt_sha256": "8140a5f90c93e6c6aeaded2c99a7e34e80f897c8d2f3c39ac2a3da07fd4bb9a6",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12585,8 +12585,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "harbor-credit-fund",
         "fund_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
@@ -12603,8 +12603,8 @@
         "request_id": "TEST_harbor",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
-        "input_sha256": "3f30a183ff85c13b40224e5cc49245cdfdc9db9784598a503308f7100143248e",
-        "receipt_sha256": "298235d7aabf9e333c83641a28ae7997cd96abea8fce2e67afba3eaa8432e4d2",
+        "input_sha256": "41595491341c0c321a3fcdf2dfed5d6718c31880142b534df93a4a89935498ad",
+        "receipt_sha256": "62cb455f4e838d06a556fcc6630cd572508f60e92ae0184e5b2edddd7507abee",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12629,7 +12629,7 @@
           }
         ],
         "commitments": {
-          "tape": "8a619cc1077805cf9ad93735ffedca8ed6d7deb4faa8685f8f0578611bc2dc77",
+          "tape": "cd8824009ce6502f2fb16789e684dc08f0853da3ddc5f8716f935c8db6ff619f",
           "cash": "b1b670b9e40529bf0b6ff3169a55a1aa4ebc35a36e5864b55f57f8b335e91bda",
           "nav_report": "0a46f336ea265bc00c42bd42d3782513862bd001f13c28574820c8d21bf7f786",
           "pledge_detail": "c7d547137caf7915643ccb254815c9662813b3200efee153d53f48f048698ede",
@@ -12641,7 +12641,7 @@
           "score_x100": "1f65dedbb8de45f2fa61f337a11cfc27dce0a26bb14def87de6dfdec43cad443",
           "parts_x100": "483bf583d74d8904aa0226e0eaad9560baef9496f34a2151c3c5be947610db6d",
           "raw_score": "e2661eb82b1f0584c38f7c2feab733c0325942cd281da886a1f0389f5cd5f244",
-          "full_report": "2442338b8053c5315734bdc8649e3f952097aa8bfd81e8fc2039df1c12f35f01"
+          "full_report": "832188983c564a89b0fb19608582612c19c233e35519580fc040c76c76aa3e81"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -12697,8 +12697,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "harbor-credit-fund",
         "fund_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
@@ -12706,7 +12706,7 @@
         "period_start": "2026-10-01",
         "period_end": "2026-11-01",
         "seq": "2",
-        "prev_receipt_sha256": "298235d7aabf9e333c83641a28ae7997cd96abea8fce2e67afba3eaa8432e4d2",
+        "prev_receipt_sha256": "62cb455f4e838d06a556fcc6630cd572508f60e92ae0184e5b2edddd7507abee",
         "supersedes_seq": "1",
         "correction_reason_code": "coverage_correction",
         "issued_at": "2026-11-10T12:01:00Z",
@@ -12715,8 +12715,8 @@
         "request_id": "TEST_harbor",
         "request_nonce": "885a6462a6e63f2374d4390313cd54554842324130ecd5d05f2226a8dc594e90",
         "synthetic": true,
-        "input_sha256": "12803c80ea44ed85873c809ef4cde1434c7a3ba04dd062188d3d44bdd4e75ba1",
-        "receipt_sha256": "e2faaf21e1a3d7ff04e0666ad9347b1e7e995ef6a9c2374cc1d5607d5617818a",
+        "input_sha256": "6f7a9fbaf2b2980f3743dd845b5b4d306d4cb31699051d619362ff4eabbb00d5",
+        "receipt_sha256": "6c98adfb26001c87c7d0109638a904f724a020da42d472b92fb8bb9aaee834e6",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12741,7 +12741,7 @@
           }
         ],
         "commitments": {
-          "tape": "9ee3265f6e687052bb8cae02cdd615f1f3ee3526e16340f4a938269cf915b279",
+          "tape": "74a269b46e436573afda5e24ddd488814819239043d4aac492f89a95651f8670",
           "cash": "22a5037b5910597871ccbd123abbdb7e4b9a04b4af83dfead15cee044ff66ece",
           "nav_report": "84071946986269bbeea84f1054e05a792030fda60aee67b5c6e45902f4fc8ff7",
           "pledge_detail": "28f36054ead925a4695bfcb1818979571a028479281fb96ebf86292f5d38fba3",
@@ -12753,7 +12753,7 @@
           "score_x100": "7d87d324afbf2e8cce27f8a31f69a77e4bfc5dc8aefacdc77c6ce67f0aa6b89a",
           "parts_x100": "ffd3d9faff4919c15698510941a829dbeab08b24ec3b146b8a16e83515fd8d31",
           "raw_score": "143c0abd6b2b003c7d3d8ab0976c7dbf27928cde0d29a8e8b245b93ffe304cae",
-          "full_report": "15b2f12f7bf6a246aa1699e372c6500f18d8df55ec52a9ed28395fab7d783e27"
+          "full_report": "ad81a8ed7847220e0065e388020d096380a860bac46807f71f1ceb459b7dcd25"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",
@@ -12818,8 +12818,8 @@
         "network": "near_testnet",
         "receipts_contract": "receipts.tnlab-718ca9.testnet",
         "currency": "USD",
-        "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
-        "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+        "engine_version_key": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+        "engine_code_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
         "token_id": "harbor-credit-fund",
         "fund_id": "harbor-credit-fund",
         "fund_account": "harbor.sim.testnet",
@@ -12836,8 +12836,8 @@
         "request_id": "TEST_harbor",
         "request_nonce": "7bb9f59a8ea1a2695e283937c54783e4ab8f1ad618110f3f31320b7a228f3b89",
         "synthetic": true,
-        "input_sha256": "3df3d713b51cb40c83ae0a499ff73e78888556139127b11aa5d883614a98ad24",
-        "receipt_sha256": "5d238149f30fdffd4a00d32eed70efb3504fa52915728fff5f5098f3c13c8f7a",
+        "input_sha256": "70a19cd26fc53a4d210b7ee18640e657adacf3208261c388a0b5bf737fe70b48",
+        "receipt_sha256": "b0a3cad8b32a87bc4f51e6ade9587943b19d0291f6325739d0452c7b3148a115",
         "attestation_ref": null,
         "source_key_ids": [
           {
@@ -12862,7 +12862,7 @@
           }
         ],
         "commitments": {
-          "tape": "8a619cc1077805cf9ad93735ffedca8ed6d7deb4faa8685f8f0578611bc2dc77",
+          "tape": "cd8824009ce6502f2fb16789e684dc08f0853da3ddc5f8716f935c8db6ff619f",
           "cash": "b1b670b9e40529bf0b6ff3169a55a1aa4ebc35a36e5864b55f57f8b335e91bda",
           "nav_report": "0a46f336ea265bc00c42bd42d3782513862bd001f13c28574820c8d21bf7f786",
           "pledge_detail": "62e2d234fbc56043f48c19b15ee9e69ce48575bb97d68faada5a6a71c3c2c9d9",
@@ -12874,7 +12874,7 @@
           "score_x100": "a9c25716f78792590bd8712d1073816b8cf046bcec0614e0dc4899bcec2e5704",
           "parts_x100": "951785cfee7e869cae9f44e534455355cc1f3defbd4e36339c6f1c02f496a8a3",
           "raw_score": "a4e8b472190415ca36c1092d61b9a0291dcf767594dfd66d108abb887a8c6f1b",
-          "full_report": "0d14e91c3f89949f0307587448d9e75027bdf051c022577b9116b65617892b54"
+          "full_report": "e6e241ae9692c5f480f63c2fe724a1297083d8b83d3f861d9409f9e3e854f68e"
         },
         "pledge_scope": {
           "registry_account": "registry.tnlab-718ca9.testnet",

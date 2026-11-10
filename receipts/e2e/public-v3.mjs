@@ -7,7 +7,7 @@ import { canonical } from "../../api/receipt.mjs";
 
 export const buyerDeliveries = [];
 
-export const V3_PIN = "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38";
+export const V3_PIN = "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb";
 const V3_CAPS = new Set(["self_reported_only", "yield_gap", "distribution_funded_by_sponsor", "claimed_not_settled", "collection_shortfall", "pledge_conflict"]);
 
 export function exampleEnvelope() {

@@ -50,6 +50,14 @@ fn read<T: BorshDeserialize>(key: &[u8]) -> Option<T> {
     let raw = env::storage_read(key)?;
     borsh::from_slice(&raw).ok()
 }
+/// Like `read`, but corrupt bytes are an error instead of "absent". Used on the write path, so corrupt
+/// attestation state fails closed (with a refund) instead of being overwritten.
+fn read_strict<T: BorshDeserialize>(key: &[u8]) -> Result<Option<T>, ()> {
+    match env::storage_read(key) {
+        None => Ok(None),
+        Some(raw) => borsh::from_slice(&raw).map(Some).map_err(|_| ()),
+    }
+}
 fn put<T: BorshSerialize>(key: &[u8], v: &T) {
     let Ok(bytes) = borsh::to_vec(v) else {
         return;
@@ -193,7 +201,11 @@ impl Receipts {
             b"record:",
             &identity(&token_id, seq.0, &receipt_sha256, Some(&proof_ref)),
         );
-        if let Some(existing) = read::<AttestationRecord>(&record_key) {
+        let Ok(existing) = read_strict::<AttestationRecord>(&record_key) else {
+            refund(writer, attached);
+            return PublishResult::error("attestation_state_corrupt");
+        };
+        if let Some(existing) = existing {
             require!(
                 existing.token_id == token_id
                     && existing.seq == seq
@@ -207,7 +219,11 @@ impl Receipts {
             return PublishResult::ok(existing);
         }
         let count_key = storage_key(b"count:", &id);
-        let count = read::<u64>(&count_key).unwrap_or(0);
+        let Ok(count) = read_strict::<u64>(&count_key) else {
+            refund(writer, attached);
+            return PublishResult::error("attestation_state_corrupt");
+        };
+        let count = count.unwrap_or(0);
         if count >= MAX_ATTESTATIONS_PER_RECEIPT {
             refund(writer, attached);
             return PublishResult::error("attestation record limit reached");
@@ -657,6 +673,111 @@ mod tests {
         }));
         assert!(again.is_ok());
         assert!(c.get_attestations(b.token_id.clone(), b.seq, None, None).len() <= MAX_ATTESTATIONS_PER_RECEIPT as usize);
+    }
+    fn transfers() -> u128 {
+        use near_sdk::{mock::MockAction, test_utils::get_created_receipts};
+        get_created_receipts()
+            .into_iter()
+            .flat_map(|r| r.actions)
+            .filter_map(|a| match a {
+                MockAction::Transfer { deposit, .. } => Some(deposit.as_yoctonear()),
+                _ => None,
+            })
+            .sum()
+    }
+    fn try_publish(c: &mut Receipts, b: &BodyBinding, n: u64) -> PublishResult {
+        c.publish_attestation(
+            b.token_id.clone(),
+            b.seq,
+            b.receipt_sha256.clone(),
+            b.body_sha256.clone(),
+            reference(n),
+            PROOF_SCHEME.into(),
+        )
+    }
+    fn item_key(b: &BodyBinding, i: u64) -> Vec<u8> {
+        let mut indexed = identity(&b.token_id, b.seq.0, &b.receipt_sha256, None);
+        indexed.extend_from_slice(&i.to_be_bytes());
+        storage_key(b"item:", &indexed)
+    }
+    fn count_key(b: &BodyBinding) -> Vec<u8> {
+        storage_key(
+            b"count:",
+            &identity(&b.token_id, b.seq.0, &b.receipt_sha256, None),
+        )
+    }
+    fn record_key(b: &BodyBinding, n: u64) -> Vec<u8> {
+        storage_key(
+            b"record:",
+            &identity(&b.token_id, b.seq.0, &b.receipt_sha256, Some(&reference(n))),
+        )
+    }
+    /// Each error return refunds the whole deposit and writes nothing.
+    fn assert_refused_with_full_refund(c: &mut Receipts, b: &BodyBinding, n: u64, code: &str) {
+        let attached = NearToken::from_near(1).as_yoctonear();
+        ctx("relayer.testnet", attached, 50);
+        let before = env::storage_usage();
+        let out = try_publish(c, b, n);
+        assert_eq!(out.error.as_deref(), Some(code));
+        assert!(out.record.is_none());
+        assert_eq!(env::storage_usage(), before, "{code}: nothing written");
+        assert_eq!(transfers(), attached, "{code}: whole deposit refunded");
+    }
+    // One case per test: the mocked storage carries over between setup() calls in one test.
+    #[test]
+    fn fix13_per_attester_limit_refunds_the_whole_deposit() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        for n in 1..=3 {
+            publish(&mut c, &b, n);
+        }
+        assert_refused_with_full_refund(&mut c, &b, 4, "attestation record limit reached");
+    }
+    #[test]
+    fn fix13_per_receipt_limit_refunds_the_whole_deposit() {
+        let (mut c, _, b) = setup();
+        put(&count_key(&b), &MAX_ATTESTATIONS_PER_RECEIPT);
+        assert_refused_with_full_refund(&mut c, &b, 1, "attestation record limit reached");
+    }
+    #[test]
+    fn fix13_missing_index_refunds_the_whole_deposit() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        env::storage_remove(&item_key(&b, 0));
+        assert_refused_with_full_refund(&mut c, &b, 2, "attestation_index_missing");
+    }
+    #[test]
+    fn fix13_missing_record_refunds_the_whole_deposit() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        let k = env::storage_read(&item_key(&b, 0)).unwrap();
+        env::storage_remove(&k);
+        assert_refused_with_full_refund(&mut c, &b, 2, "attestation_record_missing");
+    }
+    #[test]
+    fn fix13_corrupt_count_fails_closed_and_does_not_overwrite_slot_zero() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        let first = publish(&mut c, &b, 1);
+        let slot0 = env::storage_read(&item_key(&b, 0)).unwrap();
+        env::storage_write(&count_key(&b), &[1, 2, 3]);
+        assert_refused_with_full_refund(&mut c, &b, 2, "attestation_state_corrupt");
+        assert_eq!(env::storage_read(&item_key(&b, 0)).unwrap(), slot0);
+        assert_eq!(read::<AttestationRecord>(&record_key(&b, 1)), Some(first));
+        assert!(read::<AttestationRecord>(&record_key(&b, 2)).is_none());
+    }
+    #[test]
+    fn fix13_corrupt_record_fails_closed_and_is_not_overwritten() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        env::storage_write(&record_key(&b, 1), &[0xff]);
+        assert_refused_with_full_refund(&mut c, &b, 1, "attestation_state_corrupt");
+        assert_eq!(env::storage_read(&record_key(&b, 1)).unwrap(), vec![0xff]);
+        // reads still treat corrupt bytes as absent (views are unchanged in fix 13)
+        assert!(read::<AttestationRecord>(&record_key(&b, 1)).is_none());
     }
     #[test]
     fn redteam_r1_missing_attestation_record_must_not_panic() {

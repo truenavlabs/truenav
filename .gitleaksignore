@@ -34,3 +34,24 @@ e5130d15848e3d0a1dc8f2cef4ef012b58c4e737:schema/vectors/engine-v3-derived.json:g
 6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12552
 6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12663
 6c878d30b2205c76f3d684f32381faff0d862dee:schema/vectors/engine-v3-derived.json:generic-api-key:12783
+
+# Reviewed F5 pin refresh: the public engine v3 build SHA256 61fe33a0 (receipts/v3-build.json engine.sha256)
+# in engine_version_key, not a secret. Exact pin-commit findings only.
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:14
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:3520
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:5572
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:9078
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:12588
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:12700
+615e46b6701e2e706370d9b37e8e3743944b54e9:schema/vectors/engine-v3-derived.json:generic-api-key:12821
+
+# Reviewed web wireframe fixtures on lab/web-wireframe: version_key and engine_version_key hold the public
+# engine v3 build SHA256 0ffb3e31 (the earlier receipts/v3-build.json engine pin), not a secret. Exact findings only.
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-score.json:generic-api-key:6
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-score.json:generic-api-key:6
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-receipt.json:generic-api-key:8
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-receipt.json:generic-api-key:8
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-report.json:generic-api-key:4
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/harbor-report.json:generic-api-key:18
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-report.json:generic-api-key:4
+14be7e1efcd3ee7a906eabda6da6c565018119dc:web/src/fixtures/meridian-report.json:generic-api-key:18

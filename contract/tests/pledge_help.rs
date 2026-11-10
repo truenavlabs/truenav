@@ -1,6 +1,8 @@
 // Shared pledge signatures for contract unit tests.
 // The servicer key and the ticket key are fixed throwaway secp256k1 keys. They hold no value.
 // The ticket key is a LOCAL TEST KEY standing in for a TEE pledge key. It is not a TEE key and it is not attested hardware.
+// Each test crate uses a different subset of these helpers.
+#![allow(dead_code)]
 use k256::ecdsa::SigningKey;
 use truenav_registry::{eip191_digest, network_of, pledge_message};
 

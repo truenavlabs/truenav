@@ -683,6 +683,8 @@ impl Registry {
     /// Pledge a loan by its hash (64 lowercase hex). The predecessor must be the registered fund account
     /// named in a fresh servicer signature. When any ticket signer is registered, the same message also
     /// needs a ticket from one of those signers.
+    // Public NEAR method: the argument list is the call ABI, so it is kept as is.
+    #[allow(clippy::too_many_arguments)]
     #[payable]
     pub fn pledge_loan(
         &mut self,

@@ -80,7 +80,7 @@ fn redteam_r1b_tag_characters_must_not_fork_the_pledge() {
 #[test]
 fn redteam_r1b_confusable_homoglyph_must_not_fork_the_pledge() {
     let base = fp("PARCEL-1");
-    let cyrillic_er = format!("\u{0420}ARCEL-1");
+    let cyrillic_er = String::from("\u{0420}ARCEL-1");
     assert_eq!(
         fp(&cyrillic_er),
         base,

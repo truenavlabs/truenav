@@ -11,7 +11,7 @@ const ROT: [u32; 24] = [1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 
 const PIL: [usize; 24] = [10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1];
 
 fn keccak_f(st: &mut [u64; 25]) {
-    for round in 0..24 {
+    for rc in RC {
         let mut c = [0u64; 5];
         for x in 0..5 {
             c[x] = st[x] ^ st[x + 5] ^ st[x + 10] ^ st[x + 15] ^ st[x + 20];
@@ -34,7 +34,7 @@ fn keccak_f(st: &mut [u64; 25]) {
                 st[x + 5 * y] = row[x] ^ ((!row[(x + 1) % 5]) & row[(x + 2) % 5]);
             }
         }
-        st[0] ^= RC[round];
+        st[0] ^= rc;
     }
 }
 

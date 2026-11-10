@@ -612,7 +612,7 @@ mod tests {
         );
         c.accept_v3(&p, &body(&e)).unwrap();
         e["seq"] = json!("2");
-        e["prev_receipt_sha256"] = json!(c.latest_raw(&e["token_id"].as_str().unwrap()).unwrap().receipt_sha256);
+        e["prev_receipt_sha256"] = json!(c.latest_raw(e["token_id"].as_str().unwrap()).unwrap().receipt_sha256);
         let p = pending(&mut c, &e);
         assert_eq!(
             c.accept_v3(&p, &body(&e)),

@@ -20,6 +20,7 @@ fn pledge_as(r: &mut Registry, caller: &AccountId, fund: &AccountId, loan: &str,
     pledge_as_nonce(r, caller, fund, loan, asset, &next_nonce(), when, when + 60_000, None)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn pledge_as_nonce(
     r: &mut Registry,
     caller: &AccountId,
@@ -624,7 +625,6 @@ fn a_servicer_signature_is_not_a_pledge_ticket() {
     r.pledge_loan(LOAN.into(), "real_estate".into(), harbor_acct(), nonce, exp, servicer_sig, Some(servicer_as_ticket));
 }
 
-#[test]
 #[test]
 #[should_panic(expected = "ticket signature required")]
 fn removing_the_last_ticket_signer_does_not_drop_the_requirement() {

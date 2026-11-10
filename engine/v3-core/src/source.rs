@@ -356,8 +356,7 @@ pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
     }
     let lower = n.to_lowercase();
     let mut out = String::new();
-    let mut chars = lower.chars().peekable();
-    while let Some(c) = chars.next() {
+    for c in lower.chars() {
         if c == '\u{0307}' && out.ends_with('i') {
             continue;
         }

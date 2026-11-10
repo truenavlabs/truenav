@@ -68,3 +68,50 @@ test("fix13 probeFlock refuses a symlinked .flock-probe", () => {
   assert.throws(() => probeFlock(dir), /flock probe path/);
   assert.equal(existsSync("/tmp/truenav-missing-flock-target"), false, "the symlink target was not created");
 });
+
+// Fix 14 (F3): a failed head is only a genuine run_failed after the same identity and integrity checks the agent runs.
+// Wrong token, a private field, or a bad hash is an invalid receipt (502), never 409 run_failed, and nothing is redeemed.
+import { createHash } from "node:crypto";
+import { canonical } from "../receipt.mjs";
+const sha = (s) => createHash("sha256").update(s).digest("hex");
+function rehash(head, edit) {
+  const body = JSON.parse(head.receipt);
+  edit(body);
+  head.receipt = canonical(body);
+  head.receipt_sha256 = sha(head.receipt);
+  return head;
+}
+
+test("fix14 F3 an invalid failed head is 502 on /score and /report, never 409 run_failed, and never redeems", async () => {
+  for (const v3 of [true, false]) {
+    const token = "DEMO-CREDIT";
+    const cases = {
+      wrong_body_token: [failedHead(token, { v3, bodyToken: "OTHER-FUND" }), "receipt_token_mismatch"],
+      wrong_record_token: [failedHead(token, { v3, recordToken: "OTHER-FUND" }), "receipt_token_mismatch"],
+      private_salt: [rehash(failedHead(token, { v3 }), (b) => { b.private_salt = "ab".repeat(32); }), "private_salt_published"],
+      bad_commitment: [rehash(failedHead(token, { v3 }), (b) => { b.private_commitment = "SENTINEL-private"; }), "private_commitment_invalid"],
+      bad_hash: [{ ...failedHead(token, { v3 }), receipt_sha256: "00".repeat(32) }, "receipt_sha256_mismatch"],
+      bad_public_hash: [{ ...failedHead(token, { v3 }), public_sha256: "11".repeat(32) }, "receipt_sha256_mismatch"],
+    };
+    for (const [name, [head, code]] of Object.entries(cases)) {
+      await withFailedHead(head, async ({ url, ents, calls, spendStore }) => {
+        const id = `fix14-f3-${v3 ? "v3" : "v2"}-${name}`.slice(0, 64);
+        ents.set(id, { request_id: id, buyer: "agent.test", kind: "report", query_hash: queryHash("report", token), paid: "10000000000000000000000", created_ns: "1", expires_ns: String(NOW + 1000n), uses_left: 1 });
+        const nonce = randomBytes(16).toString("hex");
+        const sig = Buffer.from(buyerKey.sign(spendMessage({ audience: "query.test", id, kind: "report", token, nonce, exp: EXP })).signature).toString("base64");
+        const headers = { "x-truenav-entitlement": id, "x-truenav-buyer": "agent.test", "x-truenav-buyer-sig": sig, "x-truenav-buyer-nonce": nonce, "x-truenav-buyer-exp": EXP };
+        for (const path of ["score", "report"]) {
+          const r = await fetch(`${url}/fund/${token}/${path}`, { headers });
+          const body = await r.json();
+          assert.equal(r.status, 502, `v3=${v3} ${name} ${path}: ${JSON.stringify(body)}`);
+          assert.deepEqual(body, { error: code }, `v3=${v3} ${name} ${path}`);
+          assert.equal(JSON.stringify(body).includes("SENTINEL"), false);
+        }
+        assert.equal(calls.redeem, 0, `${name}: no redeem`);
+        assert.equal(calls.entitlement, 0, `${name}: entitlement not read`);
+        assert.equal(ents.get(id).uses_left, 1);
+        assert.equal(existsSync(join(spendStore, "LOCK")), false);
+      });
+    }
+  }
+});

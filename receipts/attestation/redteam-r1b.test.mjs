@@ -131,12 +131,17 @@ test('redteam_r1b a failed head must not be served as the previous green score',
     holds: envelope.holds,
     period: `${envelope.period_start}/${envelope.period_end}`,
     as_of: envelope.valuation_time,
-    receipt_sha256: envelope.receipt_sha256,
     receipt: JSON.stringify(envelope),
     block_height: 1,
   };
+  // fix 14 (F3): the wrapper hash is sha256 of the stored body, as the contract writes it; a failed head is only a
+  // genuine run_failed (409) once it verifies. The same head under the old, non-matching hash is 502, still no score.
+  record.receipt_sha256 = sha(record.receipt);
+  const bad = {...record, receipt_sha256: envelope.receipt_sha256};
+  assert.notEqual(bad.receipt_sha256, record.receipt_sha256);
+  let served = record;
   const server = createServer({
-    chain: {async view() { return record; }, async nowNs() { return 0n; }, async redeem() { return 0; }},
+    chain: {async view() { return served; }, async nowNs() { return 0n; }, async redeem() { return 0; }},
     receipts: 'receipts.test',
     query: 'query.test',
     fee: '1',
@@ -148,6 +153,12 @@ test('redteam_r1b a failed head must not be served as the previous green score',
     assert.equal(response.status, 409, JSON.stringify(body));
     assert.equal(body.error, 'run_failed');
     assert.notEqual(body.score, envelope.score);
+    served = bad;
+    const badResponse = await fetch(`http://127.0.0.1:${server.address().port}/fund/${envelope.token_id}/score`);
+    const badBody = await badResponse.json();
+    assert.equal(badResponse.status, 502, JSON.stringify(badBody));
+    assert.equal(badBody.error, 'receipt_sha256_mismatch');
+    assert.equal(badBody.score, undefined);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

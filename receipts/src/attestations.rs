@@ -58,6 +58,11 @@ fn read_strict<T: BorshDeserialize>(key: &[u8]) -> Result<Option<T>, ()> {
         Some(raw) => borsh::from_slice(&raw).map(Some).map_err(|_| ()),
     }
 }
+/// View-side read (fix 14, F4): corrupt bytes abort the view with an explicit `attestation_state_corrupt`
+/// error instead of reading as absent, zero, or a shorter list. Honest results keep their JSON shape.
+fn read_view<T: BorshDeserialize>(key: &[u8]) -> Option<T> {
+    read_strict(key).unwrap_or_else(|_| env::panic_str("attestation_state_corrupt"))
+}
 fn put<T: BorshSerialize>(key: &[u8], v: &T) {
     let Ok(bytes) = borsh::to_vec(v) else {
         return;
@@ -149,7 +154,7 @@ impl Receipts {
         }
     }
     pub fn get_attester(&self) -> Option<AccountId> {
-        read(ATTESTER_KEY)
+        read_view(ATTESTER_KEY)
     }
     pub fn get_body_binding(&self, token_id: String, seq: U64) -> Option<BodyBinding> {
         let r = self.receipts.get(&(token_id.clone(), seq.0))?;
@@ -160,7 +165,7 @@ impl Receipts {
             .ok()
             .and_then(|v| v.get("receipt_sha256").and_then(|x| x.as_str().map(str::to_string)))
             .unwrap_or_else(|| r.receipt_sha256.clone());
-        read(&body_key(&token_id, seq.0, &id))
+        read_view(&body_key(&token_id, seq.0, &id))
     }
     #[payable]
     pub fn publish_attestation(
@@ -298,7 +303,7 @@ impl Receipts {
             return vec![];
         };
         let id = identity(&token_id, seq.0, &binding.receipt_sha256, None);
-        let count = read::<u64>(&storage_key(b"count:", &id)).unwrap_or(0);
+        let count = read_view::<u64>(&storage_key(b"count:", &id)).unwrap_or(0);
         let start = from.map(|n| n.0).unwrap_or(0).min(count);
         let end = start
             .saturating_add(limit.unwrap_or(20).min(100) as u64)
@@ -307,11 +312,12 @@ impl Receipts {
         for i in start..end {
             let mut indexed = id.clone();
             indexed.extend_from_slice(&i.to_be_bytes());
+            // inside the stored count every slot must resolve; a gap is reported, never a shorter list
             let Some(k) = env::storage_read(&storage_key(b"item:", &indexed)) else {
-                break;
+                env::panic_str("attestation_index_missing");
             };
-            let Some(record) = read::<AttestationRecord>(&k) else {
-                break;
+            let Some(record) = read_view::<AttestationRecord>(&k) else {
+                env::panic_str("attestation_record_missing");
             };
             out.push(record);
         }
@@ -776,7 +782,7 @@ mod tests {
         env::storage_write(&record_key(&b, 1), &[0xff]);
         assert_refused_with_full_refund(&mut c, &b, 1, "attestation_state_corrupt");
         assert_eq!(env::storage_read(&record_key(&b, 1)).unwrap(), vec![0xff]);
-        // reads still treat corrupt bytes as absent (views are unchanged in fix 13)
+        // the raw helper still reads corrupt bytes as absent; views report them since fix 14 (F4)
         assert!(read::<AttestationRecord>(&record_key(&b, 1)).is_none());
     }
     #[test]
@@ -799,6 +805,92 @@ mod tests {
         );
         assert_eq!(out.error.as_deref(), Some("attestation_record_missing"));
         assert!(out.record.is_none());
+    }
+
+    // Fix 14 (F4): views report corrupt or truncated attestation state as an explicit error instead of
+    // "absent", zero, or a shorter list. Honest views keep their JSON shape. One case per test.
+    fn view_panic(f: impl FnOnce()) -> String {
+        let err = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f))
+            .expect_err("a corrupt view must not answer");
+        err.downcast_ref::<String>()
+            .cloned()
+            .or_else(|| err.downcast_ref::<&str>().map(|s| s.to_string()))
+            .unwrap_or_default()
+    }
+    #[test]
+    fn fix14_f4_honest_views_are_unchanged() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        let first = publish(&mut c, &b, 1);
+        assert_eq!(c.get_attester(), Some(acc("relayer.testnet")));
+        assert_eq!(c.get_body_binding(b.token_id.clone(), b.seq), Some(b.clone()));
+        assert_eq!(c.get_attestations(b.token_id.clone(), b.seq, None, None), vec![first]);
+        assert!(c.get_attestations(b.token_id.clone(), U64(9), None, None).is_empty());
+    }
+    #[test]
+    fn fix14_f4_corrupt_attester_is_an_error_not_absent() {
+        let (c, _, _) = setup();
+        env::storage_write(ATTESTER_KEY, &[0xff]);
+        assert!(view_panic(|| { c.get_attester(); }).contains("attestation_state_corrupt"));
+    }
+    #[test]
+    fn fix14_f4_corrupt_body_binding_is_an_error_not_absent() {
+        let (c, _, b) = setup();
+        env::storage_write(&body_key(&b.token_id, b.seq.0, &b.receipt_sha256), &[0xff]);
+        assert!(view_panic(|| { c.get_body_binding(b.token_id.clone(), b.seq); })
+            .contains("attestation_state_corrupt"));
+        assert!(view_panic(|| { c.get_attestations(b.token_id.clone(), b.seq, None, None); })
+            .contains("attestation_state_corrupt"));
+    }
+    #[test]
+    fn fix14_f4_corrupt_count_is_an_error_not_zero() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        env::storage_write(&count_key(&b), &[1, 2, 3]);
+        assert!(view_panic(|| { c.get_attestations(b.token_id.clone(), b.seq, None, None); })
+            .contains("attestation_state_corrupt"));
+    }
+    #[test]
+    fn fix14_f4_corrupt_indexed_record_is_an_error_not_a_shorter_list() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        publish(&mut c, &b, 2);
+        env::storage_write(&record_key(&b, 1), &[0xff]);
+        assert!(view_panic(|| { c.get_attestations(b.token_id.clone(), b.seq, None, None); })
+            .contains("attestation_state_corrupt"));
+    }
+    #[test]
+    fn fix14_f4_missing_index_is_an_error_not_a_shorter_list() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        publish(&mut c, &b, 2);
+        env::storage_remove(&item_key(&b, 0));
+        assert!(view_panic(|| { c.get_attestations(b.token_id.clone(), b.seq, None, None); })
+            .contains("attestation_index_missing"));
+    }
+    #[test]
+    fn fix14_f4_missing_record_is_an_error_not_a_shorter_list() {
+        let (mut c, _, b) = setup();
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        publish(&mut c, &b, 1);
+        publish(&mut c, &b, 2);
+        let k = env::storage_read(&item_key(&b, 0)).unwrap();
+        env::storage_remove(&k);
+        assert!(view_panic(|| { c.get_attestations(b.token_id.clone(), b.seq, None, None); })
+            .contains("attestation_record_missing"));
+    }
+    #[test]
+    fn fix14_f4_corrupt_binding_still_refuses_publication_without_keeping_the_deposit() {
+        let (mut c, _, b) = setup();
+        env::storage_write(&body_key(&b.token_id, b.seq.0, &b.receipt_sha256), &[0xff]);
+        ctx("relayer.testnet", NearToken::from_near(1).as_yoctonear(), 4);
+        let before = env::storage_usage();
+        // a panic aborts the call; NEAR returns the attached deposit with a failed receipt
+        fails(|| { try_publish(&mut c, &b, 1); });
+        assert_eq!(env::storage_usage(), before);
     }
 }
 

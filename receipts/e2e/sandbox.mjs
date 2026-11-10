@@ -280,7 +280,13 @@ try {
   f = await run("DEMO-RENTAL");
   ok(f.result.value === `stored:${rentalHead.seq + 1}`, `a later good run is the next seq (${f.result.value})`);
   const in2 = JSON.parse(f.req.input_data);
-  ok(in2.receipt_version === "3" && in2.context.prev_receipt_sha256 === rentalHead.receipt_sha256, `the next run carries the failure head hash (${in2.context && in2.context.prev_receipt_sha256})`);
+  // fix 14: recovery links the last successful envelope (its sealed receipt_sha256), never the failed head
+  let lastOk = null;
+  for (let s = rentalHead.seq - 1; s >= 1 && !lastOk; s -= 1) {
+    const r = await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: s });
+    if (r && r.head_status !== "failed") lastOk = r;
+  }
+  ok(in2.receipt_version === "3" && lastOk && in2.context.prev_receipt_sha256 === lastOk.receipt_sha256 && in2.previous_receipt.receipt_sha256 === lastOk.receipt_sha256 && in2.context.prev_receipt_sha256 !== rentalHead.receipt_sha256, `the next run links the last successful envelope, not the failure head (${in2.context && in2.context.prev_receipt_sha256})`);
   ok(rentalSeq1.score === 58, `seq 1 public score is ${rentalSeq1.score}`);
   const seq2 = JSON.parse((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt);
   ok(seq2.score === rentalSeq1.score && !JSON.stringify(seq2).includes("outstanding_cents"), "same period, score unchanged, no private cents");

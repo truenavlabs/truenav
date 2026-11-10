@@ -60,6 +60,33 @@ export function verifyRecord(token, r) {
   return null;
 }
 
+/** Fix 14 (F2): a served v3 report must equal the verified chain body. Every served key except `attestation` must
+ * exist in the chain body with an equal value (the API serves publicV3 of it; a full envelope also passes), every
+ * publicV3 field of the chain body must be served, and `attestation`, if present, must be "unattested". Returns null
+ * when equal, else the first offending key. Outer receipt_sha256 and seq alone do not authenticate the body. */
+export function reportMismatchV3(served, chainBody) {
+  if (!served || typeof served !== "object" || Array.isArray(served)) return "receipt";
+  if (!chainBody || typeof chainBody !== "object") return "chain_body";
+  for (const k of Object.keys(served)) {
+    if (k === "attestation") { if (served[k] !== "unattested") return k; continue; }
+    if (!Object.hasOwn(chainBody, k) || canonical(served[k]) !== canonical(chainBody[k])) return k;
+  }
+  const expected = publicV3(chainBody);
+  for (const k of Object.keys(expected)) if (!Object.hasOwn(served, k)) return k;
+  return null;
+}
+/** Fix 14 (F2), legacy v2: the served facts the agent returns must match the verified chain record. */
+export function reportMismatchV2(token, served, record) {
+  if (!served || typeof served !== "object" || Array.isArray(served)) return "receipt";
+  if (served.token_id !== undefined && served.token_id !== token) return "token_id";
+  if (served.score !== record.score) return "score";
+  if (served.band !== record.band) return "band";
+  const codes = (xs) => (Array.isArray(xs) ? JSON.stringify(xs.map((x) => (x && typeof x === "object" ? x.code : x))) : null);
+  if (codes(served.caps) === null || codes(served.caps) !== codes(record.caps)) return "caps";
+  if (codes(served.holds) === null || codes(served.holds) !== codes(record.holds)) return "holds";
+  return null;
+}
+
 /** The decision for one token from its latest stored receipt (or null). Pure: no chain access. */
 export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS } = {}) {
   if (!r) return { action: "decline", reason: "no_receipt", detail: `no receipt stored for ${token}` };
@@ -97,7 +124,9 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
   let latest = await chain.view(receipts, "get_latest", { token_id: token });
   const tokenInfo = await chain.view(receipts, "get_token", { token_id: token });
   const decision = decide(token, latest, { nowMs: now });
-  if(latest && decision.reason!=="receipt_mismatch") { const decoded=decodeReceipt(latest); latest=decoded.version==='3'?{...decoded.record,score:decoded.receipt.score}:decoded.record; }
+  // The parsed chain body that verifyRecord (in decide) just checked. The paid report is compared against it (fix 14).
+  let verifiedBody = null;
+  if(latest && decision.reason!=="receipt_mismatch") { const decoded=decodeReceipt(latest); verifiedBody=decoded.receipt; latest=decoded.version==='3'?{...decoded.record,score:decoded.receipt.score}:decoded.record; }
   const out = {
     token_id: token,
     registered: !!tokenInfo,
@@ -139,9 +168,16 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
     if(latest.method?.startsWith('truenav-v3.')) {
       const text = JSON.stringify(body.receipt ?? {});
       if (text.includes("uncapped_score") || text.includes("outstanding_cents") || text.includes("\"metrics\"")) throw new Error("private_field");
-      out.report={status:200,...publicV3(body.receipt), receipt_sha256: latest.receipt_sha256, attestation:"unattested"};
+      const mismatch = reportMismatchV3(body.receipt, verifiedBody);
+      if (mismatch) throw new Error(`report_mismatch: ${mismatch}`);
+      // built from the verified chain envelope, never from the served fields
+      out.report={status:200,...publicV3(verifiedBody), receipt_sha256: latest.receipt_sha256, attestation:"unattested"};
     }
-    else out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, score: body.receipt.score, band: body.receipt.band, caps: body.receipt.caps, holds: body.receipt.holds };
+    else {
+      const mismatch = reportMismatchV2(token, body.receipt, latest);
+      if (mismatch) throw new Error(`report_mismatch: ${mismatch}`);
+      out.report = { status: 200, seq: body.seq, receipt_sha256: body.receipt_sha256, score: body.receipt.score, band: body.receipt.band, caps: body.receipt.caps, holds: body.receipt.holds };
+    }
   }
   return out;
 }

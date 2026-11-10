@@ -9,6 +9,9 @@ use near_sdk::test_utils::{accounts, VMContextBuilder};
 use near_sdk::{testing_env, AccountId};
 use truenav_registry::{eip191_digest, Registry, VERDICT_DOMAIN};
 
+#[path = "pledge_help.rs"]
+mod pledge_help;
+
 const CONTRACT: &str = "registry.test.near";
 
 fn ctx_at(predecessor: &AccountId, now_ms: u64, yocto: u128) {
@@ -47,6 +50,7 @@ fn setup(register_tee: bool) -> (Registry, Value) {
     let mut r = Registry::new(admin(), servicer());
     r.register_fund("harbor-credit-fund".into(), harbor(), "manager-harbor".into());
     r.register_fund("meridian-yield-fund".into(), meridian(), "manager-meridian".into());
+    r.set_servicer_pledge_key(pledge_help::address_of(&pledge_help::servicer_key()));
     if register_tee {
         r.add_tee_signer(s(&fx, "signer"), s(&fx, "model"), format!("attested with nonce {}", s(&fx, "attestation_nonce")), s(&fx, "attestation_sha256"));
     }
@@ -54,8 +58,12 @@ fn setup(register_tee: bool) -> (Registry, Value) {
     for rec in fx["records"].as_array().unwrap() {
         let h = s(rec, "loan_hash");
         if seen.insert(h.clone()) {
-            ctx_at(&fund_acct(&s(rec, "fund_id")), t, 1);
-            r.pledge_loan(h, rec["asset_type"].as_str().unwrap_or("real_estate").to_string());
+            let acct = fund_acct(&s(rec, "fund_id"));
+            let asset = rec["asset_type"].as_str().unwrap_or("real_estate").to_string();
+            let exp = t + 60_000;
+            let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, acct.as_str(), &h, &asset, &h, exp);
+            ctx_at(&acct, t, 1);
+            r.pledge_loan(h.clone(), asset, acct, h, exp, sig, None);
         }
     }
     (r, fx)
@@ -135,8 +143,14 @@ fn verdict_counts_only_for_the_current_pledge() {
     ctx_at(&servicer(), now(&fx) + 2, 1);
     r.release_loan(h.clone());
     assert!(r.get_latest_verdict(h.clone()).is_none(), "no pledge, no counting verdict");
-    ctx_at(&meridian(), now(&fx) + 3, 1);
-    r.pledge_loan(h.clone(), "real_estate".into());
+    {
+        let when = now(&fx) + 3;
+        let exp = when + 60_000;
+        let nonce = format!("{:064x}", when);
+        let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, meridian().as_str(), &h, "real_estate", &nonce, exp);
+        ctx_at(&meridian(), when, 1);
+        r.pledge_loan(h.clone(), "real_estate".into(), meridian(), nonce, exp, sig, None);
+    }
     assert!(r.get_latest_verdict(h.clone()).is_none(), "the new pledge starts without a verdict");
     assert_eq!(r.get_verdict_count(h), 1, "history kept");
 }
@@ -187,9 +201,13 @@ fn synthetic_setup() -> (Registry, SigningKey, String, u64) {
     ctx_at(&admin(), t, 1);
     let mut r = Registry::new(admin(), servicer());
     r.register_fund("harbor-credit-fund".into(), harbor(), "manager-harbor".into());
+    r.set_servicer_pledge_key(pledge_help::address_of(&pledge_help::servicer_key()));
     r.add_tee_signer(addr, "Test/Model".into(), "test key".into(), "a".repeat(64));
+    let loan = "b".repeat(64);
+    let exp = t + 60_000;
+    let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, harbor().as_str(), &loan, "real_estate", &loan, exp);
     ctx_at(&harbor(), t, 1);
-    r.pledge_loan("b".repeat(64), "real_estate".into());
+    r.pledge_loan(loan, "real_estate".into(), harbor(), "b".repeat(64), exp, sig, None);
     (r, key, "b".repeat(64), t)
 }
 fn binding(t: u64, contract: &str, network: &str, version: &str) -> String {
@@ -387,10 +405,16 @@ fn a_real_tee_signed_reply_from_6_nov_that_echoed_document_fields_is_refused() {
     let t = fx["signed_at_ms"].as_u64().unwrap() + 60_000;
     ctx_at(&admin(), t, 1);
     let mut r = Registry::new(admin(), servicer());
-    r.register_fund(s(rec, "fund_id"), fund_acct(&s(rec, "fund_id")), "manager".into());
+    let acct = fund_acct(&s(rec, "fund_id"));
+    r.register_fund(s(rec, "fund_id"), acct.clone(), "manager".into());
+    r.set_servicer_pledge_key(pledge_help::address_of(&pledge_help::servicer_key()));
     r.add_tee_signer(s(&fx, "signer"), s(&fx, "model"), "attested".into(), s(&fx, "attestation_sha256"));
-    ctx_at(&fund_acct(&s(rec, "fund_id")), t, 1);
-    r.pledge_loan(s(rec, "loan_hash"), s(rec, "asset_type"));
+    let loan = s(rec, "loan_hash");
+    let asset = s(rec, "asset_type");
+    let exp = t + 60_000;
+    let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, acct.as_str(), &loan, &asset, &loan, exp);
+    ctx_at(&acct, t, 1);
+    r.pledge_loan(loan, asset, acct, s(rec, "loan_hash"), exp, sig, None);
     ctx_at(&servicer(), t + 1, 1);
     r.submit_verdict(s(rec, "loan_hash"), s(rec, "model_id"), s(rec, "request_sha256"), s(rec, "response_body"), s(rec, "signature"));
 }

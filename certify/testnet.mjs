@@ -1,5 +1,5 @@
 // Live end to end on NEAR testnet: deploy the registry, register the signer and both demo funds, store the
-// engine's signed certificates, read them back, and show the double-pledge refusal with its attempt counter.
+// engine's signed certificates, read them back, and show the double-pledge refusal. A refusal is not counted.
 //
 //   TRUENAV_TESTNET_ACCOUNT=<your-throwaway>.testnet npm run e2e:testnet
 //
@@ -17,11 +17,12 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { homedir } from "node:os";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } from "near-api-js";
 import { scorePortfolio } from "../engine/src/score.mjs";
 import { replyProblem } from "../tee/reply.mjs";
 import { toCertificate, signCertificate, signEip191, addressOf, newSecretKey } from "./certificate.mjs";
+import { networkOf, pledgeMessage } from "../tee/pledge-ticket.mjs";
 
 const root = new URL("../", import.meta.url);
 // Public testnet RPC listed in docs.near.org/api/rpc/providers (rpc.testnet.near.org is deprecated and rate limited).
@@ -107,7 +108,7 @@ function record(step, tx, expectFailure = false) {
 
 /** Function call that returns the decoded result and records the transaction, never throwing on failure. */
 // Admin, servicer and pledge calls must carry exactly 1 yoctoNEAR (full-access key check in the contract).
-const ONE_YOCTO = new Set(["add_signer", "remove_signer", "register_fund", "pledge_loan", "release_loan", "add_tee_signer", "remove_tee_signer", "submit_verdict", "set_role", "pause", "unpause"]);
+const ONE_YOCTO = new Set(["add_signer", "remove_signer", "register_fund", "pledge_loan", "release_loan", "add_tee_signer", "remove_tee_signer", "submit_verdict", "set_role", "pause", "unpause", "set_servicer_pledge_key", "add_pledge_signer", "remove_pledge_signer"]);
 async function call(signer, step, methodName, args, gasT = "100", expectFailure = false) {
   const tx = await signer.signAndSendTransaction({
     receiverId: ids.registry,
@@ -180,6 +181,14 @@ else {
 }
 const signerAddress = addressOf(secretKey);
 if (!(await view("get_signers")).includes(signerAddress)) await call(admin, "add_signer (test key, not TEE)", "add_signer", { address: signerAddress });
+if ((await view("get_servicer_pledge_key")) !== signerAddress) await call(admin, "set_servicer_pledge_key (test key, not TEE)", "set_servicer_pledge_key", { address: signerAddress });
+
+function pledgeArgs(fundAccount, loanHash, assetType) {
+  const nonce = randomBytes(32).toString("hex");
+  const expiry_ms = Date.now() + 60 * 60 * 1000;
+  const message = pledgeMessage(ids.registry, networkOf(ids.registry), loanHash, fundAccount, assetType, nonce, expiry_ms);
+  return { loan_hash: loanHash, asset_type: assetType, fund_account: fundAccount, nonce, expiry_ms, servicer_signature: signEip191(message, secretKey), ticket_signature: null };
+}
 
 const fx = JSON.parse(readFileSync(new URL("spec/nav/fixtures.json", root), "utf8"));
 const funds = JSON.parse(JSON.stringify(fx.funds));
@@ -197,7 +206,7 @@ const fundAccount = { "harbor-credit-fund": harbor, "meridian-yield-fund": merid
 for (const l of demo) {
   const lock = await view("get_lock", { loan_hash: l.loan_hash });
   if (lock) continue;
-  const d = await call(fundAccount[l.fund_id], `${l.fund_id} pledges ${l.loan_id}`, "pledge_loan", { loan_hash: l.loan_hash, asset_type: l.asset_type });
+  const d = await call(fundAccount[l.fund_id], `${l.fund_id} pledges ${l.loan_id}`, "pledge_loan", pledgeArgs(fundAccount[l.fund_id], l.loan_hash, l.asset_type));
   expect(d.ok && d.value && d.value.outcome === "pledged", `${l.loan_id} pledged, token minted`);
 }
 
@@ -296,13 +305,13 @@ expect(certs["meridian-yield-fund"].certificate.raw_x100 === 4284 && certs["meri
 // ---------- 4. double pledge ----------
 // Meridian tries to pledge Harbor's H-RE-03, which Harbor already pledged above.
 const loanHash = demo.find((l) => l.loan_id === "H-RE-03").loan_hash;
-const attemptsBefore = (await view("get_attempts_page", { fund_id: "meridian-yield-fund", from_index: 0, limit: 1 })).count;
+const attemptsBefore = (await view("get_attempts_page", { fund_id: "harbor-credit-fund", from_index: 0, limit: 1 })).count;
 const alertsBefore = await view("get_alert_count", { fund_id: "harbor-credit-fund" });
-const p2 = await call(meridian, "Meridian pledges Harbor's H-RE-03", "pledge_loan", { loan_hash: loanHash, asset_type: "real_estate" });
+const p2 = await call(meridian, "Meridian pledges Harbor's H-RE-03", "pledge_loan", pledgeArgs(ids.meridian, loanHash, "real_estate"));
 expect(p2.ok && p2.value && p2.value.outcome === "refused" && p2.value.message === "already pledged elsewhere", "Meridian refused: already pledged elsewhere");
-const attemptsAfter = (await view("get_attempts_page", { fund_id: "meridian-yield-fund", from_index: 0, limit: 1 })).count;
-expect(attemptsAfter === attemptsBefore + 1, `Meridian blocked attempts ${attemptsBefore} -> ${attemptsAfter}`);
-expect((await view("get_alert_count", { fund_id: "harbor-credit-fund" })) === alertsBefore + 1, "Harbor alerted (time only, other fund not named)");
+const attemptsAfter = (await view("get_attempts_page", { fund_id: "harbor-credit-fund", from_index: 0, limit: 1 })).count;
+expect(attemptsAfter === attemptsBefore, `Harbor blocked attempts stay ${attemptsBefore} (refusal is not counted against the signed fund)`);
+expect((await view("get_alert_count", { fund_id: "harbor-credit-fund" })) === alertsBefore, "Harbor is not alerted by the refusal");
 const token = await view("nft_token", { token_id: loanHash });
 expect(token && token.owner_id === ids.harbor, `token ${loanHash.slice(0, 12)}... owned by ${ids.harbor}`);
 
@@ -349,7 +358,7 @@ if (SANDBOX) {
   await call(pauserAcc, "pauser pauses", "pause", {});
   expect((await view("get_roles")).paused === true, "paused: get_roles still answers and shows paused");
   const fresh = createHash("sha256").update("sandbox-pause-loan").digest("hex");
-  await reject(harbor, "pledge while paused", "pledge_loan", { loan_hash: fresh, asset_type: "real_estate" }, /paused/);
+  await reject(harbor, "pledge while paused", "pledge_loan", pledgeArgs(ids.harbor, fresh, "real_estate"), /paused/);
   await reject(servicerAcc, "release while paused", "release_loan", { loan_hash: pledged }, /paused/);
   await reject(servicerAcc, "verdict while paused", "submit_verdict", { loan_hash: pledged, ...signedReply(pledged, bind(ids.registry, "sandbox", later), "p") }, /paused/);
   {
@@ -359,7 +368,7 @@ if (SANDBOX) {
   const rc = await call(admin, "set_role while paused (allowed)", "set_role", { role: "servicer", account_id: ids.servicer });
   expect(rc.ok, "role change still works while paused");
   await call(pauserAcc, "pauser unpauses", "unpause", {});
-  const pr = await call(harbor, "pledge after unpause", "pledge_loan", { loan_hash: fresh, asset_type: "real_estate" });
+  const pr = await call(harbor, "pledge after unpause", "pledge_loan", pledgeArgs(ids.harbor, fresh, "real_estate"));
   expect(pr.ok && pr.value && pr.value.outcome === "pledged", "unpaused: pledging works again");
   const rl = await call(servicerAcc, "servicer releases the extra loan", "release_loan", { loan_hash: fresh });
   expect(rl.ok, "release works after unpause");

@@ -6,12 +6,26 @@ What TrueNav proves, what it assumes, and who can break what. Testnet demo; all 
 
 | Claim | How | Checked by |
 | --- | --- | --- |
-| A loan is pledged to one fund at a time | `pledge_loan` locks the loan_hash and mints a non-transferable NEP-171 token; another fund's pledge is refused and counted | contract state, `nft_mint` / `nft_burn` events |
+| A loan is pledged to one fund at a time | `pledge_loan` requires the registered servicer key over `truenav-pledge-v1` (this contract, this network, loan hash, fund account, asset type, nonce, expiry). It locks the loan_hash and mints a non-transferable NEP-171 token. Another fund's pledge is refused. A refusal is not recorded as a blocked attempt and does not alert the holder. When a ticket signer is registered, the same message also needs that signer's ticket | contract state, `nft_mint` / `nft_burn` events |
 | A loan document matches the fund's claim, without publishing the document | NEAR AI Cloud model TEE signs `"<model>:<sha256(request)>:<sha256(response)>"`; the contract recomputes the response hash, recovers the EIP-191 signer, requires a registered TEE signer for that model, the servicer as submitter, a pledged loan, and a reply bound to this contract, network, version and an unexpired 30-day window | `submit_verdict` |
 | The TEE signing key runs in an attested TEE | the attestation report is published; its hash is stored with the TEE signer on chain; anyone re-checks the TDX quote, key and nonce binding, measurements and GPU evidence | `npm run verify:attestation` |
 | A score certificate came from the registered signer and was not edited | EIP-191 signature over a canonical pipe-joined message that includes the contract id; `signed_at` must move forward per fund | `submit_certificate` |
 | A fund cannot rename itself to escape its history | `register_fund` binds fund_id to one account and one manager; certificates must match | `submit_certificate` |
 | The deployed code is the published source | reproducible build (NEP-330), pinned image digest; the on-chain code hash equals the build hash | anyone, see README "Verify the deployed code" |
+
+## Pledge tickets
+
+A pledge always needs the servicer signature described above. The signature is checked on chain with `recover_address` (EIP-191, secp256k1). Used messages are stored, so the same nonce and tuple cannot be replayed. An expired signature is rejected. A signature for another contract account or another network does not verify here, because the contract builds the message from its own account id and network.
+
+Separately, the registrar may register one or more pledge-ticket signers. Registration stores the signer's address and the sha256 of that signer's OutLayer attestation evidence. `npm run verify:pledge-signer` re-checks a local evidence file against that hash and the recorded address and TCB field. Anyone can run it.
+
+When at least one ticket signer is registered, `pledge_loan` also requires a ticket signature over the same message, recovered to one of those addresses. When none is registered, the servicer signature is enough. Removing the last ticket signer returns to that rule. A TEE verdict signer is a different registry. A model signature is not a pledge ticket.
+
+The fingerprint module can compose that same message from the loan hash it just computed and sign it with the manifest secp256k1 key `pledge-ticket` (`bind: project`, `caller: predecessor`). It does not sign caller-supplied bytes or digests. The unit tests use a local test key standing in for that TEE key. That key is not a TEE key.
+
+What is claimed: the ticket signature is checked on chain. The evidence hash is stored on chain. Anyone can re-check the evidence file.
+
+What is not claimed: the chain does not verify hardware. This is not trustless. The ticket does not prove that a TEE holds the loan. The servicer still decides who may pledge. The publisher can ship a different module version under the same project-bound key. A refreshed NEAR AI Cloud attestation for Qwen is not claimed here.
 
 ## What is trusted (phase 1)
 

@@ -1,0 +1,5 @@
+{
+  "attestation_sha256": "8578a03fecbc0dd32cc3579098403a1865bc3df32c781cf92019ad982a87ef53",
+  "signing_address": "0x0000000000000000000000000000000000000011",
+  "note": "sha256 of evidence.json bytes. Local stand-in, not a live quote."
+}

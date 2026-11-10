@@ -9,10 +9,13 @@
 //! - Score certificates: the engine's output is signed off chain (EIP-191 personal_sign over a canonical
 //!   message that includes this contract's account id). The contract recovers the signer with
 //!   env::ecrecover, checks it is registered, checks signed_at moves forward, and stores the certificate.
-//! - Loan pledges: a registered fund pledges a loan by its hash. The first pledge locks the loan and mints a
-//!   NEP-171 token to the fund. A later pledge by another fund is refused with "already pledged elsewhere",
-//!   counted as a blocked attempt against the attempting fund, and raises an alert for the holder. The
-//!   servicer releases the loan on repayment, which burns the token.
+//! - Loan pledges: a registered fund pledges a loan by its hash. The servicer's registered secp256k1 key must
+//!   sign a canonical message naming this contract, this network, the loan hash, the fund account, the asset
+//!   type, a nonce and an expiry. The first pledge locks the loan and mints a NEP-171 token to the fund. A
+//!   later pledge by another fund is refused with "already pledged elsewhere". A refusal does not record a
+//!   blocked attempt or an alert against the fund the servicer signed for, or against the current holder.
+//!   When a pledge-ticket signer is registered, the same message also needs a ticket signature. The servicer
+//!   releases the loan on repayment, which burns the token.
 //!
 //! Limits: everything stored here is public chain state. Alerts and attempt counters do not name the other
 //! fund, but they are not private. The sealed registry design (OutLayer TEE) is the private version.
@@ -51,6 +54,8 @@ enum Key {
     VerdictList { loan_hash: Vec<u8> },
     SeenResponses,
     FlagCounts,
+    PledgeNonces,
+    PledgeSigners,
 }
 
 /// A fund bound to its account and manager by the admin.
@@ -111,7 +116,8 @@ pub struct Attempt {
     pub at_ms: u64,
 }
 
-/// Result of a pledge. A refusal is a normal return, not a panic, so the attempt counter is kept.
+/// Result of a pledge. A refusal is a normal return, not a panic. It does not record a blocked attempt
+/// or an alert for the fund named in the servicer signature, or for the fund that already holds the loan.
 #[near(serializers = [json])]
 #[derive(Clone, Debug, PartialEq)]
 #[serde(tag = "outcome", rename_all = "snake_case")]
@@ -143,6 +149,18 @@ pub struct TeeSigner {
     pub registered_at_ms: u64,
 }
 
+/// A secp256k1 address allowed to sign pledge tickets. The registrar stores the sha256 of that signer's
+/// OutLayer attestation evidence. The contract checks the ticket signature. It does not check the quote.
+#[near(serializers = [borsh, json])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PledgeSigner {
+    pub address: String,
+    pub attestation_ref: String,
+    /// sha256 (lowercase hex) of the attestation evidence file. Re-check it with `npm run verify:pledge-signer`.
+    pub attestation_sha256: String,
+    pub registered_at_ms: u64,
+}
+
 /// One TEE underwriter verdict for a loan. No document content is stored.
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Debug, PartialEq)]
@@ -167,6 +185,26 @@ pub struct StoredVerdict {
 /// expired one or one that claims more than VERDICT_TTL_MS of validity.
 pub const VERDICT_DOMAIN: &str = "truenav-verdict-v1";
 pub const VERDICT_TTL_MS: u64 = 30 * 24 * 3600 * 1000;
+
+/// Servicer pledge signatures and TEE pledge tickets use this domain. A model verdict uses VERDICT_DOMAIN,
+/// so a model signature does not authorize a pledge.
+pub const PLEDGE_DOMAIN: &str = "truenav-pledge-v1";
+/// A pledge signature is valid only until this far ahead of the current block time.
+pub const PLEDGE_TTL_MS: u64 = 24 * 3600 * 1000;
+
+/// Canonical pledge message. The contract builds this itself from the call arguments and its own account id
+/// and network. Callers do not supply the bytes that are signed.
+pub fn pledge_message(
+    contract: &str,
+    network: &str,
+    loan_hash: &str,
+    fund_account: &str,
+    asset_type: &str,
+    nonce: &str,
+    expiry_ms: u64,
+) -> String {
+    format!("{PLEDGE_DOMAIN}|{contract}|{network}|{loan_hash}|{fund_account}|{asset_type}|{nonce}|{expiry_ms}")
+}
 
 /// Network name from the account suffix: .testnet is testnet, .near is mainnet, anything else is that suffix
 /// (a local sandbox account such as registry.sandbox gives "sandbox").
@@ -212,6 +250,12 @@ pub struct Registry {
     verdicts: LookupMap<String, Vector<StoredVerdict>>,
     seen_responses: LookupSet<String>,
     flag_counts: LookupMap<String, u32>,
+    /// secp256k1 address of the servicer pledge key. Signatures are checked with recover_address.
+    servicer_pledge_key: Option<String>,
+    /// Full canonical pledge messages already accepted. A second use of the same nonce and tuple is rejected.
+    pledge_nonces: LookupSet<String>,
+    /// Ticket signers. Empty means a servicer signature alone is enough. Non-empty means a ticket is also required.
+    pledge_signers: IterableMap<String, PledgeSigner>,
 }
 
 /// Role assignment, readable by anyone.
@@ -444,6 +488,9 @@ impl Registry {
             verdicts: LookupMap::new(Key::Verdicts),
             seen_responses: LookupSet::new(Key::SeenResponses),
             flag_counts: LookupMap::new(Key::FlagCounts),
+            servicer_pledge_key: None,
+            pledge_nonces: LookupSet::new(Key::PledgeNonces),
+            pledge_signers: IterableMap::new(Key::PledgeSigners),
         }
     }
 
@@ -590,36 +637,97 @@ impl Registry {
 
     // ---------- loan pledges and NEP-171 tokens ----------
 
-    /// Pledge a loan by its hash (64 lowercase hex). Only a registered fund's own account may call it.
+    /// Admin registers the secp256k1 address whose EIP-191 signatures authorize pledges.
     #[payable]
-    pub fn pledge_loan(&mut self, loan_hash: String, asset_type: String) -> PledgeOutcome {
+    pub fn set_servicer_pledge_key(&mut self, address: String) {
+        self.assert_admin();
+        self.servicer_pledge_key = Some(norm_address(&address));
+    }
+
+    pub fn get_servicer_pledge_key(&self) -> Option<String> {
+        self.servicer_pledge_key.clone()
+    }
+
+    /// Registrar registers a ticket signer and the sha256 of its OutLayer attestation evidence.
+    /// This does not put the address on the TEE verdict allowlist, and a TEE verdict signer is not a ticket signer.
+    #[payable]
+    pub fn add_pledge_signer(&mut self, address: String, attestation_ref: String, attestation_sha256: String) {
+        self.assert_registrar();
+        require!(is_hex64(&attestation_sha256), "attestation_sha256 must be 64 lowercase hex characters");
+        require!(!attestation_ref.is_empty() && attestation_ref.len() <= 256, "attestation_ref must be 1 to 256 characters");
+        let a = norm_address(&address);
+        self.pledge_signers.insert(
+            a.clone(),
+            PledgeSigner { address: a, attestation_ref, attestation_sha256, registered_at_ms: env::block_timestamp_ms() },
+        );
+    }
+
+    #[payable]
+    pub fn remove_pledge_signer(&mut self, address: String) {
+        self.assert_registrar();
+        self.pledge_signers.remove(&norm_address(&address));
+    }
+
+    pub fn get_pledge_signers(&self) -> Vec<PledgeSigner> {
+        self.pledge_signers.values().cloned().collect()
+    }
+
+    pub fn pledge_message_used(&self, message: String) -> bool {
+        self.pledge_nonces.contains(&message)
+    }
+
+    /// Pledge a loan by its hash (64 lowercase hex). The predecessor must be the registered fund account
+    /// named in a fresh servicer signature. When any ticket signer is registered, the same message also
+    /// needs a ticket from one of those signers.
+    #[payable]
+    pub fn pledge_loan(
+        &mut self,
+        loan_hash: String,
+        asset_type: String,
+        fund_account: AccountId,
+        nonce: String,
+        expiry_ms: u64,
+        servicer_signature: String,
+        ticket_signature: Option<String>,
+    ) -> PledgeOutcome {
         assert_one_yocto();
         self.assert_not_paused();
         require!(is_loan_hash(&loan_hash), "loan_hash must be 64 lowercase hex characters");
         require!(asset_type == "real_estate" || asset_type == "invoices", "asset_type must be real_estate or invoices");
+        require!(nonce.len() >= 32 && nonce.len() <= 64 && nonce.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()), "nonce must be 32 to 64 lowercase hex characters");
+        require!(!fund_account.as_str().contains('|'), "fund_account must not contain '|'");
+        let contract = env::current_account_id();
+        let network = network_of(contract.as_str());
+        let message = pledge_message(contract.as_str(), &network, &loan_hash, fund_account.as_str(), &asset_type, &nonce, expiry_ms);
+        let digest = eip191_digest(&message);
+        let expected = self.servicer_pledge_key.as_deref().unwrap_or_else(|| env::panic_str("servicer pledge key is not set"));
+        let signer = recover_address(&digest, &servicer_signature).unwrap_or_else(|| env::panic_str("bad servicer signature"));
+        require!(signer == expected, "servicer signature not from the registered pledge key");
+        let now = env::block_timestamp_ms();
+        require!(expiry_ms > now, "pledge expired");
+        require!(expiry_ms <= now.saturating_add(PLEDGE_TTL_MS), "pledge expiry too far");
+        if !self.pledge_signers.is_empty() {
+            let ticket = ticket_signature.unwrap_or_else(|| env::panic_str("ticket signature required"));
+            let ticket_signer = recover_address(&digest, &ticket).unwrap_or_else(|| env::panic_str("bad ticket signature"));
+            require!(self.pledge_signers.contains_key(&ticket_signer), "ticket signer not registered");
+        }
         let caller = env::predecessor_account_id();
+        if caller != fund_account {
+            // The signature names another fund. Do not store the nonce and do not touch that fund's counters.
+            return PledgeOutcome::Refused { message: "caller is not the fund named in the servicer signature".to_string(), attempt_id: "none".to_string() };
+        }
         let fund_id = self.fund_by_account.get(&caller).cloned();
         require!(fund_id.is_some(), "caller is not a registered fund account");
         let fund_id = fund_id.unwrap();
-        let now = env::block_timestamp_ms();
+        require!(!self.pledge_nonces.contains(&message), "pledge nonce already used");
+        self.pledge_nonces.insert(message);
 
         if let Some(lock) = self.locks.get(&loan_hash).cloned() {
             if lock.fund_id == fund_id {
                 return PledgeOutcome::AlreadyYours { token_id: loan_hash };
             }
-            self.attempt_seq += 1;
-            let attempt_id = format!("attempt-{}", self.attempt_seq);
-            let fh = fund_hash(&fund_id);
-            if !self.attempts.contains_key(&fund_id) {
-                self.attempts.insert(fund_id.clone(), Vector::new(Key::AttemptList { fund_hash: fh }));
-            }
-            self.attempts.get_mut(&fund_id).unwrap().push(Attempt { attempt_id: attempt_id.clone(), at_ms: now });
-            let hh = fund_hash(&lock.fund_id);
-            if !self.alerts.contains_key(&lock.fund_id) {
-                self.alerts.insert(lock.fund_id.clone(), Vector::new(Key::AlertList { fund_hash: hh }));
-            }
-            self.alerts.get_mut(&lock.fund_id).unwrap().push(now);
-            return PledgeOutcome::Refused { message: "already pledged elsewhere".to_string(), attempt_id };
+            // Refusal is not a blocked attempt and does not alert the holder.
+            return PledgeOutcome::Refused { message: "already pledged elsewhere".to_string(), attempt_id: "none".to_string() };
         }
 
         self.locks.insert(loan_hash.clone(), Lock { fund_id, locked_at_ms: now });
@@ -695,8 +803,8 @@ impl Registry {
         }
     }
 
-    /// One page of the times at which another fund tried to pledge one of this fund's loans (the other fund is
-    /// not named), oldest first (limit capped at PAGE_MAX).
+    /// Times previously stored as holder alerts. New refusals do not append to this list. Oldest first
+    /// (limit capped at PAGE_MAX).
     pub fn get_alerts_page(&self, fund_id: String, from_index: u32, limit: u32) -> Vec<u64> {
         match self.alerts.get(&fund_id) {
             Some(list) => page(list, from_index, limit).cloned().collect(),

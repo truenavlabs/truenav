@@ -6,6 +6,24 @@ use near_sdk::test_utils::{accounts, VMContextBuilder};
 use near_sdk::{testing_env, AccountId};
 use truenav_registry::{Certificate, Registry};
 
+#[path = "pledge_help.rs"]
+mod pledge_help;
+
+fn next_nonce() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static N: AtomicU64 = AtomicU64::new(1);
+    format!("{:064x}", N.fetch_add(1, Ordering::Relaxed))
+}
+
+fn pledge_as(r: &mut Registry, caller: &AccountId, fund: &AccountId, loan: &str, asset: &str) {
+    let nonce = next_nonce();
+    let when = 1_793_000_000_000u64;
+    let exp = when + 60_000;
+    ctx(caller);
+    let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), "registry.test.near", fund.as_str(), loan, asset, &nonce, exp);
+    r.pledge_loan(loan.into(), asset.into(), fund.clone(), nonce, exp, sig, None);
+}
+
 const LOAN: &str = "1111111111111111111111111111111111111111111111111111111111111111";
 const ADDR: &str = "0x00000000000000000000000000000000000000aa";
 
@@ -31,8 +49,8 @@ fn setup() -> Registry {
     r.set_role("pauser".into(), pauser());
     r.set_role("servicer".into(), servicer());
     r.register_fund("f".into(), fund(), "m".into());
-    ctx(&fund());
-    r.pledge_loan(LOAN.into(), "invoices".into());
+    r.set_servicer_pledge_key(pledge_help::address_of(&pledge_help::servicer_key()));
+    pledge_as(&mut r, &fund(), &fund(), LOAN, "invoices");
     r
 }
 fn cert() -> Certificate {
@@ -105,7 +123,7 @@ macro_rules! paused {
 }
 
 // Pause blocks every state-changing call of the flow.
-paused!(pause_blocks_pledge, fund(), |r| r.pledge_loan("2".repeat(64), "invoices".into()));
+paused!(pause_blocks_pledge, fund(), |r| r.pledge_loan("2".repeat(64), "invoices".into(), fund(), "aa".repeat(32), 1_793_000_000_000 + 60_000, "0x1234".into(), None));
 paused!(pause_blocks_release, servicer(), |r| r.release_loan(LOAN.into()));
 paused!(pause_blocks_certificates, admin(), |r| r.submit_certificate(cert(), format!("0x{}", "00".repeat(65))));
 paused!(pause_blocks_verdicts, servicer(), |r| r.submit_verdict(LOAN.into(), "M".into(), "c".repeat(64), "{}".into(), format!("0x{}", "00".repeat(65))));
@@ -133,8 +151,7 @@ fn pause_leaves_views_and_role_changes_working_and_unpause_restores() {
     // Unpause restores the flow.
     ctx(&pauser());
     r.unpause();
-    ctx(&fund());
-    r.pledge_loan("3".repeat(64), "invoices".into());
+    pledge_as(&mut r, &fund(), &fund(), &"3".repeat(64), "invoices");
 }
 
 #[test]

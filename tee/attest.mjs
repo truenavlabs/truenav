@@ -7,14 +7,27 @@
 //   RTMR3 matches the replayed event log; for model reports also the NVIDIA GPU evidence (NRAS verdict).
 // It returns a checklist the UI can show as a "Verified" panel, and the attested model signing address.
 //
-// The API key is injected by the session's network proxy for cloud-api.near.ai; this file never reads it.
+// A key is sent only when NEAR_AI_CLOUD_API_KEY or NEARAI_API_KEY is set. With no key, the request has no
+// Authorization header. A dummy bearer is not sent. Docs: a key that is sent must be valid; no header is a public read.
 import { createHash, randomBytes } from "node:crypto";
 import { getCollateralAndVerify } from "@phala/dcap-qvl";
 
 export const API = "https://cloud-api.near.ai/v1";
 export const MODEL = "Qwen/Qwen3-VL-30B-A3B-Instruct";
+/// A model that currently has an attestation provider. `npm run tee:attest` uses this unless NEAR_AI_MODEL is set.
+export const ATTESTABLE_MODEL = "z-ai/glm-5.3-flash";
 export const ACCEPTED_TCB = ["UpToDate"];
-const AUTH = { Authorization: `Bearer ${process.env.NEAR_AI_CLOUD_API_KEY || "proxy-injected"}` };
+const API_KEY = process.env.NEAR_AI_CLOUD_API_KEY || process.env.NEARAI_API_KEY || "";
+
+export function authHeaders() {
+  const headers = { "x-no-aliasing": "true" };
+  if (API_KEY) headers.Authorization = `Bearer ${API_KEY}`;
+  return headers;
+}
+
+export function modelFromEnv(fallback = ATTESTABLE_MODEL) {
+  return process.env.NEAR_AI_MODEL || process.env.TRUENAV_ATTEST_MODEL || fallback;
+}
 
 const hexBytes = (v) => Buffer.from(String(v).replace(/^0x/i, ""), "hex");
 const parse = (v) => (typeof v === "string" ? JSON.parse(v) : v);
@@ -90,7 +103,7 @@ export async function checkGpu(report, nonceHex) {
 export async function attest(model = MODEL) {
   const nonce = randomBytes(32).toString("hex");
   const url = `${API}/attestation/report?${new URLSearchParams({ model, provider: "near", signing_algo: "ecdsa", nonce })}`;
-  const r = await fetch(url, { headers: { ...AUTH, "x-no-aliasing": "true" } });
+  const r = await fetch(url, { headers: authHeaders() });
   if (!r.ok) throw new Error(`attestation request failed: ${r.status}`);
   const raw = Buffer.from(await r.arrayBuffer()); // published base64-encoded as tee/fixtures/attestation-report.json.b64
   const body = JSON.parse(raw.toString("utf8"));
@@ -114,7 +127,7 @@ export async function verifyReport(body, nonce, model = MODEL) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const res = await attest(process.argv[2] || MODEL);
+  const res = await attest(process.argv[2] || modelFromEnv());
   for (const s of res.sections) {
     console.log(s.name + (s.signer ? `  signer ${s.signer.signing_address} (${s.signer.signing_algo})` : ""));
     for (const c of s.checks) console.log(`  ${c.pass ? "PASS" : "FAIL"} ${c.check}${c.detail ? "  " + c.detail : ""}`);

@@ -1,6 +1,75 @@
 //! Pure input and output rules of the TrueNav fingerprint module, kept apart from the OutLayer host bindings so they
 //! are unit-tested on the native target (`cargo test`). Owner decision 7 Nov (AUDIT_FINDINGS 25, 26).
 
+mod keccak;
+
+pub use keccak::keccak256;
+
+/// Domain of a pledge ticket. Same text the registry contract builds in `pledge_message`.
+pub const PLEDGE_DOMAIN: &str = "truenav-pledge-v1";
+
+/// Fields the module itself puts into a pledge ticket. There is no field for a caller-supplied digest or signature.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TicketRequest {
+    pub contract_id: String,
+    pub network: String,
+    pub fund_account: String,
+    pub expiry_ms: u64,
+    pub pledge_nonce: String,
+}
+
+fn no_pipe(label: &str, value: &str) -> Result<(), String> {
+    if value.is_empty() || value.contains('|') {
+        return Err(format!("{label} must be non-empty and must not contain '|'"));
+    }
+    Ok(())
+}
+
+/// Canonical ticket text. The loan hash is the fingerprint this module just computed, not a caller-supplied digest.
+pub fn pledge_ticket_message(loan_hash: &str, asset_type: &str, ticket: &TicketRequest) -> Result<String, String> {
+    if loan_hash.len() != 64 || !loan_hash.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()) {
+        return Err("loan_hash must be 64 lowercase hex characters".into());
+    }
+    if asset_type != "real_estate" && asset_type != "invoices" {
+        return Err("asset_type must be real_estate or invoices".into());
+    }
+    no_pipe("contract_id", &ticket.contract_id)?;
+    no_pipe("network", &ticket.network)?;
+    no_pipe("fund_account", &ticket.fund_account)?;
+    if ticket.pledge_nonce.len() < 32
+        || ticket.pledge_nonce.len() > 64
+        || !ticket.pledge_nonce.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    {
+        return Err("pledge_nonce must be 32 to 64 lowercase hex characters".into());
+    }
+    Ok(format!(
+        "{PLEDGE_DOMAIN}|{}|{}|{loan_hash}|{}|{asset_type}|{}|{}",
+        ticket.contract_id, ticket.network, ticket.fund_account, ticket.pledge_nonce, ticket.expiry_ms
+    ))
+}
+
+/// EIP-191 digest of a message this module composed. `sign` is given only this 32-byte digest.
+pub fn eip191_prehash(message: &str) -> [u8; 32] {
+    let prefix = format!("\u{19}Ethereum Signed Message:\n{}", message.len());
+    let mut data = prefix.into_bytes();
+    data.extend_from_slice(message.as_bytes());
+    keccak256(&data)
+}
+
+/// Compose the ticket and ask `sign` for a 65-byte r || s || v. `sign` is never given caller bytes.
+pub fn compose_ticket<F>(loan_hash: &str, asset_type: &str, ticket: &TicketRequest, mut sign: F) -> Result<(String, String), String>
+where
+    F: FnMut(&[u8; 32]) -> Result<Vec<u8>, String>,
+{
+    let message = pledge_ticket_message(loan_hash, asset_type, ticket)?;
+    let digest = eip191_prehash(&message);
+    let sig = sign(&digest)?;
+    if sig.len() != 65 {
+        return Err(format!("ticket signature must be 65 bytes, got {}", sig.len()));
+    }
+    Ok((message, format!("0x{}", hex::encode(sig))))
+}
+
 /// Longest document id accepted (characters, all ASCII).
 pub const MAX_ID_LEN: usize = 128;
 
@@ -191,5 +260,39 @@ mod tests {
         for n in [0, 16, 31, 33, 64] {
             assert!(tag_hex(&vec![0u8; n]).is_err(), "{n} bytes");
         }
+    }
+
+    #[test]
+    fn keccak256_of_empty_is_the_ethereum_vector() {
+        assert_eq!(hex::encode(keccak256(b"")), "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
+    }
+
+    #[test]
+    fn ticket_signs_only_the_digest_of_the_composed_tuple() {
+        let ticket = TicketRequest {
+            contract_id: "registry.test.near".into(),
+            network: "mainnet".into(),
+            fund_account: "harbor.testnet".into(),
+            expiry_ms: 1000,
+            pledge_nonce: "ab".repeat(32),
+        };
+        let loan = "11".repeat(32);
+        let message = pledge_ticket_message(&loan, "real_estate", &ticket).unwrap();
+        assert_eq!(
+            message,
+            format!("truenav-pledge-v1|registry.test.near|mainnet|{loan}|harbor.testnet|real_estate|{}|1000", "ab".repeat(32))
+        );
+        let mut seen = None;
+        let (got, sig) = compose_ticket(&loan, "real_estate", &ticket, |d| {
+            seen = Some(*d);
+            Ok(vec![0x11; 65])
+        })
+        .unwrap();
+        assert_eq!(got, message);
+        assert_eq!(seen.unwrap(), eip191_prehash(&message));
+        assert_eq!(sig, format!("0x{}", "11".repeat(65)));
+        let mut bad = ticket.clone();
+        bad.pledge_nonce = "TITLE-DEMO-HRE01".into();
+        assert!(pledge_ticket_message(&loan, "real_estate", &bad).is_err());
     }
 }

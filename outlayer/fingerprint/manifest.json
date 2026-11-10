@@ -5,5 +5,13 @@
       "bind": "project",
       "caller": "predecessor"
     }
+  ],
+  "signing_keys": [
+    {
+      "path": "pledge-ticket",
+      "curve": "secp256k1",
+      "bind": "project",
+      "caller": "predecessor"
+    }
   ]
 }

@@ -1,0 +1,11 @@
+{
+  "stand_in": true,
+  "note": "Local stand-in for OutLayer attestation evidence of a pledge ticket signer. Not a live TDX quote. The contract stores the sha256 of this file. npm run verify:pledge-signer re-checks that hash and these fields. It does not prove that the chain verified hardware, and it does not prove that a TEE holds any loan.",
+  "signing_address": "0x0000000000000000000000000000000000000011",
+  "tcb_status": "UpToDate",
+  "key_path": "pledge-ticket",
+  "curve": "secp256k1",
+  "bind": "project",
+  "caller": "predecessor",
+  "publisher_can_ship_another_module_version": true
+}

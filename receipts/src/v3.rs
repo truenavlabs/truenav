@@ -177,7 +177,74 @@ impl Receipts {
         self.tokens.values().filter_map(|t|read(&key(b"fund:",&t.token_id)).map(|c|json!({"token_id":t.token_id,"fund_account":c["fund_account"],"kind":t.kind,"latest_seq":t.receipts.to_string(),"first_v3_seq":self.get_first_v3_seq(t.token_id.clone())}))).skip(from.unwrap_or(0)as usize).take(limit.unwrap_or(50).min(100)as usize).collect()
     }
 }
+/// Most stored records walked back over failed heads. stamp_failure never stacks failed heads, so an
+/// honest chain needs at most two reads; anything deeper is treated as corrupt.
+const MAX_CHAIN_WALK: u64 = 4;
+/// What the next v3 run links to: the last successful receipt, never a failed head.
+pub(crate) struct ChainLink {
+    /// `prev_receipt_sha256` for the next request context and the accept check. For a v3 previous this is
+    /// the sealed envelope hash embedded in the stored body (`receipt_sha256` inside the envelope), not the
+    /// wrapper `StoredReceipt.receipt_sha256` (sha256 of the stored public body). For a v2 previous it is the
+    /// wrapper hash, which the synthetic previous object carries too.
+    pub prev_sha256: String,
+    /// `previous_receipt` for the engine. Its `receipt_sha256` always equals `prev_sha256`.
+    pub previous: Value,
+}
+fn is_hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
 impl Receipts {
+    /// The chain link for the next v3 receipt. Walks back from the head over failed heads (parsed as JSON,
+    /// `head_status == "failed"`), which stay in history untouched. `Ok(None)` when no successful receipt
+    /// exists. Fails closed with the corrupt code on unparseable bytes, a v3 body without a well-formed
+    /// embedded envelope hash, a missing record, or a walk deeper than MAX_CHAIN_WALK.
+    pub(crate) fn chain_previous(&self, token: &str) -> Result<Option<ChainLink>, &'static str> {
+        let Some(t) = self.tokens.get(token) else {
+            return Ok(None);
+        };
+        let mut seq = t.receipts;
+        let mut walked = 0;
+        while seq > 0 {
+            if walked == MAX_CHAIN_WALK {
+                return Err("v3_receipt_corrupt");
+            }
+            walked += 1;
+            let Some(r) = self.receipts.get(&(token.to_string(), seq)) else {
+                return Err("v3_receipt_corrupt");
+            };
+            let v3 = truenav_v3_core::wire::is_v3_method(&r.method);
+            let corrupt = if v3 {
+                "v3_receipt_corrupt"
+            } else {
+                "v2_receipt_corrupt"
+            };
+            let v = match serde_json::from_str::<Value>(&r.receipt) {
+                Ok(v @ Value::Object(_)) => v,
+                _ => return Err(corrupt),
+            };
+            if v.get("head_status").and_then(Value::as_str) == Some("failed") {
+                seq -= 1;
+                continue;
+            }
+            if v3 {
+                let sha = v
+                    .get("receipt_sha256")
+                    .and_then(Value::as_str)
+                    .filter(|s| is_hex64(s))
+                    .ok_or(corrupt)?
+                    .to_string();
+                return Ok(Some(ChainLink {
+                    prev_sha256: sha,
+                    previous: v,
+                }));
+            }
+            return Ok(Some(ChainLink {
+                prev_sha256: r.receipt_sha256.clone(),
+                previous: json!({"receipt_version":"2","receipt_sha256":r.receipt_sha256,"period":r.period,"passport":v["passport"]}),
+            }));
+        }
+        Ok(None)
+    }
     pub(crate) fn reserve_v3(&mut self, p: &Pending) {
         require!(enabled(), "migrate first");
         let c = read(&key(b"fund:", &p.token_id)).expect("configure v3 fund first");
@@ -188,7 +255,11 @@ impl Receipts {
             .receipts
             .checked_add(1)
             .expect("sequence exhausted");
-        let prev = self.latest_raw(&p.token_id).map(|r| r.receipt_sha256);
+        // request_run checked chain_previous before reserving, so this cannot fail here.
+        let prev = self
+            .chain_previous(&p.token_id)
+            .unwrap_or_else(|code| env::panic_str(code))
+            .map(|link| link.prev_sha256);
         let ctx = json!({"method_version":p.method,"network":"near_testnet","receipts_contract":env::current_account_id(),"token_id":p.token_id,"fund_id":p.token_id,"fund_account":c["fund_account"],"period_start":c["period_start"],"period_end":c["period_end"],"seq":seq.to_string(),"prev_receipt_sha256":prev,"supersedes_seq":c["supersedes_seq"],"correction_reason_code":c["correction_reason_code"],"request_id":p.request_id.to_string(),"request_nonce":p.run_nonce,"engine_version_key":p.version_key,"engine_code_sha256":p.version_key,"judge_valuation_time":c["judge_valuation_time"],"source_registry_sha256":c["source_registry_sha256"]});
         write(&key(b"pending:", &p.request_id.to_string()), &ctx);
     }
@@ -199,7 +270,11 @@ impl Receipts {
         let mut c =
             read(&key(b"pending:", &p.request_id.to_string())).expect("v3 pending context missing");
         c["request_nonce"] = json!(nonce);
-        let previous=self.latest_raw(token).map(|r|if truenav_v3_core::wire::is_v3_method(&r.method){serde_json::from_str::<Value>(&r.receipt).expect("stored v3")}else{let v:Value=serde_json::from_str(&r.receipt).expect("stored v2");json!({"receipt_version":"2","receipt_sha256":r.receipt_sha256,"period":r.period,"passport":v["passport"]})});
+        // request_run refuses a corrupt chain before it gets here; a view on one panics like it did before.
+        let previous = self
+            .chain_previous(token)
+            .unwrap_or_else(|code| env::panic_str(code))
+            .map(|link| link.previous);
         json!({"receipt_version":"3","context":c,"previous_receipt":previous})
     }
     pub(crate) fn accept_v3(&mut self, p: &Pending, body: &Value) -> Result<u64, String> {
@@ -291,7 +366,10 @@ impl Receipts {
             .ok_or_else(|| err("sequence_exhausted"))?;
         if envelope["seq"].as_str().and_then(|s| s.parse::<u64>().ok()) != Some(seq)
             || envelope["prev_receipt_sha256"]
-                != json!(self.latest_raw(&p.token_id).map(|r| r.receipt_sha256))
+                != json!(self
+                    .chain_previous(&p.token_id)
+                    .map_err(err)?
+                    .map(|link| link.prev_sha256))
         {
             return Err(err("v3_chain_mismatch"));
         }
@@ -612,7 +690,15 @@ mod tests {
         );
         c.accept_v3(&p, &body(&e)).unwrap();
         e["seq"] = json!("2");
-        e["prev_receipt_sha256"] = json!(c.latest_raw(e["token_id"].as_str().unwrap()).unwrap().receipt_sha256);
+        // fix 14: the chain link is the stored envelope's own hash, which differs from the wrapper hash
+        let head = c.latest_raw(e["token_id"].as_str().unwrap()).unwrap();
+        let stored: Value = serde_json::from_str(&head.receipt).unwrap();
+        assert_eq!(stored["receipt_sha256"], e["receipt_sha256"]);
+        assert_ne!(stored["receipt_sha256"], json!(head.receipt_sha256));
+        e["prev_receipt_sha256"] = json!(head.receipt_sha256);
+        let p = pending(&mut c, &e);
+        assert_eq!(c.accept_v3(&p, &body(&e)), Err("v3_chain_mismatch".into()));
+        e["prev_receipt_sha256"] = stored["receipt_sha256"].clone();
         let p = pending(&mut c, &e);
         assert_eq!(
             c.accept_v3(&p, &body(&e)),
@@ -1171,5 +1257,332 @@ mod tests {
         let mut cfg = c.config.clone();
         cfg.outlayer = account("outlayer.test.near");
         c.set_config(cfg);
+    }
+
+    /// Fix 14 (F1): the v3 chain link is the previous successful envelope's own hash, never the stored
+    /// wrapper (public-body) hash, and never a failed head.
+    mod fix14_chain {
+        use super::*;
+        fn vector(i: usize) -> Value {
+            let v: Value =
+                serde_json::from_str(include_str!("../../schema/vectors/receipt-v3-golden.json"))
+                    .unwrap();
+            v["vectors"][i]["envelope"].clone()
+        }
+        fn at(e: &Value) {
+            context(
+                "receipts.tnlab-718ca9.testnet",
+                timestamp(e["issued_at"].as_str().unwrap()).unwrap() as u64 * 1_000_000,
+            );
+        }
+        /// Mirrors outlayer/engine-v3/src/main.rs `previous_cash` up to its report-store fetch, which needs
+        /// the WASI host and cannot run natively. Same comparisons, same order, same error codes.
+        fn engine_previous_chain(input: &Value) -> Result<(), &'static str> {
+            let c = &input["context"];
+            let previous = &input["previous_receipt"];
+            let Some(prev) = c["prev_receipt_sha256"].as_str() else {
+                return if previous.is_null() {
+                    Ok(())
+                } else {
+                    Err("previous_chain")
+                };
+            };
+            if previous["receipt_sha256"].as_str() != Some(prev) {
+                return Err("previous_chain");
+            }
+            if previous["receipt_version"] == "3" {
+                truenav_v3_core::validate(previous)?;
+                if previous["token_id"] != c["token_id"]
+                    || previous["fund_account"] != c["fund_account"]
+                {
+                    return Err("previous_chain");
+                }
+                previous["commitments"]["full_report"]
+                    .as_str()
+                    .ok_or("previous_report")?;
+            } else if previous["receipt_version"] != "2" {
+                return Err("previous_version");
+            }
+            Ok(())
+        }
+        /// The production request path for the next run: request_run's reserve_v3 then run_input.
+        fn next_run_input(c: &mut Receipts, token: &str, e: &Value) -> Value {
+            write(
+                &key(b"fund:", token),
+                &json!({"fund_account":e["fund_account"],"period_start":e["period_start"],"period_end":e["period_end"],"judge_valuation_time":e["valuation_time"],"source_registry_sha256":"a".repeat(64),"supersedes_seq":null,"correction_reason_code":null}),
+            );
+            let p = Pending {
+                request_id: 1,
+                token_id: token.into(),
+                run_nonce: "ab".repeat(32),
+                requester: account("runner.testnet"),
+                version_key: e["engine_version_key"].as_str().unwrap().into(),
+                method: e["method_version"].as_str().unwrap().into(),
+                storage_deposit: U128(NearToken::from_near(1).as_yoctonear()),
+                outlayer_deposit: U128(0),
+                pending_bytes: 0,
+                requested_ns: 1,
+            };
+            c.pending.insert(token.into(), p.clone());
+            c.reserve_v3(&p);
+            let input = c.v3_run_input(token, &p.run_nonce);
+            c.pending.remove(token);
+            clear_context(1);
+            input
+        }
+        fn stored_body(c: &Receipts, token: &str, seq: u64) -> (StoredReceipt, Value) {
+            let r = c.receipts.get(&(token.to_string(), seq)).unwrap().clone();
+            let v: Value = serde_json::from_str(&r.receipt).unwrap();
+            (r, v)
+        }
+
+        #[test]
+        fn fix14_f1_envelope_hash_and_public_body_hash_differ_and_the_chain_uses_the_envelope_hash() {
+            let mut c = migrated();
+            let e = vector(0);
+            let token = e["token_id"].as_str().unwrap().to_string();
+            let p = pending(&mut c, &e);
+            at(&e);
+            assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
+            let (r, stored) = stored_body(&c, &token, 1);
+            // both sides computed here, from the same stored bytes
+            let public_body_hash = hash(r.receipt.as_bytes());
+            let envelope_hash = truenav_v3_core::wire::envelope_hash(&stored).unwrap();
+            assert_eq!(r.receipt_sha256, public_body_hash, "wrapper stays the public-body hash");
+            assert_eq!(stored["receipt_sha256"], envelope_hash, "embedded hash is the envelope hash");
+            assert_ne!(public_body_hash, envelope_hash, "the two identities differ by construction");
+            // the frozen golden correction vector chains on the envelope hash too
+            assert_eq!(vector(2)["prev_receipt_sha256"], json!(envelope_hash));
+            let input = next_run_input(&mut c, &token, &e);
+            assert_eq!(input["context"]["seq"], "2");
+            assert_eq!(input["context"]["prev_receipt_sha256"], json!(envelope_hash));
+            assert_eq!(input["previous_receipt"]["receipt_sha256"], json!(envelope_hash));
+            assert_eq!(
+                input["context"]["prev_receipt_sha256"],
+                input["previous_receipt"]["receipt_sha256"]
+            );
+            assert_ne!(input["context"]["prev_receipt_sha256"], json!(public_body_hash));
+            assert_eq!(engine_previous_chain(&input), Ok(()));
+        }
+
+        #[test]
+        fn fix14_f1_two_period_production_path_continues_instead_of_previous_chain() {
+            let mut c = migrated();
+            let e = vector(0);
+            let token = e["token_id"].as_str().unwrap().to_string();
+            let p = pending(&mut c, &e);
+            at(&e);
+            assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
+            // period 2 request: what the contract sends to the engine must pass the engine's own check
+            let input = next_run_input(&mut c, &token, &e);
+            assert_eq!(engine_previous_chain(&input), Ok(()), "{input}");
+            // the engine echoes the context; the next period's envelope must be accepted
+            let mut e2 = vector(0);
+            e2["period_start"] = json!("2026-11-01");
+            e2["period_end"] = json!("2026-12-01");
+            e2["seq"] = input["context"]["seq"].clone();
+            e2["prev_receipt_sha256"] = input["context"]["prev_receipt_sha256"].clone();
+            e2["request_id"] = json!("synthetic_harbor_period_2");
+            let p = pending(&mut c, &e2);
+            at(&e2);
+            // fail closed: the wrapper hash is not a chain link
+            let mut wrong = e2.clone();
+            wrong["prev_receipt_sha256"] = json!(c.latest_raw(&token).unwrap().receipt_sha256);
+            write(&key(b"pending:", "1"), &{
+                let mut ctx = wrong.clone();
+                ctx["judge_valuation_time"] = wrong["valuation_time"].clone();
+                ctx
+            });
+            assert_eq!(c.accept_v3(&p, &body(&wrong)), Err("v3_chain_mismatch".into()));
+            let p = pending(&mut c, &e2);
+            assert_eq!(c.accept_v3(&p, &body(&e2)), Ok(2));
+            let (_, s2) = stored_body(&c, &token, 2);
+            let (_, s1) = stored_body(&c, &token, 1);
+            assert_eq!(s2["prev_receipt_sha256"], s1["receipt_sha256"]);
+            // and a third period links to period 2's envelope
+            let input = next_run_input(&mut c, &token, &e2);
+            assert_eq!(input["context"]["seq"], "3");
+            assert_eq!(input["context"]["prev_receipt_sha256"], s2["receipt_sha256"]);
+            assert_eq!(engine_previous_chain(&input), Ok(()));
+        }
+
+        #[test]
+        fn fix14_f1_the_frozen_golden_correction_vector_chains_onto_the_golden_first_receipt() {
+            let mut c = migrated();
+            let first = vector(0);
+            let p = pending(&mut c, &first);
+            at(&first);
+            assert_eq!(c.accept_v3(&p, &body(&first)), Ok(1));
+            let correction = vector(2);
+            let p = pending(&mut c, &correction);
+            at(&correction);
+            assert_eq!(c.accept_v3(&p, &body(&correction)), Ok(2));
+            assert_eq!(
+                strip_commit(c.get_receipt(p.token_id.clone(), 2).unwrap()),
+                correction
+            );
+        }
+
+        #[test]
+        fn fix14_f1_success_failure_recovery_links_to_the_last_success_and_keeps_the_failure() {
+            let mut c = migrated();
+            let e = vector(0);
+            let token = e["token_id"].as_str().unwrap().to_string();
+            let p = pending(&mut c, &e);
+            at(&e);
+            assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
+            let (_, s1) = stored_body(&c, &token, 1);
+            let success_hash = s1["receipt_sha256"].clone();
+            c.stamp_failure(&token, 2, "outlayer_run_failed");
+            let (failed_row, failed) = stored_body(&c, &token, 2);
+            assert_eq!(failed["head_status"], "failed");
+            assert!(failed.get("receipt_sha256").is_none(), "a failed head is not sealed");
+            assert_eq!(failed["prev_receipt_sha256"], success_hash, "failed body links the last success");
+            assert!(c.head_failed(&token));
+            // recovery request: previous is the last success, never the failed head
+            let input = next_run_input(&mut c, &token, &e);
+            assert_eq!(input["context"]["seq"], "3");
+            assert_eq!(input["context"]["prev_receipt_sha256"], success_hash);
+            assert_ne!(input["context"]["prev_receipt_sha256"], json!(failed_row.receipt_sha256));
+            assert_eq!(input["previous_receipt"], s1);
+            assert_eq!(engine_previous_chain(&input), Ok(()));
+            // the recovery envelope: a correction of seq 1, as seq 3
+            let mut e3 = vector(2);
+            e3["seq"] = json!("3");
+            e3["prev_receipt_sha256"] = input["context"]["prev_receipt_sha256"].clone();
+            let p = pending(&mut c, &e3);
+            at(&e3);
+            // fail closed: the failed head's wrapper hash is not a chain link
+            let mut wrong = e3.clone();
+            wrong["prev_receipt_sha256"] = json!(failed_row.receipt_sha256);
+            write(&key(b"pending:", "1"), &{
+                let mut ctx = wrong.clone();
+                ctx["judge_valuation_time"] = wrong["valuation_time"].clone();
+                ctx
+            });
+            assert_eq!(c.accept_v3(&p, &body(&wrong)), Err("v3_chain_mismatch".into()));
+            let p = pending(&mut c, &e3);
+            assert_eq!(c.accept_v3(&p, &body(&e3)), Ok(3));
+            assert!(!c.head_failed(&token));
+            // the failure stays in history
+            let history = c.get_receipt_history(token.clone(), Some("1".into()), Some(10));
+            assert_eq!(history.len(), 3);
+            assert_eq!(history[1]["head_status"], "failed");
+            assert_eq!(c.get_receipt(token.clone(), 2).unwrap()["head_status"], "failed");
+            let (_, s3) = stored_body(&c, &token, 3);
+            assert_eq!(s3["prev_receipt_sha256"], success_hash);
+            // the next run after recovery links seq 3
+            let input = next_run_input(&mut c, &token, &e3);
+            assert_eq!(input["context"]["prev_receipt_sha256"], s3["receipt_sha256"]);
+            assert_eq!(engine_previous_chain(&input), Ok(()));
+        }
+
+        #[test]
+        fn fix14_f1_v2_previous_keeps_the_wrapper_hash_even_under_a_failed_head() {
+            let mut c = setup();
+            c.register_token("DEMO-CREDIT".into(), "credit".into());
+            let fixture: Value = serde_json::from_str(include_str!(
+                "../tests/fixtures/engine-receipts.json"
+            ))
+            .unwrap();
+            let raw = fixture["receipts"]["DEMO-CREDIT"]["output"]
+                .as_str()
+                .unwrap()
+                .to_string();
+            let v2 = StoredReceipt {
+                token_id: "DEMO-CREDIT".into(),
+                seq: 1,
+                request_id: 1,
+                method: "cashflow-v2.1.0".into(),
+                version_key: "0".repeat(64),
+                score: 58,
+                band: "red".into(),
+                period: "2026-10".into(),
+                as_of: "2026-11-09T00:00:00Z".into(),
+                caps: vec![],
+                holds: vec![],
+                receipt_sha256: hash(raw.as_bytes()),
+                receipt: raw.clone(),
+                requested_ns: 1,
+                stored_ns: 2,
+                block_height: 3,
+            };
+            c.receipts.insert(("DEMO-CREDIT".into(), 1), v2.clone());
+            c.tokens.get_mut("DEMO-CREDIT").unwrap().receipts = 1;
+            c.stamp_failure("DEMO-CREDIT", 2, "outlayer_run_failed");
+            let (failed_row, failed) = stored_body(&c, "DEMO-CREDIT", 2);
+            assert_eq!(failed["prev_receipt_sha256"], json!(v2.receipt_sha256));
+            c.pause();
+            c.flush_all();
+            env::state_write(&c);
+            drop(c);
+            context("receipts.tnlab-718ca9.testnet", 1);
+            let mut c = Receipts::migrate_v3();
+            let mut e = golden();
+            e["token_id"] = json!("DEMO-CREDIT");
+            let input = next_run_input(&mut c, "DEMO-CREDIT", &e);
+            assert_eq!(input["context"]["seq"], "3");
+            assert_eq!(input["context"]["prev_receipt_sha256"], json!(v2.receipt_sha256));
+            assert_ne!(input["context"]["prev_receipt_sha256"], json!(failed_row.receipt_sha256));
+            assert_eq!(input["previous_receipt"]["receipt_version"], "2");
+            assert_eq!(input["previous_receipt"]["receipt_sha256"], json!(v2.receipt_sha256));
+            assert_eq!(input["previous_receipt"]["period"], "2026-10");
+            assert!(input["previous_receipt"]["passport"].is_array());
+            assert_eq!(engine_previous_chain(&input), Ok(()));
+        }
+
+        #[test]
+        fn fix14_f1_corrupt_last_success_under_a_failed_head_refunds_and_never_reserves() {
+            let mut c = migrated();
+            let e = vector(0);
+            let token = e["token_id"].as_str().unwrap().to_string();
+            let p = pending(&mut c, &e);
+            at(&e);
+            assert_eq!(c.accept_v3(&p, &body(&e)), Ok(1));
+            c.stamp_failure(&token, 2, "outlayer_run_failed");
+            // the success under the failed head loses its embedded envelope hash
+            let mut s1: Value = serde_json::from_str(&c.receipts.get(&(token.clone(), 1)).unwrap().receipt).unwrap();
+            s1.as_object_mut().unwrap().remove("receipt_sha256");
+            c.receipts.get_mut(&(token.clone(), 1)).unwrap().receipt = canonical(&s1).unwrap();
+            assert!(c.chain_previous(&token).is_err());
+            // accept fails closed rather than linking to anything
+            let mut e3 = vector(2);
+            e3["seq"] = json!("3");
+            let p = pending(&mut c, &e3);
+            at(&e3);
+            assert_eq!(c.accept_v3(&p, &body(&e3)), Err("v3_receipt_corrupt".into()));
+            // and request_run refunds the whole deposit without reserving a run
+            c.paused = false;
+            c.runners.insert(account("runner.testnet"));
+            c.config.method = truenav_v3_core::wire::CURRENT_METHOD.into();
+            let next = c.next_request;
+            let deposit = c.config.storage_deposit.0 + c.config.outlayer_deposit.0;
+            let mut ctx = VMContextBuilder::new();
+            ctx.current_account_id(account("receipts.tnlab-718ca9.testnet"))
+                .predecessor_account_id(account("runner.testnet"))
+                .attached_deposit(NearToken::from_yoctonear(deposit))
+                .prepaid_gas(Gas::from_tgas(300));
+            testing_env!(ctx.build());
+            match c.request_run(token.clone()) {
+                PromiseOrValue::Value(v) => assert_eq!(v["error"], "v3_receipt_corrupt"),
+                _ => panic!("must not request execution"),
+            }
+            assert_eq!(c.next_request, next);
+            assert!(c.pending.get(&token).is_none());
+            let refunds: u128 = near_sdk::test_utils::get_created_receipts()
+                .iter()
+                .flat_map(|r| r.actions.iter())
+                .filter_map(|a| {
+                    if let near_sdk::mock::MockAction::Transfer { deposit, .. } = a {
+                        Some(deposit.as_yoctonear())
+                    } else {
+                        None
+                    }
+                })
+                .sum();
+            assert_eq!(refunds, deposit);
+            // the failure history is untouched: still exactly one failed record on top
+            assert_eq!(c.tokens.get(&token).unwrap().receipts, 2);
+        }
     }
 }

@@ -604,28 +604,37 @@ impl Receipts {
         );
 
         // Validate before reserving a nonce or pending state. Return the entire deposit
-        // on a corrupt stored head; no OutLayer request is created.
-        if let Some(last) = self.latest_raw(&token_id) {
-            if !matches!(
+        // on a corrupt stored head, or (v3) a corrupt last success under a failed head;
+        // no OutLayer request is created.
+        let head_corrupt = self.latest_raw(&token_id).and_then(|last| {
+            (!matches!(
                 serde_json::from_str::<Value>(&last.receipt),
                 Ok(Value::Object(_))
-            ) {
-                let code = if truenav_v3_core::wire::is_v3_method(&last.method) {
+            ))
+            .then(|| {
+                if truenav_v3_core::wire::is_v3_method(&last.method) {
                     "v3_receipt_corrupt"
                 } else {
                     "v2_receipt_corrupt"
-                };
-                self.stamp_failure(&token_id, self.next_request, code);
-                if attached > 0 {
-                    Promise::new(requester)
-                        .transfer(NearToken::from_yoctonear(attached))
-                        .detach();
                 }
-                return PromiseOrValue::Value(json!({
-                    "error": code,
-                    "head_status": "failed"
-                }));
+            })
+        });
+        let chain_corrupt = if head_corrupt.is_none() && truenav_v3_core::wire::is_v3_method(&c.method) {
+            self.chain_previous(&token_id).err()
+        } else {
+            None
+        };
+        if let Some(code) = head_corrupt.or(chain_corrupt) {
+            self.stamp_failure(&token_id, self.next_request, code);
+            if attached > 0 {
+                Promise::new(requester)
+                    .transfer(NearToken::from_yoctonear(attached))
+                    .detach();
             }
+            return PromiseOrValue::Value(json!({
+                "error": code,
+                "head_status": "failed"
+            }));
         }
 
         let request_id = self.next_request;
@@ -958,7 +967,16 @@ impl Receipts {
             "engine_version_key": prev.version_key.clone(),
             "valuation_time": prev.as_of.clone(),
             "as_of": prev.as_of.clone(),
-            "prev_receipt_sha256": prev.receipt_sha256.clone(),
+            // Same link a later success uses: a v3 previous links by its sealed envelope hash, a v2 (or
+            // unreadable) previous by its wrapper hash. This failure body is never sealed as an envelope.
+            "prev_receipt_sha256": if v3 {
+                serde_json::from_str::<Value>(&prev.receipt)
+                    .ok()
+                    .and_then(|v| v.get("receipt_sha256").and_then(Value::as_str).map(str::to_string))
+                    .unwrap_or_else(|| prev.receipt_sha256.clone())
+            } else {
+                prev.receipt_sha256.clone()
+            },
         });
         let stored = truenav_v3_core::canonical(&body).unwrap_or_else(|_| body.to_string());
         let sha = hex(&env::sha256(stored.as_bytes()));

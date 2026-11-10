@@ -22,7 +22,7 @@ import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } fr
 import { scorePortfolio } from "../engine/src/score.mjs";
 import { replyProblem } from "../tee/reply.mjs";
 import { toCertificate, signCertificate, signEip191, addressOf, newSecretKey } from "./certificate.mjs";
-import { networkOf, pledgeMessage } from "../tee/pledge-ticket.mjs";
+import { plainCallArgs, pledgeArgs as buildPledgeArgs } from "./call-args.mjs";
 
 const root = new URL("../", import.meta.url);
 // Public testnet RPC listed in docs.near.org/api/rpc/providers (rpc.testnet.near.org is deprecated and rate limited).
@@ -112,7 +112,7 @@ const ONE_YOCTO = new Set(["add_signer", "remove_signer", "register_fund", "pled
 async function call(signer, step, methodName, args, gasT = "100", expectFailure = false) {
   const tx = await signer.signAndSendTransaction({
     receiverId: ids.registry,
-    actions: [actions.functionCall(methodName, args, teraToGas(gasT), ONE_YOCTO.has(methodName) ? 1n : 0n)],
+    actions: [actions.functionCall(methodName, plainCallArgs(args), teraToGas(gasT), ONE_YOCTO.has(methodName) ? 1n : 0n)],
     throwOnFailure: false,
     waitUntil: "FINAL", // read-after-write: state is final before the script checks it
   });
@@ -183,11 +183,9 @@ const signerAddress = addressOf(secretKey);
 if (!(await view("get_signers")).includes(signerAddress)) await call(admin, "add_signer (test key, not TEE)", "add_signer", { address: signerAddress });
 if ((await view("get_servicer_pledge_key")) !== signerAddress) await call(admin, "set_servicer_pledge_key (test key, not TEE)", "set_servicer_pledge_key", { address: signerAddress });
 
-function pledgeArgs(fundAccount, loanHash, assetType) {
-  const nonce = randomBytes(32).toString("hex");
-  const expiry_ms = Date.now() + 60 * 60 * 1000;
-  const message = pledgeMessage(ids.registry, networkOf(ids.registry), loanHash, fundAccount, assetType, nonce, expiry_ms);
-  return { loan_hash: loanHash, asset_type: assetType, fund_account: fundAccount, nonce, expiry_ms, servicer_signature: signEip191(message, secretKey), ticket_signature: null };
+// fundAccountId is an account id string. Passing the Account object put its signer key into the args.
+function pledgeArgs(fundAccountId, loanHash, assetType) {
+  return buildPledgeArgs({ contractId: ids.registry, fundAccountId, loanHash, assetType, nonce: randomBytes(32).toString("hex"), expiryMs: Date.now() + 60 * 60 * 1000, secretKey });
 }
 
 const fx = JSON.parse(readFileSync(new URL("spec/nav/fixtures.json", root), "utf8"));
@@ -206,7 +204,7 @@ const fundAccount = { "harbor-credit-fund": harbor, "meridian-yield-fund": merid
 for (const l of demo) {
   const lock = await view("get_lock", { loan_hash: l.loan_hash });
   if (lock) continue;
-  const d = await call(fundAccount[l.fund_id], `${l.fund_id} pledges ${l.loan_id}`, "pledge_loan", pledgeArgs(fundAccount[l.fund_id], l.loan_hash, l.asset_type));
+  const d = await call(fundAccount[l.fund_id], `${l.fund_id} pledges ${l.loan_id}`, "pledge_loan", pledgeArgs(FUND_ACCOUNT[l.fund_id], l.loan_hash, l.asset_type));
   expect(d.ok && d.value && d.value.outcome === "pledged", `${l.loan_id} pledged, token minted`);
 }
 

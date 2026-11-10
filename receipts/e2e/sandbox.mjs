@@ -301,10 +301,13 @@ try {
   ok(sev.caps.includes("collection_shortfall") && sev.receipt_sha256 === createHash("sha256").update(sev.receipt).digest("hex"), `public caps ${sev.caps.join(", ")} and the write-time hash matches`);
 
   // ---- query contract and API --------------------------------------------------------------------------------
-  const wrong = await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "DEMO-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.02") });
+  // the paid report runs on HONEST-CREDIT (a good head); DEMO-CREDIT's head is a failure, so its /report is 409
+  // run_failed and must redeem nothing (fix 13). The agent later buys its own HONEST-CREDIT report under another id.
+  const wrong = await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "HONEST-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.02") });
   ok(!wrong.ok, "buy_query with the wrong amount is refused");
   ok((await view("query", "get_entitlement", { request_id: "e2e-report-0001" })) === null, "nothing stored for the refused purchase");
-  ok((await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "DEMO-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.01") })).ok, "agent buys a report entitlement for exactly 0.01 NEAR");
+  ok((await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "HONEST-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.01") })).ok, "agent buys a report entitlement for exactly 0.01 NEAR");
+  ok((await call("agent", "query", "buy_query", { request_id: "e2e-report-0002", query_hash: queryHash("report", "DEMO-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.01") })).ok, "agent buys a DEMO-CREDIT report entitlement");
   ok((await call("agent", "query", "buy_query", { request_id: "e2e-ask-00001", query_hash: queryHash("ask", "DEMO-CREDIT"), kind: "ask" }, { deposit: nearToYocto("0.01") })).ok, "agent buys an ask entitlement");
 
   const chain = nearChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), redeemerId: id("api"), keyFile: join(keys, `${id("api")}.json`) });
@@ -327,12 +330,20 @@ try {
   const s1 = await demoScore.json();
   const demoLatest = await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" });
   ok(demoScore.status === 409 && s1.error === "run_failed" && demoLatest.band !== "green" && demoLatest.score !== 100 && String(demoLatest.receipt).includes("\"head_status\":\"failed\""), `DEMO-CREDIT with a failure gives no green score (${demoScore.status} ${JSON.stringify(s1)} band ${demoLatest.band})`);
-  ok((await get("/fund/DEMO-CREDIT/report")).status === 402, "API /report without an entitlement is 402");
-  const rep = await get("/fund/DEMO-CREDIT/report", "e2e-report-0001");
-  const repBody = await rep.json();
-  ok(rep.status === 200 && repBody.receipt.token_id === "DEMO-CREDIT" && repBody.entitlement.uses_left === 0, "API /report spends the entitlement on chain and returns the receipt");
-  ok((await view("query", "get_entitlement", { request_id: "e2e-report-0001" })).uses_left === 0, "the use is recorded on chain");
-  ok((await get("/fund/DEMO-CREDIT/report", "e2e-report-0001")).status === 402, "a second /report with the same entitlement is 402");
+  const shown = async (res) => { const text = await res.text(); let body; try { body = JSON.parse(text); } catch { body = null; } return { status: res.status, body, label: `${res.status} ${text.slice(0, 300)}` }; };
+  const noEnt = await shown(await get("/fund/HONEST-CREDIT/report"));
+  ok(noEnt.status === 402 && noEnt.body?.error === "payment_required", `API /report without an entitlement is 402 (${noEnt.label})`);
+  const rep = await shown(await get("/fund/HONEST-CREDIT/report", "e2e-report-0001"));
+  ok(rep.status === 200 && rep.body?.receipt?.token_id === "HONEST-CREDIT" && rep.body?.receipt_sha256 === honest.receipt_sha256 && rep.body?.entitlement?.uses_left === 0, `API /report spends the entitlement on chain and returns the receipt (${rep.label})`);
+  const used = await view("query", "get_entitlement", { request_id: "e2e-report-0001" });
+  ok(used && used.uses_left === 0, `the use is recorded on chain (uses_left ${used && used.uses_left})`);
+  const again = await shown(await get("/fund/HONEST-CREDIT/report", "e2e-report-0001"));
+  ok(again.status === 402, `a second /report with the same entitlement is 402 (${again.label})`);
+  const failedNoEnt = await shown(await get("/fund/DEMO-CREDIT/report"));
+  ok(failedNoEnt.status === 409 && failedNoEnt.body?.error === "run_failed", `API /report on a failed head is 409 run_failed (${failedNoEnt.label})`);
+  const failedRep = await shown(await get("/fund/DEMO-CREDIT/report", "e2e-report-0002"));
+  const unspent = await view("query", "get_entitlement", { request_id: "e2e-report-0002" });
+  ok(failedRep.status === 409 && failedRep.body?.error === "run_failed" && unspent && unspent.uses_left === 1, `API /report on a failed head with an entitlement is 409 run_failed and redeems nothing (${failedRep.label}, uses_left ${unspent && unspent.uses_left})`);
   const askR = await fetch(base + "/ask", { method: "POST", headers: { "content-type": "application/json", ...buyerHeaders("e2e-ask-00001", "ask", "DEMO-CREDIT") }, body: JSON.stringify({ token_id: "DEMO-CREDIT", question: "collection rate?" }) });
   ok(askR.status === 501 && (await view("query", "get_entitlement", { request_id: "e2e-ask-00001" })).uses_left === 20, "API /ask checks the entitlement, spends nothing, 501 until step 6");
   const s2 = await (await get("/fund/DEMO-CREDIT/score")).json();
@@ -354,6 +365,11 @@ try {
     console.log(`  agent: ${summary(out)}`);
     ok(out.decision.action === action && out.decision.reason === why, `agent ${t}: ${out.decision.action} (${out.decision.detail})`);
     ok(out.receipt && out.receipt.receipt_sha256 === live.receipt_sha256, `agent ${t}: cites the stored public hash`);
+    if (why === "run_failed") {
+      // fix 13: a failed head buys nothing, so there is no entitlement to check and nothing is spent
+      ok(out.entitlement && out.entitlement.bought === false && out.entitlement.why === "run_failed" && spent === 0n, `agent ${t}: a failed head buys nothing (bought ${out.entitlement && out.entitlement.bought}, why ${out.entitlement && out.entitlement.why}, spent ${spent} yocto)`);
+      continue;
+    }
     if (!out.entitlement?.request_id) { ok(false, `agent ${t}: did not buy`); continue; }
     const ent = await view("query", "get_entitlement", { request_id: out.entitlement.request_id });
     ok(ent && ent.buyer === id("agent") && ent.query_hash === agentQueryHash("report", t) && ent.uses_left === 0, `agent ${t}: spent one report entitlement`);

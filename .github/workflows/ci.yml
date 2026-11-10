@@ -174,6 +174,8 @@ jobs:
           sudo chown -R "$(id -u):$(id -g)" receipts/target
           node receipts/check-sandbox-account.mjs --expect
           grep -a -q 'outlayer.test.near' receipts/target/near-sandbox/truenav_receipts.wasm
+      - name: Stamp the pinned-image wasm so the sandbox steps use it and never rebuild on the host
+        run: node receipts/e2e/stamp-wasm.mjs
       - name: Native engine for the worker
         working-directory: outlayer/engine-v2
         run: cargo +1.99.0 build --locked --example native

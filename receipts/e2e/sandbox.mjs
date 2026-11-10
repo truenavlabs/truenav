@@ -98,6 +98,7 @@ try {
   const locked = BigInt(rAcct.storage_usage) * 10n ** 19n;
   ok(locked + nearToYocto("0.1") <= fundReceipts, `receipts storage after D2 and D3: ${rAcct.storage_usage} bytes, ${(Number(locked) / 1e24).toFixed(4)} NEAR locked of the ${(Number(fundReceipts) / 1e24).toFixed(1)} NEAR D1 funds it`);
 
+  const resolveArgs = [];
   const datasets = Object.fromEntries(Object.keys(funds).map((t) => [t, JSON.parse(readFileSync(join(root, `cashflow/fixtures/parity/cashflow-parity-${t}.json`))).input.dataset]));
   const dsFile = (t, ds) => {
     const f = join(keys, `ds-${t}-${Math.random().toString(36).slice(2)}.json`);
@@ -116,6 +117,7 @@ try {
         try { parsed = JSON.parse(engineOut); } catch { parsed = null; }
         let out = fail || (parsed && parsed.error) ? engineOut : guestFromEngine(example, engineOut, JSON.parse(r.input_data).context);
         if (tamper) out = tamper(out);
+        resolveArgs.push(typeof out === "string" ? out : JSON.stringify(out));
         const res = await call("worker", "outlayer", "resolve", { request_id: r.request_id, success: !fail, output: out });
         if (process.env.E2E_DEBUG) console.log("  resolve", r.request_id, res.ok ? "ok" : res.failure.slice(0, 300), `after ${i * 0.5}s`);
         return r;
@@ -205,6 +207,7 @@ try {
     const cleared = await call("admin", "receipts", "clear_pending", { token_id: token }, { deposit: 1n });
     if (panic) await call("worker", "outlayer", "set_panic_on_resolve", { panic: true });
     const out = output ?? execFileSync(engine, [dsFile(token, datasets[token]), BANK_FETCHED_AT], { input: JSON.stringify({ ...JSON.parse(r.input_data), as_of: RUN_AS_OF }) }).toString();
+    resolveArgs.push(typeof out === "string" ? out : JSON.stringify(out));
     await call("worker", "outlayer", "resolve", { request_id: r.request_id, success: true, output: out });
     if (panic) await call("worker", "outlayer", "set_panic_on_resolve", { panic: false });
     let t;
@@ -254,8 +257,8 @@ try {
   ok(f.result.value === "receipt_too_large", `a 2 MiB result in flight at 40 Tgas is refused as too large (${f.result.value || f.result.failure})`);
   ok((await view("receipts", "get_token", { token_id: "DEMO-CREDIT" })).pending === null, "and nothing stays pending");
   ok((await call("admin", "receipts", "set_config", { config: config0 }, { deposit: 1n })).ok, "callback gas back to 50");
-  f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.private = { ...(v.private || {}), tenants: ["Tenant DEMO-RENTAL 01"] }; return JSON.stringify(v); } });
-  ok(!(await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt.includes("Tenant"), `a private field is not stored (${f.result.value})`);
+  f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.private = { note: "kept-off-chain" }; return JSON.stringify(v); } });
+  ok(f.result.value === "private_field" && !(await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt.includes("kept-off-chain"), `a private object is refused and not stored (${f.result.value})`);
   f = await run("DEMO-RENTAL", { tamper: (o) => JSON.stringify(o) });
   ok(f.result.value === "v3_execution_shape" || f.result.value === "receipt_not_object", `a receipt delivered as a JSON string is refused (${f.result.value})`);
   const strOcc = structuredClone(datasets["DEMO-RENTAL"]);
@@ -263,25 +266,24 @@ try {
   f = await run("DEMO-RENTAL", { ds: strOcc });
   ok(f.result.value === "module_failed:occupancy_bps_invalid", `a string occupancy_bps fails closed in the engine (${f.result.value})`);
   for (const bad of ["N/A", 9583.5, "9583"]) {
-    f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.private = { ...(v.private || {}), metrics: { occupancy_bps: bad } }; return JSON.stringify(v); } });
+    f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.private = { occupancy_bps: bad }; return JSON.stringify(v); } });
     const latest = await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" });
     ok(!latest.receipt.includes(String(bad)), `a non-integer metric stays off chain occupancy_bps=${JSON.stringify(bad)} (${f.result.value})`);
   }
   f = await run("DEMO-RENTAL", { tamper: (o) => { const v = JSON.parse(o); v.request_nonce = "ab".repeat(32); return JSON.stringify(v); } });
   ok(f.result.value === "v3_context_mismatch", `a receipt for another request is rejected (${f.result.value})`);
-  ok((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).seq === 1, "DEMO-RENTAL still has only its one good receipt");
-  const latest = await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" });
-  ok(!latest.receipt.includes("Tenant"), "no tenant name in the stored receipt");
-  const seq1hash = (await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt_sha256;
+  const rentalHead = await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" });
+  const rentalSeq1 = await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: 1 });
+  ok(rentalSeq1.score === 58 && rentalHead.seq > 1 && String(rentalHead.receipt).includes("\"head_status\":\"failed\""), "DEMO-RENTAL seq 1 stays 58 and the latest head is the failure");
+  ok(!rentalHead.receipt.includes("Tenant"), "no tenant name in the stored receipt");
   await correct("DEMO-RENTAL", 1);
   f = await run("DEMO-RENTAL");
-  ok(f.result.value === "stored:2", `a later good run is seq 2 (${f.result.value})`);
+  ok(f.result.value === `stored:${rentalHead.seq + 1}`, `a later good run is the next seq (${f.result.value})`);
   const in2 = JSON.parse(f.req.input_data);
-  const seq1 = await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: 1 });
-  ok(in2.receipt_version === "3" && in2.context.prev_receipt_sha256 === seq1hash, `the second run carries seq 1 public hash (${in2.context && in2.context.prev_receipt_sha256})`);
-  ok(seq1.score === 58, `seq 1 public score is ${seq1.score}`);
+  ok(in2.receipt_version === "3" && in2.context.prev_receipt_sha256 === rentalHead.receipt_sha256, `the next run carries the failure head hash (${in2.context && in2.context.prev_receipt_sha256})`);
+  ok(rentalSeq1.score === 58, `seq 1 public score is ${rentalSeq1.score}`);
   const seq2 = JSON.parse((await view("receipts", "get_latest", { token_id: "DEMO-RENTAL" })).receipt);
-  ok(seq2.score === seq1.score && !JSON.stringify(seq2).includes("outstanding_cents"), "same period, score unchanged, no private cents");
+  ok(seq2.score === rentalSeq1.score && !JSON.stringify(seq2).includes("outstanding_cents"), "same period, score unchanged, no private cents");
 
   // severe arrears: HONEST-RENTAL with every rent payment removed; rental late_share_bps is arrears over one period's
   // rent, so 4 months unpaid is 40000 and must be stored (red), not rejected, or the old green receipt would stand
@@ -315,8 +317,10 @@ try {
   const honest = await view("receipts", "get_latest", { token_id: "HONEST-CREDIT" });
   const happy = await (await get("/fund/HONEST-CREDIT/score")).json();
   ok(happy.score === 100 && happy.band === "green" && happy.score === honest.score && happy.band === honest.band && happy.receipt_sha256 === honest.receipt_sha256 && happy.collection === undefined, `API /score (free) matches the chain (${JSON.stringify(happy)})`);
-  const s1 = await (await get("/fund/DEMO-CREDIT/score")).json();
-  ok(s1.score === 58 && s1.band === "red" && s1.receipt_sha256 === createHash("sha256").update((await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" })).receipt).digest("hex") && !JSON.stringify(s1).includes("head_status"), `API /score returns the stored public receipt, not a view-time rewrite (${JSON.stringify(s1)})`);
+  const demoScore = await get("/fund/DEMO-CREDIT/score");
+  const s1 = await demoScore.json();
+  const demoLatest = await view("receipts", "get_latest", { token_id: "DEMO-CREDIT" });
+  ok(demoScore.status === 409 && s1.error === "run_failed" && demoLatest.band !== "green" && demoLatest.score !== 100 && String(demoLatest.receipt).includes("\"head_status\":\"failed\""), `DEMO-CREDIT with a failure gives no green score (${demoScore.status} ${JSON.stringify(s1)} band ${demoLatest.band})`);
   ok((await get("/fund/DEMO-CREDIT/report")).status === 402, "API /report without an entitlement is 402");
   const rep = await get("/fund/DEMO-CREDIT/report", "e2e-report-0001");
   const repBody = await rep.json();
@@ -336,7 +340,7 @@ try {
   const agentC = agentChain({ rpcUrl: sandbox.rpcUrl, query: id("query"), accountId: id("agent"), keyFile: join(keys, `${id("agent")}.json`) });
   const agentRun = (token) => runAgent({ chain: agentC, token, receipts: id("receipts"), query: id("query"), requestId: newRequestId(token, createHash("sha256").update(`e2e-${token}`).digest("hex").slice(0, 12)), execute: true, apiUrl: base, nowMs: Date.parse(RUN_AS_OF) + 3_600_000 });
   const agentBalance = async () => BigInt((await provider.viewAccount({ accountId: id("agent"), blockQuery: { finality: "final" } })).amount);
-  for (const [t, action, why] of [["DEMO-CREDIT", "decline", "red"], ["HONEST-CREDIT", "review", "unattested"], ["HONEST-RENTAL", "decline", "red"]]) {
+  for (const [t, action, why] of [["DEMO-CREDIT", "decline", "run_failed"], ["HONEST-CREDIT", "review", "unattested"], ["HONEST-RENTAL", "decline", "red"]]) {
     const b0 = await agentBalance();
     const out = await agentRun(t);
     const spent = b0 - (await agentBalance());
@@ -350,6 +354,12 @@ try {
     ok(spent >= nearToYocto("0.01") && spent < nearToYocto("0.012"), `agent ${t}: spent ${(Number(spent) / 1e24).toFixed(5)} NEAR`);
   }
   const b1 = await agentBalance();
+  const needles = ["uncapped_score", "outstanding_cents", "\"metrics\"", "raw_x100", "passport", "payout_exceeds_net_cash", "caps_not_public", "\"Tenant", "late_share_bps", "private_salt"];
+  const leaked = [];
+  for (const [i, arg] of resolveArgs.entries()) {
+    for (const needle of needles) if (arg.includes(needle)) leaked.push(`resolve ${i} contains ${needle}`);
+  }
+  ok(resolveArgs.length > 0 && leaked.length === 0, `0 private markers across ${resolveArgs.length} resolve txs${leaked.length ? `: ${leaked.slice(0, 4).join("; ")}` : ""}`);
   const none = await agentRun("NO-SUCH-TOKEN");
   ok(none.decision.reason === "no_receipt" && !none.entitlement.bought && (await agentBalance()) === b1, "agent: a token with no receipt is declined and nothing is bought");
 } catch (e) {

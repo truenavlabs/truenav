@@ -1,7 +1,10 @@
-// Build the guest JSON for a v3 run: a schema envelope plus a private object the contract commits
-// and does not store. receipt_sha256 is left for the contract to seal.
+// Build the guest JSON for a v3 run. The chain payload is the public envelope plus private_commitment.
+// The salt and the private object stay off chain (buyerDeliveries). receipt_sha256 is left for the contract.
+import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { canonical } from "../../api/receipt.mjs";
+
+export const buyerDeliveries = [];
 
 export const V3_PIN = "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38";
 const V3_CAPS = new Set(["self_reported_only", "yield_gap", "distribution_funded_by_sponsor", "claimed_not_settled", "collection_shortfall", "pledge_conflict"]);
@@ -29,11 +32,14 @@ export function guestFromEngine(example, engineText, context) {
     e.holds = [];
     const hidden = caps.filter((c) => !V3_CAPS.has(c));
     if (hidden.length) priv.caps_not_public = hidden;
-    for (const key of ["metrics", "parts_x100", "raw_x100", "uncapped_score", "passport"]) {
+    for (const key of ["metrics", "parts_x100", "raw_x100", "uncapped_score", "passport", "outstanding_cents", "late_share_bps", "payout_exceeds_net_cash"]) {
       if (eng[key] !== undefined) priv[key] = eng[key];
     }
   }
-  e.private = priv;
+  const salt = randomBytes(32).toString("hex");
+  const commitment = createHash("sha256").update(`truenav-private-v1|${salt}|${canonical(priv)}`).digest("hex");
+  e.private_commitment = commitment;
+  buyerDeliveries.push({ token_id: e.token_id, commitment, salt, private_report: priv });
   return JSON.stringify(e);
 }
 

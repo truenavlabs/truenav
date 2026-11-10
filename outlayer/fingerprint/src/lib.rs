@@ -295,4 +295,14 @@ mod tests {
         bad.pledge_nonce = "TITLE-DEMO-HRE01".into();
         assert!(pledge_ticket_message(&loan, "real_estate", &bad).is_err());
     }
+
+    #[test]
+    fn signing_import_matches_the_outlayer_host_and_not_the_old_stub() {
+        let wit = include_str!("../wit/deps/signing-keys.wit");
+        assert!(wit.contains("sign: func(path: string, vault: option<string>, message: list<u8>)"));
+        assert!(!wit.contains("sign: func(path: string, prehash:"), "the old stub sign(path, prehash) must not come back");
+        let manifest = include_str!("../manifest.json");
+        assert!(manifest.contains("\"type\": \"secp256k1\""));
+        assert!(!manifest.contains("\"curve\""));
+    }
 }

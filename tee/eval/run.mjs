@@ -3,7 +3,7 @@
 //
 //   node tee/eval/run.mjs [main|holdout]      main = tee/eval (86 docs), holdout = tee/eval/holdout (40 docs, frozen)
 import { readFileSync, writeFileSync } from "node:fs";
-import { attest, MODEL } from "../attest.mjs";
+import { attest } from "../attest.mjs";
 import { underwrite, bindingFor, VERDICT_TTL_MS } from "../underwrite.mjs";
 import { replyProblem } from "../reply.mjs";
 
@@ -12,7 +12,7 @@ const set = process.argv[2] || "main";
 const dir = { main: "tee/eval", holdout: "tee/eval/holdout" }[set];
 if (!dir) throw new Error("set must be main or holdout");
 const { cases } = JSON.parse(readFileSync(new URL(`${dir}/cases.json`, root), "utf8"));
-const att = await attest(MODEL);
+const att = await attest();
 if (!att.pass) throw new Error("attestation failed");
 const binding = bindingFor("eval.truenav-eval.testnet", Date.now() + VERDICT_TTL_MS); // eval only, never submitted
 const results = [];
@@ -28,5 +28,5 @@ for (const c of cases) {
   const problem = r.onchain ? replyProblem(r.onchain.response_body) : null;
   process.stdout.write(`${c.id} ${c.category.padEnd(16)} ${r.verdict ? r.verdict.verdict + " " + r.verdict.anomalies.join(",") + (r.verdict.duplicate_evidence_line !== null ? ` line=${r.verdict.duplicate_evidence_line}` : "") : "ERROR " + r.error}${problem ? `  REPLY RULE: ${problem}` : ""}\n`);
 }
-writeFileSync(new URL(`${dir}/results.json`, root), JSON.stringify({ note: "First-answer TEE verdicts; each reply signed by the attested model TEE.", set, model: MODEL, run_at: new Date().toISOString(), attestation: { nonce: att.nonce, checked_at: att.checked_at, signers: att.signers }, binding, results }, null, 2) + "\n");
+writeFileSync(new URL(`${dir}/results.json`, root), JSON.stringify({ note: "First-answer TEE verdicts; each reply signed by the attested model TEE.", set, model: att.model, run_at: new Date().toISOString(), attestation: { nonce: att.nonce, checked_at: att.checked_at, signers: att.signers }, binding, results }, null, 2) + "\n");
 console.log(`wrote ${dir}/results.json`);

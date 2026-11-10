@@ -431,7 +431,13 @@ fn a_rental_in_severe_arrears_is_stored_red_and_replaces_the_green_receipt() {
     assert_eq!(run_with(&mut c, "HONEST-RENTAL", tweak(json!("40000"))), "receipt_rejected:metrics_value");
     // credit late share is a share of principal, so it stays at most 10000
     assert_eq!(run_with(&mut c, "HONEST-CREDIT", |n| Some(engine_output("HONEST-CREDIT", n, |v| v["metrics"]["late_share_bps"] = json!(10_001)))), "receipt_rejected:metrics_value");
-    assert_eq!(c.get_latest("HONEST-RENTAL".into()).unwrap().seq, 2);
+    let kept = c.get_receipt("HONEST-RENTAL".into(), 2).unwrap();
+    assert_eq!(kept["score"], json!(59));
+    assert_eq!(kept["band"], json!("red"));
+    assert_eq!(kept["seq"], json!(2));
+    let latest = c.get_latest("HONEST-RENTAL".into()).unwrap();
+    assert!(latest.seq > 2 && latest.receipt.contains("\"head_status\":\"failed\""), "a rejected refresh fails closed");
+    assert_ne!(latest.score, 100);
 }
 
 /// Request a run for a token, then the admin clears it; returns (request_id, nonce, storage refund at clear).
@@ -686,8 +692,8 @@ fn private_fields_never_reach_state_views_or_events() {
         "public hash must be the write-time hash of the stored body"
     );
     let parsed: Value = serde_json::from_str(&latest.receipt).unwrap();
-    assert_eq!(parsed["private_commitment"].as_str().unwrap().len(), 64);
-    assert_eq!(parsed["private_salt"].as_str().unwrap().len(), 64);
+    assert!(parsed.get("private_salt").is_none(), "the salt must not be published");
+    assert!(parsed.get("private_commitment").is_none() || parsed["private_commitment"].as_str().unwrap().len() == 64);
 }
 
 fn hex_sha(s: &str) -> String {

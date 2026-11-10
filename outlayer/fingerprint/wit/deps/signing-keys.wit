@@ -1,9 +1,11 @@
 package outlayer:signing-keys@0.1.0;
 
 interface api {
-    /// Sign a 32-byte prehash with the manifest secp256k1 key at path. Returns 65-byte r || s || v.
-    /// The module never receives the private key.
-    sign: func(path: string, prehash: list<u8>) -> result<list<u8>, string>;
+    /// Uncompressed secp256k1 key is 64 bytes x || y. ed25519 is 32 bytes.
+    public-key: func(path: string, vault: option<string>) -> result<list<u8>, string>;
+    /// secp256k1: message is exactly 32 bytes, the digest the module computed. Returns 65-byte r || s || v.
+    /// vault is none when the manifest key has no vault.
+    sign: func(path: string, vault: option<string>, message: list<u8>) -> result<list<u8>, string>;
 }
 
 world signing-keys-host {

@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {Sandbox,GenesisAccount} from 'near-sandbox';
 import {Account,JsonRpcProvider,actions,nearToYocto,teraToGas,baseEncode} from 'near-api-js';
 import {ensureContractWasm} from './ensure-wasm.mjs';
+import {canonical} from '../../api/receipt.mjs';
 const root=new URL('../../',import.meta.url);
 const read=p=>JSON.parse(readFileSync(new URL(p,root)));
 const receiptId='receipts.tnlab-718ca9.testnet';
@@ -62,7 +63,7 @@ try{
  const context={fund_account:example.fund_account,period_start:example.period_start,period_end:example.period_end,judge_valuation_time:example.valuation_time,source_registry_sha256:'a'.repeat(64),supersedes_seq:null,correction_reason_code:null};
  const configure=async ctx=>call('admin','receipts','configure_v3_fund',{token_id:'DEMO-CREDIT',context:ctx},one);
  await configure(context);await call('admin','receipts','set_attester',{account:ids.relayer},one);await call('admin','receipts','set_config',{config:{...config,method:'truenav-v3.0.1',version_key:example.engine_code_sha256}},one);await call('admin','receipts','unpause',{},one);
- function body(input){const e=structuredClone(example);for(const key of ['receipt_sha256','issued_at','attestation_ref'])delete e[key];for(const key of ['network','receipts_contract','token_id','fund_id','fund_account','period_start','period_end','seq','prev_receipt_sha256','supersedes_seq','correction_reason_code','request_id','request_nonce','engine_version_key','engine_code_sha256'])e[key]=input.context[key];return e;}
+ function body(input){const e=structuredClone(example);for(const key of ['receipt_sha256','issued_at','attestation_ref'])delete e[key];for(const key of ['network','receipts_contract','token_id','fund_id','fund_account','period_start','period_end','seq','prev_receipt_sha256','supersedes_seq','correction_reason_code','request_id','request_nonce','engine_version_key','engine_code_sha256'])e[key]=input.context[key];e.private_commitment=createHash('sha256').update('truenav-private-v1|'+ 'ab'.repeat(32) +'|' + canonical({})).digest('hex');return e;}
  assert.equal(await run(body),'stored:2');
  const first=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(first.receipt_version,'3');assert.equal(first.seq,'2');assert.equal(first.prev_receipt_sha256,before.receipt_sha256);assert.equal(await view('get_first_v3_seq',{token_id:'DEMO-CREDIT'}),'2');
  const latest=await view('get_latest',{token_id:'DEMO-CREDIT'});
@@ -77,7 +78,7 @@ try{
  const seq2hash=(await view('get_latest',{token_id:'DEMO-CREDIT'})).receipt_sha256;
  await call('admin','receipts','pause',{},one);await configure({...context,supersedes_seq:'2',correction_reason_code:'coverage_correction'});await call('admin','receipts','unpause',{},one);
  assert.equal(await run(body),'stored:3');const correction=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(correction.supersedes_seq,'2');assert.equal(correction.prev_receipt_sha256,seq2hash);
- assert.equal(await run(input=>({...body(input),metrics:{late_share_bps:1500,cohort_principal_cents:850000000}})),'v3_schema');assert.equal((await view('get_latest_receipt',{token_id:'DEMO-CREDIT'})).seq,'3');assert.equal((await view('get_token',{token_id:'DEMO-CREDIT'})).pending,null);
+ assert.equal(await run(input=>({...body(input),not_a_public_field:true})),'v3_schema');const rejected=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(rejected.head_status,'failed');assert.notEqual(rejected.score,99);assert.equal((await view('get_token',{token_id:'DEMO-CREDIT'})).pending,null);
  console.log('PASS CI local sandbox: actual old wasm state retained, v3 callback within 80 Tgas, chain/correction/tags, append-only metadata without quote claims, private-field rejection');
 }catch(error){
  console.error('FAIL CI local sandbox v3 migration/callback gate', String(error?.stack ?? error).replace(/ed25519:[1-9A-HJ-NP-Za-km-z]+/g,'ed25519:[redacted]'));process.exitCode=1;

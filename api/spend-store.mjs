@@ -1,9 +1,9 @@
 // Cross-process spend nonce and buyer rate limit.
 // One directory, one machine, mode 0700. Several API processes on that machine share the directory.
 // Two machines, or two copies of the directory, do not. A missing store is not created unless init
-// is explicit (TRUENAV_SPEND_STORE_INIT=1 or node api/spend-init.mjs). A corrupt state file fails closed.
+// is explicit (`node api/spend-init.mjs`). A corrupt state file fails closed.
 import { createHash, randomBytes } from "node:crypto";
-import { chmodSync, constants, existsSync } from "node:fs";
+import { chmodSync, constants, existsSync, lstatSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { lstat, mkdir, open, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -106,16 +106,29 @@ async function writeState(dir, state) {
   finally { await dirHandle.close(); }
 }
 
-export function probeFlock() {
+export function probeFlock(dir) {
   if (process.platform === "win32") fail("util-linux flock is required. This platform has no /usr/bin/flock.");
-  const probe = spawnSync(FLOCK, ["-x", "-w", "1", "/tmp/truenav-flock-probe", NODE, "-e", "process.exit(0)"], { encoding: "utf8" });
+  if (!dir || typeof dir !== "string") fail("spend store path is required");
+  const probePath = join(dir, ".flock-probe");
+  try {
+    const st = lstatSync(probePath);
+    if (st.isSymbolicLink()) fail("flock probe path is a symlink");
+  } catch (error) {
+    if (error.code !== "ENOENT") fail(`flock probe path: ${error.code || error.message}`);
+  }
+  const probe = spawnSync(FLOCK, ["-x", "-w", "1", probePath, NODE, "-e", "process.exit(0)"], { encoding: "utf8" });
   if (probe.error || probe.status !== 0) {
     fail("util-linux flock is required (flock -x -w 1). Busybox flock is not enough. Install util-linux and retry.");
+  }
+  try {
+    const st = lstatSync(probePath);
+    if (st.isSymbolicLink()) fail("flock probe path is a symlink");
+  } catch (error) {
+    if (error.code !== "ENOENT") fail(`flock probe path: ${error.code || error.message}`);
   }
 }
 
 export async function initSpendStore(dir, { create = false } = {}) {
-  probeFlock();
   if (!dir || typeof dir !== "string") fail("spend store path is required");
   if (!existsSync(dir)) {
     if (!create) fail(INIT_HINT);
@@ -131,22 +144,26 @@ export async function initSpendStore(dir, { create = false } = {}) {
     if (!create) fail(INIT_HINT);
     await writeState(dir, { v: 1, nonces: {}, buyers: {} });
     await writeFile(ready, "1\n", { mode: 0o600 });
+    probeFlock(dir);
     const dirHandle = await open(dir, "r");
     try { await dirHandle.sync(); }
     finally { await dirHandle.close(); }
     return dir;
   }
   if (!hasState || !hasReady) fail("spend store missing. Restore state.json and READY from backup. Refusing to recreate them.");
+  probeFlock(dir);
   await readState(dir);
   return dir;
 }
 
-async function pruneUsed(dir, state) {
-  const live = new Set(Object.keys(state.nonces).map((nonce) => createHash("sha256").update(nonce).digest("hex")));
+async function pruneUsed(dir, nowMs) {
   let names = [];
   try { names = await readdir(join(dir, "used")); } catch { return; }
   for (const name of names) {
-    if (!live.has(name)) await unlink(join(dir, "used", name)).catch(() => {});
+    const path = join(dir, "used", name);
+    let until = Number.NaN;
+    try { until = Number(await readFile(path, "utf8")); } catch { continue; }
+    if (!Number.isFinite(until) || until < nowMs) await unlink(path).catch(() => {});
   }
 }
 
@@ -292,7 +309,7 @@ export async function reserveSpend(dir, { buyer, nonce, nowMs, exp, limit = BUYE
     if (!(await ownLock(dir, token))) return { ok: false, error: "spend store lock lost" };
     const state = await readState(dir);
     prune(state, nowMs, windowMs);
-    await pruneUsed(dir, state);
+    await pruneUsed(dir, nowMs);
     if (state.nonces[nonce]) {
       await writeState(dir, state);
       return { ok: false, error: "spend nonce reused" };

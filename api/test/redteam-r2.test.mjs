@@ -301,6 +301,18 @@ test('redteam_r2 N6 expired nonce files under used/ are removed', async () => {
   assert.equal(existsSync(join(dir, 'used', createHash('sha256').update('gone').digest('hex'))), false);
 });
 
+test('redteam_r2 N6 a restored empty state cannot replay a nonce still inside its expiry file', async () => {
+  const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-restore-')), { create: true });
+  const nonce = 'restore-nonce-0001';
+  const exp = 500000;
+  const first = await reserveSpend(dir, {buyer: 'buyer.testnet', nonce, nowMs: 100000, exp, limit: 8, windowMs: 60000});
+  assert.equal(first.ok, true);
+  writeFileSync(join(dir, 'state.json'), JSON.stringify({v: 1, nonces: {}, buyers: {}}));
+  const again = await reserveSpend(dir, {buyer: 'buyer.testnet', nonce, nowMs: 100000, exp, limit: 8, windowMs: 60000});
+  assert.equal(again.ok, false);
+  assert.equal(again.error, 'spend nonce reused');
+});
+
 test('redteam_r2 N6 a 503 body does not include a path or mode', async () => {
   const dir = await initSpendStore(mkdtempSync(join(tmpdir(), 'truenav-503-')), { create: true });
   writeFileSync(join(dir, 'state.json'), '{not json');

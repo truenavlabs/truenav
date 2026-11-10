@@ -233,10 +233,11 @@ fn second_fund_is_refused_and_the_holder_is_not_counted_or_alerted() {
         PledgeOutcome::Refused { message, .. } => assert_eq!(message, "already pledged elsewhere"),
         other => panic!("expected refusal, got {other:?}"),
     }
-    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 100).count, 0);
+    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 100).count, 1);
     assert_eq!(r.get_attempts_page("harbor-credit-fund".into(), 0, 100).count, 0);
     assert_eq!(r.get_alerts_page("harbor-credit-fund".into(), 0, 100), Vec::<u64>::new());
     assert_eq!(r.get_alert_count("harbor-credit-fund".into()), 0);
+    assert_eq!(r.get_alert_count("meridian-yield-fund".into()), 1);
     // Token still with Harbor.
     assert_eq!(r.nft_token(LOAN.into()).unwrap().owner_id, harbor_acct());
 }
@@ -334,9 +335,9 @@ fn audit_4_release_has_no_deposit_to_refund() {
     assert!(near_sdk::test_utils::get_created_receipts().is_empty());
 }
 
-/// A refused pledge still stores the used nonce, so storage grows, and it does not record an attempt or an alert.
+/// A signed refusal stores the nonce and one attempt on the signing fund. It does not alert the holder.
 #[test]
-fn audit_2_refused_pledge_stores_a_nonce_and_does_not_count() {
+fn audit_2_signed_refusal_stores_a_nonce_and_counts_the_signer_only() {
     let (mut r, _) = setup();
     pledge_as(&mut r, &harbor_acct(), &harbor_acct(), LOAN, "real_estate", NOW);
     near_sdk::env::state_write(&r);
@@ -345,7 +346,7 @@ fn audit_2_refused_pledge_stores_a_nonce_and_does_not_count() {
     let before = near_sdk::env::storage_usage();
     let mut r: Registry = near_sdk::env::state_read().unwrap();
     assert!(matches!(pledge_as(&mut r, &meridian_acct(), &meridian_acct(), LOAN, "real_estate", NOW + 1), PledgeOutcome::Refused { .. }));
-    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 10).count, 0);
+    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 10).count, 1);
     assert_eq!(r.get_alert_count("harbor-credit-fund".into()), 0);
     near_sdk::env::state_write(&r);
     drop(r);
@@ -360,11 +361,12 @@ fn audit_3_refusals_do_not_fill_attempt_or_alert_pages() {
     for i in 0..5u64 {
         pledge_as(&mut r, &meridian_acct(), &meridian_acct(), LOAN, "real_estate", NOW + 1 + i);
     }
-    let p = r.get_attempts_page("meridian-yield-fund".into(), 0, 2);
-    assert_eq!(p.count, 0);
-    assert!(p.attempts.is_empty());
+    let p = r.get_attempts_page("meridian-yield-fund".into(), 1, 2);
+    assert_eq!(p.count, 5);
+    assert_eq!(p.attempts.len(), 2);
     assert_eq!(r.get_alerts_page("harbor-credit-fund".into(), 0, 1000), Vec::<u64>::new());
     assert_eq!(r.get_alert_count("harbor-credit-fund".into()), 0);
+    assert_eq!(r.get_alert_count("meridian-yield-fund".into()), 5);
     assert_eq!(r.get_alerts_page("nobody".into(), 0, 10), Vec::<u64>::new());
 }
 
@@ -496,9 +498,13 @@ fn redteam_r2_squat_does_not_penalise_the_real_holder() {
         PledgeOutcome::AlreadyYours { token_id: LOAN.into() }
     );
     let own = pledge_as(&mut r, &meridian_acct(), &meridian_acct(), LOAN, "real_estate", NOW + 2000);
-    assert!(matches!(own, PledgeOutcome::Refused { .. }));
-    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 10).count, 0);
+    match own {
+        PledgeOutcome::Refused { attempt_id, .. } => assert_eq!(attempt_id, "attempt-1"),
+        other => panic!("expected a counted refusal, got {other:?}"),
+    }
+    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 10).count, 1);
     assert_eq!(r.get_alert_count("harbor-credit-fund".into()), 0);
+    assert_eq!(r.get_alert_count("meridian-yield-fund".into()), 1);
     assert_eq!(r.nft_token(LOAN.into()).unwrap().owner_id, harbor_acct());
 }
 
@@ -619,7 +625,9 @@ fn a_servicer_signature_is_not_a_pledge_ticket() {
 }
 
 #[test]
-fn removing_the_last_ticket_signer_returns_to_servicer_signatures_only() {
+#[test]
+#[should_panic(expected = "ticket signature required")]
+fn removing_the_last_ticket_signer_does_not_drop_the_requirement() {
     let (mut r, _) = setup();
     let addr = pledge_help::address_of(&pledge_help::ticket_test_key());
     ctx(&admin(), NOW);
@@ -627,5 +635,64 @@ fn removing_the_last_ticket_signer_returns_to_servicer_signatures_only() {
     ctx(&admin(), NOW);
     r.remove_pledge_signer(addr);
     assert!(r.get_pledge_signers().is_empty());
-    assert_eq!(pledge_as(&mut r, &harbor_acct(), &harbor_acct(), LOAN2, "real_estate", NOW), PledgeOutcome::Pledged { token_id: LOAN2.into() });
+    pledge_as(&mut r, &harbor_acct(), &harbor_acct(), LOAN2, "real_estate", NOW);
+}
+
+#[test]
+#[should_panic(expected = "pledge expiry too far")]
+fn pledge_rejects_an_expiry_past_24h() {
+    let (mut r, _) = setup();
+    let nonce = next_nonce();
+    let exp = NOW + truenav_registry::PLEDGE_TTL_MS + 1;
+    let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, harbor_acct().as_str(), LOAN2, "real_estate", &nonce, exp);
+    ctx(&harbor_acct(), NOW);
+    r.pledge_loan(LOAN2.into(), "real_estate".into(), harbor_acct(), nonce, exp, sig, None);
+}
+
+#[test]
+#[should_panic(expected = "bad servicer signature")]
+fn pledge_rejects_a_high_s_signature() {
+    let (mut r, _) = setup();
+    let nonce = next_nonce();
+    let exp = NOW + 60_000;
+    let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, harbor_acct().as_str(), LOAN2, "real_estate", &nonce, exp);
+    let raw = hex::decode(sig.trim_start_matches("0x")).unwrap();
+    let n = hex::decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141").unwrap();
+    let mut s = raw[32..64].to_vec();
+    let mut borrow = 0i16;
+    for i in (0..32).rev() {
+        let diff = n[i] as i16 - s[i] as i16 - borrow;
+        if diff < 0 {
+            s[i] = (diff + 256) as u8;
+            borrow = 1;
+        } else {
+            s[i] = diff as u8;
+            borrow = 0;
+        }
+    }
+    let mut hi = raw[..32].to_vec();
+    hi.extend_from_slice(&s);
+    hi.push(raw[64]);
+    let bad = format!("0x{}", hex::encode(hi));
+    ctx(&harbor_acct(), NOW);
+    r.pledge_loan(LOAN2.into(), "real_estate".into(), harbor_acct(), nonce, exp, bad, None);
+}
+
+#[test]
+fn a_second_signed_refusal_uses_the_next_attempt_seq() {
+    let (mut r, _) = setup();
+    pledge_as(&mut r, &harbor_acct(), &harbor_acct(), LOAN, "real_estate", NOW);
+    let other = "33".repeat(32);
+    pledge_as(&mut r, &harbor_acct(), &harbor_acct(), &other, "real_estate", NOW);
+    let first = pledge_as(&mut r, &meridian_acct(), &meridian_acct(), LOAN, "real_estate", NOW + 1);
+    let second = pledge_as(&mut r, &meridian_acct(), &meridian_acct(), &other, "real_estate", NOW + 2);
+    match (first, second) {
+        (PledgeOutcome::Refused { attempt_id: a, .. }, PledgeOutcome::Refused { attempt_id: b, .. }) => {
+            assert_eq!(a, "attempt-1");
+            assert_eq!(b, "attempt-2");
+        }
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(r.get_attempts_page("meridian-yield-fund".into(), 0, 10).count, 2);
+    assert_eq!(r.get_attempts_page("harbor-credit-fund".into(), 0, 10).count, 0);
 }

@@ -100,7 +100,7 @@ export async function checkGpu(report, nonceHex) {
 }
 
 /** Fetch gateway and model evidence for MODEL with a fresh nonce and check all of it. */
-export async function attest(model = MODEL) {
+export async function attest(model = modelFromEnv()) {
   const nonce = randomBytes(32).toString("hex");
   const url = `${API}/attestation/report?${new URLSearchParams({ model, provider: "near", signing_algo: "ecdsa", nonce })}`;
   const r = await fetch(url, { headers: authHeaders() });

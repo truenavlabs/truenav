@@ -8,6 +8,7 @@
 import { randomBytes } from "node:crypto";
 import { agentChain } from "./chain.mjs";
 import { runAgent, summary, newRequestId } from "./agent.mjs";
+import { validToken } from "../api/receipt.mjs";
 
 const RPC = "https://rpc.testnet.near.org";
 const MASTER = process.env.TRUENAV_MASTER || "tnlab-718ca9.testnet";
@@ -18,7 +19,7 @@ const args = process.argv.slice(2);
 const token = args.find((a) => !a.startsWith("--") && args[args.indexOf(a) - 1] !== "--api");
 const execute = args.includes("--execute");
 const apiUrl = args.includes("--api") ? args[args.indexOf("--api") + 1] : null;
-if (!token || !/^[A-Z0-9-]{1,40}$/.test(token)) {
+if (!token || !validToken(token)) {
   console.log("usage: node agent/run.mjs <TOKEN> [--execute] [--api <url>]");
   process.exit(2);
 }

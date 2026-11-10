@@ -17,4 +17,12 @@ def infer(e):
  if version!='truenav-v3.0.1':raise ValueError('unknown method')
  conflict=e['pledge_result']=='conflict'
  if conflict!=('pledge_conflict' in e['caps']) or conflict and (e['band']!='red' or e['score'] is not None and e['score']>59):raise ValueError('invalid conflict cap')
- return new.infer(e)
+ commitment=e.get('private_commitment')
+ if commitment is not None and not __import__('re').fullmatch(r'[0-9a-f]{64}',str(commitment)):raise ValueError('bad private commitment')
+ body=e if commitment is None else {k:v for k,v in e.items() if k!='private_commitment'}
+ fields=dict(new.POLICY['public_fields'])
+ fields['fund_id']='identity_context'
+ new.POLICY=dict(new.POLICY)
+ new.POLICY['public_fields']=fields
+ if 'fund_id' not in body:raise ValueError('unmodelled public envelope field')
+ return new.infer(body)

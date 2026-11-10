@@ -34,8 +34,9 @@ export function verifyRecord(token, r) {
     try { decoded=decodeReceipt(r); } catch(error) { return error.code ?? "receipt_invalid"; }
     if(decoded.version!=='3') return 'receipt_version_mismatch';
     const rec=decoded.receipt;
+    if (rec.head_status === "failed") return null;
     if (rec.private_commitment !== undefined && !/^[0-9a-f]{64}$/.test(rec.private_commitment)) return 'private_commitment_invalid';
-    if (rec.private_salt !== undefined && !/^[0-9a-f]{64}$/.test(rec.private_salt)) return 'private_commitment_invalid';
+    if (rec.private_salt !== undefined) return 'private_salt_published';
     if(rec.token_id!==token || decoded.record.token_id!==token) return 'receipt_token_mismatch';
     if(!(rec.score===decoded.record.score || (rec.score===null && decoded.record.score===0)) || rec.band!==decoded.record.band || rec.method_version!==decoded.record.method || rec.engine_version_key!==decoded.record.version_key || rec.seq!==String(decoded.record.seq) || rec.valuation_time!==decoded.record.as_of || canonical(rec.caps)!==canonical(decoded.record.caps) || canonical(rec.holds)!==canonical(decoded.record.holds)) return 'receipt_index_mismatch';
     return null;
@@ -43,8 +44,9 @@ export function verifyRecord(token, r) {
   if (sha256(r.receipt) !== (r.public_sha256 || r.receipt_sha256)) return "receipt_sha256_mismatch";
   let recHead;
   try { recHead = JSON.parse(r.receipt); } catch { return "receipt_not_json"; }
+  if (recHead.head_status === "failed") return null;
   if (recHead.private_commitment !== undefined && !/^[0-9a-f]{64}$/.test(recHead.private_commitment)) return "private_commitment_invalid";
-  if (recHead.private_salt !== undefined && !/^[0-9a-f]{64}$/.test(recHead.private_salt)) return "private_commitment_invalid";
+  if (recHead.private_salt !== undefined) return "private_salt_published";
   let rec;
   try {
     rec = JSON.parse(r.receipt);
@@ -66,6 +68,7 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   const bad = verifyRecord(token, r);
   if (bad) return { action: "decline", reason: "receipt_mismatch", detail: bad };
   const decoded=decodeReceipt(r);
+  if (decoded.receipt?.head_status === "failed") return { action: "decline", reason: "run_failed", detail: `run failed: ${decoded.receipt.failure_code || "failed"}` };
   r=decoded.record;
   if(decoded.version==='3' && decoded.receipt.score===null) return {action:'review',reason:'unknown',detail:'score unknown; no numeric score in this receipt'};
   if (r.band === "red" || r.score < 60) return { action: "decline", reason: "red", detail: `score ${r.score} red${r.caps.length ? `: ${r.caps.join(", ")}` : ""}` };

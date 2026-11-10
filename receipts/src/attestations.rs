@@ -47,10 +47,14 @@ fn body_key(token: &str, seq: u64, sha: &str) -> Vec<u8> {
     storage_key(b"body:", &identity(token, seq, sha, None))
 }
 fn read<T: BorshDeserialize>(key: &[u8]) -> Option<T> {
-    env::storage_read(key).map(|raw| borsh::from_slice(&raw).expect("invalid attestation state"))
+    let raw = env::storage_read(key)?;
+    borsh::from_slice(&raw).ok()
 }
 fn put<T: BorshSerialize>(key: &[u8], v: &T) {
-    env::storage_write(key, &borsh::to_vec(v).expect("attestation serialization"));
+    let Ok(bytes) = borsh::to_vec(v) else {
+        return;
+    };
+    env::storage_write(key, &bytes);
 }
 /// Fixed public testnet API routes only. No query, credentials, fragment, port, redirect or alternate origin.
 pub fn normalize_proof_ref(p: &str) -> Option<String> {
@@ -205,6 +209,7 @@ impl Receipts {
         let count_key = storage_key(b"count:", &id);
         let count = read::<u64>(&count_key).unwrap_or(0);
         if count >= MAX_ATTESTATIONS_PER_RECEIPT {
+            refund(writer, attached);
             return PublishResult::error("attestation record limit reached");
         }
         let mut written_by_current = 0u64;
@@ -212,9 +217,11 @@ impl Receipts {
             let mut indexed = id.clone();
             indexed.extend_from_slice(&i.to_be_bytes());
             let Some(k) = env::storage_read(&storage_key(b"item:", &indexed)) else {
+                refund(writer.clone(), attached);
                 return PublishResult::error("attestation_index_missing");
             };
             let Some(record) = read::<AttestationRecord>(&k) else {
+                refund(writer.clone(), attached);
                 return PublishResult::error("attestation_record_missing");
             };
             if record.attester == writer {
@@ -222,6 +229,7 @@ impl Receipts {
             }
         }
         if written_by_current >= MAX_ATTESTATIONS_PER_ATTESTER {
+            refund(writer, attached);
             return PublishResult::error("attestation record limit reached");
         }
         let next = count + 1;

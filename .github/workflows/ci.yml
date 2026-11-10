@@ -133,6 +133,12 @@ jobs:
           for d in receipts query receipts/mock-outlayer mirror/mock-signer; do
             (cd $d && cargo +1.99.0 test --locked && cargo +1.99.0 clippy --locked --all-targets -- -D warnings)
           done
+          (cd engine/v3-core && cargo +1.99.0 test --locked --features dry-run-tests)
+          (cd outlayer/engine-v3 && cargo +1.99.0 test --locked --features dry-run-tests)
+          (cd receipts && cargo +1.99.0 test --locked --features dry-run-tests)
+          python3 -m venv "$RUNNER_TEMP/engine-privacy"
+          "$RUNNER_TEMP/engine-privacy/bin/pip" install jsonschema==4.23.0
+          "$RUNNER_TEMP/engine-privacy/bin/python" receipts/tests/engine-v3-privacy.test.py
       - name: Contract wasm in the pinned image (receipts, query, mock OutLayer, mock signer)
         run: |
           for d in receipts query receipts/mock-outlayer mirror/mock-signer; do

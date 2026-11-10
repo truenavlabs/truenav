@@ -254,8 +254,10 @@ pub struct Registry {
     servicer_pledge_key: Option<String>,
     /// Full canonical pledge messages already accepted. A second use of the same nonce and tuple is rejected.
     pledge_nonces: LookupSet<String>,
-    /// Ticket signers. Empty means a servicer signature alone is enough. Non-empty means a ticket is also required.
+    /// Ticket signers. Empty means a servicer signature alone is enough until ticket_required is set.
     pledge_signers: IterableMap<String, PledgeSigner>,
+    /// Set when the first ticket signer is registered. Removing signers does not clear it.
+    ticket_required: bool,
 }
 
 /// Role assignment, readable by anyone.
@@ -491,6 +493,7 @@ impl Registry {
             servicer_pledge_key: None,
             pledge_nonces: LookupSet::new(Key::PledgeNonces),
             pledge_signers: IterableMap::new(Key::PledgeSigners),
+            ticket_required: false,
         }
     }
 
@@ -656,6 +659,7 @@ impl Registry {
         require!(is_hex64(&attestation_sha256), "attestation_sha256 must be 64 lowercase hex characters");
         require!(!attestation_ref.is_empty() && attestation_ref.len() <= 256, "attestation_ref must be 1 to 256 characters");
         let a = norm_address(&address);
+        self.ticket_required = true;
         self.pledge_signers.insert(
             a.clone(),
             PledgeSigner { address: a, attestation_ref, attestation_sha256, registered_at_ms: env::block_timestamp_ms() },
@@ -706,7 +710,7 @@ impl Registry {
         let now = env::block_timestamp_ms();
         require!(expiry_ms > now, "pledge expired");
         require!(expiry_ms <= now.saturating_add(PLEDGE_TTL_MS), "pledge expiry too far");
-        if !self.pledge_signers.is_empty() {
+        if self.ticket_required {
             let ticket = ticket_signature.unwrap_or_else(|| env::panic_str("ticket signature required"));
             let ticket_signer = recover_address(&digest, &ticket).unwrap_or_else(|| env::panic_str("bad ticket signature"));
             require!(self.pledge_signers.contains_key(&ticket_signer), "ticket signer not registered");
@@ -726,8 +730,19 @@ impl Registry {
             if lock.fund_id == fund_id {
                 return PledgeOutcome::AlreadyYours { token_id: loan_hash };
             }
-            // Refusal is not a blocked attempt and does not alert the holder.
-            return PledgeOutcome::Refused { message: "already pledged elsewhere".to_string(), attempt_id: "none".to_string() };
+            // A valid signature (and a ticket, when required) reached this point. Count it on the signing fund only.
+            self.attempt_seq += 1;
+            let attempt_id = format!("attempt-{}", self.attempt_seq);
+            let fh = fund_hash(&fund_id);
+            if !self.attempts.contains_key(&fund_id) {
+                self.attempts.insert(fund_id.clone(), Vector::new(Key::AttemptList { fund_hash: fh.clone() }));
+            }
+            self.attempts.get_mut(&fund_id).unwrap().push(Attempt { attempt_id: attempt_id.clone(), at_ms: now });
+            if !self.alerts.contains_key(&fund_id) {
+                self.alerts.insert(fund_id.clone(), Vector::new(Key::AlertList { fund_hash: fh }));
+            }
+            self.alerts.get_mut(&fund_id).unwrap().push(now);
+            return PledgeOutcome::Refused { message: "already pledged elsewhere".to_string(), attempt_id };
         }
 
         self.locks.insert(loan_hash.clone(), Lock { fund_id, locked_at_ms: now });

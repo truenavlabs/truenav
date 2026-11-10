@@ -34,10 +34,22 @@ Sensitive calls need exactly 1 yoctoNEAR (only a full-access key can make them).
 | `add_signer`, `remove_signer` | registrar | certificate signers |
 | `add_tee_signer(address, model_id, attestation_ref, attestation_sha256)`, `remove_tee_signer` | registrar | TEE signers, with the published attestation report hash |
 | `submit_certificate(certificate, signature)` (p) | anyone | verify and store a signed certificate |
-| `pledge_loan(loan_hash, asset_type)` (p) | registered fund account | `pledged`, `already_yours` or `refused` |
+| `pledge_loan(loan_hash, asset_type, fund_account, nonce, expiry_ms, servicer_signature, ticket_signature)` (p) | registered fund account named in the servicer signature | `pledged`, `already_yours` or `refused`. A valid signed double pledge is an attempt on that fund. An unsigned squat is not recorded. |
 | `release_loan(loan_hash)` (p) | servicer | unlock and burn on repay |
 | `submit_verdict(loan_hash, model_id, request_sha256, response_body, signature)` (p) | servicer | TEE verdict on a pledged loan; the reply may hold only the allowed keys and value types (`reply_problem`, checked first, because the arguments are public); binding `truenav-verdict-v1\|contract\|network\|expiry` checked; a flag clears only with a pass from a new request |
 | views | anyone | `get_signers`, `get_tee_signers`, `get_fund`, `get_latest_certificate`, `get_certificate_count`, `get_certificate_history_page`, `get_lock`, `get_attempts_page`, `get_alerts_page`, `get_alert_count`, `get_latest_verdict` (current pledge only), `get_verdict_count`, `get_verdicts_page`, `get_flag_count`, `nft_token`, NEP-181 views, `nft_metadata` |
+
+## Fresh account (no migration)
+
+The Borsh layout changed when pledge nonces, pledge signers, and `ticket_required` were added. There is no migration. The deployed account `registry.tnlab-718ca9.testnet` cannot be upgraded in place. Each step below is a separate yes from the owner. Do not run them in this pass.
+
+1. Owner approval: create a new testnet account for the registry. Do not reuse `registry.tnlab-718ca9.testnet`.
+2. Owner approval: deploy this contract wasm to that empty account with `new(admin, servicer)`. State starts empty.
+3. Owner approval: `set_role` for registrar, pauser, and servicer.
+4. Owner approval: `register_fund` for each demo fund.
+5. Owner approval: `set_servicer_pledge_key` to the servicer secp256k1 address.
+6. Owner approval, only if tickets are wanted: `add_pledge_signer`. This sets `ticket_required` permanently. Removing the last signer does not turn the requirement off.
+7. Owner approval: point readers at the new account. Do not expect the old account's state to load.
 
 ## Test
 
@@ -46,7 +58,7 @@ cd contract
 cargo test
 ```
 
-80 unit tests, native target, no network after crates are fetched. The tests sign with a fixed throwaway secp256k1 key that exists only inside the tests; it holds no value and is not a NEAR account key.
+107 unit tests, native target, no network after crates are fetched. The tests sign with a fixed throwaway secp256k1 key that exists only inside the tests; it holds no value and is not a NEAR account key.
 
 ## Storage
 

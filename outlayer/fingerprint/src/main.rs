@@ -110,7 +110,7 @@ fn run() -> Result<serde_json::Value, String> {
         pledge_nonce: ticket.pledge_nonce,
     };
     // The host is asked to sign the 32-byte digest of the text this module composed. Not caller bytes.
-    let (message, signature) = compose_ticket(&loan_hash, &input.asset_type, &request, |digest| signing::sign(TICKET_KEY, digest))?;
+    let (message, signature) = compose_ticket(&loan_hash, &input.asset_type, &request, |digest| signing::sign(TICKET_KEY, None, digest))?;
     Ok(json!({
         "loan_hash": loan_hash,
         "domain": DOMAIN,

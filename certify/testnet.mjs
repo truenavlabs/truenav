@@ -241,7 +241,7 @@ if (!tee) {
     if (await view("get_latest_verdict", { loan_hash: r.loan_hash })) continue;
     const o = r.onchain;
     const d = await call(servicerAcc, `servicer submits verdict ${r.loan_id} (${r.verdict.verdict})`, "submit_verdict", { loan_hash: o.loan_hash, model_id: o.model_id, request_sha256: o.request_sha256, response_body: o.response_body, signature: o.signature });
-    expect(d.ok && d.value && d.value.signer === teeSigner && d.value.attestation_sha256 === tee.attestation.report_sha256, `${r.loan_id} TEE verdict verified on chain: ${d.value && d.value.verdict}`);
+    expect(d.ok && d.value && d.value.signer === teeSigner && d.value.attestation_sha256 === tee.attestation.report_sha256, `${r.loan_id} TEE verdict signature checked: ${d.value && d.value.verdict}`);
   }
   // A rival fund holding a genuine TEE flag on Harbor's loan is refused (only the servicer submits).
   const t1 = tee.results.find((x) => x.tampered && x.tampered.id === "T1-altered-amount").onchain;
@@ -305,12 +305,15 @@ expect(certs["meridian-yield-fund"].certificate.raw_x100 === 4284 && certs["meri
 // ---------- 4. double pledge ----------
 // Meridian tries to pledge Harbor's H-RE-03, which Harbor already pledged above.
 const loanHash = demo.find((l) => l.loan_id === "H-RE-03").loan_hash;
-const attemptsBefore = (await view("get_attempts_page", { fund_id: "harbor-credit-fund", from_index: 0, limit: 1 })).count;
+const harborAttemptsBefore = (await view("get_attempts_page", { fund_id: "harbor-credit-fund", from_index: 0, limit: 1 })).count;
+const meridianAttemptsBefore = (await view("get_attempts_page", { fund_id: "meridian-yield-fund", from_index: 0, limit: 1 })).count;
 const alertsBefore = await view("get_alert_count", { fund_id: "harbor-credit-fund" });
 const p2 = await call(meridian, "Meridian pledges Harbor's H-RE-03", "pledge_loan", pledgeArgs(ids.meridian, loanHash, "real_estate"));
 expect(p2.ok && p2.value && p2.value.outcome === "refused" && p2.value.message === "already pledged elsewhere", "Meridian refused: already pledged elsewhere");
-const attemptsAfter = (await view("get_attempts_page", { fund_id: "harbor-credit-fund", from_index: 0, limit: 1 })).count;
-expect(attemptsAfter === attemptsBefore, `Harbor blocked attempts stay ${attemptsBefore} (refusal is not counted against the signed fund)`);
+const harborAttemptsAfter = (await view("get_attempts_page", { fund_id: "harbor-credit-fund", from_index: 0, limit: 1 })).count;
+const meridianAttemptsAfter = (await view("get_attempts_page", { fund_id: "meridian-yield-fund", from_index: 0, limit: 1 })).count;
+expect(harborAttemptsAfter === harborAttemptsBefore, `Harbor blocked attempts stay ${harborAttemptsBefore}`);
+expect(meridianAttemptsAfter === meridianAttemptsBefore + 1, `Meridian signed double pledge counted ${meridianAttemptsBefore} -> ${meridianAttemptsAfter}`);
 expect((await view("get_alert_count", { fund_id: "harbor-credit-fund" })) === alertsBefore, "Harbor is not alerted by the refusal");
 const token = await view("nft_token", { token_id: loanHash });
 expect(token && token.owner_id === ids.harbor, `token ${loanHash.slice(0, 12)}... owned by ${ids.harbor}`);

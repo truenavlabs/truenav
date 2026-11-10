@@ -13,11 +13,12 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
 import { keccak_256 } from "@noble/hashes/sha3.js";
-import { attest, API, MODEL } from "./attest.mjs";
+import { attest, API, authHeaders, modelFromEnv } from "./attest.mjs";
 import { ANOMALY_CODES, REPLY_KEYS, replyProblem, numberLines } from "./reply.mjs";
 
 export { ANOMALY_CODES, REPLY_KEYS };
-const AUTH = { Authorization: `Bearer ${process.env.NEAR_AI_CLOUD_API_KEY || "proxy-injected"}` };
+const AUTH = authHeaders();
+const MODEL = modelFromEnv();
 const sha256hex = (b) => createHash("sha256").update(b).digest("hex");
 /** The model copies a 64-hex hash more reliably in 8-character groups; the contract removes the spaces. */
 export const groupHash = (h) => h.match(/.{8}/g).join(" ");

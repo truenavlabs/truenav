@@ -266,8 +266,8 @@ const PUBLIC_RECEIPT_KEYS: &[&str] = &[
     "parts_band",
     "freshness_band",
     "ext",
-    "private_salt",
     "private_commitment",
+    "failure_code",
 ];
 fn public_codes(v: &Value) -> Value {
     let Some(xs) = v.as_array() else {
@@ -316,53 +316,37 @@ impl Receipts {
     }
 }
 fn view_body(raw: &str) -> String {
-    if raw.contains("\"private_commitment\"") {
-        return raw.to_string();
-    }
     let Ok(v) = serde_json::from_str::<Value>(raw) else {
         return raw.to_string();
     };
-    if !v.is_object() {
+    let Some(obj) = v.as_object() else {
+        return raw.to_string();
+    };
+    let has_private = obj.keys().any(|k| !PUBLIC_RECEIPT_KEYS.contains(&k.as_str()));
+    if !has_private {
         return raw.to_string();
     }
     project_public(&v).to_string()
 }
 
-/// Write-time public record. The stored string is the canonical public projection plus a salt and a
-/// commitment to every other field. `public_sha256` is sha256 of that stored string. Views return the
-/// stored string unchanged. `head_status` is not part of this string: a later failure is the Failure
-/// record from `get_token`, outside the hashed body.
-pub(crate) fn public_record(v: &Value, token: &str, nonce: &str) -> (String, String, String) {
-    let mut private = serde_json::Map::new();
-    if let Some(obj) = v.as_object() {
-        for (k, val) in obj {
-            if k == "private" {
-                if let Some(inner) = val.as_object() {
-                    for (ik, iv) in inner {
-                        private.insert(ik.clone(), iv.clone());
-                    }
-                } else if !val.is_null() {
-                    private.insert("private".into(), val.clone());
-                }
-                continue;
-            }
-            if !PUBLIC_RECEIPT_KEYS.contains(&k.as_str()) {
-                private.insert(k.clone(), val.clone());
+/// Write-time public record. The stored string is the canonical public projection. A guest may include
+/// `private_commitment` (64 hex). This function does not derive a salt and does not copy `private` or
+/// `private_salt`. `public_sha256` is sha256 of the stored string. Views return that string unchanged.
+pub(crate) fn public_record(v: &Value) -> (String, String, String) {
+    let mut public = project_public(v);
+    if let Some(obj) = public.as_object_mut() {
+        obj.remove("private_salt");
+        if let Some(c) = obj.get("private_commitment").and_then(Value::as_str) {
+            if c.len() != 64 || !c.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase()) {
+                obj.remove("private_commitment");
             }
         }
     }
-    let mut public = project_public(v);
-    let salt = hex(&env::sha256(
-        format!("truenav-private-salt-v1|{token}|{nonce}").as_bytes(),
-    ));
-    let private_body = truenav_v3_core::canonical(&Value::Object(private)).unwrap_or_else(|_| "{}".into());
-    let commitment = hex(&env::sha256(
-        format!("truenav-private-v1|{salt}|{private_body}").as_bytes(),
-    ));
-    if let Some(obj) = public.as_object_mut() {
-        obj.insert("private_salt".into(), json!(salt));
-        obj.insert("private_commitment".into(), json!(commitment));
-    }
+    let commitment = public
+        .get("private_commitment")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
     let stored = truenav_v3_core::canonical(&public).expect("public canonical");
     let sha = hex(&env::sha256(stored.as_bytes()));
     (stored, sha, commitment)
@@ -631,14 +615,7 @@ impl Receipts {
                 } else {
                     "v2_receipt_corrupt"
                 };
-                self.failures.insert(
-                    token_id.clone(),
-                    Failure {
-                        request_id: self.next_request,
-                        code: code.into(),
-                        at_ns: env::block_timestamp(),
-                    },
-                );
+                self.stamp_failure(&token_id, self.next_request, code);
                 if attached > 0 {
                     Promise::new(requester)
                         .transfer(NearToken::from_yoctonear(attached))
@@ -817,14 +794,7 @@ impl Receipts {
             Ok(seq) => format!("stored:{seq}"),
             Err(code) => {
                 if p.storage_deposit.0 >= 4096 * env::storage_byte_cost().as_yoctonear() {
-                    self.failures.insert(
-                        token_id.clone(),
-                        Failure {
-                            request_id,
-                            code: code.clone(),
-                            at_ns: env::block_timestamp(),
-                        },
-                    );
+                    self.stamp_failure(&token_id, request_id, &code);
                 }
                 emit(
                     "run_failed",
@@ -895,7 +865,7 @@ impl Receipts {
         let seq = token.receipts + 1;
         // Legacy v2 path. Demos use v3. This write still stores only the public projection, so a
         // leftover v2 callback cannot put cent fields into chain state.
-        let (receipt, sha, commitment) = public_record(&v, &p.token_id, &p.run_nonce);
+        let (receipt, sha, commitment) = public_record(&v);
         emit(
             "receipt_stored",
             json!({ "token_id": p.token_id, "seq": seq, "request_id": p.request_id, "score": s.score, "band": s.band, "caps": s.caps, "holds": s.holds, "method": p.method, "version_key": p.version_key, "receipt_sha256": sha, "public_sha256": sha, "private_commitment": commitment }),
@@ -954,10 +924,72 @@ impl Receipts {
             .cloned()
             .collect()
     }
+    /// Replace the latest stored body with a hashed failure record. The previous score is no longer
+    /// what get_latest returns. A later successful accept writes the next sequence.
+    pub(crate) fn stamp_failure(&mut self, token_id: &str, request_id: u64, code: &str) {
+        self.failures.insert(
+            token_id.to_string(),
+            Failure {
+                request_id,
+                code: code.to_string(),
+                at_ns: env::block_timestamp(),
+            },
+        );
+        let Some(prev) = self.latest_raw(token_id) else {
+            return;
+        };
+        if prev.receipt.contains("\"head_status\":\"failed\"") {
+            return;
+        }
+        let seq = prev.seq.saturating_add(1);
+        let v3 = prev.method.starts_with("truenav-v3.");
+        let body = json!({
+            "receipt_version": if v3 { "3" } else { "2" },
+            "token_id": token_id,
+            "seq": if v3 { json!(seq.to_string()) } else { json!(seq) },
+            "head_status": "failed",
+            "failure_code": code,
+            "score": null,
+            "band": "red",
+            "caps": [],
+            "holds": [],
+            "method_version": prev.method.clone(),
+            "method": prev.method.clone(),
+            "engine_version_key": prev.version_key.clone(),
+            "valuation_time": prev.as_of.clone(),
+            "as_of": prev.as_of.clone(),
+            "prev_receipt_sha256": prev.receipt_sha256.clone(),
+        });
+        let stored = truenav_v3_core::canonical(&body).unwrap_or_else(|_| body.to_string());
+        let sha = hex(&env::sha256(stored.as_bytes()));
+        let failed = StoredReceipt {
+            token_id: token_id.to_string(),
+            seq,
+            request_id,
+            method: prev.method.clone(),
+            version_key: prev.version_key.clone(),
+            score: 0,
+            band: "red".into(),
+            period: prev.period.clone(),
+            as_of: prev.as_of.clone(),
+            caps: vec![],
+            holds: vec![],
+            receipt_sha256: sha,
+            receipt: stored,
+            requested_ns: prev.requested_ns,
+            stored_ns: env::block_timestamp(),
+            block_height: env::block_height(),
+        };
+        self.receipts.insert((token_id.to_string(), seq), failed);
+        if let Some(mut token) = self.tokens.get(token_id).cloned() {
+            token.receipts = seq;
+            self.tokens.insert(token_id.to_string(), token);
+        }
+    }
+
     pub fn get_latest(&self, token_id: String) -> Option<StoredReceipt> {
-        // New rows include private_commitment and are returned unchanged, so the hash matches.
-        // A legacy row written before that commitment is projected here. head_status is not
-        // inserted into the body. It is the Failure record on get_token.
+        // Rows that carry private_commitment or head_status are returned unchanged, so the hash matches.
+        // A legacy row is projected here.
         let mut r = self.latest_raw(&token_id)?;
         r.receipt = view_body(&r.receipt);
         Some(r)

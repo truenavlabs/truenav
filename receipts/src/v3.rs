@@ -221,7 +221,9 @@ impl Receipts {
             return Err(err("v3_execution_shape"));
         }
         let mut envelope = body.clone();
-        let private_blob = envelope.as_object_mut().and_then(|o| o.remove("private"));
+        if envelope.get("private").is_some() || envelope.get("private_salt").is_some() {
+            return Err(err("private_field"));
+        }
         if !envelope.is_object() {
             return Err(err("v3_execution_shape"));
         }
@@ -313,11 +315,7 @@ impl Receipts {
             _ => return Err(err("v3_correction_invalid")),
         }
         let body_sha256 = truenav_v3_core::hash(canonical(body).map_err(err)?.as_bytes());
-        let mut for_store = envelope.clone();
-        if let Some(blob) = private_blob {
-            for_store["private"] = blob;
-        }
-        let (receipt, sha, commitment) = crate::public_record(&for_store, &p.token_id, &p.run_nonce);
+        let (receipt, sha, commitment) = crate::public_record(&envelope);
         let envelope_sha = envelope["receipt_sha256"]
             .as_str()
             .ok_or_else(|| err("v3_field_type"))?
@@ -1054,8 +1052,12 @@ mod tests {
             "corrupt head was not stored as failed"
         );
         let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
-        assert_eq!(shown.score, 99);
-        assert_eq!(shown.band, "green");
+        let inner: Value = serde_json::from_str(&shown.receipt).unwrap();
+        assert_eq!(shown.score, 0);
+        assert_eq!(shown.band, "red");
+        assert_eq!(inner["head_status"], "failed");
+        assert!(inner["score"].is_null());
+        assert_eq!(shown.receipt_sha256, hash(shown.receipt.as_bytes()));
     }
 
     #[test]
@@ -1090,19 +1092,14 @@ mod tests {
             },
         );
         c.tokens.get_mut("DEMO-CREDIT").unwrap().receipts = 1;
-        c.failures.insert(
-            "DEMO-CREDIT".into(),
-            Failure {
-                request_id: 2,
-                code: "outlayer_run_failed".into(),
-                at_ns: 3,
-            },
-        );
+        c.stamp_failure("DEMO-CREDIT", 2, "outlayer_run_failed");
         let shown = c.get_latest("DEMO-CREDIT".into()).unwrap();
         let inner: Value = serde_json::from_str(&shown.receipt).unwrap();
-        assert_eq!(shown.score, 58);
-        assert_eq!(inner["score"], 58);
-        assert!(inner.get("head_status").is_none());
+        assert_eq!(shown.score, 0);
+        assert_eq!(shown.band, "red");
+        assert_eq!(inner["head_status"], "failed");
+        assert!(inner["score"].is_null());
+        assert_eq!(shown.receipt_sha256, hash(shown.receipt.as_bytes()));
         assert!(c.head_failed("DEMO-CREDIT"));
         assert_eq!(
             c.get_token("DEMO-CREDIT".into()).unwrap()["last_failure"]["code"],

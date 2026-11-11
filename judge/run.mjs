@@ -4,8 +4,9 @@
 //   npm run judge -- --replay --with-tests    the same, then the full npm test
 //
 // Writes out/judge-replay.json (schema judge/summary.schema.json). Exit 0 only if every stage passed, 1 on any
-// failure, 2 on a usage error. Live testnet reads are not part of this command; CI runs them as separate steps.
+// failure, 2 on a usage error. If 127.0.0.1 is unavailable, it says so up front and on each stage that needs it. Live testnet reads are not part of this command; CI runs them as separate steps.
 import { spawnSync } from "node:child_process";
+import { createServer, connect } from "node:net";
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, relative, isAbsolute } from "node:path";
@@ -17,6 +18,25 @@ const ROOT = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const GUARD = fileURLToPath(new URL("./no-network.mjs", import.meta.url));
 const SCHEMA_ID = "truenav-judge-summary/v1";
 const IDS = STAGES.map((s) => s.id);
+// Stages that start a local API or local EVM on 127.0.0.1, or are built from those stages.
+const LOOPBACK_STAGES = new Set(["S5", "S6", "S7", "S8"]);
+const LOOPBACK_HINT = "local loopback 127.0.0.1 is unavailable in this environment, and this stage starts a local server there; this is a sandbox limit, not a product failure; enable loopback and rerun";
+
+// True if this process can listen on 127.0.0.1 and connect to itself. Read-only probe, no outside network.
+function loopbackWorks() {
+  if (process.env.TRUENAV_JUDGE_TEST_NO_LOOPBACK === "1") return Promise.resolve(false);
+  return new Promise((done) => {
+    const finish = (ok, srv) => { try { srv?.close(); } catch {} done(ok); };
+    const srv = createServer((sock) => sock.end());
+    srv.once("error", () => finish(false));
+    srv.listen(0, "127.0.0.1", () => {
+      const c = connect(srv.address().port, "127.0.0.1");
+      const timer = setTimeout(() => { c.destroy(); finish(false, srv); }, 2000);
+      c.once("connect", () => { clearTimeout(timer); c.destroy(); finish(true, srv); });
+      c.once("error", () => { clearTimeout(timer); finish(false, srv); });
+    });
+  });
+}
 
 const USAGE = `usage: npm run judge -- --replay [--with-tests]
 
@@ -99,6 +119,9 @@ const ctx = {
 const short = commit ? commit.slice(0, 7) : "no git commit";
 console.log(`truenav judge --replay${opts.withTests ? " --with-tests" : ""} on ${short}: offline, no keys, funds, Docker, Rust, Python or network${opts.only ? ` (partial: ${[...opts.only].join(", ")})` : ""}`);
 
+const loopbackOk = await loopbackWorks();
+if (!loopbackOk) console.log(`WARN ${LOOPBACK_HINT}. Stages ${[...LOOPBACK_STAGES].join(", ")} will fail here.`);
+
 const stages = [];
 const durations = {};
 const skips = [];
@@ -118,6 +141,7 @@ async function runStage(def) {
   const refused = refusedSoFar().slice(before);
   if (refused.length) r = { ...r, status: "fail", evidence: `network refused in replay (${[...new Set(refused)].join(", ")}); ${r.evidence}` };
   if (!["pass", "fail"].includes(r.status)) r = { ...r, status: "fail", evidence: `stage returned ${r.status}` };
+  if (r.status === "fail" && !loopbackOk && LOOPBACK_STAGES.has(def.id)) r = { ...r, evidence: `${LOOPBACK_HINT}; ${r.evidence}` };
   const stage = { id: def.id, name: def.name, status: r.status, claim: def.claim, evidence: clean(r.evidence ?? ""), label: def.label ?? null };
   results.set(def.id, { ...stage, data: r.data });
   stages.push(stage);

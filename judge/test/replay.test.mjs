@@ -154,3 +154,17 @@ test("--with-tests skip parsing names every skip from the spec and TAP reporters
   assert.deepEqual(parseAnyReport(tap).skipped, [{ test: "b", reason: "no rust" }]);
   assert.deepEqual(parseTap(tap).tests.map((t) => [t.ok, t.name, t.directive]), [[true, "a", null], [true, "b", "SKIP"], [false, "c", null]]);
 });
+
+test("no loopback: the judge says so up front and on each stage that needs it, and never turns a fail into a pass", () => {
+  const dir = copyTree();
+  const r = judge(dir, ["--replay", "--only", "S1,S7"], { TRUENAV_JUDGE_TEST_NO_LOOPBACK: "1" });
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.match(r.stdout, /^WARN local loopback 127\.0\.0\.1 is unavailable.*Stages S5, S6, S7, S8 will fail here\.$/m);
+  assert.equal(stage(r, "S1").status, "pass");
+  assert.doesNotMatch(stage(r, "S1").evidence, /loopback/, "a stage that does not need loopback is not labeled");
+  assert.equal(stage(r, "S7").status, "fail");
+  assert.match(stage(r, "S7").evidence, /^local loopback 127\.0\.0\.1 is unavailable.*not a product failure/);
+  assert.deepEqual(validate(SCHEMA, r.summary), []);
+  const ok = judge(dir, ["--replay", "--only", "S1"]);
+  assert.doesNotMatch(ok.stdout, /^WARN/m, "no warning when loopback works");
+});

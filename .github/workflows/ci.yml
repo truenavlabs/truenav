@@ -207,11 +207,14 @@ jobs:
         run: ulimit -n 65535 && npm run e2e:sandbox
 
   judge-path:
-    # README "Try it" steps 3 to 8, from a fresh checkout with no secrets: the offline demo, the live chain read,
-    # the NEAR AI Cloud attestation, every OutLayer fingerprint, the fixture guard (fails within 10 days of expiry)
-    # and the reply check over every submit_verdict on the live contract. npm test, the demo again and the eval run
-    # in the engine job; contract and vault tests, clippy and RustSec in the contract job; the full flow on a local
-    # node in the sandbox job; gitleaks in the secrets job.
+    # The README judge path from a fresh checkout with no secrets. First the offline judge (npm run judge -- --replay,
+    # S1 to S10: fixture guard, tamper demo, engine, v3 pin, failed head, paid report, dashboard data, mirror, local
+    # attestation slice, wasm stamp), which fails on any network use. Then the live reads, which are not part of the
+    # judge and read the earlier testnet instance tnlab-718ca9 (contract commit d37b9d2) until this commit is
+    # deployed: the chain read, the NEAR AI Cloud attestation, every OutLayer fingerprint and the reply check over
+    # every submit_verdict on the live contract. npm test, the demo again and the eval run in the engine job; contract
+    # and vault tests, clippy and RustSec in the contract job; the full flow on a local node in the sandbox job;
+    # gitleaks in the secrets job.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -221,12 +224,17 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - run: npm run demo
-      - run: npm run chain:read
-      - run: npm run verify:attestation
-      - run: npm run verify:fingerprints
-      - run: npm run check:fixtures
-      - run: npm run check:chain-replies
+      - name: judge replay (offline, S1 to S10)
+        run: npm run judge -- --replay
+        timeout-minutes: 2
+      - name: live read, earlier instance tnlab-718ca9
+        run: npm run chain:read
+      - name: live attestation, earlier instance tnlab-718ca9
+        run: npm run verify:attestation
+      - name: live fingerprints, earlier instance tnlab-718ca9
+        run: npm run verify:fingerprints
+      - name: live chain replies, earlier instance tnlab-718ca9
+        run: npm run check:chain-replies
 
   secrets:
     runs-on: ubuntu-24.04

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "truenav-judge-summary/v1",
+  "title": "TrueNav judge replay summary (out/judge-replay.json)",
+  "description": "Written by npm run judge -- --replay. evidence_hash is the sha256 of the canonical JSON (sorted keys, no whitespace) of every field except ephemeral and evidence_hash. Hashed fields hold no timestamps, remaining-day counts or absolute paths, so two passing runs on the same commit give the same hash. A skip is never a pass: skips lists every check that did not run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "commit", "mode", "with_tests", "partial", "ok", "stages", "pins", "skips", "expected", "offline", "ephemeral", "evidence_hash"],
+  "properties": {
+    "schema": { "const": "truenav-judge-summary/v1" },
+    "commit": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+    "mode": { "enum": ["replay", "live", "replay+live"] },
+    "with_tests": { "type": "boolean" },
+    "partial": { "type": "boolean", "description": "true when --only picked a subset; ok is then always false" },
+    "ok": { "type": "boolean", "description": "true only when every stage ran and passed" },
+    "stages": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 11,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "status", "claim", "evidence", "label"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^(S([1-9]|10)|TESTS)$" },
+          "name": { "type": "string" },
+          "status": { "enum": ["pass", "fail", "not_run"] },
+          "claim": { "type": "string", "description": "the README claim this stage checks" },
+          "evidence": { "type": "string" },
+          "label": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "pins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["harbor_raw", "meridian_raw", "harbor_score", "meridian_score", "engine_sha256"],
+      "properties": {
+        "harbor_raw": { "type": ["number", "null"] },
+        "meridian_raw": { "type": ["number", "null"] },
+        "harbor_score": { "type": ["integer", "null"] },
+        "meridian_score": { "type": ["integer", "null"] },
+        "engine_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "skips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "test", "reason", "status"],
+        "properties": {
+          "stage": { "type": "string" },
+          "test": { "type": "string" },
+          "reason": { "type": "string" },
+          "status": { "const": "skipped_not_verified" }
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["harbor_raw", "meridian_raw", "harbor_score", "meridian_score"],
+      "properties": {
+        "harbor_raw": { "type": "number" },
+        "meridian_raw": { "type": "number" },
+        "harbor_score": { "type": "integer" },
+        "meridian_score": { "type": "integer" }
+      }
+    },
+    "offline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["guard", "refused"],
+      "properties": {
+        "guard": { "const": "judge/no-network.mjs" },
+        "refused": { "type": "array", "items": { "type": "string" }, "description": "hosts a stage tried to reach; any entry fails that stage" }
+      }
+    },
+    "ephemeral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generated_at", "fixture_days_left_min", "wall_ms", "durations_ms", "node"],
+      "properties": {
+        "generated_at": { "type": "string" },
+        "fixture_days_left_min": { "type": ["number", "null"] },
+        "wall_ms": { "type": "integer", "minimum": 0 },
+        "durations_ms": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "node": { "type": "string" }
+      }
+    },
+    "evidence_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

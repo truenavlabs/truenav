@@ -175,6 +175,7 @@ On-chain refusals from that run:
    See: a `PASS` line per demo loan, then `Fingerprints verified: every loan_hash came from the attested OutLayer TEE.` These fingerprints are the recorded demo set, not a live read of 368aa2.
 4. Do: `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run check:chain-replies`
    See: `registry.tnlab-718ca9.testnet: 55 transactions, 18 submit_verdict calls decoded` (counts on 11 Nov 2026; they grow if the account is used) and `PASS every submit_verdict reply from our accounts is within the allowed keys`. The current registry has 0 `submit_verdict` calls (TEE pending), so this check stays on the earlier instance.
+5. Optional, only after the 368aa2 TEE verdict set is on chain: `npm run tee:chain-check` (read only; see `docs/TEE_FLIP.md`). Until then it exits 2 with "no verdicts file".
 
 ## Claims and how to verify each
 

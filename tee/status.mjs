@@ -96,6 +96,7 @@ export function renderStatusDoc(status, verdicts) {
     `TRUENAV_CONTRACT=${status.registry} npm run chain:read             # loans no longer pending`,
     `TRUENAV_CONTRACT=${status.registry} npm run check:chain-replies    # every submit_verdict reply within the allowed keys`,
     "npm run verify:attestation                                          # the signer is the attested model key",
+    `TRUENAV_CONTRACT=${status.registry} npm run tee:chain-check        # every verdict in the file is on chain, signer and expiry match`,
     "```",
     "",
     `A TEE proves which code ran, not that the model's judgment is right. Limits: \`tee/eval/REPORT.md\`. The earlier instance \`${status.earlier_instance}\` keeps its own recorded set.`,

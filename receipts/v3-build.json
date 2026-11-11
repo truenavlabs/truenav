@@ -1,6 +1,6 @@
 {
   "classification": "LOCAL ONLY build candidate, no live deployment or attestation",
-  "source_base": "ecf179c03a658f3c8353687f215dd7006568c096",
+  "source_base": "615a82be3536d9f8300e75ef085008b13ccd23bb",
   "method_version": "truenav-v3.0.1",
   "receipts": {
     "sha256": "dcb46bd0645749948a72b42e5b35c670433a86e86a692e1947841c21129d2259",

@@ -1,6 +1,6 @@
 # TrueNav engine v3
 
-Local implementation of `truenav-v3.0.1`, the approved pledge-conflict amendment to frozen `truenav-v3.0.0` at ecf179c. Historical v3.0.0 envelopes and artifacts stay unchanged. All parties and data in tests are simulated. There is no live deployment or TEE attestation claim.
+Local implementation of `truenav-v3.0.1`, the approved pledge-conflict amendment to frozen `truenav-v3.0.0` at 615a82b (ecf179c in the private lab history). Historical v3.0.0 envelopes and artifacts stay unchanged. All parties and data in tests are simulated. There is no live deployment or TEE attestation claim.
 
 ## Local gates
 

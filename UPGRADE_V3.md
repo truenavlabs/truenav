@@ -4,7 +4,7 @@ Status: local candidate only. No deploy, transaction, key change, secret setup, 
 
 ## Evidence and frozen boundary
 
-Base: frozen ecf179c, method truenav-v3.0.0. No frozen spec, schema, method artifact, golden or observer is edited. The four frozen goldens remain exact serialization conformance vectors for envelope/execution bytes and receipt_sha256 only. Their opaque commitments and unbuilt engine placeholder are not claims of financial execution.
+Base: frozen 615a82b (ecf179c in the private lab history), method truenav-v3.0.0. No frozen spec, schema, method artifact, golden or observer is edited. The four frozen goldens remain exact serialization conformance vectors for envelope/execution bytes and receipt_sha256 only. Their opaque commitments and unbuilt engine placeholder are not claims of financial execution.
 
 `schema/vectors/engine-v3-derived.json` is separate TEST evidence from actual Rust execution: fixed labelled TEST seed/salts, runtime-generated signing material, real built engine hash, private 9917/4284, public 99/43, correction and cap variants, plus consecutive receipts where a loan becomes unverified. No private signing key is committed. A version-dispatch wrapper reuses the unchanged all-public-field observer math and the corresponding method/schema, checking these outputs against the frozen bounds. Production uses fresh host entropy and encrypted private storage, never TEST salts.
 

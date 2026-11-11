@@ -7,6 +7,14 @@
 // only its request hash, the verdict-only response and the signature go on chain.
 //
 //   node tee/underwrite.mjs [--only <loan_id|T1|T2|T3>] [--out tee/fixtures/verdicts.json]
+//                           [--contract <registry account>] [--report-out <path>]
+//
+// The registry the verdicts are bound to: --contract, else the env var TRUENAV_CONTRACT, else registry.test.near (the
+// default, unchanged). For registry.tnlab-368aa2.testnet write a separate set and its own published report, never over
+// the earlier instance's files:
+//   TRUENAV_CONTRACT=registry.tnlab-368aa2.testnet node tee/underwrite.mjs \
+//     --out tee/fixtures/verdicts-368aa2.json --report-out tee/fixtures/attestation-report-368aa2.json.b64
+// then check it with: node tee/verdicts-file.mjs tee/fixtures/verdicts-368aa2.json --contract registry.tnlab-368aa2.testnet
 //
 // The NEAR AI Cloud key is injected by the network proxy (or set NEAR_AI_CLOUD_API_KEY); never stored here.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -41,6 +49,16 @@ verdict is "pass" exactly when every check is "ok". Never repeat document conten
 /** Build the exact request bytes once; the signature covers these bytes. */
 export const VERDICT_DOMAIN = "truenav-verdict-v1";
 export const VERDICT_TTL_MS = 30 * 24 * 3600 * 1000;
+export const DEFAULT_CONTRACT_ID = "registry.test.near";
+/** The registry to bind to: --contract, else TRUENAV_CONTRACT, else the default. */
+export function resolveContract(args, env = process.env) {
+  if (args.includes("--contract")) {
+    const v = args[args.indexOf("--contract") + 1];
+    if (!v || v.startsWith("--")) throw new Error("--contract needs an account id");
+    return v;
+  }
+  return env.TRUENAV_CONTRACT || DEFAULT_CONTRACT_ID;
+}
 export const networkOf = (account) => ({ testnet: "testnet", near: "mainnet" })[account.split(".").pop()] || account.split(".").pop();
 /** "truenav-verdict-v1|<contract>|<network>|<expires_at_ms>": the contract rejects a verdict bound elsewhere or expired. */
 export const bindingFor = (contractId, expiresAtMs) => `${VERDICT_DOMAIN}|${contractId}|${networkOf(contractId)}|${expiresAtMs}`;
@@ -127,7 +145,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
   const only = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
   const outPath = args.includes("--out") ? args[args.indexOf("--out") + 1] : null;
-  const contractId = args.includes("--contract") ? args[args.indexOf("--contract") + 1] : "registry.test.near";
+  const contractId = resolveContract(args);
+  const LIVE_SET = "tee/fixtures/verdicts.json";
+  const LIVE_REPORT = "tee/fixtures/attestation-report.json.b64";
+  const reportOut = args.includes("--report-out") ? args[args.indexOf("--report-out") + 1] : outPath === LIVE_SET ? LIVE_REPORT : null;
+  // The earlier instance's set and report are a pair that must not be overwritten by a set for another registry.
+  if ((outPath === LIVE_SET || reportOut === LIVE_REPORT) && outPath !== LIVE_SET) throw new Error(`${LIVE_REPORT} belongs to ${LIVE_SET}; use --report-out with another path`);
+  if (outPath === LIVE_SET && reportOut !== LIVE_REPORT) throw new Error(`${LIVE_SET} must keep its report ${LIVE_REPORT}`);
+  console.log(`binding to ${contractId}`);
   const signedAt = Date.now();
   const binding = bindingFor(contractId, signedAt + VERDICT_TTL_MS);
   const root = new URL("../", import.meta.url);
@@ -156,10 +181,21 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (outPath) {
     mkdirSync(new URL(".", new URL(outPath, root)), { recursive: true });
     writeFileSync(new URL(outPath, root), JSON.stringify({ note: "TEE underwriter verdicts. Each record is signed by the attested NEAR AI Cloud model TEE; documents are not included.", model: MODEL, contract_id: contractId, binding, signed_at_ms: signedAt, expires_at_ms: signedAt + VERDICT_TTL_MS, attestation: { nonce: att.nonce, checked_at: att.checked_at, signers: att.signers, sections: att.sections, report_sha256: att.reportSha256 }, results }, null, 2) + "\n");
-    // The published report belongs to the live set only (tee/fixtures/verdicts.json): signing another set must not
-    // overwrite it, or the hash registered on chain would point at a report nobody can read. Published
-    // base64-encoded (same bytes, same sha256) because the report embeds third-party text.
-    if (att.raw && outPath === "tee/fixtures/verdicts.json") writeFileSync(new URL("tee/fixtures/attestation-report.json.b64", root), att.raw.toString("base64").replace(/.{76}/g, "$&\n") + "\n");
+    // The published report of the earlier instance belongs to its set only (tee/fixtures/verdicts.json): signing another
+    // set must not overwrite it, or the hash registered on chain would point at a report nobody can read. Another set
+    // publishes its own report with --report-out. Published base64-encoded (same bytes, same sha256) because the report
+    // embeds third-party text.
+    if (att.raw && reportOut) {
+      mkdirSync(new URL(".", new URL(reportOut, root)), { recursive: true });
+      writeFileSync(new URL(reportOut, root), att.raw.toString("base64").replace(/.{76}/g, "$&\n") + "\n");
+      console.log(`wrote ${reportOut}`);
+    }
     console.log(`wrote ${outPath}`);
+    // Check what was written: structure, binding, signatures and the reply rule (no network).
+    const { validateVerdictsPath } = await import("./verdicts-file.mjs");
+    const v = validateVerdictsPath(new URL(outPath, root), { contract: contractId, nowMs: Date.now() });
+    for (const problem of v.problems) console.log(`FAIL ${problem}`);
+    console.log(`${v.ok ? "PASS" : "FAIL"} ${outPath} validates (${v.records} records)`);
+    if (!v.ok) process.exitCode = 1;
   }
 }

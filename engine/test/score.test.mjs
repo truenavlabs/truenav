@@ -422,11 +422,20 @@ test("T13 label constants exported; the retired name for TrueVal is gone from th
   const needle = ["TrueNav", "NAV"].join(" ");
   const hits = [];
   const walk = (dir) => {
-    for (const name of readdirSync(dir)) {
-      if (name === ".git" || name === "node_modules") continue;
+    let names;
+    try { names = readdirSync(dir); } catch (e) { if (e.code === "ENOENT") return; throw e; }
+    for (const name of names) {
+      // skip VCS, dependencies, and build trees another test may be compiling into
+      if (name === ".git" || name === "node_modules" || name === "target") continue;
       const p = join(dir, name);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (readFileSync(p, "utf8").includes(needle)) hits.push(p);
+      let st;
+      try { st = statSync(p); } catch (e) { if (e.code === "ENOENT") continue; throw e; }
+      if (st.isDirectory()) walk(p);
+      else {
+        try {
+          if (readFileSync(p, "utf8").includes(needle)) hits.push(p);
+        } catch (e) { if (e.code === "ENOENT") continue; throw e; }
+      }
     }
   };
   walk(root);

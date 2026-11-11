@@ -2,7 +2,7 @@
 // buyer proof; and the spend store refuses a symlinked .flock-probe.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, symlinkSync, existsSync } from "node:fs";
+import { mkdtempSync, symlinkSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -16,7 +16,8 @@ const EXP = "60000";
 const buyerKey = KeyPair.fromRandom("ed25519");
 
 async function withFailedHead(head, fn) {
-  const spendStore = await initSpendStore(mkdtempSync(join(tmpdir(), "truenav-failed-head-")), { create: true });
+  const spendDir = mkdtempSync(join(tmpdir(), "truenav-failed-head-"));
+  const spendStore = await initSpendStore(spendDir, { create: true });
   const ents = new Map();
   const calls = { redeem: 0, entitlement: 0 };
   const chain = {
@@ -35,6 +36,7 @@ async function withFailedHead(head, fn) {
     await fn({ url: `http://127.0.0.1:${server.address().port}`, ents, calls, spendStore });
   } finally {
     await new Promise((r) => server.close(r));
+    rmSync(spendDir, { recursive: true, force: true });
   }
 }
 
@@ -62,11 +64,15 @@ test("fix13 /report on a failed head is 409 run_failed and does not redeem a val
 
 test("fix13 probeFlock refuses a symlinked .flock-probe", () => {
   const dir = mkdtempSync(join(tmpdir(), "truenav-flock-probe-"));
+  try {
   symlinkSync("/tmp/truenav-missing-flock-target", join(dir, ".flock-probe"));
   // Refused before flock runs. Today the inner "is a symlink" error is rewrapped by the catch, so the message reads
   // "flock probe path: spend_store_closed"; the check pins the refusal, not that wording.
   assert.throws(() => probeFlock(dir), /flock probe path/);
   assert.equal(existsSync("/tmp/truenav-missing-flock-target"), false, "the symlink target was not created");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // Integrity (F3): a failed head is only a genuine run_failed after the same identity and integrity checks the agent runs.

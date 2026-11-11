@@ -3,7 +3,7 @@
 // never changes what /score returns.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
@@ -22,7 +22,8 @@ const stored = (token, seq = 1) => {
 const NOW = 5_000_000_000n;
 const buyerKey = KeyPair.fromRandom("ed25519");
 const EXP = "60000";
-const spendStore = await initSpendStore(mkdtempSync(join(tmpdir(), "truenav-api-spend-")), { create: true });
+const spendDir = mkdtempSync(join(tmpdir(), "truenav-api-spend-"));
+const spendStore = await initSpendStore(spendDir, { create: true });
 const buyerProof = (id, kind, token, audience = "query.test") => {
   const nonce = randomBytes(16).toString("hex");
   const sig = Buffer.from(buyerKey.sign(spendMessage({ audience, id, kind, token, nonce, exp: EXP })).signature).toString("base64");
@@ -59,7 +60,7 @@ before(async () => {
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
-after(() => server.close());
+after(() => { server.close(); rmSync(spendDir, { recursive: true, force: true }); });
 const auth = (id, kind, token) => {
   if (!id) return {};
   const proof = buyerProof(id, kind, token);

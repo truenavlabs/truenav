@@ -29,6 +29,16 @@ function copyTree() {
   symlinkSync(join(ROOT, "node_modules"), join(dir, "node_modules"));
   return dir;
 }
+function withCopy(fn) {
+  const dir = copyTree();
+  try {
+    return fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    const i = made.indexOf(dir);
+    if (i !== -1) made.splice(i, 1);
+  }
+}
 function judge(dir, args, env = {}) {
   rmSync(join(dir, "out/judge-replay.json"), { force: true });
   const r = spawnSync(process.execPath, [join(dir, "judge/run.mjs"), ...args], { cwd: dir, encoding: "utf8", env: { PATH: process.env.PATH, HOME: process.env.HOME || tmpdir(), ...env }, timeout: 180_000 });
@@ -52,7 +62,7 @@ test("usage errors exit 2: no flag, --with-tests alone, unknown flag, --live, a 
 });
 
 test("repro: two full replays on a fixture copy exit 0 with the same evidence_hash, with fetch stubbed to throw and network env set", () => {
-  const dir = copyTree();
+  withCopy((dir) => {
   const stub = join(dir, "judge-test-fetch-throws.mjs");
   writeFileSync(stub, 'globalThis.fetch = () => { throw new Error("fetch called in replay"); };\n');
   const a = judge(dir, ["--replay"], { NODE_OPTIONS: `--import=${stub}` });
@@ -80,16 +90,18 @@ test("repro: two full replays on a fixture copy exit 0 with the same evidence_ha
   assert.equal(dash.label, "data only, no UI");
   assert.deepEqual(dash.funds.map((f) => [f.score, f.band]), [[99, "green"], [43, "red"]]);
   assert.equal(dash.tokens[0].api.error, "run_failed");
+  });
 });
 
 test("control: the partial runs the guard tests use pass on an untouched copy (partial, ok stays false)", () => {
-  const dir = copyTree();
+  withCopy((dir) => {
   const r = judge(dir, ["--replay", "--only", "S1,S2,S3,S4,S6,S9"]);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.equal(r.summary.partial, true);
   assert.equal(r.summary.ok, false, "a partial run is never ok");
   assert.deepEqual(r.summary.stages.filter((s) => s.status !== "not_run").map((s) => s.status), Array(6).fill("pass"));
   assert.deepEqual(validate(SCHEMA, r.summary), []);
+  });
 });
 
 // [name, stages to run, the stage that must fail, edit, evidence pattern]
@@ -112,7 +124,7 @@ const CASES = [
 
 for (const [name, only, failing, edit, pattern] of CASES) {
   test(`fail closed: ${name} fails ${failing} and the judge exits 1`, () => {
-    const dir = copyTree();
+    withCopy((dir) => {
     edit(dir);
     const r = judge(dir, ["--replay", "--only", only]);
     assert.equal(r.status, 1, r.stdout + r.stderr);
@@ -123,11 +135,12 @@ for (const [name, only, failing, edit, pattern] of CASES) {
     assert.match(s.evidence, pattern);
     assert.match(r.stdout, new RegExp(`^FAIL ${failing} `, "m"));
     assert.deepEqual(validate(SCHEMA, r.summary), []);
+    });
   });
 }
 
 test("fail closed: the wrong-pin agent probe buys nothing for the committed vector", () => {
-  const dir = copyTree();
+  withCopy((dir) => {
   editJson(dir, "receipts/v3-build.json", (v) => { v.engine.sha256 = "dd".repeat(32); });
   const r = spawnSync(process.execPath, [join(dir, "judge/probes/pin-probe.mjs")], { cwd: dir, encoding: "utf8", env: { PATH: process.env.PATH }, timeout: 20_000 });
   assert.equal(r.status, 0, r.stderr);
@@ -135,6 +148,7 @@ test("fail closed: the wrong-pin agent probe buys nothing for the committed vect
   assert.deepEqual(p.pins, ["dd".repeat(32)]);
   assert.deepEqual(p.committed, { reason: "engine_hash", bought: 0 });
   assert.deepEqual(p.other, { reason: "engine_hash", bought: 0 });
+  });
 });
 
 test("the summary schema refuses a skip recorded as verified, an unknown stage status and a missing field", () => {
@@ -156,7 +170,7 @@ test("--with-tests skip parsing names every skip from the spec and TAP reporters
 });
 
 test("no loopback: the judge says so up front and on each stage that needs it, and never turns a fail into a pass", () => {
-  const dir = copyTree();
+  withCopy((dir) => {
   const r = judge(dir, ["--replay", "--only", "S1,S7"], { TRUENAV_JUDGE_TEST_NO_LOOPBACK: "1" });
   assert.equal(r.status, 1, r.stdout + r.stderr);
   assert.match(r.stdout, /^WARN local loopback 127\.0\.0\.1 is unavailable.*Stages S5, S6, S7, S8 will fail here\.$/m);
@@ -167,4 +181,5 @@ test("no loopback: the judge says so up front and on each stage that needs it, a
   assert.deepEqual(validate(SCHEMA, r.summary), []);
   const ok = judge(dir, ["--replay", "--only", "S1"]);
   assert.doesNotMatch(ok.stdout, /^WARN/m, "no warning when loopback works");
+  });
 });

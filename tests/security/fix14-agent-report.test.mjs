@@ -4,7 +4,7 @@
 // no transactions.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -61,7 +61,8 @@ function world(head) {
 }
 async function withApi(head, edit, fn) {
   const { chain, calls } = world(head);
-  const spendStore = await initSpendStore(mkdtempSync(join(tmpdir(), "truenav-fix14-f2-")), { create: true });
+  const spendDir = mkdtempSync(join(tmpdir(), "truenav-fix14-f2-"));
+  const spendStore = await initSpendStore(spendDir, { create: true });
   const server = createServer({ chain, receipts: "receipts.test", query: "query.test", fee: FEE.toString(), spendStore });
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const apiUrl = `http://127.0.0.1:${server.address().port}`;
@@ -80,6 +81,7 @@ async function withApi(head, edit, fn) {
   } finally {
     globalThis.fetch = realFetch;
     await new Promise((r) => server.close(r));
+    rmSync(spendDir, { recursive: true, force: true });
   }
 }
 
@@ -139,7 +141,11 @@ test("fix14 F2 v2: altered score, band, caps or holds with copied outer hash and
     assert.equal(out.report.band, head.band);
   });
   for (const f of [(r) => { r.score = 1; }, (r) => { r.band = "red"; }, (r) => { r.caps = ["invented_cap"]; }, (r) => { r.holds = ["invented_hold"]; }, (r) => { r.token_id = "OTHER-FUND"; }]) {
-    await withApi(head, (body) => { f(body.receipt); return body; }, async ({ run }) => {
+    await withApi(head, (body) => {
+      assert.ok(body && body.receipt, `expected a report receipt to edit, got ${JSON.stringify(body)}`);
+      f(body.receipt);
+      return body;
+    }, async ({ run }) => {
       await assert.rejects(run, /report_mismatch/);
     });
   }

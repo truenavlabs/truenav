@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { containsSandboxAccount, listWasm, scanRoot } from "../check-sandbox-account.mjs";
@@ -13,6 +13,8 @@ const text = "outlayer.test.near";
 
 test("sandbox account scan rejects case, utf16 and nul-split forms and skips the sandbox tree", () => {
   const root = mkdtempSync(join(tmpdir(), "truenav-scan-"));
+  const empty = mkdtempSync(join(tmpdir(), "truenav-scan-empty-"));
+  try {
   assert.equal(listWasm(root).length, 0);
   const forms = {
     "plain.wasm": Buffer.from(`xx${text}yy`),
@@ -46,10 +48,13 @@ test("sandbox account scan rejects case, utf16 and nul-split forms and skips the
   const clean = scanRoot(root);
   assert.equal(clean.hits.length, 5);
   assert.equal(clean.files.length, 6);
-  const empty = mkdtempSync(join(tmpdir(), "truenav-scan-empty-"));
   const child = spawnSync(process.execPath, [new URL("../check-sandbox-account.mjs", import.meta.url).pathname, "--expect"], { cwd: empty, encoding: "utf8" });
   assert.equal(child.status, 1);
   assert.match(child.stderr, /no wasm/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(empty, { recursive: true, force: true });
+  }
 });
 
 test("canonical public form matches the rust golden", () => {
@@ -58,6 +63,7 @@ test("canonical public form matches the rust golden", () => {
 
 test("wasm stamp changes when a path dep, schema, lock, or toolchain file changes", () => {
   const root = mkdtempSync(join(tmpdir(), "truenav-stamp-"));
+  try {
   const crate = join(root, "receipts");
   const core = join(root, "engine", "v3-core", "src");
   mkdirSync(crate, { recursive: true });
@@ -79,4 +85,7 @@ test("wasm stamp changes when a path dep, schema, lock, or toolchain file change
   writeStamp(join(root, "rust-toolchain.toml"), "channel-a\n");
   writeStamp(join(core, "lib.rs"), "fn changed() {}\n");
   assert.notEqual(sourceStamp(crate, "sandbox"), base);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

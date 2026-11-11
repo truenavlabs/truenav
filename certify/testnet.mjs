@@ -23,6 +23,7 @@ import { scorePortfolio } from "../engine/src/score.mjs";
 import { replyProblem } from "../tee/reply.mjs";
 import { toCertificate, signCertificate, signEip191, addressOf, newSecretKey } from "./certificate.mjs";
 import { plainCallArgs, pledgeArgs as buildPledgeArgs } from "./call-args.mjs";
+import { buildRunRecord, runRecordSummary } from "./testnet-record.mjs";
 
 const root = new URL("../", import.meta.url);
 // Public testnet RPC listed in docs.near.org/api/rpc/providers (rpc.testnet.near.org is deprecated and rate limited).
@@ -217,7 +218,9 @@ const sets = ["tee/fixtures/verdicts.json", "tee/fixtures/verdicts-sandbox.json"
 const tee = sets.find((t) => t.contract_id === ids.registry) || null;
 const teeSigner = tee ? tee.attestation.signers[0].signing_address.toLowerCase() : null;
 if (!tee) {
-  console.log(`note no recorded TEE verdicts for ${ids.registry}; loans stay pending. With a NEAR AI Cloud key: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts-own.json`);
+  const reason = `no recorded TEE verdicts for ${ids.registry}; loans stay pending`;
+  console.log(`PENDING ${reason}. With a NEAR AI Cloud key: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts-own.json`);
+  log.push({ check: "TEE verdicts", pass: null, pending: true, reason });
 } else {
   // Every submitted response body becomes public transaction data, even when the call fails: never send a reply
   // with anything beyond the allowed keys (owner decision 7 Nov). The contract refuses them too.
@@ -376,8 +379,9 @@ if (SANDBOX) {
 }
 
 // ---------- 5. write the run record ----------
-const out = {
-  note: "Live testnet run of certify/testnet.mjs. Certificate signer is a test key, not TEE; loan verdicts are signed by the attested NEAR AI Cloud model TEE.",
+const out = buildRunRecord({
+  tee,
+  teeSigner,
   network: SANDBOX ? "sandbox" : "testnet",
   rpc: RPC,
   contract_id: ids.registry,
@@ -388,13 +392,11 @@ const out = {
   engine_commit: engineCommit,
   signed_at_ms: nowMs,
   double_pledge_loan_hash: loanHash,
-  tee_signer: teeSigner,
-  tee_model: tee.model,
   scores_from_chain: results.map((r) => ({ fund_id: r.fundId, status: r.status, raw: Math.round(r.raw * 100) / 100, band: r.band, tee: { pass: r.tee.pass, pending: r.tee.pending, flag: r.tee.flag, overdue: r.tee.overdue } })),
   steps: log,
-};
+});
 mkdirSync(new URL("out/", root), { recursive: true });
 const runFile = SANDBOX ? "out/sandbox-run.json" : "out/testnet-run.json";
 writeFileSync(new URL(runFile, root), JSON.stringify(out, null, 2) + "\n");
 if (!SANDBOX) console.log(`\nContract: https://explorer.testnet.near.org/accounts/${ids.registry}`);
-console.log(`Run record: ${runFile}${process.exitCode ? "  (some checks FAILED)" : "  (all checks passed)"}`);
+console.log(`Run record: ${runFile}  (${runRecordSummary({ failed: !!process.exitCode, tee })})`);

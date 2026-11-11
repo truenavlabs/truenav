@@ -167,7 +167,7 @@ Normalization is deterministic and signed as part of loan-terms-v2:
 Second lien LOCKED rc3 policy: lien_rank >=2 -> pledge_result=unknown, hold=second_lien_unsupported; the
 loan is unverified for R7/R13. Never flag it as a proven double pledge merely for having rank 2, and never clear
 it as a supported second lien. Record rank and signed terms privately. Rank 1 conflicts remain conflicts. Ranked
-registry locks/migration are unowned follow-up work, not a hidden backend lane task or a Wednesday prerequisite.
+registry locks and their migration are follow-up work outside this spec.
 A conflicted OR unread loan becomes unverified and flows through R7 verified-value coverage and R13 exposure
 eligibility. Completed read does not mean verified ownership: a completed read showing a conflict still counts in
 read coverage. Result priority: known conflict first; otherwise unsupported rank => unknown; otherwise incomplete
@@ -195,8 +195,7 @@ not historical backfills of this cutoff. Display zero/one/two_plus; unknown when
 This period-to-valuation window is separate from R9/R10's penalty history/decay and R12's 30-day hold. No attempt
 outside the display window is silently removed from scoring. Changing period window cannot reset penalties.
 
-backend lane identity work: 4-6 hours, including normalization/signatures/vectors 2-3 and OutLayer fingerprint change
-and build 2-3. Registry rank/lineage implementation and migration belong to an external owner and are excluded.
+Registry rank/lineage implementation and migration are excluded from this spec.
 Use minimal owned tests for renamed-file, forged terms, amendment and lien input validation; external scenarios
 exercise same-rank refusal and rank >=2 unknown behavior against the registry. Source authenticity/canonical identifiers remain trust
 assumptions; identity scope is the participating registry, not a global legal lien search.
@@ -492,25 +491,22 @@ attack recovered, v3 protected values unrecoverable beyond approved policy, unkn
 Exact scores and public registry knowledge may expose inference tradeoffs; unresolved failures block publication
 until the owner approves a concrete disclosure change. No test waivers disguised as salt-based privacy claims.
 
-## 11. Frozen interface and lane ownership
+## 11. Frozen interface
 
 No disclosure decisions remain open. Coverage floors to 100 bps, or 2500 bps for small checked-count bands
 lt_5/from_5_to_9 (also conservative unknown/suppressed). Attempts wire tokens are zero/one/two_plus, displayed
 as 0/1/2+. All four NAV figures retain ladder rounding and individual salted commitments. Public score is whole;
-precision fields are private with separate commitments. The disclosure guard enforces the owner's accepted all-fields measured bounds. The signed-terms fingerprint fix and
-bounded conditional buyer analyst remain locked. the owner's final read is pending; changes after this rc3 need an
-explicit revision and coordination with consuming lanes.
+precision fields are private with separate commitments. The disclosure guard enforces the accepted all-fields measured bounds. The signed-terms fingerprint fix and
+bounded conditional buyer analyst remain locked. Changes after this rc3 need an explicit new revision.
 
-backend lane owns lab/ci-green and lab/receipt-v3-spec, receipts v3 contract/views and Wed upgrade preparation,
-engine v3, new pledge fingerprint, source signature checks INSIDE the TEE, and receipt leak tests. Only small
-fixtures necessary for these tests belong here. Contract views are in this lane; the HTTP feed and reusable
-verifier are not. No generator/attack-scenario dataset, judge command, dashboard, landing, demo token or external
-adapter implementation is assigned here. lab/sim-data owns the generator, simulated adapters and simulated signing material, broad fixtures and attack
-scenarios. lab/verifier owns the verifier package, npm run judge entry command and HTTP feed. Both consume this
-frozen interface; backend lane supplies only minimal owned test vectors, not their production implementations. Registry ranked-lock changes, query/payment/report service, analyst, dashboards/landing and demo token
-are UNOWNED and need the owner to assign them; the identity interface does not grant ownership of the registry contract.
-Root package.json/README changes require task necessity and must be reported. Keep skills/ out. Live upgrade,
-configuration and every transaction remain gated on the owner's specific yes; this local freeze authorizes none.
+Scope of this freeze: the receipts v3 contract and views, engine v3, the new pledge fingerprint, source signature
+checks INSIDE the TEE, and receipt leak tests, with only the small fixtures those tests need. Contract views are in
+scope; the HTTP feed and the reusable verifier are not. The simulated data generator, simulated adapters and
+simulated signing material, the verifier package, the npm run judge command and the HTTP feed consume this frozen
+interface; this spec supplies only minimal test vectors for them, not their production implementations. Registry
+ranked-lock changes, the query/payment/report service, the analyst, dashboards, landing page and demo token are out
+of scope; the identity interface does not change the registry contract. Live upgrade, configuration and every
+transaction are separate later actions; this local freeze authorizes none.
 
 
 ## 12. Pinned files and local golden vectors
@@ -527,9 +523,9 @@ variant, each with canonical execution/receipt preimage UTF-8/hex, receipt_sha25
 LOCAL SERIALIZATION/PIN vectors, not live receipts, real attestation or signed-source evidence. Synthetic engine
 hash, null proof reference and opaque commitment placeholders must never be passed off as a deployed build or
 mathematical commitment verification. No production salt or private signing material is exported. Corrections preserve benchmark
-as-of; source_correction is illustrative metadata only. External full scenarios belong to lab/sim-data.
-The backend lane CI enumeration/vector tests run separately from root npm scripts; root package.json/README are
-unchanged. Do not implement external npm run judge here; its owner consumes these vectors and pins.
+as-of; source_correction is illustrative metadata only. Full external scenarios live with the simulated data generator.
+The CI enumeration and vector tests for this spec run separately from the root npm scripts. The judge command
+consumes these vectors and pins; it is not implemented here.
 
 
 ## 13. Rc3 known-answer and benchmark fixtures

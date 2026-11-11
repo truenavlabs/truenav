@@ -1,6 +1,6 @@
 # TrueNav spec v2: is the yield real?
 
-Status: draft for owner review, 7 Nov 2026 (Bangkok). Replaces the pledge-registry scope (owner reset, 7 Nov). Where this conflicts with `spec/nav/NAV_SPEC.md`, older docs or Notion pages, this file wins. Revision 2 after owner review of 7 Nov (red-flag caps, freshness by source as-of, request pinning, re-sign path). All names, funds, properties, borrowers, tenants and numbers are fictional and synthetic.
+Status: draft for owner review, 7 Nov 2026 (Bangkok). Replaces the pledge-registry scope (owner reset, 7 Nov). Where this conflicts with `spec/nav/NAV_SPEC.md`, older docs, this file wins. Revision 2 after owner review of 7 Nov (red-flag caps, freshness by source as-of, request pinning, re-sign path). All names, funds, properties, borrowers, tenants and numbers are fictional and synthetic.
 
 TrueNav privately checks whether the cash behind a tokenized fund or tokenized rental property is actually coming in. It compares what the issuer says it was paid with cash a bank actually settled, without exposing borrower or tenant files, and publishes a verifiable score and a signed checks receipt. **TrueNav reports and scores only. It never holds, moves or controls investment or fund money.** The only money it receives is small testnet service fees from agents for paid queries.
 

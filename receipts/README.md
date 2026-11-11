@@ -93,12 +93,12 @@ refund), `1a04e120...` (fc0b041, rental late share capped at 10000), `57ae8fa8..
 ## Who can use the data credentials
 
 Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlayer-cli` 0.2.1 (`commands/secrets.rs`),
-8 Nov:
+8 Nov. `<master>` below is the master account given to `deploy-testnet.mjs` with `--master` or `TRUENAV_MASTER`; the script has no default.
 
 - An `--access whitelist:` leaf is judged on the transaction signer. A run starts with `runner.` signing
-  `request_run`, so the signer OutLayer sees is `runner.tnlab-718ca9.testnet`, not the receipt contract. Whitelisting
+  `request_run`, so the signer OutLayer sees is `runner.<master>`, not the receipt contract. Whitelisting
   `receipts.` alone would admit no run.
-- `--via receipts.tnlab-718ca9.testnet` adds a `Predecessor` rule: the account that called `request_execution` must
+- `--via receipts.<master>` adds a `Predecessor` rule: the account that called `request_execution` must
   be the receipt contract. The stored condition is
   `And[Whitelist[runner.], Predecessor{Whitelist[receipts.]}]`, so `runner.` calling OutLayer directly, or through any
   other contract, is refused, and nobody else's signature is accepted through the receipt contract.
@@ -159,7 +159,7 @@ Later, separately (OutLayer and the data host):
 | Step | What |
 | --- | --- |
 | H1 | host the mock bank-data API (synthetic data) where the TEE can reach it: the one approved Vercel free-tier project, root directory `hosting/mockbank` (one all-funds token from env `TRUENAV_DATA_TOKEN`, fail closed without it; steps in `hosting/mockbank/README.md`) |
-| O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.tnlab-718ca9.testnet`), then check FastFS serves sha256 `360cd473...` |
+| O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.<master>`), then check FastFS serves sha256 `360cd473...` |
 | O2 | `OUTLAYER_NETWORK=testnet outlayer deploy truenav-engine <fastfs url> --hash 360cd473... --target wasm32-wasip2` |
-| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.tnlab-718ca9.testnet/truenav-engine --profile engine --access whitelist:runner.tnlab-718ca9.testnet --via receipts.tnlab-718ca9.testnet --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
+| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.<master>/truenav-engine --profile engine --access whitelist:runner.<master> --via receipts.<master> --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
 | R1 | first live run: `request_run` for one synthetic token from `runner.`, 0.26 NEAR attached, 300 Tgas |

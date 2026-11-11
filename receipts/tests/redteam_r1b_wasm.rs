@@ -1,6 +1,6 @@
 //! The bytes an upgrade would ship have to contain the round 1 fixes.
-/// Rebuild is forbidden in this pass. The expectation is right and the pin is stale.
-/// `cargo test -- --ignored` still runs it. See FIX_R1D.md for the rebuild commands.
+/// The committed pinned wasm predates these fixes, so this test is ignored until a pinned rebuild.
+/// `cargo test -- --ignored` still runs it. Rebuild with the pinned image in receipts/README.md.
 #[test]
 #[ignore = "pinned wasm rebuild is out of scope for this pass"]
 fn redteam_r1b_pinned_receipts_wasm_contains_the_round1_fixes() {

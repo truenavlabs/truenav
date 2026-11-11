@@ -34,8 +34,7 @@
     "receipts_sha256": "9bf4539f74a02fa62564c3d418231cbcf3091ef08ec506ebdb199f1b04820895",
     "engine_sha256": "3a535b6d3caf40155d13219831c2a4d730eea6fbd9ccfb7b3084ea86944b2f11",
     "flag": "--features dry-run-tests",
-    "local_receipts_path": "/workspace/truenav-build/receipts-v3-dryrun/near/truenav_receipts.wasm",
-    "local_engine_path": "/workspace/truenav-build/engine-v3-dryrun/wasm32-wasip2/release/truenav-engine-v3.wasm",
+    "build_output": "not committed; build locally with --features dry-run-tests",
     "testnet_rehearsal": "not run"
   },
   "sandbox": "Blocked locally: hard nofile 16384, Docker rlimit increase denied; CI root cause awaited; 80 Tgas unchanged",

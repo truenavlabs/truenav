@@ -1,6 +1,6 @@
 # Audit findings
 
-Every finding from the reviews of 6 Nov 2026, with what happened to it. Reviews: the NEAR contract audit checklist (bundled kit skill, by hand), Gemini 3.1 Pro (two passes), GPT-5.5 and Claude Opus 5.5 second opinions on scoring rules. Each claim was checked by a test or by running code before it was accepted.
+Every finding from the reviews of 6 Nov 2026, with what happened to it. Reviews: a NEAR smart contract security checklist, applied by hand, Gemini 3.1 Pro (two passes), GPT-5.5 and Claude Opus 5.5 second opinions on scoring rules. Each claim was checked by a test or by running code before it was accepted.
 
 | # | Finding | Source | Status | Evidence |
 | --- | --- | --- | --- | --- |

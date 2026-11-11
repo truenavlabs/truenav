@@ -11,7 +11,7 @@
 // Transaction list: FastNEAR transactions API (POST /v0/account, paged with resume_token; full transactions with
 // their receipts from POST /v0/transactions, up to 20 hashes per call; see docs.fastnear.com/tx). No key needed.
 import { replyProblem } from "../tee/reply.mjs";
-import { DEFAULT_CONTRACT, DEFAULT_RPC, view } from "../web/chain.mjs";
+import { DEFAULT_RPC, view } from "../web/chain.mjs";
 
 /** Every submit_verdict call to `contract` inside one FastNEAR transaction record (receipts first, then actions). */
 export function verdictCalls(t, contract) {
@@ -48,7 +48,9 @@ export function callProblem(argsBase64) {
 export const isOurs = (account, parent, roleHolders) => !!account && (account === parent || account.endsWith(`.${parent}`) || roleHolders.includes(account));
 
 async function main() {
-  const contract = process.env.TRUENAV_CONTRACT || DEFAULT_CONTRACT;
+  // Recorded submit_verdict history lives on the earlier instance. The current
+  // registry (DEFAULT_CONTRACT) has none: TEE verdicts are pending / not run.
+  const contract = process.env.TRUENAV_CONTRACT || "registry.tnlab-718ca9.testnet";
   const network = contract.endsWith(".near") ? "main" : "test";
   const API = process.env.TRUENAV_TX_API || `https://tx.${network}.fastnear.com`;
   const parent = contract.split(".").slice(1).join(".");

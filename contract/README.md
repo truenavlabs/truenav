@@ -74,7 +74,7 @@ cargo install cargo-near --version 0.23.0 --locked
 cd contract && cargo near build non-reproducible-wasm
 ```
 
-Output: `contract/target/near/truenav_registry.wasm` (about 284 KB) plus its ABI. cargo-near's default `ledger` feature needs the system package `libudev-dev` (and `pkg-config`) on Linux.
+Output: `contract/target/near/truenav_registry.wasm` plus its ABI. A local host (non-reproducible) build measured on 11 Nov 2026 was 364904 bytes; that is not a pinned-image / NEP-330 size. cargo-near's default `ledger` feature needs the system package `libudev-dev` (and `pkg-config`) on Linux.
 
 Deploy goes to a throwaway testnet account (see the main README, Testnet run). Never mainnet.
 

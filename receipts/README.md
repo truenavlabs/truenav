@@ -42,10 +42,10 @@ informational, as `code_hash` is (spec 8.2).
 ## Tests
 
 ```bash
-(cd receipts && cargo test --locked)     # 36: signing recovery, civil-date validation, mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
+(cd receipts && cargo test --locked)     # 96 pass, 1 ignored (55 unit, 29 contract, 12 mirror; the wasm test is ignored): signing recovery, civil-date validation, mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
 (cd query && cargo test --locked)        # 8: exact fee, 24 h, uses, redeemer, withdraw bound, 1 yocto admin calls
-node --test api/test/api.test.mjs        # 7: free score, 402, one-use report, ask spends nothing, score unchanged
-npm run e2e:receipts                     # 67 checks on a local sandbox, engine run natively as the worker
+node --test api/test/api.test.mjs        # 12: free score, 402, one-use report, ask spends nothing, score unchanged
+npm run e2e:receipts                     # 109 PASS lines on a local sandbox, engine run natively as the worker (counted from CI run 43075427743, job receipts; not re-run locally)
 ```
 
 ## Demo agent (agents track)

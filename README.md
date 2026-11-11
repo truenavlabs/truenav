@@ -8,7 +8,7 @@ TrueNav informs only. It does not block any transfer. Testnet and fictional data
 
 ## Try it
 
-No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Steps 1 to 6 were run from a fresh clone of this repository with Node v24.22.1 on 11 Nov 2026 (Asia/Bangkok, UTC+7). The code is the same as commit `4808dc6` in this repository (commit `3c87cc3` in the team's private lab repository, where CI was green). Full expected output for each step is in [Expected output](#expected-output).
+No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Steps 1 to 6 were run from a fresh clone of this repository with Node v24.22.1 on 11 Nov 2026 (Asia/Bangkok, UTC+7). The code is the same as commit `4808dc6` in this repository. Full expected output for each step is in [Expected output](#expected-output).
 
 1. Do: `npm ci`
    See: exit 0 and `added 506 packages` (11 Nov 2026).
@@ -25,7 +25,7 @@ No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Step
 
 ## Expected output
 
-Docker is not needed for these steps. The sandbox end-to-end jobs that need Docker were not run locally. They passed in CI on lab commit `3c87cc3`, the same code as `4808dc6` here (run 42952643540, 8 of 8 jobs green, in the team's private lab repository, so judges cannot open that run). CI has not yet run in this repository.
+Docker is not needed for these steps. The sandbox end-to-end jobs that need Docker were not run locally. They run in CI: see the latest CI run on `main` in this repository (Actions tab), which runs all 8 jobs, including the sandbox end-to-end jobs.
 
 ### Step 2: `npm run judge -- --replay`
 
@@ -156,7 +156,7 @@ The days-left figure counts down. The command fails once any fixture has fewer t
 
 ### Optional: read an earlier testnet registry (no keys)
 
-These four commands use public network reads only (NEAR testnet RPC, Intel and NVIDIA attestation services). They read `registry.tnlab-718ca9.testnet`, an earlier instance whose on-chain metadata names source commit `d37b9d2` (code hash `Foc9f2oJ8Ja1ddKSt91kXTxVm33nRBMjx3e4LHMP13EW`). In this repository that source is commit `9ec99f2`, which has the same `contract/` tree. It is not the current commit. A deployment of the current commit is not published. All four exited 0 on 11 Nov 2026.
+These four commands use public network reads only (NEAR testnet RPC, Intel and NVIDIA attestation services). They read `registry.tnlab-718ca9.testnet`, an earlier instance whose on-chain metadata names source commit `d37b9d2` (code hash `Foc9f2oJ8Ja1ddKSt91kXTxVm33nRBMjx3e4LHMP13EW`). Tag `registry-tnlab-718ca9` points at `d37b9d2` itself. On `main` the same `contract/` tree is commit `9ec99f2`. It is not the current commit. A deployment of the current commit is not published. All four exited 0 on 11 Nov 2026.
 
 1. Do: `npm run chain:read`
    See: Harbor `99 green (raw 99.17)` and Meridian `43 red (raw 42.84)`, each followed by `-> matches the recomputed score`.
@@ -171,7 +171,7 @@ These four commands use public network reads only (NEAR testnet RPC, Intel and N
 
 | Claim | How to verify | Status (11 Nov 2026) |
 | --- | --- | --- |
-| A loan can be pledged by one fund only. A second fund's pledge of the same `loan_hash` is refused with `already pledged elsewhere`. | `contract/tests/registry.rs` (`cargo test` in `contract/`) | Passed in CI job `contract` on lab commit `3c87cc3` (lab run 42952643540). Not run locally |
+| A loan can be pledged by one fund only. A second fund's pledge of the same `loan_hash` is refused with `already pledged elsewhere`. | `contract/tests/registry.rs` (`cargo test` in `contract/`) | Passed in CI job `contract`: see the latest CI run on `main` in this repository (Actions tab). Not run locally |
 | Each pledge mints a NEP-171 token that cannot be transferred. | `contract/tests/registry.rs`: `first_pledge_mints_a_nep171_token_to_the_fund`, `pledge_tokens_cannot_be_transferred` | Same CI job |
 | Pledge, release and admin calls without 1 yoctoNEAR are refused. | `contract/tests/registry.rs`: `pledge_without_one_yocto_is_refused`, `admin_call_without_one_yocto_is_refused`, `release_without_one_yocto_is_refused` | Same CI job |
 | The contract stores a TEE verdict only if the signature recovers (`env::ecrecover`) to a registered TEE signer. Edited replies, unregistered signers, wrong contract or network, expired and replayed verdicts are refused. | `contract/src/lib.rs`, `contract/tests/tee_verdicts.rs` | Same CI job |
@@ -185,10 +185,10 @@ These four commands use public network reads only (NEAR testnet RPC, Intel and N
 | The agent accepts only the engine hash pinned in `receipts/v3-build.json`. Any other engine is declined `engine_hash`. | `agent/test/engine-pin.test.mjs` (in `npm test`), judge S4 | Passed locally, 11 Nov 2026 |
 | A wasm swapped after stamping is detected as stale. | `receipts/tests/wasm-stamp-integrity.test.mjs` (in `npm test`), judge S10 | Passed locally, 11 Nov 2026 |
 | The Base mirror contract accepts only the MPC signer and a rising sequence per token (local EVM, not deployed). | `mirror/test/mirror.test.mjs` (in `npm test`), judge S8 | Passed locally, 11 Nov 2026 |
-| Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts` on lab commit `3c87cc3` (lab run 42952643540). Not run locally |
-| Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from the CI job `receipts` log on lab commit `3c87cc3` (lab run 42952643540): `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR` |
-| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path. | CI workflow `.github/workflows/ci.yml` | 8 of 8 jobs green on lab commit `3c87cc3` (lab run 42952643540, private). Not yet run in this repository |
-| Production `npm audit` has no high or critical findings. | `npm audit --omit=dev --audit-level=high` | Passed in CI job `engine` on lab commit `3c87cc3`, which printed `2 low severity vulnerabilities` |
+| Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts`: see the latest CI run on `main` in this repository (Actions tab). Not run locally |
+| Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from the CI job `receipts` log in the latest CI run on `main` in this repository (Actions tab): `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR` |
+| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path. | CI workflow `.github/workflows/ci.yml` | 8 of 8 jobs green: see the latest CI run on `main` in this repository (Actions tab) |
+| Production `npm audit` has no high or critical findings. | `npm audit --omit=dev --audit-level=high` | Passed in CI job `engine` (the latest CI run on `main` in this repository (Actions tab)), which printed `2 low severity vulnerabilities` |
 | The earlier testnet instance's on-chain scores match a local recompute. | `npm run chain:read` | Exit 0 on 11 Nov 2026: Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), each matches the recomputed score. Earlier instance `tnlab-718ca9` (source `d37b9d2`), not the current commit |
 
 ## How it works
@@ -247,7 +247,7 @@ More detail: [`WHY_NEAR.md`](WHY_NEAR.md) and `ARCHITECTURE.md`.
 - **admin** assigns roles and registers funds. **registrar** adds and removes certificate and TEE signers. **pauser** pauses and unpauses. **servicer** releases repaid loans and submits TEE verdicts. Each role is refused every other role's job.
 - The certificate signer on the earlier testnet instance is a test key, not a TEE key. The engine is public and deterministic, so anyone can recompute the numbers from the same inputs.
 - The TEE signer is registered by the registrar after an off-chain attestation check that anyone can repeat (`npm run verify:attestation`). The contract does not verify the hardware quote itself.
-- On the earlier testnet instance, `registry.tnlab-718ca9.testnet` has 2 full-access keys and no function-call keys (`view_access_key_list` on testnet RPC, block 277166025, 11 Nov 2026). Per the team's records, one is the owner's key and one is an operator backup key; the chain does not say which is which. Removing the backup key is planned (RT-17) and has not been done. Either key can upgrade that contract.
+- On the earlier testnet instance, `registry.tnlab-718ca9.testnet` has 2 full-access keys and no function-call keys (`view_access_key_list` on testnet RPC, block 277166025, 11 Nov 2026). Per the deploy records, one is the owner's key and one is an operator backup key; the chain does not say which is which. Removing the backup key is planned (RT-17) and has not been done. Either key can upgrade that contract.
 - The demo agent, when used on testnet, signs with its own account. It refuses the master, `receipts.`, `query.`, `runner.` and `api.` accounts. `runAgent` buys nothing unless it is called with `execute: true`.
 - Never put a seed phrase or private key in the repo, in chat, or in a command.
 

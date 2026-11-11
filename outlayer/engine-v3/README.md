@@ -1,6 +1,6 @@
 # TrueNav engine v3
 
-Local implementation of `truenav-v3.0.1`, the approved pledge-conflict amendment to frozen `truenav-v3.0.0` at 615a82b (ecf179c in the private lab history). Historical v3.0.0 envelopes and artifacts stay unchanged. All parties and data in tests are simulated. There is no live deployment or TEE attestation claim.
+Local implementation of `truenav-v3.0.1`, the approved pledge-conflict amendment to frozen `truenav-v3.0.0` at 615a82b. Historical v3.0.0 envelopes and artifacts stay unchanged. All parties and data in tests are simulated. There is no live deployment or TEE attestation claim.
 
 ## Local gates
 
@@ -43,7 +43,7 @@ The old cashflow-v2.1.0 implementation supplies cash caps and collection holds o
 
 Public NAV uses the fixed integer 1-2-5 ladder. All exact money, cash matches, individual positions, precision parts and the fresh random 32-byte salt stay in the private report. Late share follows the existing >60 DPD cashflow signal. Positive cohort counts below five use lt_5; complementary cells are suppressed. Public cash has bands only and no dollar denominator.
 
-The host encrypts the complete private report with the OutLayer truenav-report-v3 key path, with AAD binding network, contract, token, nonce and full_report commitment. An authenticated store must acknowledge both the commitment and ciphertext digest before public output is emitted. POST the ciphertext object to the sealed store URL; GET that URL plus `/{full_report}` returns the ciphertext_hex for a prior report. Buyer authorization, payment and re-encryption are the separate report-service lane, not implemented here. The raw salt/report never goes to stdout. A previous v3 report is decrypted and checked against its public salted commitment before its cash passport is used for carry-forward checks.
+The host encrypts the complete private report with the OutLayer truenav-report-v3 key path, with AAD binding network, contract, token, nonce and full_report commitment. An authenticated store must acknowledge both the commitment and ciphertext digest before public output is emitted. POST the ciphertext object to the sealed store URL; GET that URL plus `/{full_report}` returns the ciphertext_hex for a prior report. Buyer authorization, payment and re-encryption are a separate report service, not implemented here. The raw salt/report never goes to stdout. A previous v3 report is decrypted and checked against its public salted commitment before its cash passport is used for carry-forward checks.
 
 The guest emits execution body B only. The contract adds issued_at, attestation_ref and receipt_sha256. attestation_ref stays null permanently under option 3. Separate append-only contract records link the exact body hash to public proof locators; readers verify them off chain. Private salts and exact values are absent from every public receipt and the Base score/hash mirror.
 
@@ -64,4 +64,4 @@ No signer key is needed by this read-only engine. Any secrets/profile creation, 
 
 Fixture keys are publicly derivable test keys for reproducibility. The live demo uses fresh runtime keys.
 
-The local public TEST registry exactly snapshots sim/fixtures/source-key-registry.json at lab/sim-data e6f45eb. The WASI host accepts only one explicitly live registry pinned by the contract context. Live IDs use role:live_<run-id>:v1, which fits the frozen schema. Duplicate IDs, mixed fixture/live roots and an ID rebound to different public-key bytes reject. The shared JS SourceRegistrySession under receipts/attestation/ gives the verifier lane the same public trust boundary without editing verifier/. Its integration and the sim lane's live-ID fix remain external gates.
+The local public TEST registry exactly snapshots an internal simulated-data fixture registry (`sim/fixtures/source-key-registry.json`, not in this repository). The WASI host accepts only one explicitly live registry pinned by the contract context. Live IDs use role:live_<run-id>:v1, which fits the frozen schema. Duplicate IDs, mixed fixture/live roots and an ID rebound to different public-key bytes reject. The shared JS SourceRegistrySession under receipts/attestation/ gives a verifier the same public trust boundary. Verifier integration and the live-ID fix in the simulated-data generator remain external gates.

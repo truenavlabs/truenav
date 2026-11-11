@@ -20,15 +20,15 @@ Behind a TLS-intercepting proxy, also mount its CA and pass the proxy variables
 (`-v <ca>:/ca.crt:ro -e SSL_CERT_FILE=/ca.crt -e CARGO_HTTP_CAINFO=/ca.crt -e HTTPS_PROXY --network host`). That only
 affects downloads, not the output.
 
-## Recorded result (source commit 9138f10, method cashflow-v2.1.0; BUILD.md is not a build input)
+## Recorded result (source commit 47cce06, method cashflow-v2.1.0; BUILD.md is not a build input)
 
 | | |
 |---|---|
 | wasm sha256 | `360cd47346db7060ffb213288e25a6d5e39050133bd4e20ad2f6f9280b1daa57` |
 | size | 579642 bytes |
 | check | two fresh clones, mounted at different absolute paths (`/src/a` as root, `/work/b-other` as the image user), same sha256; CI rebuilds it and fails if the hash differs from this table |
-| rechecked | 8 Nov at 591db60 (lab/receipts; same engine source as lab/engine-v2 74a53eb): the same two-clone check, same sha256. Only tests, fixtures and `examples/` changed since 9138f10, none of them build inputs |
-| previous | `6d1eac8911d751c4baf877d14c4357862c09b38aaa52d2245aec6815f4e59601` (f74661a, before the field validation and the TEE-derived new_period), `fce34e79...` (7ef4423, cashflow-v2.0.0), `a74d6976...` (214dae9); none uploaded |
+| rechecked | 8 Nov at fc0b041 (same engine source): the same two-clone check, same sha256. Only tests, fixtures and `examples/` changed since 47cce06, none of them build inputs |
+| previous | `6d1eac8911d751c4baf877d14c4357862c09b38aaa52d2245aec6815f4e59601` (7f5c3b0, before the field validation and the TEE-derived new_period), `fce34e79...` (04d9ece, cashflow-v2.0.0), `a74d6976...` (e665eb2); none uploaded |
 
 The only absolute paths in the binary are the image's own registry paths (`/home/near/.cargo/registry/...`), which the
 pinned image fixes. A change to a build input under `outlayer/engine-v2/` (`src/`, `Cargo.toml`, `Cargo.lock`, `wit/`) changes the hash, so

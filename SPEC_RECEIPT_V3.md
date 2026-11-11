@@ -292,7 +292,7 @@ Band thresholds are 85/60 on public whole score. R12 recent_pledge_attempt caps 
 without changing the number. Concentration flags remain non-capping holds. Cash caps remain <=59, no fourth weight.
 collection_pending/not_applicable limit band to yellow. R15 largest obligor >15% / top five >50% are flags only.
 Public pins: Harbor 99 green, Meridian 43 red. Private report pins: 9917/4284, independently computed from the
-unrounded final in receipt:v3:pins and lab/verifier's npm run judge -- --replay. Keep original benchmark as-of.
+unrounded final in receipt:v3:pins and npm run judge -- --replay. Keep original benchmark as-of.
 Nonnumeric statuses have score=null, band per R14; source rejection nulls private precision fields and uses unknown
 parts_band. Missing values are not zero. No public score_x100, parts_x100 or raw_score keys are accepted.
 

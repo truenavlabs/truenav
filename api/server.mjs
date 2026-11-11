@@ -141,7 +141,7 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
       let decoded;
       try { decoded = decodeReceipt(r); } catch (error) { return send(res, 502, {error:error.code ?? "receipt_invalid"}); }
       // A failed head has no score to serve: both routes refuse it, so /report never redeems for it. It counts as a
-      // genuine run_failed only after the token, private-field and hash checks (fix 14); otherwise it is invalid.
+      // genuine run_failed only after the token, private-field and hash checks; otherwise it is invalid.
       if (decoded.receipt?.head_status === "failed") {
         const bad = verifyRecord(token, r);
         if (bad) return send(res, 502, {error: bad});

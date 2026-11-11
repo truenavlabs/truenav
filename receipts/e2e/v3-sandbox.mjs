@@ -76,7 +76,7 @@ try{
 
  const seq2hash=(await view('get_latest',{token_id:'DEMO-CREDIT'})).receipt_sha256;
  await call('admin','receipts','pause',{},one);await configure({...context,supersedes_seq:'2',correction_reason_code:'coverage_correction'});await call('admin','receipts','unpause',{},one);
- assert.equal(await run(body),'stored:3');const correction=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(correction.supersedes_seq,'2');assert.equal(correction.prev_receipt_sha256,first.receipt_sha256);assert.notEqual(correction.prev_receipt_sha256,seq2hash,'fix 14: the chain links the envelope hash, not the wrapper public-body hash');
+ assert.equal(await run(body),'stored:3');const correction=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(correction.supersedes_seq,'2');assert.equal(correction.prev_receipt_sha256,first.receipt_sha256);assert.notEqual(correction.prev_receipt_sha256,seq2hash,'the chain links the envelope hash, not the wrapper public-body hash');
  assert.equal(await run(input=>({...body(input),not_a_public_field:true})),'v3_schema');const rejected=await view('get_latest_receipt',{token_id:'DEMO-CREDIT'});assert.equal(rejected.head_status,'failed');assert.notEqual(rejected.score,99);assert.equal((await view('get_token',{token_id:'DEMO-CREDIT'})).pending,null);
  console.log('PASS CI local sandbox: actual old wasm state retained, v3 callback within 80 Tgas, chain/correction/tags, append-only metadata without quote claims, private-field rejection');
 }catch(error){

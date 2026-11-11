@@ -1,4 +1,4 @@
-// Public trust-root loader for the verifier lane. One explicit mode; never concatenate registries.
+// Public trust-root loader for a verifier. One explicit mode; never concatenate registries.
 import {readFileSync} from 'node:fs';
 const schema=JSON.parse(readFileSync(new URL('../../schema/source-key-registry.schema.json',import.meta.url)));
 const keyPattern=new RegExp(schema.properties.keys.items.properties.key_id.pattern);

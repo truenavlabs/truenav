@@ -280,7 +280,7 @@ try {
   f = await run("DEMO-RENTAL");
   ok(f.result.value === `stored:${rentalHead.seq + 1}`, `a later good run is the next seq (${f.result.value})`);
   const in2 = JSON.parse(f.req.input_data);
-  // fix 14: recovery links the last successful envelope (its sealed receipt_sha256), never the failed head
+  // Recovery links the last successful envelope (its sealed receipt_sha256), never the failed head
   let lastOk = null;
   for (let s = rentalHead.seq - 1; s >= 1 && !lastOk; s -= 1) {
     const r = await view("receipts", "get_receipt", { token_id: "DEMO-RENTAL", seq: s });
@@ -302,7 +302,7 @@ try {
 
   // ---- query contract and API --------------------------------------------------------------------------------
   // the paid report runs on HONEST-CREDIT (a good head); DEMO-CREDIT's head is a failure, so its /report is 409
-  // run_failed and must redeem nothing (fix 13). The agent later buys its own HONEST-CREDIT report under another id.
+  // run_failed and must redeem nothing. The agent later buys its own HONEST-CREDIT report under another id.
   const wrong = await call("agent", "query", "buy_query", { request_id: "e2e-report-0001", query_hash: queryHash("report", "HONEST-CREDIT"), kind: "report" }, { deposit: nearToYocto("0.02") });
   ok(!wrong.ok, "buy_query with the wrong amount is refused");
   ok((await view("query", "get_entitlement", { request_id: "e2e-report-0001" })) === null, "nothing stored for the refused purchase");
@@ -366,7 +366,7 @@ try {
     ok(out.decision.action === action && out.decision.reason === why, `agent ${t}: ${out.decision.action} (${out.decision.detail})`);
     ok(out.receipt && out.receipt.receipt_sha256 === live.receipt_sha256, `agent ${t}: cites the stored public hash`);
     if (why === "run_failed") {
-      // fix 13: a failed head buys nothing, so there is no entitlement to check and nothing is spent
+      // A failed head buys nothing, so there is no entitlement to check and nothing is spent
       ok(out.entitlement && out.entitlement.bought === false && out.entitlement.why === "run_failed" && spent === 0n, `agent ${t}: a failed head buys nothing (bought ${out.entitlement && out.entitlement.bought}, why ${out.entitlement && out.entitlement.why}, spent ${spent} yocto)`);
       continue;
     }

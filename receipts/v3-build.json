@@ -15,7 +15,7 @@
   "engine": {
     "sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
     "bytes": null,
-    "bytes_note": "Not printed by CI run 42770701832 attempt 2, which printed only the sha256; record it after the next pinned-image engine build.",
+    "bytes_note": "Not printed by the CI build that produced this pin, which printed only the sha256; record it after the next pinned-image engine build.",
     "toolchain": "1.99.0",
     "target": "wasm32-wasip2",
     "command": "node outlayer/engine-v3/build-pinned.mjs",
@@ -56,7 +56,7 @@
   },
   "source_registry": {
     "kind": "public TEST fixture only",
-    "source": "lab/sim-data e6f45ebf3b230e35d6bd1b9aa25b7b70f897b8c9:sim/fixtures/source-key-registry.json",
+    "source": "internal simulated-data fixture sim/fixtures/source-key-registry.json (not in this repository)",
     "snapshot": "engine/v3-core/tests/fixtures/source-registry.TEST.json",
     "raw_sha256": "180c07fe325003ab2b734e096af2b1a6a3a602663648909a3c26f71d5663e2f6",
     "live_gate": "distinct live_<run-id> IDs required; the pinned sim helper still reuses fixture IDs"

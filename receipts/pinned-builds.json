@@ -1,9 +1,9 @@
 {
-  "note": "Local receipts v3 candidate: migration, combined receipts, existing mirror fixes, canonical body binding and append-only attestation metadata. No hardware quote validated on-chain. Not deployed; round-1 audit and separate approvals required. Receipts and query pins refreshed from the pinned-image build in CI run 42770701832 attempt 2 at dcc65955 (receipts 555924 bytes, query 162201 bytes).",
+  "note": "Local receipts v3 candidate: migration, combined receipts, existing mirror fixes, canonical body binding and append-only attestation metadata. No hardware quote validated on-chain. Not deployed; round-1 audit and separate approvals required. Receipts and query pins refreshed from the pinned-image build in CI at 8cc9ede (receipts 555924 bytes, query 162201 bytes).",
   "receipts": "dcb46bd0645749948a72b42e5b35c670433a86e86a692e1947841c21129d2259",
   "query": "dee5f216c7ed6a0b75e597b2c5dce643dfcb88dc6517e71e85c5bb96f8169d09",
   "dist": {
-    "note": "STALE: these are the hashes of the committed dist files, which predate the fix 13 and 14 sources and were not rebuilt (no Docker locally). They do not match the pins above, so deploy-testnet.mjs refuses TRUENAV_WASM_DIR=receipts/dist until the dist files are replaced with a pinned-image build. Not a deployed-code claim. Prior c19fc647 bytes remain in frozen 615a82b history (ecf179c in the private lab) for CI state migration replay.",
+    "note": "STALE: these are the hashes of the committed dist files, which predate the current sources and were not rebuilt (no Docker locally). They do not match the pins above, so deploy-testnet.mjs refuses TRUENAV_WASM_DIR=receipts/dist until the dist files are replaced with a pinned-image build. Not a deployed-code claim. Prior c19fc647 bytes remain in frozen 615a82b history for CI state migration replay.",
     "receipts/dist/truenav_receipts.wasm": "b7fb827ac4d51cd2d92090fa5caea88b1e3a3a99c63103411303aa78eb7d1f47",
     "receipts/dist/truenav_query.wasm": "ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156"
   }

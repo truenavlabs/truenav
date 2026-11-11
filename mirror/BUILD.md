@@ -1,7 +1,7 @@
 # Mirror build verification
 
-The signing-recovery and civil-date fix is based on `65c3ce0960d173e245d01b922eb550d6358bc812`, including the gas-cap
-candidate `c4da4c5d1d6fed7c18c2553a2b87c16d5b76c065`. Built locally on 9 Nov 2026 Bangkok, not deployed.
+The signing-recovery and civil-date fix is based on `c1152b6eddefffa3cdc2ecba045a0c7005db3c30`, including the gas-cap
+candidate `5a2ea399379933549f49509931b1c9ec422949fa`. Built locally on 9 Nov 2026 Bangkok, not deployed.
 Query code and its artifact are unchanged. The Q&A branch is not included.
 
 Pinned image:
@@ -22,7 +22,7 @@ Fresh verification for this fix:
 
 - Receipts `cargo +1.99.0 test --locked`: 24 contract tests and 12 mirror tests, all passed.
 - Receipts `cargo +1.99.0 clippy --locked --all-targets -- -D warnings`: passed.
-- `npm test`: 284 tests, no failures on lab/mirror. The separately committed Q&A tests are not on this branch.
+- `npm test`: 284 tests, no failures at that commit.
 - Recovery tests prove admin/one-yocto/pause enforcement, byte-identical state apart from the signing flag, unchanged
   nonce and unsigned payload, rejection of late callbacks, and a successful higher-fee retry.
 - Date tests cover Gregorian leap/century rules, impossible month/day combinations, pre-epoch timestamps and invalid

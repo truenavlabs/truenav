@@ -91,7 +91,7 @@ fn rfc8032_source_known_answer() {
     .unwrap();
 }
 fn test_key(role: &str) -> SigningKey {
-    // Public fixture seed only, matching lab/sim-data e6f45eb. Never used by the live host.
+    // Public fixture seed only, matching the simulated-data fixture registry. Never used by the live host.
     let id = match role {
         "servicer" => "servicer:simcredit:v1",
         "bank" => "bank:simcash:v1",

@@ -26,7 +26,7 @@ The frozen receipt and its digest never change. attestation_ref remains null. Th
 
 The caller verifier must first anchor the receipt and record in finalized contract views and run its full frozen-schema/chain checks. Its context must come from the original execution request and approved worker registry, not the proof's own assertions. OutLayer input_hash is the hash of public stdin; receipt input_sha256 is a different, salted private-input commitment. Never equate them. OutLayer caller_account_id is the original proven NEAR signer, not necessarily the receipts predecessor used by the common-scope encryption-key manifest.
 
-The verifier/feed lane can consume this component and these new views; verifier/ is unchanged here. No hardware quote is validated on-chain. This method, its role/configuration, callback body binding, append-only storage/index, refunds, idempotency, reference restrictions and verifier boundary are mandatory round-1 audit scope before any upgrade.
+A verifier or feed can consume this component and these new views; the verifier is outside this repository. No hardware quote is validated on-chain. This method, its role/configuration, callback body binding, append-only storage/index, refunds, idempotency, reference restrictions and verifier boundary are mandatory round-1 audit scope before any upgrade.
 
 ## No-key replay
 

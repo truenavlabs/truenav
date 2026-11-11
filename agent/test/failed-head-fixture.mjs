@@ -1,4 +1,4 @@
-// Shared fixture for the fix 13 failed-head tests (agent and API). Not a test file.
+// Shared fixture for the failed-head tests (agent and API). Not a test file.
 import { createHash } from "node:crypto";
 import { canonical } from "../../api/receipt.mjs";
 

@@ -142,7 +142,7 @@ export async function runAgent({ chain, token, receipts, query, requestId, execu
   let latest = await chain.view(receipts, "get_latest", { token_id: token });
   const tokenInfo = await chain.view(receipts, "get_token", { token_id: token });
   const decision = decide(token, latest, { nowMs: now });
-  // The parsed chain body that verifyRecord (in decide) just checked. The paid report is compared against it (fix 14).
+  // The parsed chain body that verifyRecord (in decide) just checked. The paid report is compared against it.
   let verifiedBody = null;
   if(latest && decision.reason!=="receipt_mismatch") { const decoded=decodeReceipt(latest); verifiedBody=decoded.receipt; latest=decoded.version==='3'?{...decoded.record,score:decoded.receipt.score}:decoded.record; }
   const out = {

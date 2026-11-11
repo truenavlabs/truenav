@@ -134,7 +134,7 @@ test('redteam_r1b a failed head must not be served as the previous green score',
     receipt: JSON.stringify(envelope),
     block_height: 1,
   };
-  // fix 14 (F3): the wrapper hash is sha256 of the stored body, as the contract writes it; a failed head is only a
+  // The wrapper hash is sha256 of the stored body, as the contract writes it; a failed head is only a
   // genuine run_failed (409) once it verifies. The same head under the old, non-matching hash is 502, still no score.
   record.receipt_sha256 = sha(record.receipt);
   const bad = {...record, receipt_sha256: envelope.receipt_sha256};

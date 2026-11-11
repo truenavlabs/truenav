@@ -78,7 +78,7 @@ On testnet, `--execute` signs `buy_query` with the agent's own account (`TRUENAV
 ## Pinned builds
 
 `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-receipt mirror recovery and civil-date validation fix based on 65c3ce0 (includes the gas-cap fix), built locally in the pinned image. Query source 4d472e1 is unchanged:
+receipt mirror recovery and civil-date validation fix based on c1152b6 (includes the gas-cap fix), built locally in the pinned image. Query source f9379a2 is unchanged:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
@@ -86,9 +86,9 @@ receipt mirror recovery and civil-date validation fix based on 65c3ce0 (includes
 | query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
-build differs. This mirror candidate is not deployed. Previous receipts pins: `c0be4258...` (c4f6c85, initial mirror candidate), `f32949b3...` (684b2e3, gas-cap-only candidate), `be2fed68...` (4d472e1, callback gas floor 20 Tgas), `e321077f...` (dc0b6c6, the build deployed on testnet 8 Nov, before the late-callback
-refund), `1a04e120...` (591db60, rental late share capped at 10000), `57ae8fa8...`
-(0c49d30, before the review fixes).
+build differs. This mirror candidate is not deployed. Previous receipts pins: `c0be4258...` (4918c2a, initial mirror candidate), `f32949b3...` (29e13f2, gas-cap-only candidate), `be2fed68...` (f9379a2, callback gas floor 20 Tgas), `e321077f...` (c90f631, the build deployed on testnet 8 Nov, before the late-callback
+refund), `1a04e120...` (fc0b041, rental late share capped at 10000), `57ae8fa8...`
+(e2a6cfb, before the review fixes).
 
 ## Who can use the data credentials
 

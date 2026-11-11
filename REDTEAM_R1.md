@@ -1,6 +1,6 @@
 # TrueNav red team, round 1
 
-Scope: `lab/engine-v3` at `90eb18447dd84c6fa98f9364392a3c20ca1f0ce9`. Simulated data only. No production code was changed. No transaction was sent. No key material is recorded here.
+Scope: engine v3 at `20eeeac40175b099aef6827a201271b94eb472ed`. Simulated data only. No production code was changed. No transaction was sent. No key material is recorded here.
 
 Repro tests assert the property that should hold. They fail on the current code.
 
@@ -29,7 +29,7 @@ Repro tests assert the property that should hold. They fail on the current code.
 
 ## Fix pass status
 
-Branch `lab/fix-r1`. Status after the approved fix pass.
+Status after the fix pass.
 
 | id | status | reason |
 | --- | --- | --- |

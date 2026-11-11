@@ -52,7 +52,7 @@ export function stampContractWasm(opts) {
 }
 
 export function ensureContractWasm({ crate, artifact, sandbox = false }) {
-  const { stamp, destDir, dest } = wasmTarget({ crate, artifact, sandbox });
+  const { crateDir, stamp, destDir, dest } = wasmTarget({ crate, artifact, sandbox });
   if (fresh(dest, stamp)) {
     const bytes = readFileSync(dest);
     const hasSandbox = bytes.includes("outlayer.test.near");

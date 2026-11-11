@@ -20,7 +20,7 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 | 14 | Admin call from a leaked function-call key | admin, servicer and pledge calls require exactly 1 yoctoNEAR (full-access key) | `*_without_one_yocto_is_refused` |
 | 15 | Grief the registry storage with refused pledges | only admin-registered fund accounts can pledge; each call costs gas | `audit_2_*` (contract pays storage, owner decision) |
 | 16 | Exhaust gas on long lists | paged views capped at 100 | `audit_3_*` |
-| 17 | Deploy different code than the source | reproducible build, code hash on chain | README "Verify the deployed code" |
+| 17 | Deploy different code than the source | reproducible build, code hash on chain | NEP-330 row in [README: How NEAR is used](README.md#how-near-is-used) |
 | 18 | Leak keys through the repo | gitleaks over full history in CI; keys only in `~/.near-credentials` and gitignored `.keys/` | CI `secrets` job |
 | 19 | Supply-chain swap of CI actions | actions pinned to commit SHAs; gitleaks checksum pinned | `.github/workflows/ci.yml` |
 

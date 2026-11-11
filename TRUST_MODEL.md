@@ -11,7 +11,7 @@ What TrueNav proves, what it assumes, and who can break what. Testnet demo; all 
 | The TEE signing key runs in an attested TEE | the attestation report is published; its hash is stored with the TEE signer on chain; anyone re-checks the TDX quote, key and nonce binding, measurements and GPU evidence | `npm run verify:attestation` |
 | A score certificate came from the registered signer and was not edited | EIP-191 signature over a canonical pipe-joined message that includes the contract id; `signed_at` must move forward per fund | `submit_certificate` |
 | A fund cannot rename itself to escape its history | `register_fund` binds fund_id to one account and one manager; certificates must match | `submit_certificate` |
-| The deployed code is the published source | reproducible build (NEP-330), pinned image digest; the on-chain code hash equals the build hash | anyone, see README "Verify the deployed code" |
+| The deployed code is the published source | reproducible build (NEP-330), pinned image digest; the on-chain code hash equals the build hash | anyone, see the NEP-330 row in [README: How NEAR is used](README.md#how-near-is-used); not re-checked for the current testnet registry |
 
 ## Pledge tickets
 

@@ -236,6 +236,40 @@ jobs:
       - name: live chain replies, earlier instance tnlab-718ca9
         run: TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run check:chain-replies
 
+  fresh-clone:
+    # The README "Try it" steps 1 to 3 from a clean checkout, in the README's order and with the README's commands:
+    # npm ci, npm run judge -- --replay, npm test. Passes on exit 0 and 0 failing tests. It prints the counts and does
+    # not require an exact pass count: the skipped tests depend on whether Python jsonschema and Rust 1.99.0 are on
+    # PATH, and the runner image decides that. No secrets, no network checks beyond npm ci.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: tool versions on this runner
+        run: |
+          node -v
+          npm -v
+          python3 --version || true
+          rustc --version || true
+      - name: "README step 1: npm ci"
+        run: npm ci
+      - name: "README step 2: npm run judge -- --replay"
+        shell: bash
+        run: |
+          npm run judge -- --replay 2>&1 | tee "$RUNNER_TEMP/judge.txt"
+          grep -E '^judge: [0-9]+ of [0-9]+ stages PASS, 0 skipped not verified, ok true' "$RUNNER_TEMP/judge.txt"
+        timeout-minutes: 3
+      - name: "README step 3: npm test"
+        shell: bash
+        run: npm test 2>&1 | tee "$RUNNER_TEMP/npm-test.txt"
+        timeout-minutes: 20
+      - name: npm test must have exit 0 and 0 failures; print the counts
+        run: node judge/ci-test-counts.mjs "$RUNNER_TEMP/npm-test.txt"
+
   secrets:
     runs-on: ubuntu-24.04
     steps:

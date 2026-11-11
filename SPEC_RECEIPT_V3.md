@@ -1,8 +1,8 @@
 # TrueNav receipt v3 specification
 
 Status: FROZEN v3.0.0-rc3, pending the owner's final read (9 Nov 2026 Bangkok).
-the owner's 9 Nov rc3 review: whole public score, private committed precision fields, known-answer vectors and benchmark cohorts.
-the owner's 9 Nov disclosure decision accepts the all-public-field measured bounds below. Status: FROZEN v3.0.0-rc3,
+The owner's 9 Nov rc3 review: whole public score, private committed precision fields, known-answer vectors and benchmark cohorts.
+The owner's 9 Nov disclosure decision accepts the all-public-field measured bounds below. Status: FROZEN v3.0.0-rc3,
 pending the owner's final read. No disclosure field was removed or weakened to obtain a passing guard.
 
 Design only, the owner decisions of 9 Nov 2026 Bangkok. No engine deployment or transaction is authorized by
@@ -303,7 +303,7 @@ counts, caps/holds, timestamps, method identity and provenance. It never reads p
 expected bounds. Salted commitments are opaque under the stated cryptographic assumption; they are not extra
 amount measurements. Non-null external evidence must be supplied to an expanded observer, never silently ignored.
 
-the owner accepts: when unverified_share_band=zero, R7 coverage=40 exactly for these positive-coverage scored vectors.
+The owner accepts: when unverified_share_band=zero, R7 coverage=40 exactly for these positive-coverage scored vectors.
 R13 zero implies no unverified value/not-listed balance/unattested cash; Policy NAV=L and LIH<=L, giving R7=40.
 The degenerate zero-denominator case is not assumed fully verified: score/positive parts-band excludes it here.
 This intended fully-verified signal also reveals derived raw/precision fields when the other parts are fixed;

@@ -10,7 +10,7 @@ Base: frozen ecf179c, method truenav-v3.0.0. No frozen spec, schema, method arti
 
 The public TEST registry is now a byte-identical snapshot of sim/fixtures/source-key-registry.json at lab/sim-data e6f45ebf3b230e35d6bd1b9aa25b7b70f897b8c9. Tests derive keys only in memory from that lane's public fixture seed. The old lab/verifier a17b1c3 registry differs in IDs and public keys. Never load both. Verifier files remain untouched and its lane must select the sim registry.
 
-the owner's 9 Nov 16:39 amendment is truenav-v3.0.1 for new receipts. Its new schema is schema/receipt-v3.0.1.schema.json and method artifact is schema/methods/truenav-v3.0.1.json. Confirmed active first-lien conflict adds pledge_conflict, caps at 59 and makes the band red, on top of unchanged R7/R13. Unknown second liens only add their visible hold. The old schema/artifact/spec/goldens stay byte-identical. Validators dispatch by method_version without fallback. New runs use v3.0.1; old stored v3.0.0 views and hashes remain valid.
+The owner's 9 Nov 16:39 amendment is truenav-v3.0.1 for new receipts. Its new schema is schema/receipt-v3.0.1.schema.json and method artifact is schema/methods/truenav-v3.0.1.json. Confirmed active first-lien conflict adds pledge_conflict, caps at 59 and makes the band red, on top of unchanged R7/R13. Unknown second liens only add their visible hold. The old schema/artifact/spec/goldens stay byte-identical. Validators dispatch by method_version without fallback. New runs use v3.0.1; old stored v3.0.0 views and hashes remain valid.
 
 ## Public interface and migration
 
@@ -133,7 +133,7 @@ UNVERIFIED: deployed OutLayer code parity with that source, real admission/settl
 
 ## Post-CI compatibility gates
 
-the owner reported CI run 92 green at 43bdd5e; this is sandbox evidence, not a live upgrade or dry run. The new candidate caps detached attestation records at three per receipt. Exact canonicalized retries still return the existing record and refund the deposit even at the cap; a fourth distinct request reference is rejected before any write.
+The owner reported CI run 92 green at 43bdd5e; this is sandbox evidence, not a live upgrade or dry run. The new candidate caps detached attestation records at three per receipt. Exact canonicalized retries still return the existing record and refund the deposit even at the cap; a fourth distinct request reference is rejected before any write.
 
 request_run now returns an error object for a corrupt JSON receipt head (v3_receipt_corrupt or v2_receipt_corrupt), with a full attached-deposit refund and no nonce allocation, pending state or OutLayer request. Successful runs retain the existing asynchronous callback result. Authorization and configuration preconditions still reject as before.
 

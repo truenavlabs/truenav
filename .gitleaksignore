@@ -4,6 +4,6 @@
 # .gitleaks.toml instead, so they stay allowed when the code moves to a repo with new commit hashes.
 # The two entries below exist only in this repo's history, not in the current tree.
 # A fixed test pseudonym key in a test file (generic-api-key rule), commit 88ffe20.
-88ffe2057bfb20dc7fa8b1ccb3eb974e1035d227:cashflow/test/pipeline.test.mjs:generic-api-key:11
+8cd200d018bca2b3272989bbe005af33ab929b6f:cashflow/test/pipeline.test.mjs:generic-api-key:11
 # Prose describing verification-key administration, not a credential (rc2 review, generic-api-key).
-d0350988e45896c3ab06a41d2250551c5aa4ca7a:SPEC_RECEIPT_V3.md:generic-api-key:205
+4ad28f7a64b12bdb9425edc74ff3f6b37841212a:SPEC_RECEIPT_V3.md:generic-api-key:205

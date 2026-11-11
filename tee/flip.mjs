@@ -3,8 +3,10 @@
 //
 //   npm run tee:flip                     dry run: validate the files, show the status it would write, list every doc line
 //                                        that must be edited by hand; writes nothing
-//   npm run tee:flip -- --write          write tee/status.json (live) and regenerate docs/TEE_STATUS.md
-//   options: --verdicts <path>  (default tee/fixtures/verdicts-368aa2.json)
+//   npm run tee:flip -- --write --add-signer-tx <hash>
+//                                        write tee/status.json (live) and regenerate docs/TEE_STATUS.md
+//   options: --add-signer-tx <hash>  the add_tee_signer transaction (the one thing the files cannot give; required)
+//            --verdicts <path>  (default tee/fixtures/verdicts-368aa2.json)
 //            --report <path>    (default tee/fixtures/attestation-report-368aa2.json.b64)
 //
 // After --write, `npm run tee:status` and `npm test` fail until the hand-written docs stop saying TEE is pending.
@@ -22,8 +24,11 @@ export const EXTRA_FILES = ["certify/check-chain-replies.mjs"];
 const LOOSE = /(TEE|verdict)[^\n]*(pending|not run|not yet)|(pending|not run|not yet)[^\n]*(TEE|verdict)/i;
 
 /** The status object a flip would write. Keeps registry and earlier_instance from the current file. */
-export function liveStatus(current, { verdicts = DEFAULT_VERDICTS, report = DEFAULT_REPORT } = {}) {
-  return { registry: current.registry, tee: "live", verdicts_file: verdicts, report_file: report, earlier_instance: current.earlier_instance };
+export function liveStatus(current, { verdicts = DEFAULT_VERDICTS, report = DEFAULT_REPORT, file = null, addSignerTx = null } = {}) {
+  const s = { registry: current.registry, tee: "live", verdicts_file: verdicts, report_file: report, earlier_instance: current.earlier_instance };
+  // read from the verdicts file, so the status cannot disagree with it (checkStatus compares them again)
+  if (file) Object.assign(s, { model: file.model, tee_signer: file.results?.[0]?.onchain?.signer, report_sha256: file.attestation?.report_sha256, add_tee_signer_tx: addSignerTx, expires_at_ms: file.expires_at_ms });
+  return s;
 }
 
 /** Every line in the hand-written docs that must change: exact phrase hits (these fail npm test), then looser candidates. */
@@ -43,12 +48,14 @@ export function linesToEdit(root = ROOT) {
 }
 
 /** Validate the two files for the current status registry. Returns { problems, status, summary }. */
-export function planFlip({ root = ROOT, nowMs = Date.now(), verdicts = DEFAULT_VERDICTS, report = DEFAULT_REPORT } = {}) {
+export function planFlip({ root = ROOT, nowMs = Date.now(), verdicts = DEFAULT_VERDICTS, report = DEFAULT_REPORT, addSignerTx = null } = {}) {
   const current = readStatus(root);
   const problems = [];
   if (current.tee === "live") problems.push(`${STATUS_FILE} is already live`);
   for (const [name, p] of [["verdicts", verdicts], ["report", report]]) if (!existsSync(new URL(p, root))) problems.push(`${name} file ${p} does not exist: put it in the branch first`);
-  const status = liveStatus(current, { verdicts, report });
+  let file = null;
+  if (!problems.length) { try { file = JSON.parse(readFileSync(new URL(verdicts, root), "utf8")); } catch (e) { problems.push(`${verdicts} is not JSON: ${e.message}`); } }
+  const status = liveStatus(current, { verdicts, report, file, addSignerTx });
   if (problems.length) return { problems, status, summary: null, current };
   // the same checks npm test runs on a live status: structure, binding, signatures, reply rule, 10 days left, report sha256
   const checked = checkStatus(status, { root, nowMs });
@@ -67,9 +74,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const args = process.argv.slice(2);
   const opt = (n, d) => (args.includes(n) ? args[args.indexOf(n) + 1] : d);
   const write = args.includes("--write");
-  const unknown = args.filter((a, i) => a.startsWith("--") && !["--write", "--verdicts", "--report"].includes(a) && !["--verdicts", "--report"].includes(args[i - 1]));
+  const VALUE_FLAGS = ["--verdicts", "--report", "--add-signer-tx"];
+  const unknown = args.filter((a, i) => a.startsWith("--") && a !== "--write" && !VALUE_FLAGS.includes(a) && !VALUE_FLAGS.includes(args[i - 1]));
   if (unknown.length) { console.error(`unknown argument ${unknown[0]}`); process.exit(2); }
-  const plan = planFlip({ verdicts: opt("--verdicts", DEFAULT_VERDICTS), report: opt("--report", DEFAULT_REPORT) });
+  const plan = planFlip({ verdicts: opt("--verdicts", DEFAULT_VERDICTS), report: opt("--report", DEFAULT_REPORT), addSignerTx: opt("--add-signer-tx", null) });
+  if (!plan.problems.length && !plan.status.add_tee_signer_tx) plan.problems.push("--add-signer-tx <hash> is required: the add_tee_signer transaction cannot be read from the files");
   for (const p of plan.problems) console.log(`FAIL ${p}`);
   if (plan.problems.length) { console.log("FAIL not flipped: fix the problems above"); process.exit(1); }
   const v = plan.summary;

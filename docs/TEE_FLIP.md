@@ -2,37 +2,49 @@
 
 Code and docs only. Nothing here calls NEAR AI Cloud, sends a transaction or needs a key. The chain steps (registering the TEE signer, submitting the verdicts) are TrueNav's own and happen outside this repository.
 
-## Order
+## State
 
-1. TrueNav records the verdict set (outside this repo) with `tee/underwrite.mjs`, registers the TEE signer and submits the verdicts on chain.
-2. Drop the two files into the branch:
-   - `tee/fixtures/verdicts-368aa2.json`
-   - `tee/fixtures/attestation-report-368aa2.json.b64`
-3. Dry run. Writes nothing:
-   ```bash
-   npm run tee:flip
-   ```
-   It validates the verdicts offline (`tee/verdicts-file.mjs`: binding, 30 day lifetime, 10 days left, every signature, the reply rule), checks the report sha256, prints the status it would write, and lists every doc line that must change.
-4. Flip:
-   ```bash
-   npm run tee:flip -- --write
-   ```
-   This writes `tee/status.json` as live and regenerates `docs/TEE_STATUS.md`.
-5. Edit by hand the `MUST` lines the script printed in `README.md`, `TRUST_MODEL.md` and `ARCHITECTURE.md`, and look at the `CHECK` lines (including the comment in `certify/check-chain-replies.mjs`). Until the `MUST` lines change, `npm run tee:status` and `npm test` fail, on purpose: the docs must not say TEE is pending once it is live.
-6. Check against the chain, read only:
-   ```bash
-   npm run tee:chain-check
-   ```
-   It confirms on `registry.tnlab-368aa2.testnet` that the registered TEE signer is the file's signer with the file's model and report hash, that the binding and expiry are right, and that every verdict in the file is stored on chain with the same signer, model, request hash, verdict, anomalies, expiry and attestation hash. Exit 0 all pass, 1 a check failed, 2 usage or network error.
+TEE is live on `registry.tnlab-368aa2.testnet` (12 Nov 2026, about 02:20 Bangkok). `tee/status.json` records it:
 
-`npm run tee:chain-check` is an optional step of the judge path. It is not part of `npm run judge`, because it needs the network and the verdict set.
+- the TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462`, registered in `add_tee_signer` transaction `9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE`;
+- the model `Qwen/Qwen3-VL-30B-A3B-Instruct` and the report sha256 `05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657`;
+- the verdict set `tee/fixtures/verdicts-368aa2.json` (19 records: 16 honest loans, all pass and all submitted on chain; 3 trap records T1 to T3 that are in the file and deliberately not submitted) and the report `tee/fixtures/attestation-report-368aa2.json.b64`;
+- the binding expiry, 11 Dec 2026 19:15 UTC (12 Dec 02:15 Bangkok).
+
+`docs/TEE_STATUS.md` is generated from that file. `npm test` checks that every one of those values equals what the verdicts file says.
+
+## Defaults
+
+With no environment variable, `npm run verify:attestation`, `npm run check:chain-replies`, `npm run chain:read` and `npm run tee:chain-check` read the current registry and, where they need a recorded set, the one named in `tee/status.json`. The earlier instance `registry.tnlab-718ca9.testnet` is reached with a flag:
+
+```bash
+npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet
+npm run check:chain-replies -- --contract registry.tnlab-718ca9.testnet
+```
+
+`TRUENAV_CONTRACT`, `TRUENAV_VERDICTS` and `TRUENAV_REPORT` still work. A named file that does not exist is an error (exit 1), never a silent fallback. The set follows the contract (`tee/recorded-set.mjs`).
+
+## How the flip was done, for the next registry
+
+1. TrueNav records the verdict set outside this repository, registers the TEE signer and submits the verdicts on chain.
+2. Drop `tee/fixtures/verdicts-368aa2.json` and `tee/fixtures/attestation-report-368aa2.json.b64` (or the paths for the new registry) into the branch.
+3. Dry run, writes nothing:
+   ```bash
+   npm run tee:flip -- --add-signer-tx <add_tee_signer tx hash>
+   ```
+   It validates the set offline (binding, 30 day lifetime, 10 days left, every signature, the reply rule, the report sha256), shows the status it would write, and lists the doc lines that must change.
+4. `npm run tee:flip -- --write --add-signer-tx <hash>` writes `tee/status.json` as live and regenerates `docs/TEE_STATUS.md`.
+5. Edit by hand the `MUST` lines it printed, then `npm run tee:status` and `npm test`.
+6. Check against the chain, read only: `npm run tee:chain-check`. Every honest verdict in the file must be on chain with the same signer, model, request hash, verdict, anomalies, expiry and attestation hash; a trap record that is on chain fails the check unless `--allow-traps` is given.
+
+`npm run tee:chain-check` runs in the `judge-path` CI job. It is not part of `npm run judge`, because it needs the network.
 
 ## Reviewing a step by transaction hash
 
 After each chain step, anyone can confirm it from the transaction hash, read only:
 
 ```bash
-npm run tee:tx-review -- <tx_hash> --sender <signer account> --expect-receiver registry.tnlab-368aa2.testnet --expect-method add_tee_signer
+npm run tee:tx-review -- 9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE --sender tnlab-368aa2.testnet --expect-receiver registry.tnlab-368aa2.testnet --expect-method add_tee_signer --verdicts tee/fixtures/verdicts-368aa2.json
 npm run tee:tx-review -- <tx_hash> --sender <signer account> --expect-method submit_verdict --verdicts tee/fixtures/verdicts-368aa2.json
 ```
 
@@ -40,4 +52,4 @@ It prints the final status, signer, receiver, block, each call with its deposit,
 
 ## Tests
 
-`tee/test/tee-flip.test.mjs`, `tee/test/chain-check.test.mjs` and `tee/test/tx-review.test.mjs` (in `npm test`) use a synthetic signed set (`tee/test/synthetic-set.mjs`, a throwaway key derived from a label) and an in-memory fake chain. They need no real file.
+`tee/test/tee-flip.test.mjs`, `chain-check.test.mjs`, `tx-review.test.mjs`, `recorded-set.test.mjs` and the live cases in `tee-status.test.mjs` (in `npm test`) use a synthetic signed set (`tee/test/synthetic-set.mjs`, a throwaway key derived from a label) and an in-memory fake chain. They need no real file.

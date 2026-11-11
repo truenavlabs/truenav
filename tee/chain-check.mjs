@@ -4,10 +4,11 @@
 //   2. the registered TEE signer on chain is the file's signer, with the file's model and the sha256 of the published
 //      attestation report
 //   3. the binding and expiry: the file's binding names this contract and its expiry, and has not passed
-//   4. every verdict in the file is on chain: a stored verdict with the same response sha256, signer, model, request
-//      hash, verdict, anomalies, expiry and attestation hash
+//   4. every honest verdict in the file is on chain: a stored verdict with the same response sha256, signer, model, request
+//      hash, verdict, anomalies, expiry and attestation hash. Trap records (tampered documents, `tampered` set in the file)
+//      are expected NOT to be on chain; one that is fails the check unless --allow-traps is given.
 //
-//   npm run tee:chain-check [-- --contract <id>] [--verdicts <path>] [--report <path>] [--rpc <url>]
+//   npm run tee:chain-check [-- --contract <id>] [--verdicts <path>] [--report <path>] [--rpc <url>] [--allow-traps]
 // Exit 0 when every check passes, 1 when one fails, 2 on a usage or network error.
 // It is an optional step of the judge path (not part of `npm run judge`): it needs the network and a verdict set.
 import { readFileSync, existsSync } from "node:fs";
@@ -24,7 +25,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const PAGE = 100;
 
 /** @returns {Promise<{ ok: boolean, checks: {ok: boolean, text: string}[] }>} */
-export async function chainCheck({ file, contract, reportSha256 = null, view, nowMs = Date.now() }) {
+export async function chainCheck({ file, contract, reportSha256 = null, view, nowMs = Date.now(), allowTraps = false }) {
   const checks = [];
   const add = (ok, text) => checks.push({ ok: !!ok, text });
 
@@ -62,6 +63,12 @@ export async function chainCheck({ file, contract, reportSha256 = null, view, no
     }
     const hit = stored.find((s) => s.response_sha256 === want);
     const label = `${r.loan_id} ${hash.slice(0, 12)}...`;
+    if (r.tampered) {
+      // trap records (a tampered document each) are in the file on purpose and are not submitted
+      if (hit) add(allowTraps, allowTraps ? `${label}: trap record ${r.tampered.id} is on chain (allowed by --allow-traps)` : `${label}: trap record ${r.tampered.id} is on chain, but the plan was not to submit it (use --allow-traps if that changed)`);
+      else add(true, `${label}: trap record ${r.tampered.id} is not on chain, as intended`);
+      continue;
+    }
     if (!hit) { add(false, `${label}: no stored verdict with response sha256 ${want.slice(0, 12)}... (${stored.length} stored for this loan)`); continue; }
     const diffs = [];
     if (String(hit.signer).toLowerCase() !== v.signer) diffs.push("signer");
@@ -79,7 +86,7 @@ export async function chainCheck({ file, contract, reportSha256 = null, view, no
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const known = ["--contract", "--verdicts", "--report", "--rpc"];
-  const bad = args.find((a, i) => a.startsWith("--") ? !known.includes(a) : !known.includes(args[i - 1]));
+  const bad = args.find((a, i) => a.startsWith("--") ? ![...known, "--allow-traps"].includes(a) : !known.includes(args[i - 1]));
   if (bad) { console.error(`unknown argument ${bad}`); process.exit(2); }
   const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : undefined);
   const status = readStatus();
@@ -92,7 +99,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const file = JSON.parse(read(verdictsPath));
   const reportSha256 = existsSync(new URL(reportPath, ROOT)) || existsSync(reportPath) ? sha256hex(Buffer.from(read(reportPath).replace(/\s+/g, ""), "base64")) : null;
   try {
-    const r = await chainCheck({ file, contract, reportSha256, view: (c, m, a) => chainView(c, m, a, rpcUrl) });
+    const r = await chainCheck({ file, contract, reportSha256, view: (c, m, a) => chainView(c, m, a, rpcUrl), allowTraps: args.includes("--allow-traps") });
     for (const c of r.checks) console.log(`${c.ok ? "PASS" : "FAIL"} ${c.text}`);
     console.log(r.ok ? `PASS every check: the verdict set in ${verdictsPath} is on ${contract}` : `FAIL the verdict set in ${verdictsPath} is not fully on ${contract}`);
     process.exit(r.ok ? 0 : 1);

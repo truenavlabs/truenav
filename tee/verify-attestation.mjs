@@ -1,8 +1,10 @@
 // Check the TEE attestation yourself, no API key needed (owner instruction 6 Nov: "check it", not "trust us").
 //
-//   npm run verify:attestation
+//   npm run verify:attestation                                   the current registry's recorded set (tee/status.json)
+//   npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet    the earlier instance's recorded set
+//   (--verdicts <path> and --report <path> override the files; TRUENAV_CONTRACT, TRUENAV_VERDICTS and TRUENAV_REPORT still work)
 //
-// 1. Decodes the published NEAR AI Cloud attestation report (tee/fixtures/attestation-report.json.b64) and checks
+// 1. Decodes the published NEAR AI Cloud attestation report (tee/fixtures/attestation-report-368aa2.json.b64) and checks
 //    its sha256 equals the hash recorded with the verdicts, and the hash the live contract stores for its TEE
 //    signer (get_tee_signers on the live contract, read over public RPC).
 // 2. Re-verifies the report: Intel TDX quote and collateral (Phala PCCS), TCB status, debug off, the signing key
@@ -12,19 +14,23 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { verifyReport } from "./attest.mjs";
-import { view, DEFAULT_CONTRACT, DEFAULT_RPC } from "../web/chain.mjs";
-import { readStatus } from "./status.mjs";
+import { view, DEFAULT_RPC } from "../web/chain.mjs";
+import { resolveSet } from "./recorded-set.mjs";
 
 const root = new URL("../", import.meta.url);
-// Which recorded set: the earlier instance's (tee/fixtures/verdicts.json, the default) while tee/status.json says
-// pending; the current registry's set once it says live. TRUENAV_VERDICTS and TRUENAV_REPORT (repository paths) override.
-const status = readStatus(root);
-const verdictsPath = process.env.TRUENAV_VERDICTS || (status.tee === "live" ? status.verdicts_file : "tee/fixtures/verdicts.json");
-const reportPath = process.env.TRUENAV_REPORT || (status.tee === "live" ? status.report_file : "tee/fixtures/attestation-report.json.b64");
-const raw = Buffer.from(readFileSync(new URL(reportPath, root), "utf8").replace(/\s+/g, ""), "base64");
+// Which recorded set follows the contract (tee/recorded-set.mjs): no environment variables are needed for the current registry.
+let set;
+try {
+  set = resolveSet({ argv: process.argv.slice(2), env: process.env, root });
+} catch (e) {
+  console.error(`FAIL ${e.message}`);
+  process.exit(1);
+}
+const raw = Buffer.from(readFileSync(new URL(set.reportPath, root), "utf8").replace(/\s+/g, ""), "base64");
 const sha = createHash("sha256").update(raw).digest("hex");
-const tee = JSON.parse(readFileSync(new URL(verdictsPath, root), "utf8"));
-const contract = process.env.TRUENAV_CONTRACT || tee.contract_id || DEFAULT_CONTRACT;
+const tee = JSON.parse(readFileSync(new URL(set.verdictsPath, root), "utf8"));
+const contract = set.contract;
+console.log(`contract ${contract}; recorded set ${set.verdictsPath} (${set.which})`);
 let ok = true;
 const line = (pass, what) => {
   console.log(`${pass ? "PASS" : "FAIL"} ${what}`);

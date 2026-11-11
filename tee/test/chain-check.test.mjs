@@ -9,9 +9,11 @@ import { syntheticSet, REGISTRY, SIGNED_AT, SIGNER, REPORT_SHA, sha } from "./sy
 const NOW = SIGNED_AT + 86400000;
 
 /** What the registry would return after the set was submitted: one stored verdict per record, and the signer registered. */
-function chainFor(file, { signer = SIGNER, model = file.model, attestation = REPORT_SHA } = {}) {
+function chainFor(file, { signer = SIGNER, model = file.model, attestation = REPORT_SHA, withTraps = false } = {}) {
   const verdicts = {};
   for (const r of file.results) {
+    if (r.tampered && !withTraps) continue; // trap records are in the file and are not submitted
+
     verdicts[r.loan_hash] = [{
       verdict: r.verdict.verdict, anomalies: r.verdict.anomalies, signer, model_id: file.model, request_sha256: r.onchain.request_sha256,
       response_sha256: sha(r.onchain.response_body), attestation_sha256: attestation, expires_at_ms: file.expires_at_ms, submitted_by: "servicer.testnet", at_ms: NOW,
@@ -35,7 +37,8 @@ test("a set that is fully on chain passes every check", async () => {
   const r = await run(file, chain);
   assert.deepEqual(failing(r), []);
   assert.equal(r.ok, true);
-  assert.equal(r.checks.filter((c) => /on chain, /.test(c.text)).length, 3);
+  assert.equal(r.checks.filter((c) => /: on chain, /.test(c.text)).length, 2);
+  assert.equal(r.checks.filter((c) => /not on chain, as intended/.test(c.text)).length, 1);
   assert.ok(chain.calls.every((c) => c.contract === REGISTRY && ["get_tee_signers", "get_verdicts_page"].includes(c.method)), "only these two views are called");
 });
 
@@ -82,20 +85,31 @@ test("file problems stop the check before the chain is read: wrong registry, tam
   assert.equal(r.ok, false);
 });
 
+test("a trap record on chain fails the check unless --allow-traps is given", async () => {
+  const file = syntheticSet();
+  const chain = chainFor(file, { withTraps: true });
+  let r = await run(file, chain);
+  assert.equal(r.ok, false);
+  assert.ok(failing(r).some((t) => /trap record T1-altered-amount is on chain, but the plan was not to submit it/.test(t)));
+  r = await run(file, chain, { allowTraps: true });
+  assert.deepEqual(failing(r), []);
+  assert.ok(r.checks.some((c) => /trap record T1-altered-amount is on chain \(allowed by --allow-traps\)/.test(c.text)));
+});
+
 test("verdicts beyond one page are found", async () => {
-  const file = syntheticSet({ n: 1 });
+  const file = syntheticSet({ n: 2 });
   const chain = chainFor(file);
   const real = chain.verdicts[file.results[0].loan_hash][0];
   const filler = (i) => ({ ...real, response_sha256: sha(`filler ${i}`) });
   chain.verdicts[file.results[0].loan_hash] = [...Array.from({ length: 100 }, (_, i) => filler(i)), real];
-  const view = async (c, m, a) => (m === "get_verdicts_page" ? chain.verdicts[a.loan_hash].slice(a.from_index, a.from_index + a.limit) : chain.view(c, m, a));
+  const view = async (c, m, a) => (m === "get_verdicts_page" ? (chain.verdicts[a.loan_hash] || []).slice(a.from_index, a.from_index + a.limit) : chain.view(c, m, a));
   assert.equal((await chainCheck({ file, contract: REGISTRY, reportSha256: REPORT_SHA, view, nowMs: NOW })).ok, true);
 });
 
-test("the CLI exits 2 with a clear message while no 368aa2 verdicts file exists", () => {
+test("the CLI refuses an unknown argument and a missing verdicts file with exit 2, before any network access", () => {
   const cli = fileURLToPath(new URL("../chain-check.mjs", import.meta.url));
-  const r = spawnSync(process.execPath, [cli], { encoding: "utf8", timeout: 20_000 });
-  assert.equal(r.status, 2);
-  assert.match(r.stderr, /no verdicts file at tee\/fixtures\/verdicts-368aa2\.json: nothing to check yet \(TEE status is pending\)/);
   assert.equal(spawnSync(process.execPath, [cli, "--nope"], { encoding: "utf8" }).status, 2);
+  const r = spawnSync(process.execPath, [cli, "--verdicts", "tee/fixtures/does-not-exist.json"], { encoding: "utf8", timeout: 20_000 });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /no verdicts file at tee\/fixtures\/does-not-exist\.json: nothing to check yet \(TEE status is live\)/);
 });

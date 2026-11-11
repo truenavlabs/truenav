@@ -77,7 +77,7 @@ export function verifyRecord(token, r) {
   return null;
 }
 
-/** Fix 14 (F2): a served v3 report must equal the verified chain body. Every served key except `attestation` must
+/** Paid report check (F2): a served v3 report must equal the verified chain body. Every served key except `attestation` must
  * exist in the chain body with an equal value (the API serves publicV3 of it; a full envelope also passes), every
  * publicV3 field of the chain body must be served, and `attestation`, if present, must be "unattested". Returns null
  * when equal, else the first offending key. Outer receipt_sha256 and seq alone do not authenticate the body. */
@@ -92,7 +92,7 @@ export function reportMismatchV3(served, chainBody) {
   for (const k of Object.keys(expected)) if (!Object.hasOwn(served, k)) return k;
   return null;
 }
-/** Fix 14 (F2), legacy v2: the served facts the agent returns must match the verified chain record. */
+/** Paid report check (F2), legacy v2: the served facts the agent returns must match the verified chain record. */
 export function reportMismatchV2(token, served, record) {
   if (!served || typeof served !== "object" || Array.isArray(served)) return "receipt";
   if (served.token_id !== undefined && served.token_id !== token) return "token_id";

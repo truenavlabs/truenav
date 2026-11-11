@@ -28,7 +28,7 @@ PD by days-past-due bucket, labeled "demo, not calibrated":
 | 61 to 90 | 61 to 90 | 45% |
 | over 90 | 91 or more | 100% |
 
-LGD by asset type, from the KBRA BBB row, labeled "inference from a corporate stress table; KBRA methodology does not address CRE CLOs" (source not checked by this lane):
+LGD by asset type, from the KBRA BBB row, labeled "inference from a corporate stress table; KBRA methodology does not address CRE CLOs" (source not checked here):
 
 | Asset type | LGD |
 | --- | --- |

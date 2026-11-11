@@ -1,4 +1,4 @@
-// Fix 14 (F2): the agent's paid report must be the chain receipt it already verified. A report server that copies the
+// Paid report check (F2): the agent's paid report must be the chain receipt it already verified. A report server that copies the
 // legitimate outer receipt_sha256 and seq but alters the report body is refused, and out.report is built from the
 // verified chain envelope. Honest path: the agent against the real API handler. Fake chain, local HTTP only, no network,
 // no transactions.

@@ -1,4 +1,4 @@
-// Fix 13 (N3, N4): /report on a failed head is 409 run_failed and never redeems, even with a valid entitlement and
+// Failed head (N3, N4): /report on a failed head is 409 run_failed and never redeems, even with a valid entitlement and
 // buyer proof; and the spend store refuses a symlinked .flock-probe.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -69,7 +69,7 @@ test("fix13 probeFlock refuses a symlinked .flock-probe", () => {
   assert.equal(existsSync("/tmp/truenav-missing-flock-target"), false, "the symlink target was not created");
 });
 
-// Fix 14 (F3): a failed head is only a genuine run_failed after the same identity and integrity checks the agent runs.
+// Integrity (F3): a failed head is only a genuine run_failed after the same identity and integrity checks the agent runs.
 // Wrong token, a private field, or a bad hash is an invalid receipt (502), never 409 run_failed, and nothing is redeemed.
 import { createHash } from "node:crypto";
 import { canonical } from "../receipt.mjs";

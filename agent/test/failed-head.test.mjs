@@ -1,4 +1,4 @@
-// Fix 13 (N3, N4, N6): a failed head is declined as run_failed and nothing is bought, a failed head for another
+// Failed head (N3, N4, N6): a failed head is declined as run_failed and nothing is bought, a failed head for another
 // token is a receipt_token_mismatch, and red or yellow receipts still buy a report. Fake chain, no network.
 import { test } from "node:test";
 import assert from "node:assert/strict";

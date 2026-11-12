@@ -122,7 +122,10 @@ test("the reply rule, the named loan and the echoed binding are checked on the s
   assert.ok(has(check(resign(clone(syntheticSet()), 0, (r) => (r.tenant_name = "x"))), "reply rule: reply has a key outside the allowed list"));
   assert.ok(has(check(resign(clone(syntheticSet()), 0, (r) => (r.loan_hash = group(sha("other loan"))))), "names another loan_hash"));
   assert.ok(has(check(resign(clone(syntheticSet()), 1, (r) => (r.binding = bindingFor("registry.other.testnet", 1)))), "another binding"));
-  assert.ok(has(check(resign(clone(syntheticSet()), 2, (r) => (r.verdict = "pass"))), "verdict does not match the signed reply"));
+  // a flag turned into a clean pass (all six checks ok, so the reply rule accepts it) no longer matches the record
+  assert.ok(has(check(resign(clone(syntheticSet()), 2, (r) => Object.assign(r, { verdict: "pass", amount_mismatch: "ok", anomalies: [] }))), "verdict does not match the signed reply"));
+  // a pass beside a failed check is refused by the reply rule itself (N-04)
+  assert.ok(has(check(resign(clone(syntheticSet()), 2, (r) => (r.verdict = "pass"))), "reply rule: a pass needs all six checks ok"));
 });
 
 test("structure: missing or malformed fields, unverified records, empty results and mixed signers are refused", () => {

@@ -6,6 +6,10 @@
 export const ANOMALY_CODES = ["amount_mismatch", "asset_mismatch", "id_mismatch", "injection_attempt", "duplicate_document", "unreadable"];
 export const CHECK_KEYS = ["id_mismatch", "asset_mismatch", "amount_mismatch", "duplicate_document", "injection_attempt", "unreadable"];
 export const REPLY_KEYS = ["loan_hash", "binding", ...CHECK_KEYS.slice(0, 4), "duplicate_evidence_line", ...CHECK_KEYS.slice(4), "verdict", "anomalies"];
+/** The only top-level fields a NEAR AI Cloud chat completion may have (every recorded reply has exactly these). */
+export const TOP_KEYS = ["id", "object", "created", "model", "choices", "usage"];
+/** The only fields of choices[0]. logprobs must be null and finish_reason "stop". */
+export const CHOICE_KEYS = ["index", "message", "finish_reason", "logprobs"];
 /** Fields of choices[0].message that may carry a value; any other field must be null. */
 export const MESSAGE_KEYS = ["role", "content"];
 export const MAX_EVIDENCE_LINE = 10000;
@@ -65,8 +69,15 @@ export function replyProblem(responseBody) {
   }
   const dupOuter = duplicateKey(responseBody);
   if (dupOuter !== null) return `response has a duplicate key: ${dupOuter}`;
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return "response is not a JSON object";
+  for (const k of Object.keys(body)) if (!TOP_KEYS.includes(k)) return `response has a field outside the allowed list: ${k}`;
   if (!Array.isArray(body.choices) || body.choices.length !== 1) return "response must have exactly one choice";
-  const msg = body.choices[0] && body.choices[0].message;
+  const choice = body.choices[0];
+  if (!choice || typeof choice !== "object" || Array.isArray(choice)) return "response has no message";
+  for (const k of Object.keys(choice)) if (!CHOICE_KEYS.includes(k)) return `choice has a field outside the allowed list: ${k}`;
+  if (!("logprobs" in choice) || choice.logprobs !== null) return "choice logprobs must be null";
+  if (choice.finish_reason !== "stop") return 'choice finish_reason must be "stop"';
+  const msg = choice.message;
   if (!msg || typeof msg !== "object") return "response has no message";
   for (const [k, v] of Object.entries(msg)) if (!MESSAGE_KEYS.includes(k) && v !== null) return `message field ${k} must be empty`;
   const parsed = replyObject(responseBody);
@@ -86,6 +97,8 @@ export function replyProblem(responseBody) {
     if (!(n === "ok" || (plain && Number.isInteger(n) && n >= 1 && n <= MAX_EVIDENCE_LINE))) return "duplicate_evidence_line must be a line number or ok";
   }
   if (r.verdict !== "pass" && r.verdict !== "flag") return "verdict must be pass or flag";
+  // A pass needs all six checks present and ok: a pass beside a failed or missing check is a contradiction.
+  if (r.verdict === "pass") for (const k of CHECK_KEYS) if (r[k] !== "ok") return `a pass needs all six checks ok; ${k} is ${k in r ? JSON.stringify(r[k]) : "missing"}`;
   if (!Array.isArray(r.anomalies) || !r.anomalies.every((a) => ANOMALY_CODES.includes(a))) return "anomalies must be known codes";
   return null;
 }

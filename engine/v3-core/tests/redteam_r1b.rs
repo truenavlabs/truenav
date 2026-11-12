@@ -175,7 +175,12 @@ fn redteam_r1b_pledge_module_and_engine_must_share_one_mac_key() {
     // OutLayer documents HMAC-SHA256(master, "encryption-key:v1:{bind}:{uuid}:{caller}:{account}:{path}").
     // Project and account come from the deploy script. bind and caller come from each manifest.
     let deploy = include_str!("../../../receipts/deploy-testnet.mjs");
-    let master = between(deploy, "TRUENAV_MASTER || \"", "\"");
+    // The deploy script has no default master any more (receipts/deploy-args.mjs). The scope that matters is the one the
+    // recorded fingerprints were made under, so the account is read from the fingerprint module. A deploy under another
+    // master gets a different key scope (docs/RECEIPTS_LIVE_PLAN.md).
+    assert!(!deploy.contains("TRUENAV_MASTER ||"), "the deploy script must not default the master");
+    let fp = include_str!("../../../tee/fingerprint.mjs");
+    let master = between(fp, "export const FP_CALLER = \"receipts.", "\"");
     let account = format!("receipts.{master}");
     let project = format!("{account}/truenav-engine");
     assert!(
@@ -193,7 +198,6 @@ fn redteam_r1b_pledge_module_and_engine_must_share_one_mac_key() {
         "encryption-key:v1:{}:{}:{}:{}:{}",
         module_key.0, project, module_key.1, account, module_key.2
     );
-    let fp = include_str!("../../../tee/fingerprint.mjs");
     assert_eq!(between(fp, "export const FP_PROJECT = \"", "\""), project);
     assert_eq!(between(fp, "export const FP_CALLER = \"", "\""), account);
     assert_eq!(

@@ -109,12 +109,12 @@ deployed on testnet 8 Nov, before the late-callback refund), `1a04e120...` (fc0b
 ## Who can use the data credentials
 
 Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlayer-cli` 0.2.1 (`commands/secrets.rs`),
-8 Nov:
+8 Nov. `<master>` below is the master account given to `deploy-testnet.mjs` with `--master` or `TRUENAV_MASTER`; the script has no default.
 
 - An `--access whitelist:` leaf is judged on the transaction signer. A run starts with `runner.` signing
-  `request_run`, so the signer OutLayer sees is `runner.tnlab-718ca9.testnet`, not the receipt contract. Whitelisting
+  `request_run`, so the signer OutLayer sees is `runner.<master>`, not the receipt contract. Whitelisting
   `receipts.` alone would admit no run.
-- `--via receipts.tnlab-718ca9.testnet` adds a `Predecessor` rule: the account that called `request_execution` must
+- `--via receipts.<master>` adds a `Predecessor` rule: the account that called `request_execution` must
   be the receipt contract. The stored condition is
   `And[Whitelist[runner.], Predecessor{Whitelist[receipts.]}]`, so `runner.` calling OutLayer directly, or through any
   other contract, is refused, and nobody else's signature is accepted through the receipt contract.
@@ -163,8 +163,6 @@ master on chain; the pinned wasm bytes; which accounts exist; the master balance
   `truenav_query.wasm` (for example the two files from the `truenav-pinned-wasm` artifact, see "Pinned builds"), so a
   machine without Docker can deploy. Any bytes that do not match the pins are refused, including the stale
   `receipts/dist`.
-- Master account: the script's default master is `tnlab-718ca9.testnet`. That is a stale default, not an instruction.
-  Set `TRUENAV_MASTER` to a fresh faucet account; never reuse an existing master.
 
 | Step | What | Cost |
 | --- | --- | --- |
@@ -174,14 +172,12 @@ master on chain; the pinned wasm bytes; which accounts exist; the master balance
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 
-Later, separately (OutLayer and the data host). The account names `receipts.tnlab-718ca9.testnet` and
-`runner.tnlab-718ca9.testnet` in O1, O3 and in "Who can use the data credentials" are from the earlier 8 Nov deploy;
-replace `tnlab-718ca9.testnet` with the new master:
+Later, separately (OutLayer and the data host):
 
 | Step | What |
 | --- | --- |
 | H1 | host the mock bank-data API (synthetic data) where the TEE can reach it: the one approved Vercel free-tier project, root directory `hosting/mockbank` (one all-funds token from env `TRUENAV_DATA_TOKEN`, fail closed without it; steps in `hosting/mockbank/README.md`) |
-| O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.tnlab-718ca9.testnet`), then check FastFS serves sha256 `360cd473...` |
+| O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.<master>`), then check FastFS serves sha256 `360cd473...` |
 | O2 | `OUTLAYER_NETWORK=testnet outlayer deploy truenav-engine <fastfs url> --hash 360cd473... --target wasm32-wasip2` |
-| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.tnlab-718ca9.testnet/truenav-engine --profile engine --access whitelist:runner.tnlab-718ca9.testnet --via receipts.tnlab-718ca9.testnet --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
+| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.<master>/truenav-engine --profile engine --access whitelist:runner.<master> --via receipts.<master> --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
 | R1 | first live run: `request_run` for one synthetic token from `runner.`, 0.26 NEAR attached, 300 Tgas |

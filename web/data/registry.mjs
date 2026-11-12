@@ -166,9 +166,9 @@ export async function loadRegistry({ contract = DEFAULT_CONTRACT, url = DEFAULT_
 export async function loadLoan(loan_hash, { contract = DEFAULT_CONTRACT, url = DEFAULT_RPC, fetchImpl } = {}) {
   const rpc = makeRpc({ url, fetchImpl });
   const v = (m, a) => viewCall(rpc, contract, m, a);
-  const [token, lock, count, flags] = await Promise.all([v("nft_token", { token_id: loan_hash }), v("get_lock", { loan_hash }), v("get_verdict_count", { loan_hash }), v("get_flag_count", { loan_hash })]);
+  const [token, lock, count, flags, latest] = await Promise.all([v("nft_token", { token_id: loan_hash }), v("get_lock", { loan_hash }), v("get_verdict_count", { loan_hash }), v("get_flag_count", { loan_hash }), v("get_latest_verdict", { loan_hash })]);
   const verdicts = count ? await v("get_verdicts_page", { loan_hash, from_index: 0, limit: Math.min(count, 50) }) : [];
-  return { loan_hash, token, lock, verdictCount: count, flagCount: flags, verdicts, readAt: new Date().toISOString(), rpc: rpc.seen.endpoint, block: rpc.seen.block };
+  return { loan_hash, token, lock, verdictCount: count, flagCount: flags, latest, verdicts, readAt: new Date().toISOString(), rpc: rpc.seen.endpoint, block: rpc.seen.block };
 }
 
 /** Any testnet account: pledge tokens it holds and whether it is a registered fund or holds a role. */

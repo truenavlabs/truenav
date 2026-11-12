@@ -53,7 +53,7 @@ export function appRoute(path: string): R {
   if ((m = p.match(/^\/funds?\/([^/]+)$/))) return r(P.Fund, "Fund", { fundId: decodeURIComponent(m[1]).replace(/^harbor$/, "harbor-credit-fund").replace(/^meridian$/, "meridian-yield-fund"), tab: q.get("tab") || undefined });
   if (p === "/loans") return r(P.Loans, "Loans", { q: q.get("q") || "" });
   if ((m = p.match(/^\/loans\/([0-9a-f]{64})$/))) return r(P.Loan, "Loan", { hash: m[1] });
-  if (p === "/verify") return r(P.Verify, "Verifier");
+  if (p === "/verify") return r(P.Verify, "Verifier", { q });
   if (p === "/features") return r(P.Features, "Verify it yourself");
   if ((m = p.match(/^\/features\/([a-z-]+)$/)) && FEATURES[m[1]]) return r(P[FEATURES[m[1]][0]], FEATURES[m[1]][1], { q });
   if (p === "/data") return r(P.Data, "Raw chain data");

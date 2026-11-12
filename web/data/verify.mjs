@@ -33,9 +33,39 @@ function tampered(evidence, kind) {
 
 /** Run the checks; returns { checks, summary, tamper }. */
 export async function runWebChecks({ evidence, chain, now, tamper = "none" } = {}) {
-  const raw = await runVerifierChecks({ evidence: tampered(evidence, tamper), chain, now });
-  const checks = raw.map((r) => (r.state === "fail" && PENDING_RE.test(r.detail) ? Object.freeze({ ...r, state: "unchecked", detail: PENDING_DETAIL, pendingLibrary: true }) : r));
+  const ev = tampered(evidence, tamper);
+  const raw = await runVerifierChecks({ evidence: ev, chain, now });
+  let checks = raw.map((r) => (r.state === "fail" && PENDING_RE.test(r.detail) ? Object.freeze({ ...r, state: "unchecked", detail: PENDING_DETAIL, pendingLibrary: true }) : r));
+  // The report hash needs only sha256, which every browser has built in (WebCrypto): run it with that instead.
+  const i = checks.findIndex((c) => c.id === "attestation-hash" && c.pendingLibrary);
+  if (i >= 0 && globalThis.crypto && globalThis.crypto.subtle && chain) {
+    checks = checks.slice();
+    checks[i] = await attestationHashWebCrypto(ev, chain, checks[i]);
+  }
   return { checks, summary: webSummary(checks), tamper };
+}
+
+async function sha256HexWeb(bytes) {
+  const d = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+const b64Bytes = (b64) => Uint8Array.from(atob(String(b64).replace(/\s+/g, "")), (c) => c.charCodeAt(0));
+
+/** Same rule as the verifier's attestation-hash check, with WebCrypto sha256. */
+export async function attestationHashWebCrypto(ev, chain, prev) {
+  const status = ev.status || {}, file = ev.verdicts || {};
+  const teeSigner = String(status.tee_signer || "").toLowerCase();
+  const base = { id: "attestation-hash", label: "Published attestation report hash", source: prev ? prev.source : "attestation report; get_tee_signers" };
+  const sha = ev.reportB64 ? await sha256HexWeb(b64Bytes(ev.reportB64)) : "";
+  if (!sha || sha !== status.report_sha256 || sha !== (file.attestation && file.attestation.report_sha256)) {
+    return Object.freeze({ ...base, state: "fail", detail: `sha256 of the published report (${sha.slice(0, 16)}...) does not equal the hash in tee/status.json and the verdicts file`, webCrypto: true });
+  }
+  let tee;
+  try { tee = await chain.view("get_tee_signers"); } catch (e) {
+    return Object.freeze({ ...base, state: "unchecked", detail: `could not read the registry: ${e && e.message ? e.message : e}. Not checked.`, webCrypto: true });
+  }
+  const ok = (Array.isArray(tee) ? tee : []).some((t) => t.attestation_sha256 === sha && String(t.address).toLowerCase() === teeSigner);
+  return Object.freeze({ ...base, state: ok ? "live" : "fail", detail: ok ? `sha256 ${sha} computed now in this browser (WebCrypto) equals the hash the contract stores for ${teeSigner}` : "the contract stores no TEE signer with this report hash", webCrypto: true });
 }
 
 /** Like summarize(), plus what this browser could run: green only if nothing failed and every runnable chain check was live. */

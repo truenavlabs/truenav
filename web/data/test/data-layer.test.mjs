@@ -282,3 +282,14 @@ test("tx decoding: the recorded refused pledge returns a value; the refused cert
   assert.equal(c.method, "submit_certificate");
   assert.equal(c.failure, "Smart contract panicked: signer not registered");
 });
+
+test("attestation hash with WebCrypto: live on the committed report, fail on a changed report or a changed status hash", async () => {
+  const { attestationHashWebCrypto } = await import("../verify.mjs");
+  const ev = await loadEvidence((p) => readFileSync(new URL(p, root), "utf8"));
+  const chain = { view: async (m) => (m === "get_tee_signers" ? REC.teeSigners : null) };
+  assert.equal((await attestationHashWebCrypto(ev, chain)).state, "live");
+  const bad = { ...ev, reportB64: ev.reportB64.slice(0, 100) + (ev.reportB64[100] === "A" ? "B" : "A") + ev.reportB64.slice(101) };
+  assert.equal((await attestationHashWebCrypto(bad, chain)).state, "fail");
+  assert.equal((await attestationHashWebCrypto(ev, { view: async () => [] })).state, "fail");
+  assert.equal((await attestationHashWebCrypto(ev, { view: async () => { throw new Error("down"); } })).state, "unchecked");
+});

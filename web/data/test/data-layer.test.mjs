@@ -293,3 +293,38 @@ test("attestation hash with WebCrypto: live on the committed report, fail on a c
   assert.equal((await attestationHashWebCrypto(ev, { view: async () => [] })).state, "fail");
   assert.equal((await attestationHashWebCrypto(ev, { view: async () => { throw new Error("down"); } })).state, "unchecked");
 });
+
+test("paid report simulation: /score free, /report 402 then 200 once, then 402 already used; failed head 409 with nothing spent", async () => {
+  const { createSim, FEE_YOCTO } = await import("../api-sim.mjs");
+  const s = createSim();
+  assert.equal((await s.score("HONEST-CREDIT")).status, 200);
+  const r0 = await s.report("HONEST-CREDIT", {});
+  assert.deepEqual([r0.status, r0.body.reason, r0.body.buy.attach_yocto], [402, "no entitlement given", FEE_YOCTO]);
+  assert.equal((await s.report("HONEST-CREDIT", { entitlement: "nope", buyer: "a.testnet" })).body.reason, "unknown entitlement");
+  const ent = await s.buy("HONEST-CREDIT", "a.testnet");
+  assert.equal((await s.report("HONEST-CREDIT", { entitlement: ent.request_id, buyer: "b.testnet" })).status, 403);
+  const ok = await s.report("HONEST-CREDIT", { entitlement: ent.request_id, buyer: "a.testnet" });
+  assert.deepEqual([ok.status, ok.body.entitlement.uses_left], [200, 0]);
+  const again = await s.report("HONEST-CREDIT", { entitlement: ent.request_id, buyer: "a.testnet" });
+  assert.deepEqual([again.status, again.body.reason], [402, "entitlement already used"]);
+  assert.equal((await s.score("HONEST-CREDIT")).body.score, 100, "a purchase never changes the score");
+  const before = s.spent();
+  const failed = await s.report("DEMO-CREDIT", { entitlement: ent.request_id, buyer: "a.testnet" });
+  assert.deepEqual([failed.status, failed.body.error, s.spent()], [409, "run_failed", before]);
+});
+
+test("agent decision port: only the pinned engine is accepted; order matches agent/agent.mjs", async () => {
+  const { decide, variants } = await import("../agent-sim.mjs");
+  const pin = json("receipts/v3-build.json").engine.sha256;
+  assert.match(pin, /^61fe33a0/);
+  const now = "2026-11-13T00:00:00Z";
+  const got = Object.fromEntries(variants(pin, now).map(([name, r]) => [name, decide("HONEST-CREDIT", r, { nowMs: Date.parse(now), pins: new Set([pin]) }).reason]));
+  assert.deepEqual(got, {
+    "Pinned engine, green": "unattested", "Wrong engine version_key": "engine_hash", "engine_version_key differs from the stored key": "engine_hash",
+    "Receipt body does not match its hash": "receipt_mismatch", "Failed head": "run_failed", Red: "red", Yellow: "yellow", "Green with a cap": "capped",
+    "Stale (60 days)": "stale", "Version 2 receipt, green": "green", "No receipt": "no_receipt",
+  });
+  const { v3EngineNotPinned } = await import("../../../agent/agent.mjs");
+  assert.equal(v3EngineNotPinned({ engine_version_key: "x" }, "x", new Set([pin])), "the stored engine version_key is not a pinned build");
+  assert.equal(v3EngineNotPinned({ engine_version_key: pin }, pin, new Set([pin])), null);
+});

@@ -227,3 +227,58 @@ test("what-if engine: certified inputs reproduce both certificates; the T1 flag 
   assert.deepEqual(teeStore, teeStoreFrom(REC), "editTeeStore never mutates the live store");
   assert.equal(Object.keys(editTeeStore(teeStore, loanMap, { "NOPE-1": T1_PRESET })).length, Object.keys(teeStore).length);
 });
+
+test("pledge simulator follows pledge_loan's order and reproduces the recorded refusal", async () => {
+  const { simulatePledge, applyOutcome, SIG, PLEDGE_TTL_MS } = await import("../pledge-sim.mjs");
+  const now = 1794411700818;
+  const hre03 = json("web/data/loan-map.json").loans.find((l) => l.loan_id === "H-RE-03").loan_hash;
+  assert.equal(hre03, json("web/data/recorded/tx-pledge.json").result ? "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7" : null);
+  const state = {
+    paused: false, pledgeKey: "0xkey", ticketRequired: false, contract: "registry.tnlab-368aa2.testnet",
+    fundsByAccount: { "harbor.tnlab-368aa2.testnet": "harbor-credit-fund", "meridian.tnlab-368aa2.testnet": "meridian-yield-fund" },
+    locks: { [hre03]: { fund_id: "harbor-credit-fund" } }, usedNonces: new Set(), attemptSeq: 0, now,
+  };
+  const call = { deposit_yocto: "1", loan_hash: hre03, asset_type: "real_estate", fund_account: "meridian.tnlab-368aa2.testnet", nonce: "a".repeat(64), expiry_ms: now + 3600000, sig: SIG.VALID, caller: "meridian.tnlab-368aa2.testnet" };
+  const refused = simulatePledge(call, state);
+  assert.deepEqual(refused.value, { outcome: "refused", message: "already pledged elsewhere", attempt_id: "attempt-1" });
+  // order: each earlier rule wins over every later one
+  assert.match(simulatePledge({ ...call, deposit_yocto: "0", sig: SIG.BAD }, state).message, /exactly 1 yoctoNEAR/);
+  assert.match(simulatePledge(call, { ...state, paused: true }).message, /paused$/);
+  assert.match(simulatePledge({ ...call, loan_hash: "ABC" }, state).message, /64 lowercase hex/);
+  assert.match(simulatePledge({ ...call, asset_type: "cars" }, state).message, /asset_type/);
+  assert.match(simulatePledge({ ...call, nonce: "A".repeat(64) }, state).message, /nonce must be/);
+  assert.match(simulatePledge({ ...call, fund_account: "a|b", caller: "a|b" }, state).message, /must not contain/);
+  assert.match(simulatePledge(call, { ...state, pledgeKey: null }).message, /pledge key is not set/);
+  assert.match(simulatePledge({ ...call, sig: SIG.BAD }, state).message, /bad servicer signature/);
+  assert.match(simulatePledge({ ...call, sig: SIG.OTHER_KEY }, state).message, /not from the registered pledge key/);
+  assert.match(simulatePledge({ ...call, expiry_ms: now }, state).message, /pledge expired/);
+  assert.match(simulatePledge({ ...call, expiry_ms: now + PLEDGE_TTL_MS + 1 }, state).message, /too far/);
+  assert.match(simulatePledge(call, { ...state, ticketRequired: true }).message, /ticket signature required/);
+  const wrongCaller = simulatePledge({ ...call, caller: "harbor.tnlab-368aa2.testnet" }, state);
+  assert.deepEqual([wrongCaller.value.attempt_id, wrongCaller.stores], ["none", []]);
+  assert.match(simulatePledge({ ...call, fund_account: "x.testnet", caller: "x.testnet" }, state).message, /not a registered fund account/);
+  const after = applyOutcome(state, refused);
+  assert.match(simulatePledge(call, after).message, /nonce already used/);
+  assert.equal(simulatePledge({ ...call, nonce: "b".repeat(64) }, after).value.attempt_id, "attempt-2");
+  const mine = simulatePledge({ ...call, fund_account: "harbor.tnlab-368aa2.testnet", caller: "harbor.tnlab-368aa2.testnet" }, state);
+  assert.equal(mine.value.outcome, "already_yours");
+  const fresh = simulatePledge({ ...call, loan_hash: "f".repeat(64) }, state);
+  assert.equal(fresh.value.outcome, "pledged");
+  assert.equal(applyOutcome(state, fresh).locks["f".repeat(64)].fund_id, "meridian-yield-fund");
+  assert.equal(state.usedNonces.size, 0, "the live state is never mutated");
+});
+
+test("tx decoding: the recorded refused pledge returns a value; the refused certificate panics", async () => {
+  const { decodeTx } = await import("../tx.mjs");
+  const p = decodeTx(json("web/data/recorded/tx-pledge.json").result);
+  assert.equal(p.ok, true);
+  assert.equal(p.method, "pledge_loan");
+  assert.equal(p.signer, "meridian.tnlab-368aa2.testnet");
+  assert.deepEqual(p.returnValue, { outcome: "refused", message: "already pledged elsewhere", attempt_id: "attempt-1" });
+  assert.equal(p.args.fund_account, "meridian.tnlab-368aa2.testnet");
+  const c = decodeTx(json("web/data/recorded/tx-cert.json").result);
+  assert.equal(c.ok, false);
+  assert.equal(c.signer, "tnlab-368aa2.testnet");
+  assert.equal(c.method, "submit_certificate");
+  assert.equal(c.failure, "Smart contract panicked: signer not registered");
+});

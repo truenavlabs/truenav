@@ -344,7 +344,7 @@ if (SANDBOX) {
   const group = (h) => h.match(/.{8}/g).join(" ");
   const signedReply = (loanHash, bindingText, salt) => {
     const content = JSON.stringify({ loan_hash: group(loanHash), binding: bindingText, id_mismatch: "ok", asset_mismatch: "ok", amount_mismatch: "ok", duplicate_document: "ok", duplicate_evidence_line: "ok", injection_attempt: "ok", unreadable: "ok", verdict: "pass", anomalies: [] });
-    const response_body = JSON.stringify({ id: `chatcmpl-sandbox-${salt}`, object: "chat.completion", choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }] });
+    const response_body = JSON.stringify({ id: `chatcmpl-sandbox-${salt}`, object: "chat.completion", choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop", logprobs: null }] });
     const request_sha256 = createHash("sha256").update(`sandbox-request-${salt}`).digest("hex");
     const resp = createHash("sha256").update(response_body).digest("hex");
     return { model_id: TEST_MODEL, request_sha256, response_body, signature: signEip191(`${TEST_MODEL}:${request_sha256}:${resp}`, teeKey) };

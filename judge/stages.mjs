@@ -5,6 +5,7 @@
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { canonical, parseTap, sha256hex } from "./lib.mjs";
+import { validateVerdictsFile } from "../tee/verdicts-file.mjs";
 
 // The numbers the README states. A stage fails when the replay gives anything else.
 export const EXPECTED = Object.freeze({ harbor_raw: 99.17, meridian_raw: 42.84, harbor_score: 99, meridian_score: 43 });
@@ -46,6 +47,7 @@ export const STAGES = [
   {
     id: "S1", name: "fixtures",
     claim: "Recorded verdicts are at least 10 days from expiry and match the published attestation report.",
+    label: "includes the live registry.tnlab-368aa2.testnet set named in tee/status.json, checked offline",
     async run(ctx) {
       const files = ["tee/fixtures/verdicts.json", "tee/fixtures/verdicts-sandbox.json", "tee/fixtures/verdicts-unit.json", "contract/tests/fixtures/tee-verdicts.json", "tee/fixtures/attestation-report.json.b64", "tee/status.json"];
       const problems = need(ctx, files);
@@ -69,8 +71,19 @@ export const STAGES = [
         if (!new RegExp(`^PASS published attestation report ${status.report_file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} is the one ${liveSet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} was signed under$`, "m").test(r.stdout)) problems.push(`the published attestation report ${status.report_file} does not match ${liveSet}`);
       }
       if (!/^PASS published attestation report is the one tee\/fixtures\/verdicts\.json was signed under$/m.test(r.stdout)) problems.push("published attestation report sha256 does not match tee/fixtures/verdicts.json");
+      let liveText = "";
+      if (liveSet) {
+        // the live registry's set is also checked in full, offline: binding to the registry, 30 day lifetime, every
+        // signature against the attested signer, the reply rule, and the status fields recorded for it
+        const v = validateVerdictsFile(readJson(ctx, liveSet), { contract: status.registry, nowMs: Date.now(), minDays: 10 });
+        for (const p of v.problems.slice(0, 3)) problems.push(`${liveSet}: ${p}`);
+        if (v.ok && status.tee_signer && v.signer !== status.tee_signer) problems.push(`${liveSet} is signed by ${v.signer}, but tee/status.json records ${status.tee_signer}`);
+        liveText = `; live ${status.registry} set ${liveSet}: ${v.records} records, every signature checked offline, signer ${v.signer}, report sha256 matches`;
+        const row = all.find((m) => m[2] === liveSet);
+        if (row) sets.push(row);
+      }
       const days = sets.map((m) => Number(m[3])).filter(Number.isFinite);
-      return done(problems, "4 of 4 verdict sets at least 10 days from expiry; published attestation report sha256 matches tee/fixtures/verdicts.json", { ephemeral: { fixture_days_left_min: days.length ? Math.min(...days) : null } });
+      return done(problems, `4 of 4 recorded verdict sets at least 10 days from expiry; published attestation report sha256 matches tee/fixtures/verdicts.json${liveText}`, { ephemeral: { fixture_days_left_min: days.length ? Math.min(...days) : null } });
     },
   },
   {

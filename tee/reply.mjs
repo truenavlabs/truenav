@@ -6,6 +6,10 @@
 export const ANOMALY_CODES = ["amount_mismatch", "asset_mismatch", "id_mismatch", "injection_attempt", "duplicate_document", "unreadable"];
 export const CHECK_KEYS = ["id_mismatch", "asset_mismatch", "amount_mismatch", "duplicate_document", "injection_attempt", "unreadable"];
 export const REPLY_KEYS = ["loan_hash", "binding", ...CHECK_KEYS.slice(0, 4), "duplicate_evidence_line", ...CHECK_KEYS.slice(4), "verdict", "anomalies"];
+/** The only top-level fields a NEAR AI Cloud chat completion may have (every recorded reply has exactly these). */
+export const TOP_KEYS = ["id", "object", "created", "model", "choices", "usage"];
+/** The only fields of choices[0]. logprobs must be null and finish_reason "stop". */
+export const CHOICE_KEYS = ["index", "message", "finish_reason", "logprobs"];
 /** Fields of choices[0].message that may carry a value; any other field must be null. */
 export const MESSAGE_KEYS = ["role", "content"];
 export const MAX_EVIDENCE_LINE = 10000;
@@ -55,8 +59,25 @@ export function replyObject(responseBody) {
   }
 }
 
-/** null when the reply is clean, otherwise the first problem found. */
+/**
+ * null when the reply is clean, otherwise the first problem found: the shape and allowed-keys rule (replyShapeProblem),
+ * then the verdict-consistency rule (verdictConsistencyProblem). The client applies both before it submits.
+ */
 export function replyProblem(responseBody) {
+  return replyShapeProblem(responseBody) ?? verdictConsistencyProblem(responseBody);
+}
+
+/** N-04: a pass needs all six checks present and ok. null when consistent (or not a readable reply). */
+export function verdictConsistencyProblem(responseBody) {
+  const parsed = replyObject(responseBody);
+  const r = parsed && parsed.reply;
+  if (!r || typeof r !== "object" || Array.isArray(r) || r.verdict !== "pass") return null;
+  for (const k of CHECK_KEYS) if (r[k] !== "ok") return `a pass needs all six checks ok; ${k} is ${k in r ? JSON.stringify(r[k]) : "missing"}`;
+  return null;
+}
+
+/** The shape and allowed-keys rule: what may appear in public transaction data. null when clean. */
+export function replyShapeProblem(responseBody) {
   let body;
   try {
     body = JSON.parse(responseBody);
@@ -65,8 +86,15 @@ export function replyProblem(responseBody) {
   }
   const dupOuter = duplicateKey(responseBody);
   if (dupOuter !== null) return `response has a duplicate key: ${dupOuter}`;
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return "response is not a JSON object";
+  for (const k of Object.keys(body)) if (!TOP_KEYS.includes(k)) return `response has a field outside the allowed list: ${k}`;
   if (!Array.isArray(body.choices) || body.choices.length !== 1) return "response must have exactly one choice";
-  const msg = body.choices[0] && body.choices[0].message;
+  const choice = body.choices[0];
+  if (!choice || typeof choice !== "object" || Array.isArray(choice)) return "response has no message";
+  for (const k of Object.keys(choice)) if (!CHOICE_KEYS.includes(k)) return `choice has a field outside the allowed list: ${k}`;
+  if (!("logprobs" in choice) || choice.logprobs !== null) return "choice logprobs must be null";
+  if (choice.finish_reason !== "stop") return 'choice finish_reason must be "stop"';
+  const msg = choice.message;
   if (!msg || typeof msg !== "object") return "response has no message";
   for (const [k, v] of Object.entries(msg)) if (!MESSAGE_KEYS.includes(k) && v !== null) return `message field ${k} must be empty`;
   const parsed = replyObject(responseBody);

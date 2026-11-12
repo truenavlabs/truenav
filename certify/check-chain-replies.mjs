@@ -11,7 +11,7 @@
 //
 // Transaction list: FastNEAR transactions API (POST /v0/account, paged with resume_token; full transactions with
 // their receipts from POST /v0/transactions, up to 20 hashes per call; see docs.fastnear.com/tx). No key needed.
-import { replyProblem } from "../tee/reply.mjs";
+import { replyShapeProblem, verdictConsistencyProblem } from "../tee/reply.mjs";
 import { DEFAULT_RPC, view } from "../web/chain.mjs";
 
 /** Every submit_verdict call to `contract` inside one FastNEAR transaction record (receipts first, then actions). */
@@ -21,29 +21,58 @@ export function verdictCalls(t, contract) {
     const rc = r.receipt || {};
     const action = rc.receipt && rc.receipt.Action;
     if (rc.receiver_id !== contract || !action) continue;
+    const outcome = outcomeOf(r.execution_outcome && r.execution_outcome.outcome && r.execution_outcome.outcome.status);
     for (const a of action.actions || []) {
       const fc = a.FunctionCall;
-      if (fc && fc.method_name === "submit_verdict") out.push({ tx: t.transaction.hash, signer: action.signer_id, predecessor: rc.predecessor_id, args: fc.args });
+      if (fc && fc.method_name === "submit_verdict") out.push({ tx: t.transaction.hash, signer: action.signer_id, predecessor: rc.predecessor_id, args: fc.args, outcome });
     }
   }
   // A transaction not yet executed has no receipts: fall back to its own actions.
   if (!(t.receipts || []).length && t.transaction.receiver_id === contract) {
     for (const a of t.transaction.actions || []) {
       const fc = a.FunctionCall;
-      if (fc && fc.method_name === "submit_verdict") out.push({ tx: t.transaction.hash, signer: t.transaction.signer_id, predecessor: t.transaction.signer_id, args: fc.args });
+      if (fc && fc.method_name === "submit_verdict") out.push({ tx: t.transaction.hash, signer: t.transaction.signer_id, predecessor: t.transaction.signer_id, args: fc.args, outcome: "unknown" });
     }
   }
   return out;
 }
 
-/** The reply-rule problem in one call's base64 arguments, or null. */
-export function callProblem(argsBase64) {
+/** "success", "failure" or "unknown" from a receipt outcome status. */
+export function outcomeOf(status) {
+  if (!status || typeof status !== "object") return "unknown";
+  if ("Failure" in status) return "failure";
+  if ("SuccessValue" in status || "SuccessReceiptId" in status) return "success";
+  return "unknown";
+}
+
+const responseBodyOf = (argsBase64) => {
   try {
     const args = JSON.parse(Buffer.from(argsBase64, "base64").toString("utf8"));
-    return typeof args.response_body === "string" ? replyProblem(args.response_body) : "no response_body";
+    return typeof args.response_body === "string" ? { body: args.response_body } : { problem: "no response_body" };
   } catch {
-    return "arguments are not JSON";
+    return { problem: "arguments are not JSON" };
   }
+};
+
+/** The shape and allowed-keys problem in one call's base64 arguments, or null. Applies to every call, refused or not. */
+export function callProblem(argsBase64) {
+  const r = responseBodyOf(argsBase64);
+  return r.problem ?? replyShapeProblem(r.body);
+}
+
+/**
+ * How one decoded call is judged: { level: "fail" | "warn" | null, problem }. The shape rule is a FAIL on every call.
+ * The verdict-consistency rule (N-04) is a FAIL on a call that succeeded, a WARN on a call refused on chain (nothing was
+ * stored), and a FAIL when the outcome cannot be read.
+ */
+export function judgeCall(call) {
+  const shape = callProblem(call.args);
+  if (shape) return { level: "fail", problem: shape };
+  const consistency = verdictConsistencyProblem(responseBodyOf(call.args).body);
+  if (!consistency) return { level: null, problem: null };
+  if (call.outcome === "failure") return { level: "warn", problem: `${consistency} (refused on chain)` };
+  if (call.outcome === "success") return { level: "fail", problem: consistency };
+  return { level: "fail", problem: `${consistency}; the on-chain outcome could not be read` };
 }
 
 export const isOurs = (account, parent, roleHolders) => !!account && (account === parent || account.endsWith(`.${parent}`) || roleHolders.includes(account));
@@ -93,18 +122,21 @@ async function main() {
     for (const t of j.transactions || []) {
       for (const c of verdictCalls(t, contract)) {
         const own = isOurs(c.signer, parent, roleHolders) || isOurs(c.predecessor, parent, roleHolders);
-        (own ? ours : foreign).push({ ...c, problem: callProblem(c.args) });
+        const j = judgeCall(c);
+        (own ? ours : foreign).push({ ...c, level: j.level, problem: j.problem });
       }
     }
   }
 
-  const bad = ours.filter((c) => c.problem);
+  const bad = ours.filter((c) => c.level === "fail");
+  const warned = ours.filter((c) => c.level === "warn");
   console.log(`${contract}: ${unique.length} transactions, ${ours.length + foreign.length} submit_verdict calls decoded (successful and failed): ${ours.length} from our accounts, ${foreign.length} foreign`);
   for (const c of foreign.filter((x) => x.problem)) console.log(`WARN foreign ${c.tx} from ${c.signer}: ${c.problem}`);
+  for (const w of warned) console.log(`WARN ${w.tx} (refused on chain) from ${w.signer}: ${w.problem.replace(/ \(refused on chain\)$/, "")}`);
   for (const b of bad.slice(0, 20)) console.log(`FAIL ${b.tx} from ${b.signer}: ${b.problem}`);
   if (unique.length === 0) console.log("FAIL no transactions found: indexer empty or wrong contract");
   const ok = bad.length === 0 && unique.length > 0;
-  console.log(ok ? "PASS every submit_verdict reply from our accounts is within the allowed keys" : `FAIL ${bad.length} replies from our accounts outside the allowed keys`);
+  console.log(ok ? "PASS every submit_verdict reply from our accounts is within the allowed keys" : `FAIL ${bad.length} replies from our accounts break the reply rule`);
   process.exitCode = ok ? 0 : 1;
 }
 

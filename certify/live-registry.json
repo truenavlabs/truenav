@@ -1,0 +1,15 @@
+{
+  "note": "What the repository expects the live registry to hold. Checked read-only by npm run verify:live-signer (certify/verify-live-signer.mjs). The TEE signer, its model and its attestation report hash come from tee/status.json, so they are not repeated here.",
+  "contract": "registry.tnlab-368aa2.testnet",
+  "code_hash": "9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o",
+  "roles": {
+    "admin": "tnlab-368aa2.testnet",
+    "registrar": "tnlab-368aa2.testnet",
+    "pauser": "pauser.tnlab-368aa2.testnet",
+    "servicer": "servicer.tnlab-368aa2.testnet",
+    "paused": false
+  },
+  "certificate_signers": ["0x6994c1391f4244185497aa2afa8e14f5790314b0"],
+  "servicer_pledge_address": "0x6994c1391f4244185497aa2afa8e14f5790314b0",
+  "pledge_signers": []
+}

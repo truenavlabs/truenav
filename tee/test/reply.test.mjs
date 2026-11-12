@@ -69,3 +69,55 @@ test("shared reply cases: the JS rule gives the expected verdict on every case (
   const { cases } = JSON.parse(readFileSync(new URL("../../contract/tests/fixtures/reply-cases.json", import.meta.url), "utf8"));
   for (const c of cases) assert.equal(replyProblem(c.body) === null, c.accept, `${c.name}: ${replyProblem(c.body)}`);
 });
+
+// N-03: the NEAR AI Cloud response around the reply has a fixed shape. Client side only; the contract is unchanged.
+const wrapped = (edit) => { const b = JSON.parse(body(clean)); edit(b); return JSON.stringify(b); };
+
+test("N-03 an unknown top-level field is refused, whatever its value", () => {
+  for (const [k, v] of [["system_fingerprint", "fp_1"], ["prompt_logprobs", null], ["kv_transfer_params", {}], ["service_tier", "default"], ["debug", "Original principal: USD 355,500"]]) {
+    assert.match(replyProblem(wrapped((b) => { b[k] = v; })), new RegExp(`response has a field outside the allowed list: ${k}`), k);
+  }
+  assert.match(replyProblem(JSON.stringify([JSON.parse(body(clean))])), /not a JSON object/);
+});
+
+test("N-03 an unknown field in the choice is refused", () => {
+  for (const [k, v] of [["stop_reason", null], ["reasoning", "the title says USD 1"], ["matched_stop", 1]]) {
+    assert.match(replyProblem(wrapped((b) => { b.choices[0][k] = v; })), new RegExp(`choice has a field outside the allowed list: ${k}`), k);
+  }
+});
+
+test("N-03 logprobs must be present and null", () => {
+  assert.match(replyProblem(wrapped((b) => { delete b.choices[0].logprobs; })), /logprobs must be null/);
+  for (const v of [{ content: [{ token: "USD", logprob: -0.1 }] }, [], 0, "", false]) {
+    assert.match(replyProblem(wrapped((b) => { b.choices[0].logprobs = v; })), /logprobs must be null/, JSON.stringify(v));
+  }
+});
+
+test('N-03 finish_reason must be "stop"', () => {
+  for (const v of ["length", "tool_calls", "content_filter", null, "STOP", " stop"]) {
+    assert.match(replyProblem(wrapped((b) => { b.choices[0].finish_reason = v; })), /finish_reason must be "stop"/, JSON.stringify(v));
+  }
+  assert.match(replyProblem(wrapped((b) => { delete b.choices[0].finish_reason; })), /finish_reason must be "stop"/);
+});
+
+test("N-03 every allowed field may be present: the clean reply carries all of them and passes", () => {
+  const b = JSON.parse(body(clean));
+  assert.deepEqual(Object.keys(b).sort(), ["choices", "created", "id", "model", "object", "usage"]);
+  assert.deepEqual(Object.keys(b.choices[0]).sort(), ["finish_reason", "index", "logprobs", "message"]);
+  assert.equal(replyProblem(JSON.stringify(b)), null);
+});
+
+// N-04: a pass is accepted only if all six checks are present and ok.
+test("N-04 a pass with 5 of 6 checks ok and one failed is refused, for each check", () => {
+  for (const k of ["id_mismatch", "asset_mismatch", "amount_mismatch", "duplicate_document", "injection_attempt", "unreadable"]) {
+    assert.match(replyProblem(body({ ...clean, [k]: "fail" })), new RegExp(`a pass needs all six checks ok; ${k} is "fail"`), k);
+  }
+});
+
+test("N-04 a pass with a check missing is refused; a flag with a failed check still passes", () => {
+  for (const k of ["id_mismatch", "unreadable"]) {
+    const { [k]: _gone, ...rest } = clean;
+    assert.match(replyProblem(body(rest)), new RegExp(`${k} is missing`), k);
+  }
+  assert.equal(replyProblem(body({ ...clean, amount_mismatch: "fail", verdict: "flag", anomalies: ["amount_mismatch"] })), null);
+});

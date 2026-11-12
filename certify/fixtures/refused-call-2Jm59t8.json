@@ -1,0 +1,20 @@
+{
+  "note": "Public on-chain data of one refused submit_verdict call on the earlier instance registry.tnlab-718ca9.testnet: the reply says pass while amount_mismatch is fail (trap T1, loan H-RE-01). The contract refused it, so nothing was stored. Used by certify/chain-replies.test.mjs.",
+  "tx": "2Jm59t8YoDKYM3wQuVYbjf8K8sAbwiuTPCjR6SdYZHVH",
+  "contract": "registry.tnlab-718ca9.testnet",
+  "signer": "servicer.tnlab-718ca9.testnet",
+  "predecessor": "servicer.tnlab-718ca9.testnet",
+  "args_base64": "eyJsb2FuX2hhc2giOiI4ODU2Y2M5YzVlYWIzMjEzOWQ1ZTc2ZGQyZWZiODczZTc4ZWYxOThjMjU5ZWQ5ZDFkMGZhYzE0NWNjNzgxOTk4IiwibW9kZWxfaWQiOiJRd2VuL1F3ZW4zLVZMLTMwQi1BM0ItSW5zdHJ1Y3QiLCJyZXF1ZXN0X3NoYTI1NiI6IjlhYTAxNWU0ZDkyMDI0OGQ2ODk3NjVhZjU1MjE2YzViZmEzZjI3YTU2Mjk2NjQ1MGYxM2NjOTE4MDE5YWZjMTMiLCJyZXNwb25zZV9ib2R5Ijoie1wiaWRcIjpcImNoYXRjbXBsLWZjOWYyOTM2LWNiYTktNDhlNC1hMjdlLWQyMDRiZGRmM2ZjYlwiLFwib2JqZWN0XCI6XCJjaGF0LmNvbXBsZXRpb25cIixcImNob2ljZXNcIjpbe1wiaW5kZXhcIjowLFwibWVzc2FnZVwiOntcInJvbGVcIjpcImFzc2lzdGFudFwiLFwiY29udGVudFwiOlwie1xcXCJsb2FuX2hhc2hcXFwiOlxcXCI4ODU2Y2M5YyA1ZWFiMzIxMyA5ZDVlNzZkZCAyZWZiODczZSA3OGVmMTk4YyAyNTllZDlkMSBkMGZhYzE0NSBjYzc4MTk5OFxcXCIsXFxcImJpbmRpbmdcXFwiOlxcXCJ0cnVlbmF2LXZlcmRpY3QtdjF8cmVnaXN0cnkudG5sYWItNzE4Y2E5LnRlc3RuZXR8dGVzdG5ldHwxNzk2NjExODc0NjIzXFxcIixcXFwiaWRfbWlzbWF0Y2hcXFwiOlxcXCJva1xcXCIsXFxcImFzc2V0X21pc21hdGNoXFxcIjpcXFwib2tcXFwiLFxcXCJhbW91bnRfbWlzbWF0Y2hcXFwiOlxcXCJmYWlsXFxcIixcXFwiZHVwbGljYXRlX2RvY3VtZW50XFxcIjpcXFwib2tcXFwiLFxcXCJkdXBsaWNhdGVfZXZpZGVuY2VfbGluZVxcXCI6XFxcIm9rXFxcIixcXFwiaW5qZWN0aW9uX2F0dGVtcHRcXFwiOlxcXCJva1xcXCIsXFxcInVucmVhZGFibGVcXFwiOlxcXCJva1xcXCIsXFxcInZlcmRpY3RcXFwiOlxcXCJwYXNzXFxcIixcXFwiYW5vbWFsaWVzXFxcIjpbXFxcImFtb3VudF9taXNtYXRjaFxcXCJdfVwifSxcImZpbmlzaF9yZWFzb25cIjpcInN0b3BcIixcImxvZ3Byb2JzXCI6bnVsbH1dLFwibW9kZWxcIjpcIlF3ZW4vUXdlbjMtVkwtMzBCLUEzQi1JbnN0cnVjdFwiLFwiY3JlYXRlZFwiOjE3OTQwMTk4OTksXCJ1c2FnZVwiOntcInByb21wdF90b2tlbnNcIjo4MDMsXCJ0b3RhbF90b2tlbnNcIjo5NjMsXCJjb21wbGV0aW9uX3Rva2Vuc1wiOjE2MCxcInByb21wdF90b2tlbnNfZGV0YWlsc1wiOntcImNhY2hlZF90b2tlbnNcIjo3MjB9fX0iLCJzaWduYXR1cmUiOiIweDVmNGM5ODNiNzkwM2VmOWVjYjBjNjQ5NTc1YzA3OTI0MzBkZWJkMGI3YzJkNjlkZWFkMmUwOWU2NTc5ZWQ2Nzk0MGJjMDZmZDllZjgwM2UxYTYyM2U0OWJhMzNhMTJiYmFhN2EzMDJhNGMwYjAxZGZiMDkwYWJmZWY2NDU4OGU4MWIifQ==",
+  "status": {
+    "Failure": {
+      "ActionError": {
+        "index": 0,
+        "kind": {
+          "FunctionCallError": {
+            "ExecutionError": "Smart contract panicked: TEE signer not registered"
+          }
+        }
+      }
+    }
+  }
+}

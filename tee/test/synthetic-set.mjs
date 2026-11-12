@@ -25,7 +25,7 @@ export function syntheticSet({ contract = REGISTRY, signedAt = SIGNED_AT, n = 3,
     const verdict = tampered ? "flag" : "pass";
     const anomalies = tampered ? ["amount_mismatch"] : [];
     const reply = { loan_hash: group(loan_hash), binding, id_mismatch: "ok", asset_mismatch: "ok", amount_mismatch: tampered ? "fail" : "ok", duplicate_document: "ok", duplicate_evidence_line: "ok", injection_attempt: "ok", unreadable: "ok", verdict, anomalies };
-    const response_body = JSON.stringify({ id: `chatcmpl-synthetic-${i}`, object: "chat.completion", choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify(reply) }, finish_reason: "stop" }] });
+    const response_body = JSON.stringify({ id: `chatcmpl-synthetic-${i}`, object: "chat.completion", choices: [{ index: 0, message: { role: "assistant", content: JSON.stringify(reply) }, finish_reason: "stop", logprobs: null }] });
     const request_sha256 = sha(`synthetic request ${i}`);
     const signature = signEip191(`${model}:${request_sha256}:${sha(response_body)}`, KEY);
     results.push({

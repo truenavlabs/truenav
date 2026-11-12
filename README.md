@@ -51,7 +51,7 @@ npm run judge -- --replay --out out/x.json   # summary path inside the repo (def
 
 What each stage checks (from `judge/stages.mjs`):
 
-- S1 fixtures: 4 verdict sets have at least 10 days left; the attestation report hash matches `tee/fixtures/verdicts.json`.
+- S1 fixtures: 4 recorded verdict sets and the live `registry.tnlab-368aa2.testnet` set (`tee/fixtures/verdicts-368aa2.json`, every signature checked offline) have at least 10 days left; each published attestation report hash matches its verdict set.
 - S2 tamper: T1 `amount_mismatch`, T2 `injection_attempt`, T3 `duplicate_document`; 16 of 16 honest documents pass, every signature checked; Harbor 99.17 green, then 51.59 red.
 - S3 engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43), every worked-example field matches; eval 86 plus 40 signatures verified, 0 extra fields.
 - S4 v3 pin: the agent accepts only the engine hash in `receipts/v3-build.json`; another engine is declined `engine_hash` and nothing is bought.

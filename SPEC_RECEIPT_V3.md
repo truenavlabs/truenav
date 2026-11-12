@@ -42,7 +42,7 @@ Hidden means absent from public JSON, not merely a null field beside a leaked me
 | fund_account | NEAR account ID | P, contract-bound token registration | Prevent identity substitution |
 | kind | enum | P, credit accepted; real_estate and treasury reserved and REJECTED | Explicit asset policy |
 | period_start / period_end | UTC date strings | P, start inclusive/end exclusive | Scope and comparison |
-| network / receipts_contract / currency | fixed strings near_testnet / receipts.tnlab-718ca9.testnet / USD | P, part of every hash and signature context | Prevent cross-network/contract/unit substitution |
+| network / receipts_contract / currency | fixed strings near_testnet / receipts.tnlab-718ca9.testnet / USD (the receipts account of the earlier instance, frozen in this spec version; the live registry registry.tnlab-368aa2.testnet has no receipts contract) | P, part of every hash and signature context | Prevent cross-network/contract/unit substitution |
 | seq | u64 decimal string | P, contract-assigned strictly increasing per token | History order |
 | prev_receipt_sha256 | hex32 or null | P, prior stored record hash, null only with no v2 or v3 history | Bind history |
 | supersedes_seq | u64 string or null | P, earlier sequence of same token/period only | Corrections |

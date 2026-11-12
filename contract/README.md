@@ -41,9 +41,9 @@ Sensitive calls need exactly 1 yoctoNEAR (only a full-access key can make them).
 
 ## Fresh account (no migration)
 
-The Borsh layout changed when pledge nonces, pledge signers, and `ticket_required` were added. There is no migration. The deployed account `registry.tnlab-718ca9.testnet` cannot be upgraded in place. Each step below is a separate yes from the owner. Do not run them in this pass.
+The Borsh layout changed when pledge nonces, pledge signers, and `ticket_required` were added. There is no migration. The earlier instance `registry.tnlab-718ca9.testnet` cannot be upgraded in place; the live registry was deployed fresh to `registry.tnlab-368aa2.testnet` by these steps. Each step below is a separate yes from the owner. Do not run them in this pass.
 
-1. Owner approval: create a new testnet account for the registry. Do not reuse `registry.tnlab-718ca9.testnet`.
+1. Owner approval: create a new testnet account for the registry. Do not reuse the earlier instance `registry.tnlab-718ca9.testnet` or the live `registry.tnlab-368aa2.testnet`.
 2. Owner approval: deploy this contract wasm to that empty account with `new(admin, servicer)`. State starts empty.
 3. Owner approval: `set_role` for registrar, pauser, and servicer.
 4. Owner approval: `register_fund` for each demo fund.

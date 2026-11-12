@@ -60,7 +60,7 @@ Read-only testnet observations on 9 Nov 2026 Bangkok:
 - `public_key({domain_id:0})`, `derived_public_key({domain_id:0,path,predecessor})`, `config({})` and `state({})` answered.
 - Domain 0 is ECDSA, purpose `Sign`. The live config requires at least 15 Tgas for a signing call. This contract
   attaches 100 Tgas and reserves 35 Tgas for its private callback.
-- Local address derivation matches the live derived-key view for `receipts.tnlab-718ca9.testnet` and this path:
+- Local address derivation matches the live derived-key view for `receipts.tnlab-718ca9.testnet` (the earlier instance's receipts account; there is no receipts contract on the live 368aa2 registry) and this path:
   `0x34dc6299b7a1a491f915cc2c5d8ff3038e9f72cc`. Recheck for the actual deployed account before configuration.
 - Source-verified request: `sign({request:{path,domain_id:0,payload_v2:{Ecdsa:"<64 lowercase hex>"}}})`, deposit one
   yoctoNEAR. The current source also accepts deprecated `payload` byte-array and `key_version` aliases; this feature

@@ -71,7 +71,7 @@ export function About() {
               </div>
               <div className="cta-a">
                 <A href="/product" className="pillbtn inv">Product <span aria-hidden="true">→</span></A>
-                <A href="/funds" className="pillbtn ghost inv">Open app</A>
+                <A href="/overview" className="pillbtn ghost inv">Open app</A>
               </div>
             </section>
             <SiteFooter />

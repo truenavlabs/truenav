@@ -1,7 +1,7 @@
 // Marketing chrome: top nav (uppercase mono links, active dot, open app button) and footer.
 // The dashboard keeps its own DashShell. Verify is the receipt checker inside the app, so its link leaves this shell.
 import { useEffect, useState, type ReactNode } from "react";
-import { Brand } from "../dashboard/Shell";
+import { Brand } from "../shell/Brand";
 import { A } from "../ui";
 
 export type SiteRoute = "product" | "technology" | "about";
@@ -35,7 +35,7 @@ export function SiteNav({ route, tone = "light" }: { route?: SiteRoute; tone?: "
             {l.label}
           </A>
         ))}
-        <A href="/funds" className="pillbtn">Open app <span aria-hidden="true">→</span></A>
+        <A href="/overview" className="pillbtn">Open app <span aria-hidden="true">→</span></A>
       </nav>
     </header>
   );
@@ -60,7 +60,7 @@ export function SiteFooter() {
           <span className="lbl">app</span>
           <A href="/funds">Funds</A>
           <A href="/verify">Verify a receipt</A>
-          <A href="/how">Method</A>
+          <A href="/methodology">Method</A>
           <a href={REPO} rel="noopener noreferrer" target="_blank">Source code ↗</a>
         </nav>
       </div>

@@ -3,7 +3,7 @@
 // Below 1024px the tabs sit in their own scroller above the field; the page itself still does not scroll.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { FIELD, HeroField, STAGE_W, type Fit } from "../components/HeroE";
-import { Brand } from "../dashboard/Shell";
+import { Brand } from "../shell/Brand";
 import { A, navigate } from "../ui";
 import { counts } from "./facts";
 
@@ -110,7 +110,7 @@ export function Home({ freezeAt }: { freezeAt?: number }) {
           <span className="ld-mark" data-tn-dot aria-hidden="true" />
           <Brand />
           <A href="/about" className="ld-about mono">About</A>
-          <A href="/funds" className="pillbtn sm">Open app <span aria-hidden="true">→</span></A>
+          <A href="/overview" className="pillbtn sm">Open app <span aria-hidden="true">→</span></A>
         </header>
       )}
       {desk ? (
@@ -141,7 +141,7 @@ export function Home({ freezeAt }: { freezeAt?: number }) {
           <span>testnet fixture counts</span>
           <span>near testnet · synthetic data</span>
         </div>
-        {desk ? <A href="/funds" className="pillbtn">Open app <span aria-hidden="true">→</span></A> : null}
+        {desk ? <A href="/overview" className="pillbtn">Open app <span aria-hidden="true">→</span></A> : null}
       </footer>
     </div>
   );

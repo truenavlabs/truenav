@@ -45,7 +45,7 @@ export function Product() {
             </div>
             <div className="pd-cta">
               <A href="/funds" className="pillbtn">Open the funds <span aria-hidden="true">→</span></A>
-              <A href="/investor" className="pillbtn ghost">Investor view</A>
+              <A href="/features" className="pillbtn ghost">Verify it yourself</A>
             </div>
           </article>
           <article className="pd-card dark" aria-labelledby="pd-man">
@@ -72,7 +72,7 @@ export function Product() {
             </div>
             <div className="pd-cta">
               <A href="/verify" className="pillbtn inv">Verify a receipt <span aria-hidden="true">→</span></A>
-              <A href="/manager" className="pillbtn ghost inv">Manager view</A>
+              <A href="/features/double-pledge" className="pillbtn ghost inv">Try the pledge lock</A>
             </div>
           </article>
         </div>

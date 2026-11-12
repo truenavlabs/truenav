@@ -25,7 +25,7 @@ No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Step
 
 ## Expected output
 
-Docker is not needed for these steps. The sandbox end-to-end jobs that need Docker were not run locally. They run in CI: see the latest CI run on `main` in this repository (Actions tab), which runs all 8 jobs, including the sandbox end-to-end jobs.
+Docker is not needed for these steps. The sandbox end-to-end jobs that need Docker were not run locally. They run in CI: see the latest CI run on `main` in this repository (Actions tab), which runs all 9 jobs, including the sandbox end-to-end jobs.
 
 ### Step 2: `npm run judge -- --replay`
 
@@ -197,7 +197,7 @@ On-chain refusals from that run:
 | The Base mirror contract accepts only the MPC signer and a rising sequence per token (local EVM, not deployed). | `mirror/test/mirror.test.mjs` (in `npm test`), judge S8 | Passed locally, 11 Nov 2026 |
 | Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts`: see the latest CI run on `main` in this repository (Actions tab). Not run locally |
 | Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from the CI job `receipts` log in the latest CI run on `main` in this repository (Actions tab): `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR` |
-| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path. | CI workflow `.github/workflows/ci.yml` | 8 of 8 jobs green: see the latest CI run on `main` in this repository (Actions tab) |
+| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path, fresh-clone. | CI workflow `.github/workflows/ci.yml` | 9 of 9 jobs green: see the latest CI run on `main` in this repository (Actions tab) |
 | Production `npm audit` has no high or critical findings. | `npm audit --omit=dev --audit-level=high` | Passed in CI job `engine` (the latest CI run on `main` in this repository (Actions tab)), which printed `2 low severity vulnerabilities` |
 | The current testnet registry's on-chain scores match a local recompute. TEE verdicts for this contract are on chain (16 pass). | `npm run chain:read` | Exit 0 on 11 Nov 2026 against `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`): Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), 11 + 5 verdicts on chain, all pass. The earlier instance `registry.tnlab-718ca9.testnet` (source `d37b9d2`) still holds recorded TEE verdicts; read it with `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read` |
 

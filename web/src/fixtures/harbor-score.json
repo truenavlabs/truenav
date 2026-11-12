@@ -1,0 +1,59 @@
+{
+  "receipt_version": "3",
+  "token_id": "harbor-credit-fund",
+  "seq": "1",
+  "method_version": "truenav-v3.0.1",
+  "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+  "period_start": "2026-10-01",
+  "period_end": "2026-11-01",
+  "data_as_of": "2026-11-09T06:00:00Z",
+  "valuation_time": "2026-11-10T12:00:00Z",
+  "score": 99,
+  "band": "green",
+  "parts_band": {
+    "coverage": "high",
+    "nav_gap": "high",
+    "freshness": "high",
+    "penalty": "none"
+  },
+  "caps": [],
+  "holds": [
+    "concentration_largest_obligor",
+    "concentration_top_five"
+  ],
+  "freshness_band": "gt_24_lte_72h",
+  "currency": "USD",
+  "reported_nav": "950000000",
+  "trueval": "967000000",
+  "truerange_low": "932000000",
+  "truerange_high": "1002000000",
+  "nav_result": "inside",
+  "nav_gap_band": "inside",
+  "unverified_share_band": "zero",
+  "pledge_scope": {
+    "registry_account": "registry.tnlab-718ca9.testnet",
+    "block_height": "123456",
+    "block_hash": "TEST_ONLY_finalized_block",
+    "scope_id": "loan-terms-v2:first-lien",
+    "coverage_status": "complete"
+  },
+  "pledge_result": "clear",
+  "pledge_coverage_bps": 10000,
+  "loans_checked": "from_10_to_19",
+  "blocked_attempts": "zero",
+  "cash_evidence_status": "verified",
+  "cash_match_band": "gte_98_lte_100pct",
+  "yield_gap_band": "gte_0_lt_3pp",
+  "collection_rate_band": "gte_90pct",
+  "late_share_band": "gt_0_lte_10pct",
+  "late_loan_cohorts": {
+    "dpd_1_30": "lt_5",
+    "dpd_31_60": "suppressed",
+    "dpd_61_90": "suppressed",
+    "dpd_91_plus": "lt_5"
+  },
+  "exceptions": [],
+  "synthetic": true,
+  "receipt_sha256": "40e161da951a840ff796aaf81cb4f2fb38b47489bfa4927495dfdf23fad62c73",
+  "stored_block": null
+}

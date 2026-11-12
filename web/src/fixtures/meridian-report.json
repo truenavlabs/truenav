@@ -1,0 +1,126 @@
+{
+  "token_id": "meridian-yield-fund",
+  "seq": "1",
+  "version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+  "receipt_sha256": "e48b633c6299e19b6aa23068db58d0151ab4603ae31401ece282bc45976a66c8",
+  "stored_block": null,
+  "entitlement": {
+    "request_id": "simreport02",
+    "uses_left": 0
+  },
+  "receipt": {
+    "receipt_version": "3",
+    "method_version": "truenav-v3.0.1",
+    "method_spec_sha256": "0fedd9a7f7330db2f9eaa209bf4424e9941c9528224581710496546b75201455",
+    "network": "near_testnet",
+    "receipts_contract": "receipts.tnlab-718ca9.testnet",
+    "currency": "USD",
+    "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+    "engine_code_sha256": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+    "token_id": "meridian-yield-fund",
+    "fund_account": "meridian.sim.testnet",
+    "kind": "credit",
+    "period_start": "2026-10-01",
+    "period_end": "2026-11-01",
+    "seq": "1",
+    "prev_receipt_sha256": null,
+    "supersedes_seq": null,
+    "correction_reason_code": null,
+    "issued_at": "2026-11-10T12:01:00Z",
+    "data_as_of": "2026-11-08T12:00:00Z",
+    "valuation_time": "2026-11-10T12:00:00Z",
+    "request_id": "TEST_meridian",
+    "request_nonce": "59d4e991ac98c991bed5b0c39d8cb0d11ede44bebe852be9abe49596a1098667",
+    "synthetic": true,
+    "input_sha256": "a705a4737879bc4398b08321b2c45197f8ff4d3c6be662c8afa1851abd2f4a99",
+    "receipt_sha256": "e48b633c6299e19b6aa23068db58d0151ab4603ae31401ece282bc45976a66c8",
+    "attestation_ref": null,
+    "source_key_ids": [
+      {
+        "source": "servicer",
+        "key_id": "servicer:simcredit:v1",
+        "sig_ok": true
+      },
+      {
+        "source": "bank",
+        "key_id": "bank:simcash:v1",
+        "sig_ok": true
+      },
+      {
+        "source": "fund_admin",
+        "key_id": "fund_admin:simadmin:v1",
+        "sig_ok": true
+      },
+      {
+        "source": "custodian",
+        "key_id": "custodian:simcustody:v1",
+        "sig_ok": true
+      }
+    ],
+    "commitments": {
+      "tape": "acb5bc65f76655f77dd772f3364d794d5f64f0ff20826355b654d839f2420720",
+      "cash": "4884d15ed6a2a78550303f2cc1e0e88bc3ecc8e94eba35cf13416e6bc3b3be88",
+      "nav_report": "d1c1442b063c717f04564b7d84e15b31cd0c65d004d6b4ec9d34ddf3771facd1",
+      "pledge_detail": "1f4a7636ad89cc636b89d49e9b95b2bc99c8c9e51f756d5bfd31cb13daf11494",
+      "registry_state_root": "eac26a39b010cecaeab037c411a13ac44abbc2e4a8d69268cb17f71d087032a1",
+      "reported_nav": "51247385d68835edae4450d9737b797be6b78491925ef10ae742a168980641c7",
+      "trueval": "bdc9f4f2cb5c441bd1ed94b2e1a1edeeb9a503be1cf5e6cccfa67843bca830c4",
+      "truerange_low": "f43f066e78c18f6de96ec3a331d5fcd268558e226499fb04333c2b75f54f90f1",
+      "truerange_high": "4232a9410c66abe28111b8c36df62ce9fab75286a67c185a422472d6da15281a",
+      "score_x100": "e1c307df9271150bbe367f13a92ba760edca2706f5be0847bd2874fa57c23b85",
+      "parts_x100": "ad087a3ee5edbc8fcef0e35f7a48a92ad8a4ba40288f8f039ae651f442aed7c7",
+      "raw_score": "b1ccfa9e01f681f0a172286d00ccc1ec4a1e34559061b9fbfa41f63282091f62",
+      "full_report": "81093f1703808951e1bc1a52f246095dba6e7eb3f4db424ca36aea43b41dbeb7"
+    },
+    "pledge_scope": {
+      "registry_account": "registry.tnlab-718ca9.testnet",
+      "block_height": "123456",
+      "block_hash": "TEST_ONLY_finalized_block",
+      "scope_id": "loan-terms-v2:first-lien",
+      "coverage_status": "complete"
+    },
+    "fingerprint_scheme": "loan-terms-v2",
+    "pledge_result": "clear",
+    "pledge_coverage_bps": 10000,
+    "loans_checked": "from_5_to_9",
+    "blocked_attempts": "one",
+    "blocked_attempts_window": "period_to_valuation",
+    "lien_support": "first_lien_only",
+    "reported_nav": "374000000",
+    "trueval": "309000000",
+    "truerange_low": "273000000",
+    "truerange_high": "345000000",
+    "nav_result": "outside_high",
+    "nav_gap_band": "gt_5_lte_10pct",
+    "unverified_share_band": "gt_0_lte_10pct",
+    "cash_evidence_status": "verified",
+    "cash_match_band": "gte_98_lte_100pct",
+    "yield_gap_band": "gte_0_lt_3pp",
+    "collection_rate_band": "gte_90pct",
+    "late_share_band": "gt_25pct",
+    "late_loan_cohorts": {
+      "dpd_1_30": "suppressed",
+      "dpd_31_60": "suppressed",
+      "dpd_61_90": "lt_5",
+      "dpd_91_plus": "lt_5"
+    },
+    "exceptions": [],
+    "status": "scored",
+    "score": 43,
+    "band": "red",
+    "parts_band": {
+      "coverage": "high",
+      "nav_gap": "low",
+      "freshness": "medium",
+      "penalty": "medium"
+    },
+    "caps": [],
+    "holds": [
+      "recent_pledge_attempt",
+      "concentration_largest_obligor",
+      "concentration_top_five"
+    ],
+    "freshness_band": "gt_24_lte_72h",
+    "ext": {}
+  }
+}

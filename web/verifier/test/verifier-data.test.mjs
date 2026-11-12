@@ -158,11 +158,11 @@ test("chain disagrees (code hash, TEE signer, on-chain verdict): each is a fail"
   for (const id of ["registry-code", "tee-signer", "attestation-hash", "onchain-verdicts"]) assert.equal(r[id].state, "fail", id);
 });
 
-test("expiry: at expires_at_ms the set is expired (fail); one ms before it is current", async () => {
+test("expiry matches the contract boundary: equal to now is current, now + 1 ms past it is expired", async () => {
   const ev = await fresh();
   const at = (now) => runVerifierChecks({ evidence: ev, chain: fakeChain(ev), now }).then((rs) => byId(rs)["verdict-binding"].state);
-  assert.equal(await at(ev.verdicts.expires_at_ms), "fail");
-  assert.equal(await at(ev.verdicts.expires_at_ms - 1), "live");
+  assert.equal(await at(ev.verdicts.expires_at_ms), "live");
+  assert.equal(await at(ev.verdicts.expires_at_ms + 1), "fail");
 });
 
 test("missing or unreadable evidence never yields live or recorded for the evidence checks", async () => {

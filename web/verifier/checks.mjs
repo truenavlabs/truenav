@@ -178,12 +178,13 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
       : result("verdict-replies", "Signed replies follow the reply rule", "fail", `${bad.length} of ${recs.length} fail: ${bad.slice(0, 3).map(([i, p]) => `results[${i}] ${p}`).join("; ")}`, paths.verdicts);
   });
 
+  // Same boundary as the contract (lib.rs: require!(expires_at_ms >= now)): expiry equal to now is current.
   await run("verdict-binding", "Verdict binding and expiry", paths.verdicts, async () => {
     const problems = [];
     if (file.contract_id !== contract) problems.push(`verdicts are bound to ${file.contract_id}, not ${contract}`);
     if (!Number.isSafeInteger(file.expires_at_ms) || file.binding !== bindingFor(String(file.contract_id), file.expires_at_ms)) problems.push("binding does not match contract, network and expiry");
     if (file.expires_at_ms - file.signed_at_ms !== VERDICT_TTL_MS) problems.push("lifetime is not 30 days");
-    if (!(now < file.expires_at_ms)) problems.push(`expired at ${new Date(file.expires_at_ms).toISOString()}`);
+    if (!(now <= file.expires_at_ms)) problems.push(`expired at ${new Date(file.expires_at_ms).toISOString()}`);
     return problems.length === 0
       ? result("verdict-binding", "Verdict binding and expiry", "live", `bound to ${contract} on testnet; current until ${new Date(file.expires_at_ms).toISOString()} (${((file.expires_at_ms - now) / 86400000).toFixed(1)} days left). Expiry is set by the servicer at signing; the TEE run time is not checked.`, paths.verdicts)
       : result("verdict-binding", "Verdict binding and expiry", "fail", problems.join("; "), paths.verdicts);

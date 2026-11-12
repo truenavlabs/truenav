@@ -5,8 +5,9 @@
 //   - calls from foreign accounts: listed as warnings, never a failure (anyone can send junk; D4)
 // Our accounts: the contract's parent account and its sub-accounts, plus the current role holders (get_roles).
 //
-//   npm run check:chain-replies
-//   TRUENAV_CONTRACT=registry.<name>.testnet npm run check:chain-replies
+//   npm run check:chain-replies                                              the current registry (tee/status.json)
+//   npm run check:chain-replies -- --contract registry.tnlab-718ca9.testnet    the earlier instance
+//   (TRUENAV_CONTRACT=registry.<name>.testnet still works)
 //
 // Transaction list: FastNEAR transactions API (POST /v0/account, paged with resume_token; full transactions with
 // their receipts from POST /v0/transactions, up to 20 hashes per call; see docs.fastnear.com/tx). No key needed.
@@ -48,9 +49,12 @@ export function callProblem(argsBase64) {
 export const isOurs = (account, parent, roleHolders) => !!account && (account === parent || account.endsWith(`.${parent}`) || roleHolders.includes(account));
 
 async function main() {
-  // Recorded submit_verdict history lives on the earlier instance. The current
-  // registry (DEFAULT_CONTRACT) has none: TEE verdicts are pending / not run.
-  const contract = process.env.TRUENAV_CONTRACT || "registry.tnlab-718ca9.testnet";
+  // The contract follows tee/status.json: the current registry once it says live, the earlier instance (which holds the
+  // other recorded history) through --contract or TRUENAV_CONTRACT. No environment variable is needed for the default.
+  const { flag } = await import("../tee/recorded-set.mjs");
+  const { readStatus } = await import("../tee/status.mjs");
+  const status = readStatus();
+  const contract = flag(process.argv.slice(2), "--contract") || process.env.TRUENAV_CONTRACT || (status.tee === "live" ? status.registry : status.earlier_instance);
   const network = contract.endsWith(".near") ? "main" : "test";
   const API = process.env.TRUENAV_TX_API || `https://tx.${network}.fastnear.com`;
   const parent = contract.split(".").slice(1).join(".");

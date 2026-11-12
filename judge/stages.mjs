@@ -47,15 +47,27 @@ export const STAGES = [
     id: "S1", name: "fixtures",
     claim: "Recorded verdicts are at least 10 days from expiry and match the published attestation report.",
     async run(ctx) {
-      const files = ["tee/fixtures/verdicts.json", "tee/fixtures/verdicts-sandbox.json", "tee/fixtures/verdicts-unit.json", "contract/tests/fixtures/tee-verdicts.json", "tee/fixtures/attestation-report.json.b64"];
+      const files = ["tee/fixtures/verdicts.json", "tee/fixtures/verdicts-sandbox.json", "tee/fixtures/verdicts-unit.json", "contract/tests/fixtures/tee-verdicts.json", "tee/fixtures/attestation-report.json.b64", "tee/status.json"];
       const problems = need(ctx, files);
+      if (problems.length) return done(problems);
+      // When tee/status.json says live, the current registry's set (check:fixtures lists it too) must also be fresh; the
+      // four recorded sets below are counted without it, so the stage text stays "4 of 4".
+      const status = readJson(ctx, "tee/status.json");
+      const liveSet = status?.tee === "live" && typeof status.verdicts_file === "string" ? status.verdicts_file : null;
+      if (liveSet) problems.push(...need(ctx, [liveSet, status.report_file]));
       if (problems.length) return done(problems);
       const r = await ctx.node(["certify/check-fixtures.mjs"]);
       const bad = exitProblem(ctx, "npm run check:fixtures", r);
       if (bad) problems.push(bad);
-      const sets = [...r.stdout.matchAll(/^(PASS|FAIL) (\S+\.json): ([\d.]+|no expiry) days left/gm)];
+      const all = [...r.stdout.matchAll(/^(PASS|FAIL) (\S+\.json): ([\d.]+|no expiry) days left/gm)];
+      const sets = all.filter((m) => m[2] !== liveSet);
       const passing = sets.filter((m) => m[1] === "PASS").length;
       if (sets.length !== 4 || passing !== 4) problems.push(`${passing} of ${sets.length} verdict sets at least 10 days from expiry (need 4 of 4)`);
+      if (liveSet) {
+        const row = all.find((m) => m[2] === liveSet);
+        if (!row || row[1] !== "PASS") problems.push(`${liveSet}, the current registry's set from tee/status.json, is missing from check:fixtures or inside 10 days of expiry`);
+        if (!new RegExp(`^PASS published attestation report ${status.report_file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} is the one ${liveSet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} was signed under$`, "m").test(r.stdout)) problems.push(`the published attestation report ${status.report_file} does not match ${liveSet}`);
+      }
       if (!/^PASS published attestation report is the one tee\/fixtures\/verdicts\.json was signed under$/m.test(r.stdout)) problems.push("published attestation report sha256 does not match tee/fixtures/verdicts.json");
       const days = sets.map((m) => Number(m[3])).filter(Number.isFinite);
       return done(problems, "4 of 4 verdict sets at least 10 days from expiry; published attestation report sha256 matches tee/fixtures/verdicts.json", { ephemeral: { fixture_days_left_min: days.length ? Math.min(...days) : null } });

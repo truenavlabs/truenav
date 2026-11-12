@@ -4,16 +4,20 @@
 // (TRUENAV_SIGNER_KEYFILE, default ~/.near-credentials/testnet/<master>.json; only its private_key is used and its
 // public key must be a full-access key of the master on chain); new accounts get fresh keys written to
 // ~/.near-credentials/testnet with mode 600, created exclusively (an existing file is never overwritten). No key is
-// ever printed. Wasm: target/near of each crate, or TRUENAV_WASM_DIR (e.g. receipts/dist, the pinned-image builds);
-// either way the bytes must match receipts/pinned-builds.json.
+// ever printed. Wasm: target/near of each crate, or TRUENAV_WASM_DIR (a directory holding truenav_receipts.wasm and
+// truenav_query.wasm, e.g. unpacked from the receipts-pinned-build artifact); either way the bytes must match
+// receipts/pinned-builds.json. The committed receipts/dist is stale and refused.
 //
-//   node receipts/deploy-testnet.mjs D0              read-only checks (no flag needed)
-//   node receipts/deploy-testnet.mjs D1 [--execute]  create receipts, query, runner, api sub-accounts (resumable: an
+// The master account has no default: --master <fresh-account.testnet> or env TRUENAV_MASTER (receipts/deploy-args.mjs).
+// A master that hosted an earlier deploy is refused with --execute.
+//
+//   node receipts/deploy-testnet.mjs D0 --master M              read-only checks (no flag needed)
+//   node receipts/deploy-testnet.mjs D1 --master M [--execute]  create receipts, query, runner, api sub-accounts (resumable: an
 //                                                    existing one is skipped only if its local key is a full-access
 //                                                    key on chain, otherwise D1 stops)
-//   node receipts/deploy-testnet.mjs D2 [--execute]  deploy + init the receipt contract (pinned engine build)
-//   node receipts/deploy-testnet.mjs D3 [--execute]  register the 4 synthetic tokens, set the runner (1 yocto each)
-//   node receipts/deploy-testnet.mjs D4 [--execute]  deploy + init the query contract (fee 0.01 NEAR, redeemer api)
+//   node receipts/deploy-testnet.mjs D2 --master M [--execute]  deploy + init the receipt contract (pinned engine build)
+//   node receipts/deploy-testnet.mjs D3 --master M [--execute]  register the 4 synthetic tokens, set the runner (1 yocto each)
+//   node receipts/deploy-testnet.mjs D4 --master M [--execute]  deploy + init the query contract (fee 0.01 NEAR, redeemer api)
 //
 // OutLayer (upload, project, secrets) and the first run are separate steps with their own yes (README.md).
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -22,9 +26,19 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } from "near-api-js";
+import { parseDeployArgs, UsageError, USAGE } from "./deploy-args.mjs";
 
-const MASTER = process.env.TRUENAV_MASTER || "tnlab-718ca9.testnet";
-const RPC = "https://rpc.testnet.near.org";
+// before anything else touches a file, a key or the network
+let parsed;
+try {
+  parsed = parseDeployArgs(process.argv.slice(2));
+} catch (e) {
+  if (!(e instanceof UsageError)) throw e;
+  console.error(`${e.message}\n${USAGE}`);
+  process.exit(2);
+}
+const MASTER = parsed.master;
+const RPC = parsed.rpc;
 const KEYS = join(homedir(), ".near-credentials/testnet");
 const root = new URL("../", import.meta.url).pathname;
 const SIGNER_KEYFILE = process.env.TRUENAV_SIGNER_KEYFILE || join(KEYS, `${MASTER}.json`);
@@ -40,7 +54,7 @@ const WASM_DIR = process.env.TRUENAV_WASM_DIR ? (isAbsolute(process.env.TRUENAV_
 const WASM = WASM_DIR
   ? { receipts: join(WASM_DIR, "truenav_receipts.wasm"), query: join(WASM_DIR, "truenav_query.wasm") }
   : { receipts: join(root, "receipts/target/near/truenav_receipts.wasm"), query: join(root, "query/target/near/truenav_query.wasm") };
-const PINNED = JSON.parse(readFileSync(join(root, "receipts/pinned-builds.json"), "utf8"));
+const PINNED = JSON.parse(readFileSync(parsed.pinsFile || join(root, "receipts/pinned-builds.json"), "utf8"));
 const TOKENS = { "DEMO-CREDIT": "credit", "DEMO-RENTAL": "rental", "HONEST-CREDIT": "credit", "HONEST-RENTAL": "rental" };
 // project_id must stay receipts/truenav-engine. The pledge module derives loan-terms-v2 in this same project
 // with caller predecessor, so the receipts account is the account in both keys. Do not point this at another project.
@@ -50,8 +64,8 @@ const CONFIG = {
   outlayer_deposit: nearToYocto("0.01").toString(), storage_deposit: nearToYocto("0.25").toString(), outlayer_tgas: 230, callback_tgas: 50,
 };
 
-const step = process.argv[2];
-const execute = process.argv.includes("--execute");
+const step = parsed.step;
+const execute = parsed.execute;
 const provider = new JsonRpcProvider({ url: RPC });
 const sha = (f) => createHash("sha256").update(readFileSync(f)).digest("hex");
 // only the private_key field is taken from a key file; it is never printed
@@ -117,7 +131,7 @@ async function checks() {
   const need = await remainingNeed();
   console.log(`  chain testnet; ${MASTER} balance ${near(bal)} NEAR; D1 still needs ${near(need)} NEAR (funding for the accounts not created yet, plus ${near(GAS_MARGIN)} gas margin; all four: ${FUND_TOTAL} + 0.05)${bal < need ? `: SHORT by ${near(need - bal)} NEAR` : ""}`);
   for (const [k, f] of Object.entries(WASM)) {
-    if (!existsSync(f)) throw new Error(`${f} missing: build it in the pinned image (receipts/README.md) or set TRUENAV_WASM_DIR=receipts/dist`);
+    if (!existsSync(f)) throw new Error(`${f} missing: build it in the pinned image (receipts/README.md) or set TRUENAV_WASM_DIR to a directory holding the two pinned files`);
     if (sha(f) !== PINNED[k]) throw new Error(`${k} wasm ${sha(f).slice(0, 12)} is not the pinned build ${PINNED[k].slice(0, 12)}`);
     console.log(`  ${k} wasm ${f.replace(root, "")} is the pinned build ${PINNED[k]}`);
   }
@@ -128,10 +142,6 @@ async function checks() {
 
 const one = 1n;
 console.log(`TrueNav step 4 deploy, ${step || "(no step)"}${execute ? " EXECUTE" : " (print only)"}, master ${MASTER}`);
-if (!["D0", "D1", "D2", "D3", "D4"].includes(step)) {
-  console.log("usage: node receipts/deploy-testnet.mjs D0|D1|D2|D3|D4 [--execute]");
-  process.exit(2);
-}
 await checks();
 if (step === "D1") {
   console.log(`D1: create 4 sub-accounts of ${MASTER}, each with a fresh full-access key (key files mode 600, created exclusively, never printed). Cost: ${FUND_TOTAL} NEAR moved to our own new accounts (receipts ${FUND.receipts}, query ${FUND.query}, runner ${FUND.runner}, api ${FUND.api}), plus gas (about 0.001 NEAR each); the preflight needs ${FUND_TOTAL} + 0.05.`);

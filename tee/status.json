@@ -1,0 +1,12 @@
+{
+  "registry": "registry.tnlab-368aa2.testnet",
+  "tee": "live",
+  "verdicts_file": "tee/fixtures/verdicts-368aa2.json",
+  "report_file": "tee/fixtures/attestation-report-368aa2.json.b64",
+  "earlier_instance": "registry.tnlab-718ca9.testnet",
+  "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "tee_signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+  "report_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+  "add_tee_signer_tx": "9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE",
+  "expires_at_ms": 1797016506416
+}

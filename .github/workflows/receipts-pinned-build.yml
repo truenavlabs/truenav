@@ -1,0 +1,74 @@
+# Pinned-image build of the receipts and query contracts, as a downloadable artifact.
+# The recipe is the one in the `receipts` job of ci.yml: the same digest-pinned image, `cargo near build
+# non-reproducible-wasm --locked` (not reproducible-wasm), the same workdir, user and mount per crate. The job prints
+# sha256 and byte size of both wasm files, uploads them, and fails if either differs from receipts/pinned-builds.json.
+# It deploys nothing, calls no network service and uses no secrets. Every third-party action is pinned to a full SHA.
+name: receipts-pinned-build
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/receipts-pinned-build
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Pins this run is checked against
+        run: node -e "const p=require('./receipts/pinned-builds.json');console.log('receipts',p.receipts);console.log('query   ',p.query)"
+      - name: Build receipts and query in the pinned image
+        run: |
+          IMAGE='sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e'
+          # receipts: the candidate's canonical image user, workdir and target path (as in ci.yml)
+          docker run --rm -u 0 -v "$PWD:/home/near/code" -w /home/near/code/receipts "$IMAGE" \
+            bash -c 'cargo near build non-reproducible-wasm --locked && chmod -R a+rX target/near'
+          # query: the runner's own user (as in ci.yml)
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/home/near/code" -w /home/near/code/query "$IMAGE" \
+            cargo near build non-reproducible-wasm --locked
+      - name: sha256 and size of both wasm files
+        run: |
+          {
+            echo '| crate | path | sha256 | bytes |'
+            echo '| --- | --- | --- | --- |'
+            for c in receipts query; do
+              f="$c/target/near/truenav_$c.wasm"
+              echo "| $c | \`$f\` | \`$(sha256sum "$f" | cut -d' ' -f1)\` | $(stat -c %s "$f") |"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Upload both wasm files
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: truenav-pinned-wasm
+          path: |
+            receipts/target/near/truenav_receipts.wasm
+            query/target/near/truenav_query.wasm
+          if-no-files-found: error
+          retention-days: 30
+      - name: Both files match the pins in receipts/pinned-builds.json (sha256 and bytes)
+        run: |
+          # The sha256 pins are in receipts/pinned-builds.json. The byte sizes are recorded in receipts/v3-build.json
+          # (receipts) and in the note of receipts/pinned-builds.json (query); neither file has a size field for both.
+          node - <<'JS'
+          const fs = require("fs"), crypto = require("crypto");
+          const pins = require("./receipts/pinned-builds.json");
+          const sizes = { receipts: 555924, query: 162201 };
+          let bad = 0;
+          for (const c of ["receipts", "query"]) {
+            const b = fs.readFileSync(`${c}/target/near/truenav_${c}.wasm`);
+            const got = crypto.createHash("sha256").update(b).digest("hex");
+            const hashOk = got === pins[c], sizeOk = b.length === sizes[c];
+            console.log(`${c}: sha256 ${got} (pin ${pins[c]}) ${hashOk ? "match" : "MISMATCH"}; bytes ${b.length} (pin ${sizes[c]}) ${sizeOk ? "match" : "MISMATCH"}`);
+            if (!hashOk || !sizeOk) { console.log(`::error::${c} wasm does not match the pin`); bad++; }
+          }
+          process.exit(bad ? 1 : 0);
+          JS

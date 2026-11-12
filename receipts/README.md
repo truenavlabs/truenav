@@ -42,10 +42,10 @@ informational, as `code_hash` is (spec 8.2).
 ## Tests
 
 ```bash
-(cd receipts && cargo test --locked)     # 36: signing recovery, civil-date validation, mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
+(cd receipts && cargo test --locked)     # 96 pass, 1 ignored (55 unit, 29 contract, 12 mirror; the wasm test is ignored): signing recovery, civil-date validation, mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
 (cd query && cargo test --locked)        # 8: exact fee, 24 h, uses, redeemer, withdraw bound, 1 yocto admin calls
-node --test api/test/api.test.mjs        # 7: free score, 402, one-use report, ask spends nothing, score unchanged
-npm run e2e:receipts                     # 67 checks on a local sandbox, engine run natively as the worker
+node --test api/test/api.test.mjs        # 12: free score, 402, one-use report, ask spends nothing, score unchanged
+npm run e2e:receipts                     # 109 PASS lines on a local sandbox, engine run natively as the worker (counted from CI run 43075427743, job receipts; not re-run locally)
 ```
 
 ## Demo agent (agents track)
@@ -77,28 +77,44 @@ On testnet, `--execute` signs `buy_query` with the agent's own account (`TRUENAV
 
 ## Pinned builds
 
-`sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40ef...`, `cargo near build non-reproducible-wasm --locked`,
-receipt mirror recovery and civil-date validation fix based on c1152b6 (includes the gas-cap fix), built locally in the pinned image. Query source f9379a2 is unchanged:
+Image: `sourcescan/cargo-near:0.22.0-rust-1.99.0@sha256:51ab40efd798eae26c0dc71180909303f10bb4988b15ce3a18522c5be06e277e`.
+Command: `cargo near build non-reproducible-wasm --locked` (not `reproducible-wasm`). Receipts is built as user 0 in
+`/home/near/code/receipts`, query as the runner's own user in `/home/near/code/query`, as in the `receipts` job of
+`.github/workflows/ci.yml`.
+
+These are the pins of the local receipts v3 candidate (migration, combined receipts, mirror fixes, canonical body
+binding, append-only attestation metadata), refreshed from the pinned-image build in CI at 8cc9ede. Not deployed:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1` | 305346 |
-| query | `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` | 155543 |
+| receipts | `dcb46bd0645749948a72b42e5b35c670433a86e86a692e1947841c21129d2259` | 555924 |
+| query | `dee5f216c7ed6a0b75e597b2c5dce643dfcb88dc6517e71e85c5bb96f8169d09` | 162201 |
 
-`receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and CI fails if its
-build differs. This mirror candidate is not deployed. Previous receipts pins: `c0be4258...` (4918c2a, initial mirror candidate), `f32949b3...` (29e13f2, gas-cap-only candidate), `be2fed68...` (f9379a2, callback gas floor 20 Tgas), `e321077f...` (c90f631, the build deployed on testnet 8 Nov, before the late-callback
-refund), `1a04e120...` (fc0b041, rental late share capped at 10000), `57ae8fa8...`
-(e2a6cfb, before the review fixes).
+`receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and the `receipts` job
+of CI fails if its build differs. The workflow `receipts-pinned-build` (Actions tab, "Run workflow", or a push to the
+branch it names) builds both files the same way, prints sha256 and size, fails on any mismatch with the table above,
+and uploads them as the artifact `truenav-pinned-wasm`. Inside the artifact the files are
+`receipts/target/near/truenav_receipts.wasm` and `query/target/near/truenav_query.wasm`; copy them into one directory
+and set `TRUENAV_WASM_DIR` to it to deploy from a machine without Docker. The committed `receipts/dist` is stale: it
+does not match these pins (see its note in `pinned-builds.json`), so the deploy script refuses it.
+
+Previous pins, kept as history and not current. The mirror recovery and civil-date validation candidate based on
+c1152b6 (includes the gas-cap fix, built locally in the pinned image): receipts `c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1`
+(305346 bytes) and query `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` (155543 bytes, query
+source f9379a2). Earlier receipts pins: `c0be4258...` (4918c2a, initial mirror candidate), `f32949b3...` (29e13f2,
+gas-cap-only candidate), `be2fed68...` (f9379a2, callback gas floor 20 Tgas), `e321077f...` (c90f631, the build
+deployed on testnet 8 Nov, before the late-callback refund), `1a04e120...` (fc0b041, rental late share capped at
+10000), `57ae8fa8...` (e2a6cfb, before the review fixes).
 
 ## Who can use the data credentials
 
 Checked against the OutLayer contract (`contract/src/execution.rs`) and `outlayer-cli` 0.2.1 (`commands/secrets.rs`),
-8 Nov:
+8 Nov. `<master>` below is the master account given to `deploy-testnet.mjs` with `--master` or `TRUENAV_MASTER`; the script has no default.
 
 - An `--access whitelist:` leaf is judged on the transaction signer. A run starts with `runner.` signing
-  `request_run`, so the signer OutLayer sees is `runner.tnlab-718ca9.testnet`, not the receipt contract. Whitelisting
+  `request_run`, so the signer OutLayer sees is `runner.<master>`, not the receipt contract. Whitelisting
   `receipts.` alone would admit no run.
-- `--via receipts.tnlab-718ca9.testnet` adds a `Predecessor` rule: the account that called `request_execution` must
+- `--via receipts.<master>` adds a `Predecessor` rule: the account that called `request_execution` must
   be the receipt contract. The stored condition is
   `And[Whitelist[runner.], Predecessor{Whitelist[receipts.]}]`, so `runner.` calling OutLayer directly, or through any
   other contract, is refused, and nobody else's signature is accepted through the receipt contract.
@@ -143,14 +159,16 @@ master on chain; the pinned wasm bytes; which accounts exist; the master balance
 - D1 is resumable: an account that already exists is skipped only if its local key file's public key is a
   full-access key on chain; otherwise D1 stops. New key files are created exclusively (mode 600), never overwritten.
   The preflight checks the funding of the accounts not created yet plus 0.05 NEAR for gas, before every account.
-- Wasm: `target/near` of each crate, or `TRUENAV_WASM_DIR=receipts/dist`, the pinned-image builds committed there
-  (same sha256 as above), so a machine without Docker can deploy. Any other bytes are refused.
+- Wasm: `target/near` of each crate, or `TRUENAV_WASM_DIR=<directory>` holding `truenav_receipts.wasm` and
+  `truenav_query.wasm` (for example the two files from the `truenav-pinned-wasm` artifact, see "Pinned builds"), so a
+  machine without Docker can deploy. Any bytes that do not match the pins are refused, including the stale
+  `receipts/dist`.
 
 | Step | What | Cost |
 | --- | --- | --- |
 | D0 | read-only checks | none |
-| D1 | create `receipts.` (3.2), `query.` (1.7), `runner.` (0.4), `api.tnlab-718ca9.testnet` (0.1) with fresh keys | 5.4 NEAR moved to our own accounts, plus gas; the preflight needs 5.45 |
-| D2 | deploy and init the receipt contract (admin and pauser `tnlab-718ca9.testnet`, engine pin `360cd473...`) | about 2.68 NEAR storage: 267,971 bytes after D2 and D3 on the sandbox, of the 3.2 NEAR D1 gives `receipts.` (about 0.52 left for gas and refunds; the e2e checks it fits) |
+| D1 | create `receipts.` (6), `query.` (1.7), `runner.` (0.4) and `api.` (0.1) sub-accounts of `<master>` with fresh keys | 8.2 NEAR moved to our own accounts, plus gas; the preflight needs 8.25 (8.2 plus a 0.05 gas margin) |
+| D2 | deploy the receipts wasm and `new(...)` (admin and pauser `<master>`, engine pin `360cd473...`). This initializes the compatibility v2 path, not the v3 migration | code storage alone is about 5.56 NEAR for 555924 bytes (script: bytes / 100000); storage after D2 and D3 on the sandbox was 558,867 bytes, 5.5887 NEAR locked of the 6.0 NEAR D1 gives `receipts.` (CI run 43062804177, `receipts` job log; the e2e checks it fits) |
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 
@@ -159,7 +177,7 @@ Later, separately (OutLayer and the data host):
 | Step | What |
 | --- | --- |
 | H1 | host the mock bank-data API (synthetic data) where the TEE can reach it: the one approved Vercel free-tier project, root directory `hosting/mockbank` (one all-funds token from env `TRUENAV_DATA_TOKEN`, fail closed without it; steps in `hosting/mockbank/README.md`) |
-| O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.tnlab-718ca9.testnet`), then check FastFS serves sha256 `360cd473...` |
+| O1 | `OUTLAYER_NETWORK=testnet outlayer upload outlayer/engine-v2/target/wasm32-wasip2/release/truenav-engine-v2.wasm` (signed as `receipts.<master>`), then check FastFS serves sha256 `360cd473...` |
 | O2 | `OUTLAYER_NETWORK=testnet outlayer deploy truenav-engine <fastfs url> --hash 360cd473... --target wasm32-wasip2` |
-| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.tnlab-718ca9.testnet/truenav-engine --profile engine --access whitelist:runner.tnlab-718ca9.testnet --via receipts.tnlab-718ca9.testnet --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
+| O3 | `OUTLAYER_NETWORK=testnet outlayer secrets set '<TRUENAV_DATA_URL, TRUENAV_DATA_TOKEN>' --project receipts.<master>/truenav-engine --profile engine --access whitelist:runner.<master> --via receipts.<master> --build 360cd473...` (token read from a file, never shown; see "Who can use the data credentials" below) |
 | R1 | first live run: `request_run` for one synthetic token from `runner.`, 0.26 NEAR attached, 300 Tgas |

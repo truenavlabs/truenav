@@ -210,9 +210,10 @@ jobs:
     # The README judge path from a fresh checkout with no secrets. First the offline judge (npm run judge -- --replay,
     # S1 to S10: fixture guard, tamper demo, engine, v3 pin, failed head, paid report, dashboard data, mirror, local
     # attestation slice, wasm stamp), which fails on any network use. Then the live reads, which are not part of the
-    # judge: chain:read against the current registry.tnlab-368aa2.testnet (certificates and pledges; TEE pending),
-    # and the NEAR AI Cloud attestation, every OutLayer fingerprint and the reply check over every submit_verdict
-    # on the earlier instance tnlab-718ca9 (contract commit d37b9d2), which still holds the recorded TEE verdicts.
+    # judge: chain:read against the current registry.tnlab-368aa2.testnet (certificates, pledges and TEE verdicts),
+    # the NEAR AI Cloud attestation, the check that the 368aa2 verdict set is on chain, and the reply check over every
+    # submit_verdict on it; then the same attestation and reply checks on the earlier instance tnlab-718ca9
+    # (contract commit d37b9d2) through --contract, and every OutLayer fingerprint.
     # npm test, the demo again and the eval run in the engine job; contract and vault tests, clippy and RustSec in
     # the contract job; the full flow on a local node in the sandbox job; gitleaks in the secrets job.
     runs-on: ubuntu-24.04
@@ -229,12 +230,18 @@ jobs:
         timeout-minutes: 2
       - name: live read, registry.tnlab-368aa2.testnet
         run: npm run chain:read
+      - name: live attestation, current registry tnlab-368aa2 (recorded set from tee/status.json)
+        run: npm run verify:attestation
+      - name: live TEE check, every honest verdict of the 368aa2 set is on chain
+        run: npm run tee:chain-check
       - name: live attestation, earlier instance tnlab-718ca9
-        run: TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run verify:attestation
+        run: npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet
       - name: live fingerprints, earlier instance tnlab-718ca9
         run: npm run verify:fingerprints
+      - name: live chain replies, current registry tnlab-368aa2
+        run: npm run check:chain-replies
       - name: live chain replies, earlier instance tnlab-718ca9
-        run: TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run check:chain-replies
+        run: npm run check:chain-replies -- --contract registry.tnlab-718ca9.testnet
 
   fresh-clone:
     # The README "Try it" steps 1 to 3 from a clean checkout, in the README's order and with the README's commands:

@@ -3,8 +3,8 @@
 useDefault = true
 
 [[allowlists]]
-description = "Published NEAR AI Cloud attestation report (both encodings). Its signing_key fields are 32-byte public verification keys and its ohttp_key_config fields are public OHTTP key configurations (RFC 9458: key id, X25519 KEM 0x0020, public key, cipher suites), served by NEAR AI Cloud's public attestation endpoint. No private key is in these files."
-paths = ['''^tee/fixtures/attestation-report\.json(\.b64)?$''']
+description = "Published NEAR AI Cloud attestation reports (both encodings; the earlier instance's and the one recorded for registry.tnlab-368aa2.testnet). The decoded text mentions credentials only as environment variable names such as ${MODEL_DISCOVERY_API_KEY}, never a value. Its signing_key fields are 32-byte public verification keys and its ohttp_key_config fields are public OHTTP key configurations (RFC 9458: key id, X25519 KEM 0x0020, public key, cipher suites), served by NEAR AI Cloud's public attestation endpoint. No private key is in these files."
+paths = ['''^tee/fixtures/attestation-report(-368aa2)?\.json(\.b64)?$''']
 
 [[allowlists]]
 description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 61fe33a0 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md). Add a new pin here when it is published, after checking it is a build hash."

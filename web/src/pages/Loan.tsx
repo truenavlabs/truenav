@@ -59,7 +59,7 @@ export default function Loan({ hash }: { hash: string }) {
               </div>
             </div>
             {fx && verdict === "pass" && excluded ? (
-              <Note tone="warn">documents: pass (enclave). servicer data: anomaly flag, excluded from TrueVal. The on-chain verdict covers the document only; the exclusion comes from the servicer's tape, which the engine reads separately. This is a different loan from the refused double pledge.</Note>
+              <Note tone="warn">documents: pass (enclave). servicer data: anomaly, excluded from TrueVal. The on-chain verdict covers the document only; the exclusion comes from the servicer's tape, which the engine reads separately. This loan was not double pledged: the refused double pledge was Meridian trying to pledge Harbor's H-RE-03.</Note>
             ) : null}
           </Panel>
 

@@ -58,7 +58,7 @@ cd contract
 cargo test
 ```
 
-107 unit tests, native target, no network after crates are fetched. The tests sign with a fixed throwaway secp256k1 key that exists only inside the tests; it holds no value and is not a NEAR account key.
+106 unit tests (`cargo test`, 87 `#[test]` functions; the role tests in `tests/roles.rs` expand to 24), native target, no network after crates are fetched. The tests sign with a fixed throwaway secp256k1 key that exists only inside the tests; it holds no value and is not a NEAR account key.
 
 ## Storage
 

@@ -204,3 +204,26 @@ test("verifier wrapper: tamper tests turn a row red; a pending library is unchec
   assert.deepEqual(s.pending, ["verdict-signatures"]);
   assert.equal(s.green, false);
 });
+
+test("what-if engine: certified inputs reproduce both certificates; the T1 flag on H-RE-01 takes Harbor to 51.59 red; edits are labelled", async () => {
+  const { runWhatIf, isWhatIf, T1_PRESET, editTeeStore } = await import("../whatif.mjs");
+  const fixtures = json("spec/nav/fixtures.json");
+  const loanMap = json("web/data/loan-map.json").loans;
+  const teeStore = teeStoreFrom(REC);
+  const base = runWhatIf({ fixtures, loanMap, teeStore, teeEdits: {} });
+  for (const r of base) assert.equal(compareWithCertificate(r, REC.funds.find((f) => f.fund_id === r.fundId).certificate).match, true, r.fundId);
+  const t1 = runWhatIf({ fixtures, loanMap, teeStore, teeEdits: { [T1_PRESET.loanId]: T1_PRESET } });
+  const h = t1.find((r) => r.fundId === "harbor-credit-fund");
+  assert.equal(h.rawX100, 5159);
+  assert.equal(h.band, "red");
+  const m0 = base.find((r) => r.fundId === "meridian-yield-fund"), m1 = t1.find((r) => r.fundId === "meridian-yield-fund");
+  assert.equal(m1.rawX100, m0.rawX100, "a flag on a Harbor loan leaves Meridian unchanged");
+  assert.equal(isWhatIf(fixtures, fixtures, {}), false);
+  assert.equal(isWhatIf(fixtures, fixtures, { "H-RE-01": T1_PRESET }), true);
+  const edited = JSON.parse(JSON.stringify(fixtures)); edited.funds[0].headline_nav = 12000000;
+  assert.equal(isWhatIf(fixtures, edited, {}), true);
+  const pdRun = runWhatIf({ fixtures: edited, loanMap, teeStore, teeEdits: {} });
+  assert.notEqual(pdRun.find((r) => r.fundId === "harbor-credit-fund").rawX100, base.find((r) => r.fundId === "harbor-credit-fund").rawX100);
+  assert.deepEqual(teeStore, teeStoreFrom(REC), "editTeeStore never mutates the live store");
+  assert.equal(Object.keys(editTeeStore(teeStore, loanMap, { "NOPE-1": T1_PRESET })).length, Object.keys(teeStore).length);
+});

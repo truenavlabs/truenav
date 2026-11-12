@@ -271,3 +271,16 @@
   .tn { display: block; background: #fff; color: #000; }
   .tn .sb, .tn .tb, .tn .helpfab, .tn .helppanel, .tn .ft, .tn .tickerslot { display: none; }
 }
+/* engine controls */
+.tn .ctlgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 14px; }
+.tn .ctl { display: flex; flex-direction: column; gap: 4px; }
+.tn .ctl > span { font-size: 12px; color: var(--text); }
+.tn .ctl > small { font-size: 11px; color: var(--muted); line-height: 1.35; }
+.tn .ctl input, .tn .ctl select { width: 100%; }
+.tn .ctl.changed input, .tn .ctl.changed select { border-color: var(--yellow); }
+.tn .pill-bar { display: grid; grid-template-columns: 92px 1fr 64px; gap: 8px; align-items: center; font-size: 12px; margin: 4px 0; }
+.tn .pill-bar .tr { height: 8px; border-radius: 4px; background: var(--border2); overflow: hidden; }
+.tn .pill-bar .tr i { display: block; height: 100%; background: var(--cyan); }
+.tn .pill-bar.neg .tr i { background: var(--red); }
+.tn .wi { border: 1px solid var(--yellow); }
+.tn .dt td select, .tn .dt td input[type=number] { padding: 2px 6px; font-size: 12px; }

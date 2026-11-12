@@ -1,0 +1,853 @@
+{
+ "note": "Recorded read of the live registry, for offline fallback and tests. Not live data.",
+ "contract": "registry.tnlab-368aa2.testnet",
+ "network": "testnet",
+ "state": "live",
+ "errors": [],
+ "attempted": 89,
+ "rpc": "https://test.rpc.fastnear.com",
+ "block": {
+  "height": 277405640,
+  "hash": "24FybvVdXurVWkYiRPzvuvJBrCrE8dpiEDK17JBKXF1W"
+ },
+ "blockTime": 1794511383473,
+ "readAt": "2026-11-12T19:23:08.037Z",
+ "durationMs": 2148,
+ "codeHash": "9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o",
+ "storageBytes": 399065,
+ "roles": {
+  "admin": "tnlab-368aa2.testnet",
+  "registrar": "tnlab-368aa2.testnet",
+  "pauser": "pauser.tnlab-368aa2.testnet",
+  "servicer": "servicer.tnlab-368aa2.testnet",
+  "paused": false
+ },
+ "signers": [
+  "0x6994c1391f4244185497aa2afa8e14f5790314b0"
+ ],
+ "teeSigners": [
+  {
+   "address": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+   "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+   "attestation_ref": "tee/attest.mjs nonce c7fca6ba41b11f3e88701ac5a0ee644deb4889b8d5b382f2e6f64a4c0dfb1f6e at 2026-11-11T19:15:10.859Z",
+   "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+   "registered_at_ms": 1794424871781
+  }
+ ],
+ "pledgeKey": "0x6994c1391f4244185497aa2afa8e14f5790314b0",
+ "pledgeSigners": [],
+ "totalSupply": 16,
+ "metadata": {
+  "spec": "nft-1.0.0",
+  "name": "TrueNav loan pledge (testnet demo)",
+  "symbol": "TNPLEDGE",
+  "icon": null,
+  "base_uri": null,
+  "reference": null,
+  "reference_hash": null
+ },
+ "sourceMetadata": {
+  "version": "0.1.0",
+  "link": "https://github.com/truenavlabs/truenav",
+  "standards": [
+   {
+    "standard": "nep330",
+    "version": "1.3.0"
+   }
+  ],
+  "build_info": null
+ },
+ "funds": [
+  {
+   "fund_id": "harbor-credit-fund",
+   "fund": {
+    "fund_id": "harbor-credit-fund",
+    "account_id": "harbor.tnlab-368aa2.testnet",
+    "manager_id": "mgr-harbor.demo"
+   },
+   "certificate": {
+    "certificate": {
+     "fund_id": "harbor-credit-fund",
+     "fund_account": "harbor.tnlab-368aa2.testnet",
+     "manager_id": "mgr-harbor.demo",
+     "status": "scored",
+     "score": 99,
+     "band": "green",
+     "raw_x100": 9917,
+     "true_val_cents": "966511000",
+     "true_range_cents": "34555424",
+     "policy_nav_cents": "950000000",
+     "headline_cents": "950000000",
+     "blocked_attempts": 0,
+     "data_asof_ms": 1794303689037,
+     "signed_at_ms": 1794411689037,
+     "engine_commit": "d837036"
+    },
+    "signer": "0x6994c1391f4244185497aa2afa8e14f5790314b0",
+    "stored_at_ms": 1794411689989
+   },
+   "certCount": 1,
+   "certHistory": [
+    1794411689037
+   ],
+   "attempts": {
+    "count": 0,
+    "attempts": []
+   },
+   "alerts": [],
+   "alertCount": 0
+  },
+  {
+   "fund_id": "meridian-yield-fund",
+   "fund": {
+    "fund_id": "meridian-yield-fund",
+    "account_id": "meridian.tnlab-368aa2.testnet",
+    "manager_id": "mgr-meridian.demo"
+   },
+   "certificate": {
+    "certificate": {
+     "fund_id": "meridian-yield-fund",
+     "fund_account": "meridian.tnlab-368aa2.testnet",
+     "manager_id": "mgr-meridian.demo",
+     "status": "scored",
+     "score": 43,
+     "band": "red",
+     "raw_x100": 4284,
+     "true_val_cents": "309297000",
+     "true_range_cents": "36143458",
+     "policy_nav_cents": "343500000",
+     "headline_cents": "373500000",
+     "blocked_attempts": 1,
+     "data_asof_ms": 1794238889037,
+     "signed_at_ms": 1794411689037,
+     "engine_commit": "d837036"
+    },
+    "signer": "0x6994c1391f4244185497aa2afa8e14f5790314b0",
+    "stored_at_ms": 1794411693532
+   },
+   "certCount": 1,
+   "certHistory": [
+    1794411689037
+   ],
+   "attempts": {
+    "count": 1,
+    "attempts": [
+     {
+      "attempt_id": "attempt-1",
+      "at_ms": 1794411700818
+     }
+    ]
+   },
+   "alerts": [
+    1794411700818
+   ],
+   "alertCount": 1
+  }
+ ],
+ "loans": [
+  {
+   "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
+   "owner_id": "meridian.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411669797,
+   "fund_id": "meridian-yield-fund",
+   "lock": {
+    "fund_id": "meridian-yield-fund",
+    "locked_at_ms": 1794411669797
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "d19ab406c8d9f62c372a18cf74f0a00726dba378c4be3935d872a4f40702ac59",
+    "response_sha256": "c5dca1b5a867f6bde985fd2b899e575e3365f7cc7c58beff9874942664c3352f",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425472742
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
+    "owner_id": "meridian.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411669797",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
+   "owner_id": "meridian.tnlab-368aa2.testnet",
+   "asset_type": "invoices",
+   "issued_at_ms": 1794411682005,
+   "fund_id": "meridian-yield-fund",
+   "lock": {
+    "fund_id": "meridian-yield-fund",
+    "locked_at_ms": 1794411682005
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "384a3b2f212662819b9e573808d9d57b8236be7e3bbe468ee8b53c22d72e3415",
+    "response_sha256": "61c94d5836ce96f939b2ff1975a2713ae6502044a8cbd1cd860d48b15e8933ef",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425483612
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
+    "owner_id": "meridian.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411682005",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"invoices\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
+   "owner_id": "meridian.tnlab-368aa2.testnet",
+   "asset_type": "invoices",
+   "issued_at_ms": 1794411673455,
+   "fund_id": "meridian-yield-fund",
+   "lock": {
+    "fund_id": "meridian-yield-fund",
+    "locked_at_ms": 1794411673455
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "990014f310707993c5c3f2c1d5dd925b4e8f16b103f480847cbcc71a391e116a",
+    "response_sha256": "1633e3b880bc5b9723d8a3a263a1b9c7907978d373b3a7a7f777047167da471d",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425476501
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
+    "owner_id": "meridian.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411673455",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"invoices\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "invoices",
+   "issued_at_ms": 1794411657308,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411657308
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "2628393ed826596224c879a1c6f3db48343f3719e7993a485ffcf3bca0e2d19f",
+    "response_sha256": "5c30c40ce5e198c9be6f86513a7bc0da06b4da64bf4c61045114659e029b9ef1",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425461519
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411657308",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"invoices\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411649367,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411649367
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "8a3b414e1bb0f5f0c95ce3f524b4c11b48b2ce96b56f4f2051b79e4f5de62f6f",
+    "response_sha256": "032649b218aae76f0ad9134ce75287069c48972aa721985716e6d6fae5e967d2",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425454240
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411649367",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411637581,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411637581
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "07b8848e22a3100d617756393cb6103e88570e278caa98152e95a8e83b90b89a",
+    "response_sha256": "88852cacbb4489d58e2ab1b64afa4eb17196eee10a0f7fab002188e11fc5052f",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425442577
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411637581",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411641201,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411641201
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "7b24d54697e0f9827c56f4a6cbcd78cd271704a8dd78fb7a87339535d3458828",
+    "response_sha256": "af5e3be491b5139b6c72a1dcc58504e6ebbe582120611ad2c599b6581f43a117",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425446910
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411641201",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "invoices",
+   "issued_at_ms": 1794411653552,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411653552
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "4409068303eabe4962562ed9289c35b860092e069fd7657b24b07be73ad82c11",
+    "response_sha256": "82aedc31b6090ecd56066c90aa3a1989ee8394394e71854fc1aa109a6924c26f",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425457797
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411653552",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"invoices\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411620635,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411620635
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "b35cffcca3557a21c3728e862d3de75766a6a851036b3c229376a714ed71a38e",
+    "response_sha256": "f0c6f6c4e5793b9a35fdfeb7ed293c7e163a1494826355341511f3fa582f3d9a",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425425728
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411620635",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "invoices",
+   "issued_at_ms": 1794411661449,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411661449
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "1aa1836750a6fbbf1f58b1039bd1173e47116192236aa11d897470101db499d9",
+    "response_sha256": "e556902ffda7120d36846b9a869f6504026485463794e8ce92d781f98510f71c",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425465145
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411661449",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"invoices\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411645401,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411645401
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "a82d0d1a3fb50140ba53006cf1913a2dd3f38ec117883c3f61b062c629d39a07",
+    "response_sha256": "65d05dedeaebe9ba8a89d680ccbd6881662e7a3e02b3d98e449095a77ce4c60b",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425450724
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411645401",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
+   "owner_id": "meridian.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411665563,
+   "fund_id": "meridian-yield-fund",
+   "lock": {
+    "fund_id": "meridian-yield-fund",
+    "locked_at_ms": 1794411665563
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "dc700cfd01a0b3224da97f877acf92cf89c37f362f17128a1b3d34276b35e7ed",
+    "response_sha256": "83a7e2593db49656b19a72d5f369b085d39ac274f58ba56fa9ed9a147a4fd4fb",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425469266
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
+    "owner_id": "meridian.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411665563",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411624949,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411624949
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "80c3bce4c72810f5195cb41c3cbdaff7da4d8a6abd1d24587ef2f1648e53c5c1",
+    "response_sha256": "88699faeeca893905a138b02c7f409dfe6753133845b85aa9bffa7c4509b35be",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425429932
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411624949",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411629245,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411629245
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "c6f6d4621c1b9af4984e317ecbfdd14cdbb8face10d612a56ff61107a573bb3e",
+    "response_sha256": "d5fb3486a48e6267463cdc52f493d8ded6b2a4bdd40f1a7da1d3ce68fa12e561",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425434160
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411629245",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
+   "owner_id": "meridian.tnlab-368aa2.testnet",
+   "asset_type": "invoices",
+   "issued_at_ms": 1794411677742,
+   "fund_id": "meridian-yield-fund",
+   "lock": {
+    "fund_id": "meridian-yield-fund",
+    "locked_at_ms": 1794411677742
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "4a3516c8ba0b6d617c11b068692f37e705d45d030da143598ae17d4326130189",
+    "response_sha256": "b7d7bbd9a24a6c39f81db1fc7dbd91e65986f88f0f4ce0e28e42fd5ef5ab9a6e",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425479737
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
+    "owner_id": "meridian.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411677742",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"invoices\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  },
+  {
+   "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
+   "owner_id": "harbor.tnlab-368aa2.testnet",
+   "asset_type": "real_estate",
+   "issued_at_ms": 1794411633255,
+   "fund_id": "harbor-credit-fund",
+   "lock": {
+    "fund_id": "harbor-credit-fund",
+    "locked_at_ms": 1794411633255
+   },
+   "latest": {
+    "verdict": "pass",
+    "anomalies": [],
+    "signer": "0x2665cce942fa427ef30d87f4b0bff67fb7645462",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "request_sha256": "66eea49fabd55ad020fafc8d20782338a922e179943f373408d71fd46ae82a56",
+    "response_sha256": "3dd7e027d333aa446260768998cd24326c8c506e0c9370d43441e996878fb759",
+    "attestation_sha256": "05d451cc07311890cda19795b31e06e61111ddf70385e1ff99cd24a095d92657",
+    "expires_at_ms": 1797016506416,
+    "submitted_by": "servicer.tnlab-368aa2.testnet",
+    "at_ms": 1794425438355
+   },
+   "verdictCount": 1,
+   "flagCount": 0,
+   "token": {
+    "token_id": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
+    "owner_id": "harbor.tnlab-368aa2.testnet",
+    "metadata": {
+     "title": "TrueNav loan pledge",
+     "description": null,
+     "media": null,
+     "media_hash": null,
+     "copies": 1,
+     "issued_at": "1794411633255",
+     "expires_at": null,
+     "starts_at": null,
+     "updated_at": null,
+     "extra": "{\"asset_type\":\"real_estate\"}",
+     "reference": null,
+     "reference_hash": null
+    },
+    "approved_account_ids": {}
+   }
+  }
+ ]
+}

@@ -12,7 +12,7 @@ TrueNav informs only. It does not block any transfer. Testnet and fictional data
 
 ## Try it
 
-No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Everything runs offline or against public testnet views. Steps 1 to 6 were re-run from a fresh checkout of `main` at `5833c91` on 12 Nov 2026 (Asia/Bangkok, UTC+7), on Linux x64 with Node v24.22.1, npm 11.21.1, Python `jsonschema` 4.26.0 and system Rust 1.85.1 (no Rust 1.99.0). All six took about 2 min 15 s together; `npm test` is the long step. Full expected output for each step is in [Expected output](#expected-output).
+No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Everything runs offline or against public testnet views. Steps 1 to 6 were re-run from a fresh checkout of `main` at `5833c91` on 12 Nov 2026 (Asia/Bangkok, UTC+7), and step 3 again after the RT2 tests below were added, on Linux x64 with Node v24.22.1, npm 11.21.1, Python `jsonschema` 4.26.0 and system Rust 1.85.1 (no Rust 1.99.0). All six took about 2 min 15 s together; `npm test` is the long step. Full expected output for each step is in [Expected output](#expected-output).
 
 ```bash
 npm ci
@@ -28,7 +28,7 @@ npm run check:fixtures
 2. Do: `npm run judge -- --replay`
    See: one `PASS` line for each of 10 stages (S1 fixtures, S2 tamper, S3 engine, S4 v3 pin, S5 failed head, S6 paid report, S7 dashboard data, S8 mirror, S9 attest local subset, S10 stamp), then `judge: 10 of 10 stages PASS, 0 skipped not verified, ok true`, and exit 0. It runs offline in about 14 s (13.6 and 13.7 s measured on 12 Nov 2026, 14.1 s on a second fresh clone the same day) and writes `out/judge-replay.json`. Details in [Step 2](#step-2-npm-run-judge-----replay).
 3. Do: `npm test`
-   See: `ℹ tests 492`, `ℹ pass 491`, `ℹ fail 0`, `ℹ skipped 1`, then `All worked example numbers match.` Takes about 115 s (114.7 and 112.2 s measured on 12 Nov 2026). The 1 skipped test is the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs`. It needs Rust 1.99.0 cargo (`rustup +1.99.0`, or cargo 1.99 on `PATH`) and prints that reason when it is missing. With Rust 1.99.0 on `PATH` the expected counts are `tests 492`, `pass 492`, `skipped 0` (reported from another machine on the same tree; not reproduced on the machine above). The four Python schema tests need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON` (CI pins 4.23.0; 4.26.0 also passes). Without it they are skipped as well, so up to 5 tests can be skipped, and the suite still exits 0. When the output is not a terminal, the same counts print as `# tests 492`, `# pass 491`.
+   See: `ℹ tests 498`, `ℹ pass 497`, `ℹ fail 0`, `ℹ skipped 1`, then `All worked example numbers match.` Takes about 2 minutes (116.6 s measured on 12 Nov 2026; 114.7 s for the 492 tests before the RT2 tests were added). The 1 skipped test is the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs`. It needs Rust 1.99.0 cargo (`rustup +1.99.0`, or cargo 1.99 on `PATH`) and prints that reason when it is missing. With Rust 1.99.0 on `PATH` the expected counts are `tests 498`, `pass 498`, `skipped 0` (inferred: `492 / 492 / 0` was reported from another machine before the 6 RT2 tests were added; not reproduced on the machine above). The four Python schema tests need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON` (CI pins 4.23.0; 4.26.0 also passes). Without it they are skipped as well, so up to 5 tests can be skipped, and the suite still exits 0. When the output is not a terminal, the same counts print as `# tests 498`, `# pass 497`.
 4. Do: `npm run demo`
    See: `T1-altered-amount ... -> flag amount_mismatch`, `T2-hidden-injection ... -> flag amount_mismatch, injection_attempt`, `T3-duplicate-as-new ... -> flag duplicate_document`, `honest documents: 16 of 16 pass, every signature checked`, then Harbor `99.17 green` and, after the T1 flag, `51.59 red`.
 5. Do: `npm run eval`
@@ -67,7 +67,7 @@ How it behaves:
 - Offline. Each stage runs as a child process with a fixed minimal environment (no keys, RPC URLs or accounts from your shell) and loads `judge/no-network.mjs`, which refuses outside network calls. Any refused call fails that stage.
 - Exit 0 only if every selected stage passes; 1 on any failure; 2 on a usage error.
 - `out/judge-replay.json` follows `judge/summary.schema.json`. It has each stage's status, claim and evidence, the pins, any skips, and `evidence_hash`, the sha256 of the canonical summary without its `ephemeral` part (time, durations, Node version, fixture days left). The hash includes the commit id, so it differs per commit.
-- `--with-tests` adds `npm test` as stage TESTS. It ends with `judge: 11 of 11 stages PASS` when every selected npm test passes. Skipped tests, if any, are listed as not verified. The `npm test` counts themselves are in [Step 3](#step-3-npm-test) (12 Nov 2026: 492 tests, 491 pass, 0 fail, 1 skipped without Rust 1.99.0).
+- `--with-tests` adds `npm test` as stage TESTS. It ends with `judge: 11 of 11 stages PASS` when every selected npm test passes. Skipped tests, if any, are listed as not verified. The `npm test` counts themselves are in [Step 3](#step-3-npm-test) (12 Nov 2026: 498 tests, 497 pass, 0 fail, 1 skipped without Rust 1.99.0).
 - `--live` is not built. It prints `--live is not built: live reads run in CI only` and exits 2. The live reads are the optional steps below.
 - If this machine cannot listen on 127.0.0.1, the judge prints a `WARN` line first, saying loopback is unavailable and that S5, S6, S7 and S8 will fail, and each of those failures is labelled "this is a sandbox limit, not a product failure". Those four stages start a local API or a local EVM.
 
@@ -87,8 +87,8 @@ npm test
 ```
 
 ```
-ℹ tests 492
-ℹ pass 491
+ℹ tests 498
+ℹ pass 497
 ℹ fail 0
 ℹ skipped 1
 ```
@@ -209,10 +209,10 @@ Contract claims run in CI job `contract` (`cargo test` in `contract/`). It needs
 | The contract stores a TEE verdict only if the signature recovers (`env::ecrecover`) to a registered TEE signer. Edited replies, unregistered signers, wrong contract or network, expired and replayed verdicts are refused. | `contract/src/lib.rs`, `contract/tests/tee_verdicts.rs` | Same CI job |
 | Each role (admin, registrar, pauser, servicer) is refused every other role's job. | `contract/tests/roles.rs` | Same CI job |
 | The TEE flags an altered amount, a hidden prompt injection and a reused document, and passes 16 of 16 honest documents. Every reply signature is checked. | `npm run demo`, judge S2 | Run locally, 12 Nov 2026 |
-| Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. | `npm test` (ends with `node spec/nav/check.mjs`), judge S3 | Run locally on 12 Nov 2026: 492 tests, 491 pass, 0 fail, 1 skipped (OutLayer output parity, needs Rust 1.99.0) |
+| Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. | `npm test` (ends with `node spec/nav/check.mjs`), judge S3 | Run locally on 12 Nov 2026: 498 tests, 497 pass, 0 fail, 1 skipped (OutLayer output parity, needs Rust 1.99.0) |
 | TEE eval: 126 signed replies, 0 extra fields, 100% precision and recall on this synthetic set. | `npm run eval`, judge S3; limits in `tee/eval/REPORT.md` | Run locally, 12 Nov 2026 |
 | Recorded verdicts are at least 10 days from expiry and match the published attestation report. | `npm run check:fixtures`, judge S1 | Run locally, 12 Nov 2026 |
-| On a failed head, `/report` returns 409 `run_failed`, the entitlement is not used, and the agent buys nothing. This holds when the head the API reads is failed: the API refuses before it redeems. One window is open: see RT2-07 in [Security and limits](#security-and-limits). | `api/test/failed-head.test.mjs`, `agent/test/failed-head.test.mjs` (in `npm test`), judge S5 | Passed locally, 12 Nov 2026. The RT2-07 window has no test |
+| On a failed head, `/report` returns 409 `run_failed`, the entitlement is not used, and the agent buys nothing. This holds when the head the API reads is failed: the API refuses before it redeems. One window is open: see RT2-07 in [Security and limits](#security-and-limits). | `api/test/failed-head.test.mjs`, `agent/test/failed-head.test.mjs` (in `npm test`), judge S5; the RT2-07 window in `tests/security/rt2-report-race.test.mjs` | Passed locally, 12 Nov 2026 |
 | `/report` without an entitlement returns 402; a one-use entitlement works once. | `api/test/api.test.mjs` (in `npm test`), judge S6 | Passed locally, 12 Nov 2026 |
 | The agent accepts only the engine hash pinned in `receipts/v3-build.json`. Any other engine is declined `engine_hash`. | `agent/test/engine-pin.test.mjs` (in `npm test`), judge S4 | Passed locally, 12 Nov 2026 |
 | A wasm swapped after stamping is detected as stale. | `receipts/tests/wasm-stamp-integrity.test.mjs` (in `npm test`), judge S10 | Passed locally, 12 Nov 2026 |
@@ -342,10 +342,10 @@ Open items, all Low or Info. None of them changes the offline judge path. Chain 
 | TEE signer age | A registered TEE signer has no expiry or age check on chain. Each verdict binding may expire at most 30 days (plus a 1 hour margin) after it is submitted, and the registrar removes a signer by hand. | `contract/src/lib.rs` | Open |
 | Upgrade authority key | One full-access key on `registry.tnlab-368aa2.testnet` can replace the contract code. No multisig or DAO. | Roles and keys above | Disclosed |
 | Storage headroom (N-01) | `registry.tnlab-368aa2.testnet` has a balance of 3.99694 NEAR and uses 399065 bytes. At 1e19 yoctoNEAR per byte that leaves about 628 bytes (about 0.0063 NEAR). The next write, such as a new verdict or certificate, is likely to fail until the account is topped up. Reads are not affected. | RPC `view_account` | Open, Low |
-| RT2-01 | The committed `receipts/dist` wasm files do not match the pins in `receipts/pinned-builds.json`, so `receipts/deploy-testnet.mjs` refuses them (sha256 re-checked 12 Nov 2026). | `receipts/` | Open |
-| RT2-02 | `stamp_failure` in `receipts/src/lib.rs` treats a stored head as failed by searching its text for `"head_status":"failed"` instead of parsing it. For v3, the schema sets `additionalProperties: false` on every object, so a nested `head_status` key is refused before storage. No test covers this yet. | `receipts/src/lib.rs` | Info, not fixed |
-| RT2-07 | `/report` reads the latest head once, then redeems. If that head is failed, it returns 409 and redeems nothing (tested). If a new failed head is stored after that read and before the redeem, the use is spent and the reply is the earlier good receipt it read. No test covers this window. | `api/server.mjs` | Info, not fixed |
-| RT2-08 | `plainCallArgs` checks the call arguments and returns the same object, so a getter could return a different value when the arguments are serialized. Current callers pass literals. Its extra type refusals (cycles, `Map`, `Set`, `Date`, boxed values, functions, `toJSON`, `Infinity`) have no test yet. | `certify/call-args.mjs` | Info, not fixed |
+| RT2-01 | The committed `receipts/dist` wasm files do not match the pins in `receipts/pinned-builds.json`, so `receipts/deploy-testnet.mjs` refuses them (sha256 re-checked 12 Nov 2026; the refusal is tested in `receipts/tests/deploy-args.test.mjs`). `tests/security/rt2-pins.test.mjs` checks that every copy of the engine v3 pin and the receipts pin agree. | `receipts/` | Open |
+| RT2-02 | `stamp_failure` in `receipts/src/lib.rs` treats a stored head as failed by searching its text for `"head_status":"failed"` instead of parsing it. For v3, the schema sets `additionalProperties: false` on every object, so a nested `head_status` key is refused before storage. `receipts/tests/rt2_n6.rs` checks that refusal at every object path of the golden v3 vectors; it runs under `cargo test` in `receipts/` (CI), and was not run locally. | `receipts/src/lib.rs` | Info, not fixed |
+| RT2-07 | `/report` reads the latest head once, then redeems. If that head is failed, it returns 409 and redeems nothing (tested). If a new failed head is stored after that read and before the redeem, the use is spent and the reply is the earlier good receipt it read. `tests/security/rt2-report-race.test.mjs` (in `npm test`) records this behaviour. | `api/server.mjs` | Info, not fixed |
+| RT2-08 | `plainCallArgs` checks the call arguments and returns the same object, so a getter could return a different value when the arguments are serialized. Current callers pass literals. `tests/security/rt2-call-args.test.mjs` (in `npm test`) checks its refusals of cycles, `Map`, `Set`, `Date`, boxed values, functions, `toJSON` and `Infinity`, and records the getter behaviour. | `certify/call-args.mjs` | Info, not fixed |
 
 ## Hackathon disclosures
 

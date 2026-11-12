@@ -238,6 +238,8 @@ jobs:
         run: npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet
       - name: live fingerprints, earlier instance tnlab-718ca9
         run: npm run verify:fingerprints
+      - name: "RT-17: exactly 1 full-access key on registry.tnlab-368aa2.testnet and tnlab-368aa2.testnet (read-only RPC)"
+        run: npm run rt17:check
       - name: live chain replies, current registry tnlab-368aa2
         run: npm run check:chain-replies
       - name: live chain replies, earlier instance tnlab-718ca9

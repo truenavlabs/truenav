@@ -13,11 +13,17 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { verifyReport } from "./attest.mjs";
 import { view, DEFAULT_CONTRACT, DEFAULT_RPC } from "../web/chain.mjs";
+import { readStatus } from "./status.mjs";
 
 const root = new URL("../", import.meta.url);
-const raw = Buffer.from(readFileSync(new URL("tee/fixtures/attestation-report.json.b64", root), "utf8").replace(/\s+/g, ""), "base64");
+// Which recorded set: the earlier instance's (tee/fixtures/verdicts.json, the default) while tee/status.json says
+// pending; the current registry's set once it says live. TRUENAV_VERDICTS and TRUENAV_REPORT (repository paths) override.
+const status = readStatus(root);
+const verdictsPath = process.env.TRUENAV_VERDICTS || (status.tee === "live" ? status.verdicts_file : "tee/fixtures/verdicts.json");
+const reportPath = process.env.TRUENAV_REPORT || (status.tee === "live" ? status.report_file : "tee/fixtures/attestation-report.json.b64");
+const raw = Buffer.from(readFileSync(new URL(reportPath, root), "utf8").replace(/\s+/g, ""), "base64");
 const sha = createHash("sha256").update(raw).digest("hex");
-const tee = JSON.parse(readFileSync(new URL("tee/fixtures/verdicts.json", root), "utf8"));
+const tee = JSON.parse(readFileSync(new URL(verdictsPath, root), "utf8"));
 const contract = process.env.TRUENAV_CONTRACT || tee.contract_id || DEFAULT_CONTRACT;
 let ok = true;
 const line = (pass, what) => {

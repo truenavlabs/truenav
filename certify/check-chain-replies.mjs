@@ -48,9 +48,11 @@ export function callProblem(argsBase64) {
 export const isOurs = (account, parent, roleHolders) => !!account && (account === parent || account.endsWith(`.${parent}`) || roleHolders.includes(account));
 
 async function main() {
-  // Recorded submit_verdict history lives on the earlier instance. The current
-  // registry (DEFAULT_CONTRACT) has none: TEE verdicts are pending / not run.
-  const contract = process.env.TRUENAV_CONTRACT || "registry.tnlab-718ca9.testnet";
+  // Recorded submit_verdict history lives on the earlier instance while tee/status.json says pending: the current
+  // registry (DEFAULT_CONTRACT) has none. Once the status is live, the current registry is the default.
+  const { readStatus } = await import("../tee/status.mjs");
+  const status = readStatus();
+  const contract = process.env.TRUENAV_CONTRACT || (status.tee === "live" ? status.registry : "registry.tnlab-718ca9.testnet");
   const network = contract.endsWith(".near") ? "main" : "test";
   const API = process.env.TRUENAV_TX_API || `https://tx.${network}.fastnear.com`;
   const parent = contract.split(".").slice(1).join(".");

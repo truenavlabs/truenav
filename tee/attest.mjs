@@ -14,8 +14,8 @@ import { getCollateralAndVerify } from "@phala/dcap-qvl";
 
 export const API = "https://cloud-api.near.ai/v1";
 export const MODEL = "Qwen/Qwen3-VL-30B-A3B-Instruct";
-/// A model that currently has an attestation provider. `npm run tee:attest` uses this unless NEAR_AI_MODEL is set.
-export const ATTESTABLE_MODEL = "z-ai/glm-5.3-flash";
+/// The default model for `npm run tee:attest` and `npm run tee:underwrite` is MODEL (the model the live verdicts are
+/// signed by). NEAR_AI_MODEL, then TRUENAV_ATTEST_MODEL, override it.
 export const ACCEPTED_TCB = ["UpToDate"];
 const API_KEY = process.env.NEAR_AI_CLOUD_API_KEY || process.env.NEARAI_API_KEY || "";
 
@@ -25,8 +25,8 @@ export function authHeaders() {
   return headers;
 }
 
-export function modelFromEnv(fallback = ATTESTABLE_MODEL) {
-  return process.env.NEAR_AI_MODEL || process.env.TRUENAV_ATTEST_MODEL || fallback;
+export function modelFromEnv(fallback = MODEL, env = process.env) {
+  return env.NEAR_AI_MODEL || env.TRUENAV_ATTEST_MODEL || fallback;
 }
 
 const hexBytes = (v) => Buffer.from(String(v).replace(/^0x/i, ""), "hex");

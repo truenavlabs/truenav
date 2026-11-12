@@ -16,7 +16,9 @@
 //     --out tee/fixtures/verdicts-368aa2.json --report-out tee/fixtures/attestation-report-368aa2.json.b64
 // then check it with: node tee/verdicts-file.mjs tee/fixtures/verdicts-368aa2.json --contract registry.tnlab-368aa2.testnet
 //
-// The NEAR AI Cloud key is injected by the network proxy (or set NEAR_AI_CLOUD_API_KEY); never stored here.
+// The NEAR AI Cloud key is read from NEAR_AI_CLOUD_API_KEY or NEARAI_API_KEY and sent as a Bearer header (tee/attest.mjs
+// authHeaders). With neither set, requests carry no Authorization header; this code does not add one. The key is never
+// written to a file or printed.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { secp256k1 } from "@noble/curves/secp256k1.js";

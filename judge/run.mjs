@@ -46,8 +46,12 @@ const USAGE = `usage: npm run judge -- --replay [--with-tests]
   --only S1,S4   run only these stages (for tests; the summary is marked partial and ok stays false)
   --out FILE     summary path inside the repo (default out/judge-replay.json)
 
-Live testnet reads (chain:read, verify:attestation, verify:fingerprints, check:chain-replies) are not part of the
-judge; they run as separate CI steps and read the earlier tnlab-718ca9 instance.`;
+S1 also checks the live registry's verdict set named in tee/status.json (registry.tnlab-368aa2.testnet,
+tee/fixtures/verdicts-368aa2.json) offline: binding, lifetime, every signature, the reply rule and the report hash.
+
+Live testnet reads (chain:read, verify:attestation, verify:live-signer, tee:chain-check, check:chain-replies,
+verify:fingerprints) are not part of the judge; they run as separate CI steps against the live
+registry.tnlab-368aa2.testnet. The earlier tnlab-718ca9 instance is read with --contract registry.tnlab-718ca9.testnet.`;
 
 function usage(msg) {
   if (msg) console.error(`judge: ${msg}`);

@@ -4,7 +4,8 @@ import liveRegistryJson from "../../../certify/live-registry.json";
 import verdictsJson from "../../../tee/fixtures/verdicts-368aa2.json";
 
 export type VerdictRecord = {
-  loan_id: string; fund_id: string; loan_hash: string; tampered: string | null;
+  loan_id: string; fund_id: string; loan_hash: string; tampered: { id: string; expected_anomaly: string } | null;
+  tries?: { request_sha256: string; response_sha256: string; verdict: string; anomalies: string[]; checks_passed: boolean }[];
   verdict: { verdict: string; anomalies: string[]; [k: string]: unknown };
   checks: Record<string, boolean>; ok: boolean;
   onchain?: { loan_hash: string; model_id: string; request_sha256: string; response_body: string; signature: string; signer: string; [k: string]: unknown };

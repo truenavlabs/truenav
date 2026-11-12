@@ -286,3 +286,6 @@
 .tn .dt td select, .tn .dt td input[type=number] { padding: 2px 6px; font-size: 12px; }
 /* depth modules embedded in the shell */
 .tn .tn-root.tn-embed { --tn-sans: var(--sans); --tn-mono: var(--mono); background: transparent; padding: 0; max-width: none; font-size: 13px; margin: 0; }
+.tn .crow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 12px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 12.5px; align-items: center; }
+.tn .crow:first-child { border-top: 0; }
+.tn .crow .cd { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }

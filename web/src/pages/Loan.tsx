@@ -93,7 +93,7 @@ export default function Loan({ hash }: { hash: string }) {
           </div>
 
           {rec ? (
-            <Panel className="mt" title="What the enclave checked" sub="The signed reply holds only the loan hash, the binding, the verdict and anomaly codes. No document text. The checks below were run by the verifier when the reply was recorded." tags={<SrcTag tag="recorded" source={`tee/fixtures/verdicts-368aa2.json, signed ${when(VERDICTS.signed_at_ms)}`} />}>
+            <Panel className="mt" title="What the enclave checked" sub="The signed reply holds only the loan hash, the binding, one ok or fail per check, the verdict and anomaly codes. No document text. The checks below were run by the verifier when the reply was recorded." tags={<SrcTag tag="recorded" source={`tee/fixtures/verdicts-368aa2.json, signed ${when(VERDICTS.signed_at_ms)}`} />}>
               <p>Verdict <b>{rec.verdict.verdict}</b>, anomaly codes {rec.verdict.anomalies.length ? rec.verdict.anomalies.join(", ") : "none"}. Bound to <span className="mono">{String(rec.verdict.binding ?? "")}</span>.</p>
               <table className="dt"><thead><tr><th>Verifier check on the signed reply</th><th>Result</th></tr></thead>
                 <tbody>{Object.entries(rec.checks).map(([k, v]) => <tr key={k}><td>{k.replace(/_/g, " ")}</td><td>{v ? <span className="ok">pass</span> : <span className="bad">fail</span>}</td></tr>)}</tbody></table>

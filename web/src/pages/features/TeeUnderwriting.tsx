@@ -7,6 +7,7 @@ import { fundName, short, whenFull } from "../../shell/fmt";
 import { FeatureFrame, Note, PageHead, Panel, SrcTag, StatusChip } from "../../shell/kit";
 import { useRegistry } from "../../shell/store";
 import { sha256Hex } from "../../lib/webhash";
+import { recoverVerdict } from "../../../data/sigs.mjs";
 
 const DOCS = import.meta.glob("../../../../tee/docs/**/*.txt", { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
 const docPath = (r: VerdictRecord) => `../../../../tee/docs/${r.tampered ? `tampered/${r.tampered.id}` : r.loan_id}.txt`;
@@ -23,13 +24,13 @@ function Metrics() {
   const sets = [["Main set", mainMetrics], ["Hold-out set", holdMetrics]] as const;
   return (
     <Panel className="mt" title="How good is it? The eval" sub="126 fictional documents, signed replies, temperature 0, no retries. A perfect score means no failure was found on this small synthetic set, not that it cannot fail." tags={<SrcTag tag="recorded" source="tee/eval/metrics.json, tee/eval/holdout/metrics.json, tee/eval/REPORT.md" />} pad={false}>
-      <table className="dt">
+      <div className="tscroll"><table className="dt">
         <thead><tr><th>Set</th><th className="r">Cases</th><th className="r">Signatures verified</th><th className="r">Recall</th><th className="r">Precision</th><th className="r">False positive rate</th>{Object.keys(mainMetrics.raw.categories).map((k) => <th key={k} className="r">{k}</th>)}</tr></thead>
         <tbody>{sets.map(([name, m]) => (
           <tr key={name}><td>{name}</td><td className="r num">{m.cases}</td><td className="r num">{m.signatures_verified} of {m.cases}</td><td className="r num">{m.raw.recall_flag_pct}%</td><td className="r num">{m.raw.precision_flag_pct}%</td><td className="r num">{m.raw.false_positive_rate_pct}%</td>
             {Object.entries(m.raw.categories).map(([k, c]) => <td key={k} className="r num">{(c as { flagged: number }).flagged} of {(c as { cases: number }).cases}</td>)}</tr>
         ))}</tbody>
-      </table>
+      </table></div>
       <p className="dim" style={{ padding: "8px 12px" }}>Cells per category: documents flagged of documents in the category. Honest documents should never be flagged; every other category should be.</p>
     </Panel>
   );
@@ -53,6 +54,7 @@ export default function TeeUnderwriting({ q }: { q?: URLSearchParams }) {
   const chainLoan = view.loans.find((l) => l.loan_hash === r.loan_hash);
   const onChainHash = !r.tampered ? chainLoan?.latest?.response_sha256 : null;
   const problem = replyProblem(shown);
+  const rec = useMemo(() => (r.onchain ? recoverVerdict(VERDICTS.model, { ...r.onchain, response_body: shown }) : { address: null, error: "no signed reply" }), [r, shown]);
   const liveSigner = (view.teeSigners as { address?: string }[] | undefined)?.[0]?.address ?? (view.teeSigners as unknown as string[] | undefined)?.[0];
   const docLines = (doc ?? "").split("\n");
   const honestLines = new Set((honest ?? "").split("\n"));
@@ -83,11 +85,11 @@ export default function TeeUnderwriting({ q }: { q?: URLSearchParams }) {
         <div className="crow"><span className="cl">Reply follows the reply rule (allowed keys, consistent verdict)</span><span className="cd">{problem ? <span className="bad">{problem}</span> : <span className="ok">pass</span>} <SrcTag tag="computed" source="tee/reply.mjs replyProblem" /></span></div>
         <div className="crow"><span className="cl">sha256 of the reply equals the hash recorded when it was signed</span><span className="cd">{hash === null ? "hashing..." : hash === recorded?.response_sha256 ? <span className="ok">match {short(hash, 8, 6)}</span> : <span className="bad">differs: {short(hash, 8, 6)} vs {short(recorded?.response_sha256, 8, 6)}</span>} <SrcTag tag="computed" source="WebCrypto sha256" /></span></div>
         {!r.tampered ? <div className="crow"><span className="cl">and equals the response hash stored on chain</span><span className="cd">{!onChainHash ? "no verdict read" : hash === onChainHash ? <span className="ok">match</span> : <span className="bad">differs</span>} <SrcTag tag={tag} source="get_latest_verdict" /></span></div> : <div className="crow"><span className="cl">On chain</span><span className="cd dim">Tampered cases were signed by the enclave but not submitted; the registry holds the honest pass.</span></div>}
-        <div className="crow"><span className="cl">Signer recovered from the signature equals the TEE signer on chain ({short(liveSigner ?? VERDICTS.attestation.signers[0]?.signing_address, 6, 4)})</span><span className="cd">{r.checks.recovered_equals_signing_address ? <span className="ok">pass (recorded)</span> : <span className="bad">fail (recorded)</span>} <span className="tp y">in-browser recovery pending library approval</span></span></div>
+        <div className="crow"><span className="cl">Signer recovered now from the signature equals the TEE signer on chain ({short(liveSigner ?? VERDICTS.attestation.signers[0]?.signing_address, 6, 4)})</span><span className="cd">{rec.address && rec.address === String(liveSigner ?? "").toLowerCase() ? <span className="ok">pass: {short(rec.address, 6, 4)}</span> : <span className="bad">fail: recovers to {rec.address ? short(rec.address, 6, 4) : rec.error}</span>} <SrcTag tag="computed" source="secp256k1 recover over EIP-191(model:request_sha256:sha256(reply)), as lib.rs recover_address" /></span></div>
         {Object.entries(r.checks).filter(([k]) => k !== "recovered_equals_signing_address").map(([k, v]) => (
           <div className="crow" key={k}><span className="cl">{k.replace(/_/g, " ")}</span><span className="cd">{v ? <span className="ok">pass</span> : <span className="bad">fail</span>} <SrcTag tag="recorded" source="npm run verify (verifier checks, recorded)" /></span></div>
         ))}
-        {flip ? <Note tone="bad">One byte changed in the reply. The hash no longer matches, so the contract (which recovers the signer from the exact bytes) would refuse it.</Note> : null}
+        {flip ? <Note tone="bad">One byte changed in the reply. Its hash no longer matches and the signature now recovers to a different key, so the contract would refuse it.</Note> : null}
       </Panel>
       <Metrics />
     </>
@@ -107,7 +109,7 @@ export default function TeeUnderwriting({ q }: { q?: URLSearchParams }) {
         notProves={[
           "That the model's judgment is right in general. A TEE proves which code ran, not that the answer is correct.",
           "The eval set is small, synthetic and written by the same team.",
-          "Signature recovery runs in your browser only after the crypto library is approved; until then that row shows the recorded result.",
+          "Which prompt the servicer sent: the signature covers the request hash, not the prompt text.",
         ]}
         run={["npm run demo", "npm run eval", "npm run check:fixtures"]}
         sources={["tee/underwrite.mjs", "tee/reply.mjs", "tee/fixtures/verdicts-368aa2.json", "tee/docs/", "tee/eval/REPORT.md"]}

@@ -328,3 +328,52 @@ test("agent decision port: only the pinned engine is accepted; order matches age
   assert.equal(v3EngineNotPinned({ engine_version_key: "x" }, "x", new Set([pin])), "the stored engine version_key is not a pinned build");
   assert.equal(v3EngineNotPinned({ engine_version_key: pin }, pin, new Set([pin])), null);
 });
+
+// ---- signature recovery (@noble) ----
+import { recoverAllVerdicts, checkCertificates, decodeRecordedTxs, canonicalCertMessage, recoverCertificateTx, flipByte } from "../sigs.mjs";
+import { canonicalMessage as certifyCanonical } from "../../../certify/certificate.mjs";
+import { decodeTx as decodeTxS } from "../tx.mjs";
+
+const sigRead = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8"));
+const REG368 = sigRead("../recorded/registry-368aa2.json");
+const VERD = sigRead("../../../tee/fixtures/verdicts-368aa2.json");
+const ACCEPTED = sigRead("../recorded/tx-cert-accepted.json");
+
+test("signatures: 16 of 16 on-chain verdict replies recover to the registered TEE signer", () => {
+  const tee = REG368.teeSigners[0].address;
+  const r = recoverAllVerdicts({ ...VERD, results: VERD.results.filter((x) => !x.tampered) }, tee);
+  assert.equal(r.total, 16);
+  assert.equal(r.ok, 16);
+  assert.equal(tee, "0x2665cce942fa427ef30d87f4b0bff67fb7645462");
+  const all = recoverAllVerdicts(VERD, tee);
+  assert.equal(all.ok, all.total, "the tampered-document cases are also signed by the enclave");
+});
+
+test("signatures: one flipped byte recovers to another address", () => {
+  const r0 = VERD.results.find((x) => !x.tampered);
+  const r = recoverAllVerdicts({ ...VERD, results: [{ ...r0, onchain: { ...r0.onchain, signature: flipByte(r0.onchain.signature) } }] }, REG368.teeSigners[0].address);
+  assert.equal(r.ok, 0);
+});
+
+test("signatures: certificate message matches certify/certificate.mjs, both accepted certificates recover to the registered test-key signer and equal the stored ones", async () => {
+  const txs = decodeRecordedTxs(ACCEPTED);
+  const c = Object.values(txs)[0].args.certificate;
+  assert.equal(canonicalCertMessage("registry.tnlab-368aa2.testnet", c), certifyCanonical("registry.tnlab-368aa2.testnet", c));
+  const latest = Object.fromEntries(REG368.funds.map((f) => [f.fund_id, f.certificate]));
+  const rows = await checkCertificates({ signers: REG368.signers, latest, txs });
+  assert.equal(rows.length, 2);
+  for (const r of rows) {
+    assert.equal(r.recovered, "0x6994c1391f4244185497aa2afa8e14f5790314b0");
+    assert.equal(r.registered, true);
+    assert.equal(r.sameAsStored, true, `${r.fund_id} tx certificate equals get_latest_certificate`);
+    assert.equal(r.ok, true);
+  }
+  const bad = await checkCertificates({ signers: REG368.signers, latest, txs, flip: true });
+  assert.ok(bad.every((r) => !r.ok));
+});
+
+test("signatures: the refused certificate recovers to a key the registry does not list", () => {
+  const d = decodeTxS(sigRead("../recorded/tx-cert.json").result);
+  const r = recoverCertificateTx(d);
+  assert.ok(r.address && !REG368.signers.includes(r.address), `recovered ${r.address}`);
+});

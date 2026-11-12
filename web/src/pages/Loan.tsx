@@ -7,6 +7,7 @@ import { assetLabel, countdown, fundName, short, usdWhole, when, whenFull } from
 import { ErrorBox, Hash, Note, PageHead, Panel, Q, Skel, SrcTag } from "../shell/kit";
 import { useAsync, useRegistry } from "../shell/store";
 import { sha256Hex } from "../lib/webhash";
+import { recoverVerdict } from "../../data/sigs.mjs";
 import { A } from "../ui";
 import { SLOTS } from "../shell/slots";
 
@@ -18,6 +19,8 @@ export default function Loan({ hash }: { hash: string }) {
   const fx = fixtureLoan(loanId);
   const rc = useRecompute(view).find((x) => x.r.fundId === (known?.fund_id || fx?.fund));
   const rec = recordFor(hash);
+  const [sig, setSig] = useState<{ address: string | null; error?: string } | null>(null);
+  const teeSigner = String((view.teeSigners as { address?: string }[] | undefined)?.[0]?.address ?? "").toLowerCase();
   const [respMatch, setRespMatch] = useState<null | boolean>(null);
   const latest = data?.verdicts?.length ? data.verdicts[data.verdicts.length - 1] : known?.latest ?? null;
   useEffect(() => {
@@ -87,6 +90,9 @@ export default function Loan({ hash }: { hash: string }) {
                   <tr><th>Response sha256</th><td>{short(latest.response_sha256, 10, 8)}</td></tr>
                   <tr><th>Attestation sha256</th><td>{short(latest.attestation_sha256, 10, 8)}</td></tr>
                   <tr><th>Recorded reply hash</th><td>{respMatch === null ? "checking..." : respMatch ? <span className="ok">sha256 of the recorded signed reply equals the on-chain hash</span> : <span className="bad">differs</span>}</td></tr>
+                  {rec?.onchain ? <tr><th>Signature</th><td>{!sig ? <button className="xb sm" data-tour="check-signature" onClick={() => setSig(recoverVerdict(VERDICTS.model, rec.onchain!))}>Check signature</button>
+                    : sig.address && sig.address === teeSigner ? <span className="ok">Signed inside the attested enclave by {short(sig.address, 6, 4)}, the registered TEE signer (recovered now in your browser). The document never touched the chain.</span>
+                    : <span className="bad">recovers to {sig.address ?? sig.error}, not the registered TEE signer</span>}</td></tr> : null}
                 </tbody></table>
               ) : <p className="dim">No verdict on chain.</p>}
             </Panel>

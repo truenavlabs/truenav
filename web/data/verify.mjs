@@ -1,9 +1,11 @@
 // Web wrapper over the verifier data layer (web/verifier). Adds two things the panel needs:
-// 1. Checks that need the signature and hash library show as "unchecked" with a plain reason while @noble is not
-//    approved for the web build (the bundle stubs it; see web/src/lib/crypto-pending.mjs). They never show as passed.
+// 1. A certificate-signatures check: the contract does not store certificate signatures, so this reads the two
+//    accepted submit_certificate transactions from RPC and recovers their signer in the browser (data/sigs.mjs).
 // 2. A tamper test that changes recorded evidence in memory only and re-runs, so a visitor can watch a row turn red.
 import { runVerifierChecks, summarize, CHAIN_CHECK_IDS } from "../verifier/index.mjs";
+import { checkCertificates } from "./sigs.mjs";
 
+// Kept for an old bundle that stubs the crypto library: such a failure shows as "unchecked", never as passed.
 export const PENDING_RE = /crypto library pending approval/;
 export const PENDING_DETAIL = "Needs the signature and hash library, which is pending approval for the web build. Not checked in this browser; run npm run judge or npm run verify:attestation to check it locally.";
 
@@ -12,6 +14,7 @@ export const TAMPERS = Object.freeze({
   signer: "Change one character of the recorded TEE signer address.",
   reply: "Change the verdict inside one recorded signed reply from pass to flag.",
   binding: "Move the recorded verdict expiry by one millisecond, so the binding no longer matches.",
+  cert: "Flip one byte of each certificate signature read from the chain, so it recovers to another key.",
 });
 
 function tampered(evidence, kind) {
@@ -25,6 +28,8 @@ function tampered(evidence, kind) {
     const PASS = '\\"verdict\\":\\"pass\\"';
     const r = ev.verdicts.results.find((x) => x.onchain && typeof x.onchain.response_body === "string" && x.onchain.response_body.includes(PASS));
     if (r) r.onchain.response_body = r.onchain.response_body.replace(PASS, PASS.replace("pass", "flag"));
+  } else if (kind === "cert") {
+    // applied in the certificate-signatures check
   } else if (kind === "binding") {
     ev.verdicts.expires_at_ms = Number(ev.verdicts.expires_at_ms) + 1;
   } else throw new Error(`unknown tamper ${kind}`);
@@ -42,7 +47,27 @@ export async function runWebChecks({ evidence, chain, now, tamper = "none" } = {
     checks = checks.slice();
     checks[i] = await attestationHashWebCrypto(ev, chain, checks[i]);
   }
+  checks = checks.map((c) => (c.id === "certificates" && /cannot re-verify it/.test(c.detail) ? Object.freeze({ ...c, detail: c.detail.replace(/The contract checked each signature at submission and does not store it, so the panel cannot re-verify it\./, "The contract does not store the signature; the last row recovers it from the submit_certificate transaction.") }) : c));
+  if (chain && chain.view) {
+    checks = checks.concat([await certificateSignatures(chain, tamper === "cert")]);
+  }
   return { checks, summary: webSummary(checks), tamper };
+}
+
+/** Certificate signatures recovered now from the submit_certificate transactions. */
+export async function certificateSignatures(chain, flip = false, txs = null) {
+  const base = { id: "certificate-signatures", label: "Certificate signatures recovered", source: "RPC tx (submit_certificate args); get_signers; get_latest_certificate" };
+  try {
+    const signers = await chain.view("get_signers");
+    const latest = {};
+    for (const f of ["harbor-credit-fund", "meridian-yield-fund"]) latest[f] = await chain.view("get_latest_certificate", { fund_id: f });
+    const rows = await checkCertificates({ signers, latest, txs, live: !txs, url: chain.url, flip });
+    const bad = rows.filter((r) => !r.ok);
+    if (bad.length) return Object.freeze({ ...base, state: "fail", detail: bad.map((r) => `${r.fund_id}: ${r.error ? r.error : !r.registered ? `signature recovers to ${r.recovered}, not a registered signer` : "the signed certificate differs from the stored one"}`).join("; ") });
+    return Object.freeze({ ...base, state: "live", detail: `both accepted certificates (${rows.map((r) => r.fund_id).join(", ")}): the EIP-191 signature in each transaction recovered now in this browser to ${rows[0].recovered}, a registered signer, and the signed certificate equals the one the contract stores` });
+  } catch (e) {
+    return Object.freeze({ ...base, state: "unchecked", detail: `could not read the transactions: ${e && e.message ? e.message : e}. Not checked.` });
+  }
 }
 
 async function sha256HexWeb(bytes) {

@@ -1,5 +1,4 @@
-// sha256 with the browser's built-in WebCrypto (no dependency). Async; used where the verifier's sync helper is
-// unavailable because its library is pending approval.
+// sha256 with the browser's built-in WebCrypto. Async; used by pages that hash large inputs (reports, documents).
 const enc = new TextEncoder();
 export async function sha256Hex(data: string | Uint8Array): Promise<string> {
   const bytes = typeof data === "string" ? enc.encode(data) : data;

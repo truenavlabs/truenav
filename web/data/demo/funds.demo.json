@@ -1,0 +1,4223 @@
+{
+  "schema": "truenav-fund-detail-v1",
+  "generator": "web/data/demo/generate.mjs",
+  "generated_from": {
+    "repo_commit": "9fe5985",
+    "fixtures": "spec/nav/fixtures.json",
+    "loans": "tee/loans.json",
+    "docs": "tee/docs/",
+    "verdicts": "tee/fixtures/verdicts-368aa2.json",
+    "cashflow": "cashflow/demo/data.mjs",
+    "engine": "engine/src/score.mjs"
+  },
+  "disclaimer": "Demo data. Fictional funds, managers, borrowers and documents. Testnet demo. Market data is not in this file.",
+  "valuation_time": "2026-11-10T12:00:00Z",
+  "model": {
+    "pd": {
+      "current": 0.02,
+      "dpd_1_30": 0.1,
+      "dpd_31_60": 0.25,
+      "dpd_61_90": 0.45,
+      "dpd_over_90": 1
+    },
+    "lgd": {
+      "real_estate": 0.31,
+      "invoices": 0.67
+    },
+    "source": "spec/nav/fixtures.json"
+  },
+  "funds": [
+    {
+      "fund_id": "harbor-credit-fund",
+      "on_chain": true,
+      "anchors": {
+        "source": "recorded",
+        "registry": "registry.tnlab-368aa2.testnet",
+        "fund_account": "harbor.tnlab-368aa2.testnet",
+        "fund_account_source": "certify/testnet.mjs FUND_ACCOUNT names these testnet accounts. Confirm with get_fund.",
+        "manager_id": "mgr-harbor.demo",
+        "manager_id_source": "spec/nav/fixtures.json certificate.signer",
+        "certificate": {
+          "score": 99,
+          "raw_x100": 9917,
+          "true_val_cents": "966511000",
+          "true_range_cents": "34555424",
+          "policy_nav_cents": "950000000",
+          "headline_cents": "950000000",
+          "blocked_attempts": 0,
+          "band": "green",
+          "status": "scored",
+          "engine_commit": "d837036",
+          "engine_commit_source": "Named in certify/testnet-record.test.mjs. The live certificate's engine_commit must be read with get_latest_certificate."
+        },
+        "loan_hashes": [
+          "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+          "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+          "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
+          "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
+          "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
+          "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
+          "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
+          "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
+          "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
+          "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
+          "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79"
+        ],
+        "carrying_value_cents": "995000000",
+        "open_loans": 11
+      },
+      "profile": {
+        "tag": "demo",
+        "name": "Harbor Credit Fund",
+        "legal_form": "closed-end LP (fictional)",
+        "domicile": "fictional",
+        "strategy": "first-lien real estate and short-dated receivables",
+        "vintage_year": 2025,
+        "inception_date": "2025-03-01",
+        "base_currency": "USD",
+        "target_net_return_bps": 800,
+        "fees": {
+          "management_bps": 125,
+          "performance_bps": 1000,
+          "hurdle_bps": 600
+        },
+        "liquidity": {
+          "redemptions": "quarterly",
+          "notice_days": 60,
+          "lockup_months": 12,
+          "gate_bps": 1000
+        },
+        "service_providers": {
+          "administrator": "Demo Fund Admin (fictional)",
+          "auditor": "Demo Audit LLP (fictional)",
+          "servicer": "TrueNav Labs (testnet servicer)"
+        },
+        "valuation_policy": "amortized cost with markdowns for delinquency (policy NAV)",
+        "reporting": "monthly NAV, quarterly LP letter",
+        "aum_cents": "950000000",
+        "aum_source": "headline NAV from the engine certificate, not a separate valuation"
+      },
+      "manager": {
+        "tag": "demo",
+        "manager_id": "mgr-harbor.demo",
+        "name": "Harbor Credit Partners (fictional)",
+        "founded": 2018,
+        "hq": "fictional",
+        "team": [
+          {
+            "role": "PM",
+            "alias": "Manager A"
+          }
+        ]
+      },
+      "nav_history": [
+        {
+          "month": "2025-12",
+          "reported_nav_cents": "945820000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "965447838",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-01",
+          "reported_nav_cents": "951615000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "966921767",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-02",
+          "reported_nav_cents": "947720000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "965931093",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-03",
+          "reported_nav_cents": "942970000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "964722955",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-04",
+          "reported_nav_cents": "943635000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "964892094",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-05",
+          "reported_nav_cents": "944775000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "965182047",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-06",
+          "reported_nav_cents": "947720000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "965931093",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-07",
+          "reported_nav_cents": "946580000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "965641140",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-08",
+          "reported_nav_cents": "948290000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "966076070",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-09",
+          "reported_nav_cents": "950570000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "966655977",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-10",
+          "reported_nav_cents": "950285000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "966583488",
+          "demo_true_range_cents": "34555424",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-11",
+          "reported_nav_cents": "950000000",
+          "policy_nav_cents": "950000000",
+          "true_val_cents": "966511000",
+          "true_range_cents": "34555424",
+          "tag": "recorded",
+          "source": "engine pins checked on chain by certify/testnet.mjs. Confirm with get_latest_certificate before treating this point as live."
+        }
+      ],
+      "loans": [
+        {
+          "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-01",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-01 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-11",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "179100000",
+              "accrued_cents": "900000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "West"
+              },
+              "sector": "mixed use",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "271199273"
+              },
+              "ltv_bps": 6604,
+              "dscr": 1.21,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-11",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 895500,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "895500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-11",
+                  "amount_cents": "179100000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "180000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "180000000",
+              "expected_loss_cents": "1116000",
+              "true_val_part_cents": "178884000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-02",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-02 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-12",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "149250000",
+              "accrued_cents": "750000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "South"
+              },
+              "sector": "office",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "293222004"
+              },
+              "ltv_bps": 5090,
+              "dscr": 1.17,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-12",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 746250,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "746250",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-12",
+                  "amount_cents": "149250000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "150000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "150000000",
+              "expected_loss_cents": "930000",
+              "true_val_part_cents": "149070000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-03",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-03 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-13",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "139300000",
+              "accrued_cents": "700000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": "Meridian tried to pledge this property and was blocked",
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "South"
+              },
+              "sector": "mixed use",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "269334880"
+              },
+              "ltv_bps": 5172,
+              "dscr": 1.15,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-13",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 696500,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "696500",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-13",
+                  "amount_cents": "139300000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "140000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "140000000",
+              "expected_loss_cents": "868000",
+              "true_val_part_cents": "139132000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-04",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-04 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-14",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "119400000",
+              "accrued_cents": "600000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "Northeast"
+              },
+              "sector": "multifamily",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "189976134"
+              },
+              "ltv_bps": 6285,
+              "dscr": 1.58,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-14",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 597000,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "597000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-14",
+                  "amount_cents": "119400000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "120000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "120000000",
+              "expected_loss_cents": "744000",
+              "true_val_part_cents": "119256000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-05",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-05 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-15",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "99000000",
+              "accrued_cents": "1000000",
+              "repaid_cents": "0",
+              "bucket": "dpd_1_30",
+              "dpd": 9,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "West"
+              },
+              "sector": "multifamily",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "183503244"
+              },
+              "ltv_bps": 5395,
+              "dscr": 0.8,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-15",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "delinquent",
+              "monthly_interest_cents": 495000,
+              "missed_months": [
+                "2026-11"
+              ],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "495000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-15",
+                  "amount_cents": "99000000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "100000000",
+              "pd": 0.1,
+              "lgd": 0.31,
+              "mark_cents": "100000000",
+              "expected_loss_cents": "3100000",
+              "true_val_part_cents": "96900000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-06",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-06 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-16",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "89550000",
+              "accrued_cents": "450000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "South"
+              },
+              "sector": "mixed use",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "143739968"
+              },
+              "ltv_bps": 6230,
+              "dscr": 1.51,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-16",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 447750,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "447750",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-16",
+                  "amount_cents": "89550000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "90000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "90000000",
+              "expected_loss_cents": "558000",
+              "true_val_part_cents": "89442000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-07",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-07 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-17",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "79600000",
+              "accrued_cents": "400000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "Northeast"
+              },
+              "sector": "mixed use",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "138170457"
+              },
+              "ltv_bps": 5761,
+              "dscr": 1.3,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-17",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 398000,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "398000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-17",
+                  "amount_cents": "79600000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "80000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "80000000",
+              "expected_loss_cents": "496000",
+              "true_val_part_cents": "79504000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-RE-08",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-08 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-18",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "58800000",
+              "accrued_cents": "1200000",
+              "repaid_cents": "0",
+              "bucket": "dpd_over_90",
+              "dpd": 120,
+              "dpd_source": "spec/nav/fixtures.json",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "US",
+                "region": "Northeast"
+              },
+              "sector": "office",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "56246413"
+              },
+              "ltv_bps": 10454,
+              "dscr": 0.89,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-18",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "delinquent",
+              "monthly_interest_cents": 294000,
+              "missed_months": [
+                "2026-08",
+                "2026-09",
+                "2026-10",
+                "2026-11"
+              ],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "294000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-18",
+                  "amount_cents": "58800000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "60000000",
+              "pd": 1,
+              "lgd": 0.31,
+              "mark_cents": "15000000",
+              "expected_loss_cents": "18600000",
+              "true_val_part_cents": "41400000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-IN-01",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Buyer IN-01 Co (fictional)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": "2026-09-02",
+              "document_due_date": "2026-12-02",
+              "goods": "industrial parts, 40 units",
+              "document_type": "commercial invoice",
+              "principal_cents": "29850000",
+              "accrued_cents": "150000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "DE",
+                "region": "non-US"
+              },
+              "sector": "industrial parts",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 1.19,
+              "advance_rate_bps": 8932,
+              "discount_bps": 523,
+              "maturity_date": "2026-12-02",
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "2026 Q3",
+              "maturity_bucket": "under 1 year",
+              "status": "performing",
+              "monthly_interest_cents": 0,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-12-02",
+                  "amount_cents": "30000000",
+                  "component": "bullet",
+                  "status": "scheduled",
+                  "tag": "demo",
+                  "note": "Bullet on the document due date. Face is principal plus accrued from the fixture."
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "30000000",
+              "pd": 0.02,
+              "lgd": 0.67,
+              "mark_cents": "30000000",
+              "expected_loss_cents": "402000",
+              "true_val_part_cents": "29598000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "commercial invoice",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-IN-02",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Buyer IN-02 Co (fictional)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": "2026-09-03",
+              "document_due_date": "2026-12-03",
+              "goods": "industrial parts, 40 units",
+              "document_type": "commercial invoice",
+              "principal_cents": "24900000",
+              "accrued_cents": "100000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "DE",
+                "region": "non-US"
+              },
+              "sector": "industrial parts",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 1.13,
+              "advance_rate_bps": 8977,
+              "discount_bps": 496,
+              "maturity_date": "2026-12-03",
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "2026 Q3",
+              "maturity_bucket": "under 1 year",
+              "status": "performing",
+              "monthly_interest_cents": 0,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-12-03",
+                  "amount_cents": "25000000",
+                  "component": "bullet",
+                  "status": "scheduled",
+                  "tag": "demo",
+                  "note": "Bullet on the document due date. Face is principal plus accrued from the fixture."
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "25000000",
+              "pd": 0.02,
+              "lgd": 0.67,
+              "mark_cents": "25000000",
+              "expected_loss_cents": "335000",
+              "true_val_part_cents": "24665000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "commercial invoice",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-IN-03",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Buyer IN-03 Co (fictional)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": "2026-09-04",
+              "document_due_date": "2026-12-04",
+              "goods": "industrial parts, 40 units",
+              "document_type": "commercial invoice",
+              "principal_cents": "19800000",
+              "accrued_cents": "200000",
+              "repaid_cents": "0",
+              "bucket": "dpd_1_30",
+              "dpd": 9,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "DE",
+                "region": "non-US"
+              },
+              "sector": "industrial parts",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 0.99,
+              "advance_rate_bps": 8989,
+              "discount_bps": 414,
+              "maturity_date": "2026-12-04",
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "2026 Q3",
+              "maturity_bucket": "under 1 year",
+              "status": "delinquent",
+              "monthly_interest_cents": 0,
+              "missed_months": [
+                "bullet"
+              ],
+              "payments": [
+                {
+                  "due": "2026-12-04",
+                  "amount_cents": "20000000",
+                  "component": "bullet",
+                  "status": "scheduled",
+                  "tag": "demo",
+                  "note": "Bullet on the document due date. Face is principal plus accrued from the fixture."
+                },
+                {
+                  "due": "2026-11-10",
+                  "amount_cents": "200000",
+                  "component": "servicer accrued",
+                  "status": "missed",
+                  "tag": "demo",
+                  "note": "Servicer bucket is delinquent. The shortfall is the fixture accrued amount. The document due date may still be in the future."
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "20000000",
+              "pd": 0.1,
+              "lgd": 0.67,
+              "mark_cents": "20000000",
+              "expected_loss_cents": "1340000",
+              "true_val_part_cents": "18660000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "commercial invoice",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": null,
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": null,
+          "public_tags": {
+            "loan_hash": "demo",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "demo"
+          },
+          "public_sources": {
+            "loan_hash": "H-IN-04 has no pledge token in tee/loans.json. Fixture note: NFT burned, lock released.",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "No recorded verdict. The fixture marks the loan repaid."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "H-IN-04",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower H-IN-04 (fictional, no tee/docs file)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": null,
+              "document_due_date": null,
+              "goods": null,
+              "document_type": null,
+              "principal_cents": "35000000",
+              "accrued_cents": "200000",
+              "repaid_cents": "35200000",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": "Repaid on due date by Keel-signed event; NFT burned, lock released",
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(harbor-credit-fund)",
+              "geography": {
+                "country": "DE",
+                "region": "non-US"
+              },
+              "sector": "receivables",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 1.17,
+              "advance_rate_bps": 8843,
+              "discount_bps": 388,
+              "maturity_date": null,
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "unknown",
+              "maturity_bucket": "bullet under 1 year",
+              "status": "closed",
+              "monthly_interest_cents": 0,
+              "missed_months": [],
+              "payments": []
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": false,
+              "ead_cents": "0",
+              "pd": 0.02,
+              "lgd": 0.67,
+              "mark_cents": "0",
+              "expected_loss_cents": "0",
+              "true_val_part_cents": "0",
+              "verified": false,
+              "reason": "repaid"
+            },
+            "documents": [],
+            "checks": null
+          }
+        }
+      ],
+      "cash_flows": {
+        "tag": "demo",
+        "rule": "Real estate scheduled interest is principal times 6% / 12, copied from the document coupon. A month inside the servicer dpd window is a shortfall. Invoices are a bullet on the document due date. Current-loan accrued interest is earned and not yet due, so it is not a shortfall.",
+        "monthly": [
+          {
+            "month": "2026-03",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4570000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-04",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4570000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-05",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4570000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-06",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4570000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-07",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4570000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-08",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4276000",
+            "shortfall_cents": "294000",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-09",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4276000",
+            "shortfall_cents": "294000",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-10",
+            "scheduled_interest_cents": "4570000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "4276000",
+            "shortfall_cents": "294000",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-11",
+            "scheduled_interest_cents": "4770000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "3781000",
+            "shortfall_cents": "989000",
+            "tag": "demo"
+          }
+        ]
+      },
+      "accrued_reconciliation": {
+        "tag": "computed (demo)",
+        "note": "Current real estate loans: fixture accrued is within $50 of one coupon month (day-count stub). Delinquent real estate: residual is fixture accrued minus missed coupons. H-RE-05 is dpd_1_30 in the fixture while accrued is about two coupons; the bucket wins, and the residual is reported rather than forced to zero.",
+        "loans": [
+          {
+            "loan_id": "H-RE-01",
+            "fixture_accrued_cents": "900000",
+            "model_unpaid_cents": "900000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-02",
+            "fixture_accrued_cents": "750000",
+            "model_unpaid_cents": "750000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-03",
+            "fixture_accrued_cents": "700000",
+            "model_unpaid_cents": "700000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-04",
+            "fixture_accrued_cents": "600000",
+            "model_unpaid_cents": "600000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-05",
+            "fixture_accrued_cents": "1000000",
+            "model_unpaid_cents": "495000",
+            "residual_cents": "505000",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-06",
+            "fixture_accrued_cents": "450000",
+            "model_unpaid_cents": "450000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-07",
+            "fixture_accrued_cents": "400000",
+            "model_unpaid_cents": "400000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-RE-08",
+            "fixture_accrued_cents": "1200000",
+            "model_unpaid_cents": "1176000",
+            "residual_cents": "24000",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-IN-01",
+            "fixture_accrued_cents": "150000",
+            "model_unpaid_cents": "150000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-IN-02",
+            "fixture_accrued_cents": "100000",
+            "model_unpaid_cents": "100000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-IN-03",
+            "fixture_accrued_cents": "200000",
+            "model_unpaid_cents": "200000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "H-IN-04",
+            "fixture_accrued_cents": "200000",
+            "model_unpaid_cents": "200000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          }
+        ]
+      },
+      "stress_scenarios": [
+        {
+          "id": "base",
+          "label": "Certified inputs",
+          "tag": "computed (demo)",
+          "rule": "Unchanged fixture. Shown so the scenarios have a baseline. This is not a new on-chain score.",
+          "true_val_cents": "966511000",
+          "true_range_cents": "34555424",
+          "policy_nav_cents": "950000000",
+          "reported_nav_cents": "950000000",
+          "reported_nav_vs_range": "inside",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "pd_x2",
+          "label": "Default rates double",
+          "tag": "computed (demo)",
+          "rule": "Each PD in spec/nav/fixtures.json is doubled and capped at 100%. Demo stress, not a certified score.",
+          "true_val_cents": "956622000",
+          "true_range_cents": "47622273",
+          "policy_nav_cents": "950000000",
+          "reported_nav_cents": "950000000",
+          "reported_nav_vs_range": "inside",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "lgd_plus_10",
+          "label": "Loss given default plus 10 points",
+          "tag": "computed (demo)",
+          "rule": "Each LGD is increased by 0.10 and capped at 100%.",
+          "true_val_cents": "957681000",
+          "true_range_cents": "45166598",
+          "policy_nav_cents": "950000000",
+          "reported_nav_cents": "950000000",
+          "reported_nav_vs_range": "inside",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "property_minus_20",
+          "label": "Property values minus 20%",
+          "tag": "computed (demo)",
+          "rule": "The certified engine has no LTV input. This demo maps a 20% price drop to a 10 point rise in real estate LGD, capped at 100%.",
+          "true_val_cents": "957991000",
+          "true_range_cents": "44761277",
+          "policy_nav_cents": "950000000",
+          "reported_nav_cents": "950000000",
+          "reported_nav_vs_range": "inside",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "invoices_60_late",
+          "label": "Invoices paid 60 days late",
+          "tag": "computed (demo)",
+          "rule": "Invoice dpd increases by 60 and the bucket follows engine/src/score.mjs BUCKET_DPD. Real estate loans stay as in the fixture.",
+          "true_val_cents": "956025500",
+          "true_range_cents": "41266028",
+          "policy_nav_cents": "950000000",
+          "reported_nav_cents": "950000000",
+          "reported_nav_vs_range": "inside",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "largest_defaults",
+          "label": "Largest obligor defaults",
+          "tag": "computed (demo)",
+          "rule": "The open loan with the largest EAD (H-RE-01) moves to dpd_over_90 (PD 100%).",
+          "true_val_cents": "911827000",
+          "true_range_cents": "30977971",
+          "policy_nav_cents": "815000000",
+          "reported_nav_cents": "950000000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        }
+      ],
+      "exposures": {
+        "by_asset_type": {
+          "tag": "computed",
+          "source": "spec/nav/fixtures.json asset, joined to tee/loans.json",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "real_estate",
+              "ead_cents": "920000000",
+              "share": 0.9246231155778895
+            },
+            {
+              "key": "invoices",
+              "ead_cents": "75000000",
+              "share": 0.07537688442211055
+            }
+          ]
+        },
+        "by_geography": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "US / South",
+              "ead_cents": "380000000",
+              "share": 0.38190954773869346
+            },
+            {
+              "key": "US / West",
+              "ead_cents": "280000000",
+              "share": 0.2814070351758794
+            },
+            {
+              "key": "US / Northeast",
+              "ead_cents": "260000000",
+              "share": 0.2613065326633166
+            },
+            {
+              "key": "DE / non-US",
+              "ead_cents": "75000000",
+              "share": 0.07537688442211055
+            }
+          ]
+        },
+        "by_sector": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "mixed use",
+              "ead_cents": "490000000",
+              "share": 0.49246231155778897
+            },
+            {
+              "key": "multifamily",
+              "ead_cents": "220000000",
+              "share": 0.22110552763819097
+            },
+            {
+              "key": "office",
+              "ead_cents": "210000000",
+              "share": 0.21105527638190955
+            },
+            {
+              "key": "industrial parts",
+              "ead_cents": "75000000",
+              "share": 0.07537688442211055
+            }
+          ]
+        },
+        "by_lien": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "first mortgage",
+              "ead_cents": "920000000",
+              "share": 0.9246231155778895
+            },
+            {
+              "key": "receivable",
+              "ead_cents": "75000000",
+              "share": 0.07537688442211055
+            }
+          ]
+        },
+        "by_vintage_quarter": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "2026 Q1",
+              "ead_cents": "920000000",
+              "share": 0.9246231155778895
+            },
+            {
+              "key": "2026 Q3",
+              "ead_cents": "75000000",
+              "share": 0.07537688442211055
+            }
+          ]
+        },
+        "by_maturity_bucket": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "3 to 7 years",
+              "ead_cents": "920000000",
+              "share": 0.9246231155778895
+            },
+            {
+              "key": "under 1 year",
+              "ead_cents": "75000000",
+              "share": 0.07537688442211055
+            }
+          ]
+        },
+        "by_delinquency": {
+          "tag": "computed",
+          "source": "spec/nav/fixtures.json bucket",
+          "total_ead_cents": "995000000",
+          "parts": [
+            {
+              "key": "current",
+              "ead_cents": "815000000",
+              "share": 0.8190954773869347
+            },
+            {
+              "key": "dpd_1_30",
+              "ead_cents": "120000000",
+              "share": 0.12060301507537688
+            },
+            {
+              "key": "dpd_over_90",
+              "ead_cents": "60000000",
+              "share": 0.06030150753768844
+            }
+          ]
+        },
+        "top_obligors": {
+          "tag": "computed (demo)",
+          "parts": [
+            {
+              "key": "Demo Borrower RE-01 LLC (fictional)",
+              "ead_cents": "180000000",
+              "share": 0.18090452261306533
+            },
+            {
+              "key": "Demo Borrower RE-02 LLC (fictional)",
+              "ead_cents": "150000000",
+              "share": 0.1507537688442211
+            },
+            {
+              "key": "Demo Borrower RE-03 LLC (fictional)",
+              "ead_cents": "140000000",
+              "share": 0.1407035175879397
+            },
+            {
+              "key": "Demo Borrower RE-04 LLC (fictional)",
+              "ead_cents": "120000000",
+              "share": 0.12060301507537688
+            },
+            {
+              "key": "Demo Borrower RE-05 LLC (fictional)",
+              "ead_cents": "100000000",
+              "share": 0.10050251256281408
+            }
+          ]
+        },
+        "hhi": {
+          "tag": "computed (demo)",
+          "value": 0.12012322921138355,
+          "basis": "open loan EAD by borrower alias"
+        }
+      },
+      "why_score": {
+        "tag": "computed",
+        "source": "engine/src/score.mjs scorePortfolio",
+        "raw": 99.17,
+        "score": 99,
+        "band": "green",
+        "pillars": {
+          "gap": 40,
+          "coverage": 40,
+          "freshness": 19.166666666666668,
+          "penalty": 0
+        },
+        "concentration": {
+          "basis": "EAD on open listed loans",
+          "largestShare": 0.18090452261306533,
+          "topFiveShare": 0.6934673366834171,
+          "largestBreach": true,
+          "topFiveBreach": true,
+          "reference": "S&P AIF para 91 (15% and 50%), as cited by owner; flag only, no score impact"
+        },
+        "holds": [
+          "Largest obligor is over 15% of open EAD (engine concentration, flag only, no score impact).",
+          "Top five obligors are over 50% of open EAD (engine concentration, flag only, no score impact)."
+        ]
+      },
+      "investor_reports": [
+        {
+          "period": "2026-10",
+          "type": "LP letter",
+          "tag": "demo",
+          "body": "Demo letter. Fictional. No performance claim beyond the figures in this file."
+        },
+        {
+          "type": "TrueNav report",
+          "tag": "recorded",
+          "href": "/reports/harbor-credit-fund",
+          "note": "The printable report uses the certificate pins. A live page should rebuild it from get_latest_certificate."
+        }
+      ]
+    },
+    {
+      "fund_id": "meridian-yield-fund",
+      "on_chain": true,
+      "anchors": {
+        "source": "recorded",
+        "registry": "registry.tnlab-368aa2.testnet",
+        "fund_account": "meridian.tnlab-368aa2.testnet",
+        "fund_account_source": "certify/testnet.mjs FUND_ACCOUNT names these testnet accounts. Confirm with get_fund.",
+        "manager_id": "mgr-meridian.demo",
+        "manager_id_source": "spec/nav/fixtures.json certificate.signer",
+        "certificate": {
+          "score": 43,
+          "raw_x100": 4284,
+          "true_val_cents": "309297000",
+          "true_range_cents": "36143458",
+          "policy_nav_cents": "343500000",
+          "headline_cents": "373500000",
+          "blocked_attempts": 1,
+          "band": "red",
+          "status": "scored",
+          "engine_commit": "d837036",
+          "engine_commit_source": "Named in certify/testnet-record.test.mjs. The live certificate's engine_commit must be read with get_latest_certificate."
+        },
+        "loan_hashes": [
+          "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
+          "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
+          "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
+          "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
+          "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc"
+        ],
+        "carrying_value_cents": "390000000",
+        "open_loans": 5
+      },
+      "profile": {
+        "tag": "demo",
+        "name": "Meridian Yield Fund",
+        "legal_form": "closed-end LP (fictional)",
+        "domicile": "fictional",
+        "strategy": "senior secured real estate and trade receivables",
+        "vintage_year": 2025,
+        "inception_date": "2025-06-01",
+        "base_currency": "USD",
+        "target_net_return_bps": 900,
+        "fees": {
+          "management_bps": 150,
+          "performance_bps": 1500,
+          "hurdle_bps": 700
+        },
+        "liquidity": {
+          "redemptions": "quarterly",
+          "notice_days": 90,
+          "lockup_months": 12,
+          "gate_bps": 1000
+        },
+        "service_providers": {
+          "administrator": "Demo Fund Admin (fictional)",
+          "auditor": "Demo Audit LLP (fictional)",
+          "servicer": "TrueNav Labs (testnet servicer)"
+        },
+        "valuation_policy": "amortized cost with markdowns for delinquency (policy NAV)",
+        "reporting": "monthly NAV, quarterly LP letter",
+        "aum_cents": "373500000",
+        "aum_source": "headline NAV from the engine certificate, not a separate valuation"
+      },
+      "manager": {
+        "tag": "demo",
+        "manager_id": "mgr-meridian.demo",
+        "name": "Meridian Capital Partners (fictional)",
+        "founded": 2019,
+        "hq": "fictional",
+        "team": [
+          {
+            "role": "PM",
+            "alias": "Manager A"
+          }
+        ]
+      },
+      "nav_history": [
+        {
+          "month": "2025-12",
+          "reported_nav_cents": "344770950",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309583100",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-01",
+          "reported_nav_cents": "345354900",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309714551",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-02",
+          "reported_nav_cents": "342332100",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309034098",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-03",
+          "reported_nav_cents": "341542050",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "308856252",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-04",
+          "reported_nav_cents": "343774800",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309358859",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-05",
+          "reported_nav_cents": "343500000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309297000",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-06",
+          "reported_nav_cents": "343774800",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309358859",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-07",
+          "reported_nav_cents": "349500000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "308979971",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-08",
+          "reported_nav_cents": "355500000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "308724801",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-09",
+          "reported_nav_cents": "361500000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "309915594",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-10",
+          "reported_nav_cents": "367500000",
+          "true_val_cents": null,
+          "true_range_cents": null,
+          "demo_true_val_cents": "308979971",
+          "demo_true_range_cents": "36143458",
+          "tag": "demo",
+          "series": "demo backfill, not certified"
+        },
+        {
+          "month": "2026-11",
+          "reported_nav_cents": "373500000",
+          "policy_nav_cents": "343500000",
+          "true_val_cents": "309297000",
+          "true_range_cents": "36143458",
+          "tag": "recorded",
+          "source": "engine pins checked on chain by certify/testnet.mjs. Confirm with get_latest_certificate before treating this point as live."
+        }
+      ],
+      "loans": [
+        {
+          "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "M-RE-01",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-01 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-11",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "159200000",
+              "accrued_cents": "800000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(meridian-yield-fund)",
+              "geography": {
+                "country": "US",
+                "region": "Northeast"
+              },
+              "sector": "multifamily",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "302431611"
+              },
+              "ltv_bps": 5264,
+              "dscr": 1.17,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-11",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "performing",
+              "monthly_interest_cents": 796000,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "796000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-11",
+                  "amount_cents": "159200000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "160000000",
+              "pd": 0.02,
+              "lgd": 0.31,
+              "mark_cents": "160000000",
+              "expected_loss_cents": "992000",
+              "true_val_part_cents": "159008000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
+          "asset_type": "real_estate",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "M-RE-02",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Borrower RE-02 LLC (fictional)",
+              "coupon_bps": 600,
+              "lien": "first mortgage",
+              "origination_date": "2026-03-12",
+              "document_due_date": null,
+              "goods": null,
+              "document_type": "recorded mortgage summary",
+              "principal_cents": "107800000",
+              "accrued_cents": "2200000",
+              "repaid_cents": "0",
+              "bucket": "dpd_over_90",
+              "dpd": 104,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(meridian-yield-fund)",
+              "geography": {
+                "country": "US",
+                "region": "Northeast"
+              },
+              "sector": "office",
+              "collateral": {
+                "type": "first mortgage",
+                "value_cents": "132399902"
+              },
+              "ltv_bps": 8142,
+              "dscr": 0.88,
+              "advance_rate_bps": null,
+              "discount_bps": null,
+              "maturity_date": "2031-03-12",
+              "maturity_rule": "5 years from the recorded date in tee/docs",
+              "vintage_quarter": "2026 Q1",
+              "maturity_bucket": "3 to 7 years",
+              "status": "delinquent",
+              "monthly_interest_cents": 539000,
+              "missed_months": [
+                "2026-08",
+                "2026-09",
+                "2026-10",
+                "2026-11"
+              ],
+              "payments": [
+                {
+                  "due": "2026-03-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-04-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-05-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-06-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-07-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "received",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-08-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-09-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-10-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2026-11-01",
+                  "amount_cents": "539000",
+                  "component": "interest",
+                  "status": "missed",
+                  "tag": "demo"
+                },
+                {
+                  "due": "2031-03-12",
+                  "amount_cents": "107800000",
+                  "component": "principal",
+                  "status": "scheduled",
+                  "tag": "demo"
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "110000000",
+              "pd": 1,
+              "lgd": 0.31,
+              "mark_cents": "93500000",
+              "expected_loss_cents": "34100000",
+              "true_val_part_cents": "75900000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "recorded mortgage summary",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "M-IN-01",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Buyer IN-01 Co (fictional)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": "2026-09-02",
+              "document_due_date": "2026-12-02",
+              "goods": "industrial parts, 40 units",
+              "document_type": "commercial invoice",
+              "principal_cents": "49200000",
+              "accrued_cents": "800000",
+              "repaid_cents": "0",
+              "bucket": "dpd_61_90",
+              "dpd": 75,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(meridian-yield-fund)",
+              "geography": {
+                "country": "US",
+                "region": "West"
+              },
+              "sector": "industrial parts",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 0.93,
+              "advance_rate_bps": 8488,
+              "discount_bps": 318,
+              "maturity_date": "2026-12-02",
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "2026 Q3",
+              "maturity_bucket": "under 1 year",
+              "status": "delinquent",
+              "monthly_interest_cents": 0,
+              "missed_months": [
+                "bullet"
+              ],
+              "payments": [
+                {
+                  "due": "2026-12-02",
+                  "amount_cents": "50000000",
+                  "component": "bullet",
+                  "status": "scheduled",
+                  "tag": "demo",
+                  "note": "Bullet on the document due date. Face is principal plus accrued from the fixture."
+                },
+                {
+                  "due": "2026-11-10",
+                  "amount_cents": "800000",
+                  "component": "servicer accrued",
+                  "status": "missed",
+                  "tag": "demo",
+                  "note": "Servicer bucket is delinquent. The shortfall is the fixture accrued amount. The document due date may still be in the future."
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "50000000",
+              "pd": 0.45,
+              "lgd": 0.67,
+              "mark_cents": "50000000",
+              "expected_loss_cents": "15075000",
+              "true_val_part_cents": "34925000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "commercial invoice",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "M-IN-02",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Buyer IN-02 Co (fictional)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": "2026-09-03",
+              "document_due_date": "2026-12-03",
+              "goods": "industrial parts, 40 units",
+              "document_type": "commercial invoice",
+              "principal_cents": "39800000",
+              "accrued_cents": "200000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": false,
+              "fixture_note": null,
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(meridian-yield-fund)",
+              "geography": {
+                "country": "MX",
+                "region": "non-US"
+              },
+              "sector": "industrial parts",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 1.14,
+              "advance_rate_bps": 8994,
+              "discount_bps": 527,
+              "maturity_date": "2026-12-03",
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "2026 Q3",
+              "maturity_bucket": "under 1 year",
+              "status": "performing",
+              "monthly_interest_cents": 0,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-12-03",
+                  "amount_cents": "40000000",
+                  "component": "bullet",
+                  "status": "scheduled",
+                  "tag": "demo",
+                  "note": "Bullet on the document due date. Face is principal plus accrued from the fixture."
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "40000000",
+              "pd": 0.02,
+              "lgd": 0.67,
+              "mark_cents": "40000000",
+              "expected_loss_cents": "536000",
+              "true_val_part_cents": "39464000",
+              "verified": true,
+              "reason": null
+            },
+            "documents": [
+              {
+                "type": "commercial invoice",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": null
+          }
+        },
+        {
+          "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
+          "asset_type": "invoices",
+          "pledged_at_ms": null,
+          "verdict": "pass",
+          "public_tags": {
+            "loan_hash": "recorded",
+            "asset_type": "recorded",
+            "pledged_at_ms": "live",
+            "verdict": "recorded"
+          },
+          "public_sources": {
+            "loan_hash": "tee/loans.json",
+            "asset_type": "spec/nav/fixtures.json and tee/loans.json. Chain metadata uses the same asset_type values (real_estate, invoices).",
+            "pledged_at_ms": "Not stored. Read nft_token issued_at on the registry.",
+            "verdict": "tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read."
+          },
+          "data_room": {
+            "tag": "demo",
+            "loan_id": "M-IN-03",
+            "recorded": {
+              "tag": "recorded",
+              "borrower_alias": "Demo Buyer IN-03 Co (fictional)",
+              "coupon_bps": null,
+              "lien": null,
+              "origination_date": "2026-09-04",
+              "document_due_date": "2026-12-04",
+              "goods": "industrial parts, 40 units",
+              "document_type": "commercial invoice",
+              "principal_cents": "29850000",
+              "accrued_cents": "150000",
+              "repaid_cents": "0",
+              "bucket": "current",
+              "dpd": 0,
+              "dpd_source": "demo value inside the fixture bucket",
+              "servicer_anomaly_flag": true,
+              "fixture_note": "Underwriter flagged a tampered invoice",
+              "source": "spec/nav/fixtures.json and tee/docs. Document ids and document text are not copied."
+            },
+            "demo": {
+              "tag": "demo",
+              "seed": "sha256(meridian-yield-fund)",
+              "geography": {
+                "country": "US",
+                "region": "South"
+              },
+              "sector": "industrial parts",
+              "collateral": {
+                "type": "receivable",
+                "value_cents": null
+              },
+              "ltv_bps": null,
+              "dscr": 1.24,
+              "advance_rate_bps": 8344,
+              "discount_bps": 496,
+              "maturity_date": "2026-12-04",
+              "maturity_rule": "invoice due date copied from tee/docs",
+              "vintage_quarter": "2026 Q3",
+              "maturity_bucket": "under 1 year",
+              "status": "performing",
+              "monthly_interest_cents": 0,
+              "missed_months": [],
+              "payments": [
+                {
+                  "due": "2026-12-04",
+                  "amount_cents": "30000000",
+                  "component": "bullet",
+                  "status": "scheduled",
+                  "tag": "demo",
+                  "note": "Bullet on the document due date. Face is principal plus accrued from the fixture."
+                }
+              ]
+            },
+            "engine": {
+              "tag": "computed",
+              "source": "engine/src/score.mjs formulas on the fixture loan, same PD and LGD tables",
+              "open": true,
+              "ead_cents": "30000000",
+              "pd": 0.02,
+              "lgd": 0.67,
+              "mark_cents": "30000000",
+              "expected_loss_cents": "402000",
+              "true_val_part_cents": "0",
+              "verified": false,
+              "reason": "anomaly flag"
+            },
+            "documents": [
+              {
+                "type": "commercial invoice",
+                "enclave_verdict": "pass",
+                "tag": "demo",
+                "source": "Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included."
+              }
+            ],
+            "checks": {
+              "documents": "pass (enclave)",
+              "servicer_data": "anomaly, excluded from TrueVal",
+              "line": "documents: pass (enclave). servicer data: anomaly, excluded from TrueVal.",
+              "citation": "spec/nav/fixtures.json sets anomaly true on M-IN-03 (note: Underwriter flagged a tampered invoice). tee/fixtures/verdicts-368aa2.json records an enclave pass. TrueVal excludes the loan because of the servicer anomaly flag, not because the enclave failed. The blocked double-pledge attempt is a different loan: the H-RE-03 fixture note says Meridian tried to pledge that Harbor property and was blocked."
+            }
+          }
+        }
+      ],
+      "cash_flows": {
+        "tag": "demo",
+        "rule": "Real estate scheduled interest is principal times 6% / 12, copied from the document coupon. A month inside the servicer dpd window is a shortfall. Invoices are a bullet on the document due date. Current-loan accrued interest is earned and not yet due, so it is not a shortfall.",
+        "monthly": [
+          {
+            "month": "2026-03",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "1335000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-04",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "1335000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-05",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "1335000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-06",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "1335000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-07",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "1335000",
+            "shortfall_cents": "0",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-08",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "796000",
+            "shortfall_cents": "539000",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-09",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "796000",
+            "shortfall_cents": "539000",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-10",
+            "scheduled_interest_cents": "1335000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "796000",
+            "shortfall_cents": "539000",
+            "tag": "demo"
+          },
+          {
+            "month": "2026-11",
+            "scheduled_interest_cents": "2135000",
+            "scheduled_principal_cents": "0",
+            "received_cents": "796000",
+            "shortfall_cents": "1339000",
+            "tag": "demo"
+          }
+        ]
+      },
+      "accrued_reconciliation": {
+        "tag": "computed (demo)",
+        "note": "Current real estate loans: fixture accrued is within $50 of one coupon month (day-count stub). Delinquent real estate: residual is fixture accrued minus missed coupons. H-RE-05 is dpd_1_30 in the fixture while accrued is about two coupons; the bucket wins, and the residual is reported rather than forced to zero.",
+        "loans": [
+          {
+            "loan_id": "M-RE-01",
+            "fixture_accrued_cents": "800000",
+            "model_unpaid_cents": "800000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "M-RE-02",
+            "fixture_accrued_cents": "2200000",
+            "model_unpaid_cents": "2156000",
+            "residual_cents": "44000",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "M-IN-01",
+            "fixture_accrued_cents": "800000",
+            "model_unpaid_cents": "800000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "M-IN-02",
+            "fixture_accrued_cents": "200000",
+            "model_unpaid_cents": "200000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          },
+          {
+            "loan_id": "M-IN-03",
+            "fixture_accrued_cents": "150000",
+            "model_unpaid_cents": "150000",
+            "residual_cents": "0",
+            "tag": "computed (demo)"
+          }
+        ]
+      },
+      "stress_scenarios": [
+        {
+          "id": "base",
+          "label": "Certified inputs",
+          "tag": "computed (demo)",
+          "rule": "Unchanged fixture. Shown so the scenarios have a baseline. This is not a new on-chain score.",
+          "true_val_cents": "309297000",
+          "true_range_cents": "36143458",
+          "policy_nav_cents": "343500000",
+          "reported_nav_cents": "373500000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "pd_x2",
+          "label": "Default rates double",
+          "tag": "computed (demo)",
+          "rule": "Each PD in spec/nav/fixtures.json is doubled and capped at 100%. Demo stress, not a certified score.",
+          "true_val_cents": "292694000",
+          "true_range_cents": "29272524",
+          "policy_nav_cents": "343500000",
+          "reported_nav_cents": "373500000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "lgd_plus_10",
+          "label": "Loss given default plus 10 points",
+          "tag": "computed (demo)",
+          "rule": "Each LGD is increased by 0.10 and capped at 100%.",
+          "true_val_cents": "295647000",
+          "true_range_cents": "42482568",
+          "policy_nav_cents": "343500000",
+          "reported_nav_cents": "373500000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "property_minus_20",
+          "label": "Property values minus 20%",
+          "tag": "computed (demo)",
+          "rule": "The certified engine has no LTV input. This demo maps a 20% price drop to a 10 point rise in real estate LGD, capped at 100%.",
+          "true_val_cents": "297977000",
+          "true_range_cents": "38014918",
+          "policy_nav_cents": "343500000",
+          "reported_nav_cents": "373500000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "invoices_60_late",
+          "label": "Invoices paid 60 days late",
+          "tag": "computed (demo)",
+          "rule": "Invoice dpd increases by 60 and the bucket follows engine/src/score.mjs BUCKET_DPD. Real estate loans stay as in the fixture.",
+          "true_val_cents": "309833000",
+          "true_range_cents": "38870858",
+          "policy_nav_cents": "343500000",
+          "reported_nav_cents": "373500000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        },
+        {
+          "id": "largest_defaults",
+          "label": "Largest obligor defaults",
+          "tag": "computed (demo)",
+          "rule": "The open loan with the largest EAD (M-RE-01) moves to dpd_over_90 (PD 100%).",
+          "true_val_cents": "260689000",
+          "true_range_cents": "33482995",
+          "policy_nav_cents": "319500000",
+          "reported_nav_cents": "373500000",
+          "reported_nav_vs_range": "above",
+          "score_not_on_chain": true
+        }
+      ],
+      "exposures": {
+        "by_asset_type": {
+          "tag": "computed",
+          "source": "spec/nav/fixtures.json asset, joined to tee/loans.json",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "real_estate",
+              "ead_cents": "270000000",
+              "share": 0.6923076923076923
+            },
+            {
+              "key": "invoices",
+              "ead_cents": "120000000",
+              "share": 0.3076923076923077
+            }
+          ]
+        },
+        "by_geography": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "US / Northeast",
+              "ead_cents": "270000000",
+              "share": 0.6923076923076923
+            },
+            {
+              "key": "US / West",
+              "ead_cents": "50000000",
+              "share": 0.1282051282051282
+            },
+            {
+              "key": "MX / non-US",
+              "ead_cents": "40000000",
+              "share": 0.10256410256410256
+            },
+            {
+              "key": "US / South",
+              "ead_cents": "30000000",
+              "share": 0.07692307692307693
+            }
+          ]
+        },
+        "by_sector": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "multifamily",
+              "ead_cents": "160000000",
+              "share": 0.41025641025641024
+            },
+            {
+              "key": "industrial parts",
+              "ead_cents": "120000000",
+              "share": 0.3076923076923077
+            },
+            {
+              "key": "office",
+              "ead_cents": "110000000",
+              "share": 0.28205128205128205
+            }
+          ]
+        },
+        "by_lien": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "first mortgage",
+              "ead_cents": "270000000",
+              "share": 0.6923076923076923
+            },
+            {
+              "key": "receivable",
+              "ead_cents": "120000000",
+              "share": 0.3076923076923077
+            }
+          ]
+        },
+        "by_vintage_quarter": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "2026 Q1",
+              "ead_cents": "270000000",
+              "share": 0.6923076923076923
+            },
+            {
+              "key": "2026 Q3",
+              "ead_cents": "120000000",
+              "share": 0.3076923076923077
+            }
+          ]
+        },
+        "by_maturity_bucket": {
+          "tag": "computed (demo)",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "3 to 7 years",
+              "ead_cents": "270000000",
+              "share": 0.6923076923076923
+            },
+            {
+              "key": "under 1 year",
+              "ead_cents": "120000000",
+              "share": 0.3076923076923077
+            }
+          ]
+        },
+        "by_delinquency": {
+          "tag": "computed",
+          "source": "spec/nav/fixtures.json bucket",
+          "total_ead_cents": "390000000",
+          "parts": [
+            {
+              "key": "current",
+              "ead_cents": "230000000",
+              "share": 0.5897435897435898
+            },
+            {
+              "key": "dpd_over_90",
+              "ead_cents": "110000000",
+              "share": 0.28205128205128205
+            },
+            {
+              "key": "dpd_61_90",
+              "ead_cents": "50000000",
+              "share": 0.1282051282051282
+            }
+          ]
+        },
+        "top_obligors": {
+          "tag": "computed (demo)",
+          "parts": [
+            {
+              "key": "Demo Borrower RE-01 LLC (fictional)",
+              "ead_cents": "160000000",
+              "share": 0.41025641025641024
+            },
+            {
+              "key": "Demo Borrower RE-02 LLC (fictional)",
+              "ead_cents": "110000000",
+              "share": 0.28205128205128205
+            },
+            {
+              "key": "Demo Buyer IN-01 Co (fictional)",
+              "ead_cents": "50000000",
+              "share": 0.1282051282051282
+            },
+            {
+              "key": "Demo Buyer IN-02 Co (fictional)",
+              "ead_cents": "40000000",
+              "share": 0.10256410256410256
+            },
+            {
+              "key": "Demo Buyer IN-03 Co (fictional)",
+              "ead_cents": "30000000",
+              "share": 0.07692307692307693
+            }
+          ]
+        },
+        "hhi": {
+          "tag": "computed (demo)",
+          "value": 0.2807363576594345,
+          "basis": "open loan EAD by borrower alias"
+        }
+      },
+      "why_score": {
+        "tag": "computed",
+        "source": "engine/src/score.mjs scorePortfolio",
+        "raw": 42.84,
+        "score": 43,
+        "band": "red",
+        "pillars": {
+          "gap": 3.71184767246306,
+          "coverage": 36.78714859437751,
+          "freshness": 16.666666666666668,
+          "penalty": 14.322624058656247
+        },
+        "concentration": {
+          "basis": "EAD on open listed loans",
+          "largestShare": 0.41025641025641024,
+          "topFiveShare": 1,
+          "largestBreach": true,
+          "topFiveBreach": true,
+          "reference": "S&P AIF para 91 (15% and 50%), as cited by owner; flag only, no score impact"
+        },
+        "holds": [
+          "A recent blocked pledge attempt keeps the band out of green (engine noGreenCap).",
+          "Largest obligor is over 15% of open EAD (engine concentration, flag only, no score impact).",
+          "Top five obligors are over 50% of open EAD (engine concentration, flag only, no score impact).",
+          "Reported NAV is above TrueRange.",
+          "Unverified loans: M-IN-03 (anomaly flag)."
+        ]
+      },
+      "investor_reports": [
+        {
+          "period": "2026-10",
+          "type": "LP letter",
+          "tag": "demo",
+          "body": "Demo letter. Fictional. No performance claim beyond the figures in this file."
+        },
+        {
+          "type": "TrueNav report",
+          "tag": "recorded",
+          "href": "/reports/meridian-yield-fund",
+          "note": "The printable report uses the certificate pins. A live page should rebuild it from get_latest_certificate."
+        }
+      ]
+    }
+  ],
+  "demo_funds": [
+    {
+      "fund_id": "DEMO-CREDIT",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Ashgrove Private Credit Fund",
+      "kind": "credit",
+      "method": "cashflow-v2.1.0",
+      "score": 58,
+      "band": "red",
+      "uncapped_score": 58,
+      "caps": [
+        "red because the reported yield is at least 3.00 percentage points above the cash yield",
+        "red because more than 2% of the cash the manager reports was never settled by the bank",
+        "red because of unverified collection: 78.57% of contractual dues for 2026-10 were bank-confirmed by 2026-11-07 (at least 90.00% needed)"
+      ],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 5958329,
+        "cash_received_cents": 5041663,
+        "cash_match_bps": 8462,
+        "claimed_not_settled_cents": 916666
+      },
+      "public_metrics": {
+        "reported_yield_bps": 1100,
+        "cash_yield_bps": 592,
+        "collection_rate_bps": 7857,
+        "occupancy_bps": null,
+        "rent_due_cents": null,
+        "rent_collected_cents": null,
+        "net_operating_cash_cents": null,
+        "distributions_cents": null
+      },
+      "roster": [
+        {
+          "loan_id": "DEMO-CREDIT-L00",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L01",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L02",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L03",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L04",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L05",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L06",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L07",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L08",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L09",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L10",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L11",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L12",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L13",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L14",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L15",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L16",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L17",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L18",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L19",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        }
+      ]
+    },
+    {
+      "fund_id": "DEMO-RENTAL",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Larkspur Residences",
+      "kind": "rental",
+      "method": "cashflow-v2.1.0",
+      "score": 58,
+      "band": "red",
+      "uncapped_score": 58,
+      "caps": [
+        "red because payouts exceed net cash from rent",
+        "red because part of a payout was funded by a sponsor transfer, not by income",
+        "red because more than 2% of the cash the manager reports was never settled by the bank",
+        "red because of unverified collection: 78.26% of contractual dues for 2026-10 were bank-confirmed by 2026-11-07 (at least 90.00% needed)"
+      ],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 3800000,
+        "cash_received_cents": 3600000,
+        "cash_match_bps": 9474,
+        "claimed_not_settled_cents": 200000
+      },
+      "public_metrics": {
+        "reported_yield_bps": null,
+        "cash_yield_bps": null,
+        "collection_rate_bps": 7826,
+        "occupancy_bps": 9583,
+        "rent_due_cents": 4600000,
+        "rent_collected_cents": 3600000,
+        "net_operating_cash_cents": 2000000,
+        "distributions_cents": 3000000
+      },
+      "roster": [
+        {
+          "unit_id": "DEMO-RENTAL-U00",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U01",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U02",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U03",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U04",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U05",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U06",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U07",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U08",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U09",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U10",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U11",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U12",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U13",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U14",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U15",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U16",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U17",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U18",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U19",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U20",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U21",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U22",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U23",
+          "occupied": false,
+          "rent_cents": 200000
+        }
+      ]
+    },
+    {
+      "fund_id": "HONEST-CREDIT",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Kestrel Lending Fund",
+      "kind": "credit",
+      "method": "cashflow-v2.1.0",
+      "score": 100,
+      "band": "green",
+      "uncapped_score": 100,
+      "caps": [],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 8708327,
+        "cash_received_cents": 9166660,
+        "cash_match_bps": 10000,
+        "claimed_not_settled_cents": 0
+      },
+      "public_metrics": {
+        "reported_yield_bps": 1080,
+        "cash_yield_bps": 1079,
+        "collection_rate_bps": 10000,
+        "occupancy_bps": null,
+        "rent_due_cents": null,
+        "rent_collected_cents": null,
+        "net_operating_cash_cents": null,
+        "distributions_cents": null
+      },
+      "roster": [
+        {
+          "loan_id": "HONEST-CREDIT-L00",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L01",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L02",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L03",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L04",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L05",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L06",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L07",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L08",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L09",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L10",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L11",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L12",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L13",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L14",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L15",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L16",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L17",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L18",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L19",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        }
+      ]
+    },
+    {
+      "fund_id": "HONEST-RENTAL",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Linden Court",
+      "kind": "rental",
+      "method": "cashflow-v2.1.0",
+      "score": 100,
+      "band": "green",
+      "uncapped_score": 100,
+      "caps": [],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 4400000,
+        "cash_received_cents": 4600000,
+        "cash_match_bps": 10000,
+        "claimed_not_settled_cents": 0
+      },
+      "public_metrics": {
+        "reported_yield_bps": null,
+        "cash_yield_bps": null,
+        "collection_rate_bps": 10000,
+        "occupancy_bps": 9583,
+        "rent_due_cents": 4600000,
+        "rent_collected_cents": 4600000,
+        "net_operating_cash_cents": 3300000,
+        "distributions_cents": 2500000
+      },
+      "roster": [
+        {
+          "unit_id": "HONEST-RENTAL-U00",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U01",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U02",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U03",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U04",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U05",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U06",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U07",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U08",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U09",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U10",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U11",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U12",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U13",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U14",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U15",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U16",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U17",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U18",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U19",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U20",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U21",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U22",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U23",
+          "occupied": false,
+          "rent_cents": 200000
+        }
+      ]
+    }
+  ]
+}

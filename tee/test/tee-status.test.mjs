@@ -30,6 +30,7 @@ test("a pending status must not name files; unknown keys and bad values are refu
   assert.deepEqual(checkStatus(ok, { root: REPO }).problems, []);
   assert.ok(checkStatus({ ...ok, verdicts_file: "tee/fixtures/verdicts-368aa2.json" }, { root: REPO }).problems.some((p) => p.includes("pending status must have verdicts_file")));
   assert.ok(checkStatus({ ...ok, extra: 1 }, { root: REPO }).problems.some((p) => p.includes("unknown key extra")));
+  assert.ok(checkStatus({ ...ok, tee_signer: "0x" + "1".repeat(40) }, { root: REPO }).problems.some((p) => p.includes("pending status must not have tee_signer")));
   assert.ok(checkStatus({ ...ok, tee: "maybe" }, { root: REPO }).problems.some((p) => p.includes('"pending" or "live"')));
   assert.ok(checkStatus({ ...ok, registry: "nope" }, { root: REPO }).problems.some((p) => p.includes("registry must be")));
 });
@@ -66,7 +67,9 @@ function liveTree({ report = "synthetic attestation report", recordedReport = re
   writeFileSync(join(dir, "tee/fixtures/attestation-report-368aa2.json.b64"), Buffer.from(report).toString("base64").replace(/.{20}/g, "$&\n") + "\n");
   return { dir, root: pathToFileURL(dir + "/") };
 }
-const live = { registry: REGISTRY, tee: "live", verdicts_file: "tee/fixtures/verdicts-368aa2.json", report_file: "tee/fixtures/attestation-report-368aa2.json.b64", earlier_instance: "registry.tnlab-718ca9.testnet" };
+const TX = "9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE";
+const liveFor = (recorded = "synthetic attestation report") => ({ ...{ registry: REGISTRY, tee: "live", verdicts_file: "tee/fixtures/verdicts-368aa2.json", report_file: "tee/fixtures/attestation-report-368aa2.json.b64", earlier_instance: "registry.tnlab-718ca9.testnet" }, model: "synthetic/test-model", tee_signer: SIGNER, report_sha256: sha(recorded), add_tee_signer_tx: TX, expires_at_ms: SIGNED_AT + VERDICT_TTL_MS });
+const live = liveFor();
 
 test("a live status with a valid set and its matching report has no problems and renders the live doc", () => {
   const { dir, root } = liveTree();
@@ -79,7 +82,9 @@ test("a live status with a valid set and its matching report has no problems and
     assert.match(doc, /TEE status: \*\*live\*\*/);
     assert.match(doc, new RegExp(SIGNER));
     assert.match(doc, /1 records \(1 pass, 0 flag\)/);
-    assert.match(doc, new RegExp(`TRUENAV_CONTRACT=${REGISTRY} npm run chain:read`));
+    assert.match(doc, /npm run chain:read/);
+    assert.match(doc, new RegExp(TX));
+    assert.match(doc, /0 are trap records/);
     assert.doesNotMatch(doc, /\*\*pending\*\*/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -88,6 +93,7 @@ test("a live status with a valid set and its matching report has no problems and
 
 test("a live status is refused when a file is missing, the set is for another registry, or the report hash differs", () => {
   const { dir, root } = liveTree({ report: "the report we publish", recordedReport: "a different report" });
+  const live = liveFor("a different report");
   try {
     assert.ok(checkStatus(live, { root }).problems.some((p) => p.includes("has sha256") && p.includes("records")), "report hash mismatch");
     assert.ok(checkStatus({ ...live, verdicts_file: "tee/fixtures/nope.json" }, { root }).problems.some((p) => p.includes("does not exist")));
@@ -111,4 +117,24 @@ test("hand-written docs that still say TEE is pending are found (README.md, TRUS
     rmSync(dir, { recursive: true, force: true });
   }
   assert.equal(STATUS_FILE, "tee/status.json");
+});
+
+test("a live status must carry the signer, model, report hash, add_tee_signer tx and expiry, and each must match the verdicts file", () => {
+  const { dir, root } = liveTree();
+  try {
+    assert.deepEqual(checkStatus(live, { root }).problems, []);
+    for (const k of ["model", "tee_signer", "report_sha256", "add_tee_signer_tx", "expires_at_ms"]) {
+      const { [k]: _gone, ...without } = live;
+      assert.ok(checkStatus(without, { root }).problems.length > 0, `${k} missing must be refused`);
+    }
+    const wrong = {
+      model: "another/model", tee_signer: "0x" + "9".repeat(40), report_sha256: "0".repeat(64), expires_at_ms: live.expires_at_ms + 1,
+    };
+    for (const [k, v] of Object.entries(wrong)) assert.ok(checkStatus({ ...live, [k]: v }, { root }).problems.some((p) => p.startsWith(`${k} is`)), `${k} differing from the file must be named`);
+    for (const bad of ["", "short", "0".repeat(44), "9pWm jgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE", 5]) {
+      assert.ok(checkStatus({ ...live, add_tee_signer_tx: bad }, { root }).problems.some((p) => p.includes("add_tee_signer_tx must be a NEAR transaction hash")), JSON.stringify(bad));
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

@@ -158,7 +158,7 @@ The days-left figure counts down. The command fails once any fixture has fewer t
 
 These commands use public network reads only (NEAR testnet RPC; the attestation and fingerprint commands also call Intel and NVIDIA attestation services). No keys and no transactions.
 
-The current live registry is `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`). It was deployed and initialised in [Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE](https://explorer.testnet.near.org/transactions/Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE) on 11 Nov 2026 from a local host (non-reproducible) build of the registry wasm, 364904 bytes. That is not a pinned-image / NEP-330 reproducible-build claim. TEE verdicts for this contract are pending / not run: there is no recorded TEE verdict set and no TEE signer is registered. Receipts stay synthetic fixtures; there is no live receipts contract on this account.
+The current live registry is `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`). It was deployed and initialised in [Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE](https://explorer.testnet.near.org/transactions/Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE) on 11 Nov 2026 from a local host (non-reproducible) build of the registry wasm, 364904 bytes. That is not a pinned-image / NEP-330 reproducible-build claim. TEE is live on this contract: the TEE signer `0x2665cce942fa427ef30d87f4b0bff67fb7645462` was registered in [9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE](https://explorer.testnet.near.org/transactions/9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE) and 16 verdicts, one per honest loan, are on chain (all pass). The 3 trap records in `tee/fixtures/verdicts-368aa2.json` were not submitted. Receipts stay synthetic fixtures; there is no live receipts contract on this account.
 
 On-chain refusals from that run:
 
@@ -168,13 +168,14 @@ On-chain refusals from that run:
 `registry.tnlab-718ca9.testnet` is an earlier instance. Its on-chain metadata names source commit `d37b9d2` (code hash `Foc9f2oJ8Ja1ddKSt91kXTxVm33nRBMjx3e4LHMP13EW`). Tag `registry-tnlab-718ca9` points at `d37b9d2` itself. That instance still holds the recorded TEE verdicts, attestation and `submit_verdict` history, so the live attestation, fingerprint and chain-reply checks read it. Those data do not exist on 368aa2.
 
 1. Do: `npm run chain:read`
-   See: Harbor `99 green (raw 99.17)` and Meridian `43 red (raw 42.84)`, each followed by `-> matches the recomputed score`, and TEE verdicts pending (11 Harbor, 5 Meridian). Verified exit 0 against `registry.tnlab-368aa2.testnet` on 11 Nov 2026. To read the earlier instance: `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read`.
+   See: Harbor `99 green (raw 99.17)` and Meridian `43 red (raw 42.84)`, each followed by `-> matches the recomputed score`, and `TEE verdicts on chain: 11 pass, 0 flag, 0 pending, 0 overdue` for Harbor and `TEE verdicts on chain: 5 pass, 0 flag, 0 pending, 0 overdue` for Meridian. Verified exit 0 against `registry.tnlab-368aa2.testnet` on 11 Nov 2026. To read the earlier instance: `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read`.
 2. Do: `npm run verify:attestation`
-   See: checks of the Intel TDX quote, nonce binding, measurements and NVIDIA GPU evidence, then `Attestation verified: the key that signs TrueNav verdicts runs in an attested NEAR AI Cloud TEE.` This reads the earlier instance (the recorded TEE set is bound to `registry.tnlab-718ca9.testnet`).
+   See: checks of the Intel TDX quote, nonce binding, measurements and NVIDIA GPU evidence, then `Attestation verified: the key that signs TrueNav verdicts runs in an attested NEAR AI Cloud TEE.` This reads the current registry's recorded set, `tee/fixtures/verdicts-368aa2.json`. For the earlier instance: `npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet`.
 3. Do: `npm run verify:fingerprints`
    See: a `PASS` line per demo loan, then `Fingerprints verified: every loan_hash came from the attested OutLayer TEE.` These fingerprints are the recorded demo set, not a live read of 368aa2.
-4. Do: `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run check:chain-replies`
-   See: `registry.tnlab-718ca9.testnet: 55 transactions, 18 submit_verdict calls decoded` (counts on 11 Nov 2026; they grow if the account is used) and `PASS every submit_verdict reply from our accounts is within the allowed keys`. The current registry has 0 `submit_verdict` calls (TEE pending), so this check stays on the earlier instance.
+4. Do: `npm run check:chain-replies`
+   See: `registry.tnlab-368aa2.testnet: 45 transactions, 16 submit_verdict calls decoded` (counts on 11 Nov 2026; they grow if the account is used) and `PASS every submit_verdict reply from our accounts is within the allowed keys`. For the earlier instance (55 transactions, 18 calls): `npm run check:chain-replies -- --contract registry.tnlab-718ca9.testnet`.
+5. Optional: `npm run tee:chain-check` (read only; see `docs/TEE_FLIP.md`). It confirms the registered TEE signer, the binding and expiry, and that each of the 16 honest verdicts in `tee/fixtures/verdicts-368aa2.json` is on chain; the 3 trap records are not.
 
 ## Claims and how to verify each
 
@@ -198,7 +199,7 @@ On-chain refusals from that run:
 | Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from the CI job `receipts` log in the latest CI run on `main` in this repository (Actions tab): `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR` |
 | CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path. | CI workflow `.github/workflows/ci.yml` | 8 of 8 jobs green: see the latest CI run on `main` in this repository (Actions tab) |
 | Production `npm audit` has no high or critical findings. | `npm audit --omit=dev --audit-level=high` | Passed in CI job `engine` (the latest CI run on `main` in this repository (Actions tab)), which printed `2 low severity vulnerabilities` |
-| The current testnet registry's on-chain scores match a local recompute. TEE verdicts for this contract are pending / not run. | `npm run chain:read` | Exit 0 on 11 Nov 2026 against `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`): Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), 11 + 5 loans pending. The earlier instance `registry.tnlab-718ca9.testnet` (source `d37b9d2`) still holds recorded TEE verdicts; read it with `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read` |
+| The current testnet registry's on-chain scores match a local recompute. TEE verdicts for this contract are on chain (16 pass). | `npm run chain:read` | Exit 0 on 11 Nov 2026 against `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`): Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), 11 + 5 verdicts on chain, all pass. The earlier instance `registry.tnlab-718ca9.testnet` (source `d37b9d2`) still holds recorded TEE verdicts; read it with `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read` |
 
 ## How it works
 

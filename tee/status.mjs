@@ -1,7 +1,9 @@
 // The one data file for the TEE status of the current registry: tee/status.json.
 //   tee: "pending"  no verdict set is bound to the registry (today)
 //   tee: "live"     a verdict set bound to the registry is recorded in verdicts_file with its published attestation
-//                   report in report_file, and TrueNav has submitted it on chain
+//                   report in report_file, and TrueNav has submitted it on chain. A live status also records the
+//                   TEE signer, the model, the report sha256, the add_tee_signer transaction and the expiry; every
+//                   one except the transaction is checked against the verdicts file, so they cannot drift.
 // Flip it by editing that file, then run `npm run tee:status -- --write` to regenerate docs/TEE_STATUS.md. `npm test`
 // fails if the doc is stale, if a live status points at a file that does not validate (tee/verdicts-file.mjs) or at
 // a report whose sha256 differs from the one recorded in the verdicts, and if the root README or TRUST_MODEL.md still
@@ -24,6 +26,9 @@ export const PENDING_PHRASES = ["TEE verdicts pending", "TEE verdicts for this c
 export const DOCS_TO_CHECK = ["README.md", "TRUST_MODEL.md", "ARCHITECTURE.md"];
 const ACCOUNT = /^[a-z0-9._-]+\.(testnet|near)$/;
 const MIN_DAYS = 10;
+/** Keys that only a live status carries. */
+export const LIVE_KEYS = ["model", "tee_signer", "report_sha256", "add_tee_signer_tx", "expires_at_ms"];
+const TX_HASH = /^[1-9A-HJ-NP-Za-km-z]{43,44}$/;
 
 export function readStatus(root = ROOT) {
   return JSON.parse(readFileSync(new URL(STATUS_FILE, root), "utf8"));
@@ -34,7 +39,7 @@ export function checkStatus(status, { root = ROOT, nowMs = Date.now() } = {}) {
   const problems = [];
   const bad = (m) => problems.push(m);
   const keys = Object.keys(status);
-  for (const k of keys) if (!["registry", "tee", "verdicts_file", "report_file", "earlier_instance"].includes(k)) bad(`unknown key ${k}`);
+  for (const k of keys) if (!["registry", "tee", "verdicts_file", "report_file", "earlier_instance", ...LIVE_KEYS].includes(k)) bad(`unknown key ${k}`);
   if (!ACCOUNT.test(status.registry ?? "")) bad("registry must be a testnet or mainnet account id");
   if (!ACCOUNT.test(status.earlier_instance ?? "")) bad("earlier_instance must be an account id");
   if (status.tee !== "pending" && status.tee !== "live") {
@@ -43,6 +48,7 @@ export function checkStatus(status, { root = ROOT, nowMs = Date.now() } = {}) {
   }
   if (status.tee === "pending") {
     if (status.verdicts_file !== null || status.report_file !== null) bad("a pending status must have verdicts_file and report_file null (set tee to live when the set is on chain)");
+    for (const k of LIVE_KEYS) if (k in status) bad(`a pending status must not have ${k}`);
     return { problems, verdicts: null };
   }
   let verdicts = null;
@@ -58,7 +64,10 @@ export function checkStatus(status, { root = ROOT, nowMs = Date.now() } = {}) {
   const reportSha = createHash("sha256").update(Buffer.from(readFileSync(new URL(status.report_file, root), "utf8").replace(/\s+/g, ""), "base64")).digest("hex");
   if (file.attestation && reportSha !== file.attestation.report_sha256) bad(`${status.report_file} has sha256 ${reportSha}, but ${status.verdicts_file} records ${file.attestation.report_sha256}`);
   if (status.report_file === "tee/fixtures/attestation-report.json.b64") bad("report_file must not be the earlier instance's report");
-  verdicts = { ...v, model: file.model, signed_at_ms: file.signed_at_ms, pass: file.results.filter((r) => r.verdict?.verdict === "pass").length, flag: file.results.filter((r) => r.verdict?.verdict === "flag").length };
+  const want = { model: file.model, tee_signer: v.signer, report_sha256: file.attestation?.report_sha256, expires_at_ms: file.expires_at_ms };
+  for (const [k, expected] of Object.entries(want)) if (status[k] !== expected) bad(`${k} is ${JSON.stringify(status[k])}, but ${status.verdicts_file} has ${JSON.stringify(expected)}`);
+  if (typeof status.add_tee_signer_tx !== "string" || !TX_HASH.test(status.add_tee_signer_tx)) bad("add_tee_signer_tx must be a NEAR transaction hash (43 or 44 base58 characters)");
+  verdicts = { ...v, model: file.model, signed_at_ms: file.signed_at_ms, pass: file.results.filter((r) => r.verdict?.verdict === "pass").length, flag: file.results.filter((r) => r.verdict?.verdict === "flag").length, traps: file.results.filter((r) => r.tampered).length };
   return { problems, verdicts };
 }
 
@@ -88,14 +97,17 @@ export function renderStatusDoc(status, verdicts) {
   }
   return [
     ...head,
-    `A verdict set bound to \`${status.registry}\` is recorded in \`${status.verdicts_file}\`: model \`${verdicts.model}\`, TEE signer \`${verdicts.signer}\`, ${verdicts.records} records (${verdicts.pass} pass, ${verdicts.flag} flag), signed ${day(verdicts.signed_at_ms)}, expires ${day(verdicts.expires_at_ms)}. The published attestation report is \`${status.report_file}\`.`,
+    `A verdict set bound to \`${status.registry}\` is recorded in \`${status.verdicts_file}\`: model \`${verdicts.model}\`, TEE signer \`${verdicts.signer}\`, ${verdicts.records} records (${verdicts.pass} pass, ${verdicts.flag} flag), signed ${day(verdicts.signed_at_ms)}, expires ${day(verdicts.expires_at_ms)}. The published attestation report is \`${status.report_file}\` (sha256 \`${status.report_sha256}\`).`,
     "",
-    "This status records that TrueNav submitted the set on chain. The files cannot show that, so check it against the chain:",
+    `The TEE signer was registered in transaction \`${status.add_tee_signer_tx}\`. ${verdicts.records - verdicts.traps} of the ${verdicts.records} records are honest loans, submitted on chain; ${verdicts.traps} are trap records (a tampered document each) that are in the file and were deliberately not submitted.`,
+    "",
+    "The files cannot show what is on chain, so check it against the chain (read only, no environment variables; add `-- --contract registry.tnlab-718ca9.testnet` to `verify:attestation` and `check:chain-replies` for the earlier instance):",
     "",
     "```bash",
-    `TRUENAV_CONTRACT=${status.registry} npm run chain:read             # loans no longer pending`,
-    `TRUENAV_CONTRACT=${status.registry} npm run check:chain-replies    # every submit_verdict reply within the allowed keys`,
-    "npm run verify:attestation                                          # the signer is the attested model key",
+    "npm run chain:read                  # loans no longer pending",
+    "npm run check:chain-replies         # every submit_verdict reply within the allowed keys",
+    "npm run verify:attestation          # the signer is the attested model key",
+    "npm run tee:chain-check             # every honest verdict in the file is on chain, signer and expiry match",
     "```",
     "",
     `A TEE proves which code ran, not that the model's judgment is right. Limits: \`tee/eval/REPORT.md\`. The earlier instance \`${status.earlier_instance}\` keeps its own recorded set.`,

@@ -1,4 +1,5 @@
 // App frame: sidebar, top bar (search, Testnet pill, live data pill, wallet slot), ticker slot, footer, help bubble.
+import { Tour } from "./Tour";
 import { useEffect, useState, type ReactNode } from "react";
 import { A, navigate } from "../ui";
 import { Brand } from "./Brand";
@@ -125,6 +126,7 @@ export function AppShell({ path, children }: { path: string; children: ReactNode
           <span>TrueNav Labs</span>
         </footer>
       </div>
+      <Tour />
       <HelpBubble page={p} />
     </div>
   );

@@ -1,5 +1,21 @@
 // Hand-drawn SVG charts (no chart dependency). One idea per chart, direct labels, thin lines.
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+
+/** Measured width of the chart box, so one SVG unit is one CSS pixel and text never scales or spills. */
+function useWidth(fallback: number): [RefObject<HTMLDivElement | null>, number] {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [w, setW] = useState(fallback);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const set = () => { const x = Math.floor(el.getBoundingClientRect().width); if (x > 0) setW(x); };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, w];
+}
 import { usdM, when, fundName } from "./fmt";
 
 type FundRow = { fund_id: string; band: string | null; score: number | null; range: { low: number; high: number; trueVal: number | null } | null; headline: number | null; policy: number | null; headlinePosition: string | null };
@@ -7,21 +23,24 @@ const bandColor = (b: string | null) => (b === "green" ? "var(--green)" : b === 
 
 /** One row per fund: TrueRange as a shaded band, TrueVal tick, policy NAV ring, reported NAV diamond (red when outside). */
 export function NavRangeChart({ funds, height = 64 }: { funds: FundRow[]; height?: number }) {
+  const [ref, W] = useWidth(760);
   const rows = funds.filter((f) => f.range && f.headline !== null);
   if (!rows.length) return <p className="dim">No certificate to draw.</p>;
-  const W = 760, L = 150, R = 30, rowH = height, H = rows.length * rowH + 34;
+  const narrow = W < 520, L = narrow ? 0 : 196, R = 40, rowH = narrow ? height + 44 : height, H = rows.length * rowH + 34;
   return (
-    <div className="chartbox">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Reported NAV against TrueRange per fund">
+    <div className="chartbox" ref={ref}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Reported NAV against TrueRange per fund">
         {rows.map((f, i) => {
           const r = { ...f.range!, trueVal: f.range!.trueVal ?? 0 }, rep = f.headline!, pol = f.policy ?? rep;
           const lo = Math.min(r.low, rep, pol), hi = Math.max(r.high, rep, pol), pad = (hi - lo) * 0.18 || 1;
           const a = lo - pad, b = hi + pad, X = (v: number) => L + ((v - a) / (b - a)) * (W - L - R);
-          const y = 18 + i * rowH, mid = y + rowH / 2 - 6, out = f.headlinePosition !== "inside";
+          const y = 18 + i * rowH, mid = narrow ? y + rowH - 30 : y + rowH / 2 - 6, out = f.headlinePosition !== "inside";
+          const ly = narrow ? y + 4 : mid - 6;
           return (
             <g key={f.fund_id}>
-              <text x={0} y={mid - 6} className="axl">{fundName(f.fund_id)}</text>
-              <text x={0} y={mid + 10} className="ax" fill={bandColor(f.band)} style={{ fill: bandColor(f.band) }}>score {f.score ?? "n/a"} {f.band}</text>
+              <text x={0} y={ly} className="axl">{fundName(f.fund_id)}</text>
+              <text x={0} y={ly + 15} className="ax" fill={bandColor(f.band)} style={{ fill: bandColor(f.band) }}>score {f.score ?? "n/a"} {f.band}</text>
+              {out ? <text x={0} y={ly + 29} className="ax" style={{ fill: "var(--red)" }}>reported {usdM(rep)}, {f.headlinePosition} range</text> : null}
               <line x1={L} x2={W - R} y1={mid} y2={mid} stroke="var(--border2)" strokeWidth={1} />
               <rect x={X(r.low)} width={Math.max(2, X(r.high) - X(r.low))} y={mid - 10} height={20} rx={3} fill={out ? "rgba(240,82,79,.14)" : "rgba(47,191,113,.16)"} stroke={out ? "rgba(240,82,79,.45)" : "rgba(47,191,113,.45)"} />
               <line x1={X(r.trueVal)} x2={X(r.trueVal)} y1={mid - 14} y2={mid + 14} stroke="var(--text)" strokeWidth={2} />
@@ -30,9 +49,6 @@ export function NavRangeChart({ funds, height = 64 }: { funds: FundRow[]; height
               <text x={X(r.trueVal)} y={mid - 18} className="ax" textAnchor="middle">TrueVal {usdM(r.trueVal)}</text>
               {f.policy !== null && f.policy !== rep ? <circle cx={X(pol)} cy={mid} r={4.5} fill="none" stroke="var(--cmp)" strokeWidth={1.6}><title>Policy NAV {usdM(pol)}</title></circle> : null}
               <rect x={X(rep) - 6} y={mid - 6} width={12} height={12} transform={`rotate(45 ${X(rep)} ${mid})`} fill={out ? "var(--red)" : "var(--bg)"} stroke={out ? "var(--red)" : "var(--text)"} strokeWidth={2} />
-              <text x={X(rep) + (out ? 10 : 0)} y={out ? mid + 4 : mid - 18} dx={out ? 4 : 0} className="ax" textAnchor={out ? "start" : "middle"} style={{ fill: out ? "var(--red)" : undefined }}>
-                {out ? `reported ${usdM(rep)}, ${f.headlinePosition} range` : ""}
-              </text>
             </g>
           );
         })}
@@ -54,22 +70,24 @@ export const KIND_LABEL: Record<string, string> = { pledge: "Pledge", verdict: "
 /** Swimlane timeline of real on-chain events. */
 export function ActivityChart({ events }: { events: Ev[] }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [ref, W] = useWidth(760);
   if (!events.length) return <p className="dim">No activity.</p>;
   const kinds = ["pledge", "verdict", "certificate", "blocked", "signer"].filter((k) => events.some((e) => e.kind === k));
   const t0 = Math.min(...events.map((e) => e.at)), t1 = Math.max(...events.map((e) => e.at));
-  const W = 760, L = 108, R = 16, lane = 26, H = kinds.length * lane + 36;
+  const L = 108, R = 16, lane = 26, H = kinds.length * lane + 36;
   const X = (t: number) => L + ((t - t0) / Math.max(1, t1 - t0)) * (W - L - R);
-  const ticks = Array.from({ length: 5 }, (_, i) => t0 + ((t1 - t0) * i) / 4);
+  const nt = Math.max(2, Math.min(5, Math.floor((W - L) / 110)));
+  const ticks = Array.from({ length: nt }, (_, i) => t0 + ((t1 - t0) * i) / (nt - 1));
   return (
-    <div className="chartbox">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="On-chain activity timeline">
+    <div className="chartbox" ref={ref}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="On-chain activity timeline">
         {kinds.map((k, i) => (
           <g key={k}>
             <text x={0} y={18 + i * lane + 4} className="axl">{KIND_LABEL[k]}</text>
             <line x1={L} x2={W - R} y1={18 + i * lane} y2={18 + i * lane} stroke="var(--border)" />
           </g>
         ))}
-        {ticks.map((t, i) => <text key={i} x={X(t)} y={H - 4} className="ax" textAnchor={i === 0 ? "start" : i === 4 ? "end" : "middle"}>{when(t)}</text>)}
+        {ticks.map((t, i) => <text key={i} x={X(t)} y={H - 4} className="ax" textAnchor={i === 0 ? "start" : i === nt - 1 ? "end" : "middle"}>{when(t)}</text>)}
         {events.map((e, i) => {
           const y = 18 + kinds.indexOf(e.kind) * lane;
           return (
@@ -90,21 +108,22 @@ export function ActivityChart({ events }: { events: Ev[] }) {
 /** Horizontal stacked bars: count per category per row. */
 export function StackBars({ rows, keys, colors, labels }: { rows: { label: string; values: Record<string, number> }[]; keys: string[]; colors: string[]; labels: Record<string, string> }) {
   const max = Math.max(1, ...rows.map((r) => keys.reduce((s, k) => s + (r.values[k] || 0), 0)));
-  const W = 360, L = 130, H = rows.length * 30 + 6;
+  const [ref, W] = useWidth(360);
+  const L = 110, H = rows.length * 30 + 6;
   return (
-    <div className="chartbox">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Counts by category">
+    <div className="chartbox" ref={ref}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Counts by category">
         {rows.map((r, i) => {
           let x = L;
           return (
             <g key={r.label}>
               <text x={0} y={i * 30 + 18} className="axl">{r.label}</text>
               {keys.map((k, j) => {
-                const w = ((r.values[k] || 0) / max) * (W - L - 30);
+                const w = ((r.values[k] || 0) / max) * (W - L - 12);
                 const el = w > 0 ? (
                   <g key={k}>
                     <rect x={x} y={i * 30 + 6} width={w} height={16} rx={2} fill={colors[j]} />
-                    <text x={x + w / 2} y={i * 30 + 18} className="ax" textAnchor="middle" style={{ fill: "#04121c", fontWeight: 700 }}>{r.values[k]}</text>
+                    {w >= 14 ? <text x={x + w / 2} y={i * 30 + 18} className="ax" textAnchor="middle" style={{ fill: "#04121c", fontWeight: 700 }}>{r.values[k]}</text> : null}
                   </g>
                 ) : null;
                 x += w;
@@ -121,10 +140,11 @@ export function StackBars({ rows, keys, colors, labels }: { rows: { label: strin
 
 /** Score bars with the 60 and 85 band thresholds drawn. */
 export function ScoreBars({ funds }: { funds: { fund_id: string; score: number | null; band: string | null }[] }) {
-  const W = 360, L = 130, H = funds.length * 30 + 22, X = (v: number) => L + (v / 100) * (W - L - 10);
+  const [ref, W] = useWidth(360);
+  const L = 110, H = funds.length * 30 + 22, X = (v: number) => L + (v / 100) * (W - L - 28);
   return (
-    <div className="chartbox">
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Score by fund">
+    <div className="chartbox" ref={ref}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Score by fund">
         {[60, 85].map((t) => (
           <g key={t}>
             <line x1={X(t)} x2={X(t)} y1={0} y2={H - 16} stroke="var(--border2)" strokeDasharray="3 3" />

@@ -1,3 +1,4 @@
+import { tourStart } from "../../shell/Tour";
 import { A } from "../../ui";
 import { PageHead, StatusChip } from "../../shell/kit";
 
@@ -18,7 +19,7 @@ const F: [string, string, string, "live" | "recorded" | "built" | "notdeployed"]
 export default function Index() {
   return (
     <>
-      <PageHead title="Verify it yourself" lead="Every built feature, one page each, with a test you can run in this browser. Read-only: nothing is sent to the chain." right={<A href="/verify" className="xb">Run the verifier</A>} />
+      <PageHead title="Verify it yourself" lead="Every built feature, one page each, with a test you can run in this browser. Read-only: nothing is sent to the chain." right={<><A href={tourStart()} className="xb">Take the judge tour</A><A href="/verify" className="xb ghost">Run the verifier</A></>} />
       <div className="fgrid">
         {F.map(([n, slug, text, st]) => (
           <A key={slug} href={`/features/${slug}`} className="fcard">

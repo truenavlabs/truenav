@@ -32,12 +32,12 @@ export default function Roles() {
   const tryIt = (
     <>
       <Panel title="Live roles against what the repository expects" pad={false} tags={<><SrcTag tag={tag} source="get_roles, get_signers, get_servicer_pledge_key, get_pledge_signers, get_tee_signers, view_code" /><SrcTag tag="recorded" source="certify/live-registry.json, tee/status.json" /></>}>
-        <table className="dt">
+        <div className="tscroll"><table className="dt">
           <thead><tr><th>Item</th><th>On chain now</th><th>Repository expects</th><th>Result</th></tr></thead>
           <tbody>{rows.map(([k, live, want]) => (
-            <tr key={k}><td>{k}</td><td className="mono" style={{ wordBreak: "break-all" }}>{live.endsWith(".testnet") ? <Ext href={accountUrl(live)}>{live}</Ext> : live}</td><td className="mono" style={{ wordBreak: "break-all" }}>{want}</td><td>{live.toLowerCase() === want.toLowerCase() ? <span className="ok">match</span> : <span className="bad">differs</span>}</td></tr>
+            <tr key={k}><td>{k}</td><td className="mono" style={{ wordBreak: "break-all", whiteSpace: "normal" }}>{live.endsWith(".testnet") ? <Ext href={accountUrl(live)}>{live}</Ext> : live}</td><td className="mono" style={{ wordBreak: "break-all", whiteSpace: "normal" }}>{want}</td><td>{live.toLowerCase() === want.toLowerCase() ? <span className="ok">match</span> : <span className="bad">differs</span>}</td></tr>
           ))}</tbody>
-        </table>
+        </table></div>
       </Panel>
       {tee[0] ? <p className="dim mt">TEE signer model {tee[0].model_id}; attestation report sha256 {short(tee[0].attestation_sha256, 10, 8)} (see F3).</p> : null}
       <Panel className="mt" title="Who can call what" pad={false} tags={<SrcTag tag="recorded" source="contract/src/lib.rs" />}>

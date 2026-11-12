@@ -57,7 +57,7 @@ export default function Fund({ fundId, tab: initialTab }: { fundId: string; tab?
             <Kpi label="Reported NAV" term="headline-nav" value={usdM(f.headline)} tag={tag} source="certificate headline_cents" tone={f.headlinePosition !== "inside" ? "r" : undefined} />
             <Kpi label="Policy NAV" term="policy-nav" value={usdM(f.policy)} tag={tag} source="certificate policy_nav_cents" />
             <Kpi label="TrueVal" term="trueval" value={usdM(f.trueVal)} tag={tag} source="certificate true_val_cents" />
-            <Kpi label="TrueRange" term="truerange" value={f.range ? <span style={{ fontSize: "0.72em" }}>{usdM(f.range.low)} to {usdM(f.range.high)}</span> : "n/a"} tag="computed" source="true_val_cents plus or minus true_range_cents" />
+            <Kpi label="TrueRange" term="truerange" wrap value={f.range ? <>{usdM(f.range.low)} to<br />{usdM(f.range.high)}</> : "n/a"} tag="computed" source="true_val_cents plus or minus true_range_cents" />
             <Kpi label="Refused pledges" term="blocked-attempt" value={int(f.attempts)} tag={tag} source="get_attempts_page" tone={f.attempts ? "r" : undefined} />
           </div>
           <div className="g21">
@@ -73,7 +73,7 @@ export default function Fund({ fundId, tab: initialTab }: { fundId: string; tab?
               {rc ? <ul className="plain">{rc.why.map((w, i) => <li key={i}><span className="tp">{w.kind}</span> {w.text}</li>)}</ul> : <p className="dim">No engine result.</p>}
             </Panel>
           </div>
-          <Panel className="mt" title="Recompute check" sub="Your browser ran the scoring engine on the same inputs and compared every number with the signed certificate on chain." tags={<><SrcTag tag="computed" /><SrcTag tag={tag} source="get_latest_certificate" /></>}
+          <Panel id="t-recompute" className="mt" title="Recompute check" sub="Your browser ran the scoring engine on the same inputs and compared every number with the signed certificate on chain." tags={<><SrcTag tag="computed" /><SrcTag tag={tag} source="get_latest_certificate" /></>}
             right={rc ? (rc.cmp.match ? <span className="status s-live">Matches the certificate</span> : <span className="status" style={{ background: "var(--red-t)", color: "var(--red)" }}>Does not match</span>) : null} pad={false}>
             {rc ? (
               <table className="dt">
@@ -117,7 +117,7 @@ export default function Fund({ fundId, tab: initialTab }: { fundId: string; tab?
 
       {tab === "pledges" ? (
         <div className="grid2" style={{ marginTop: 0 }}>
-          <Panel title="Refused pledges by this fund" tags={<SrcTag tag={tag} source={`get_attempts_page({"fund_id":"${fundId}","from_index":0,"limit":50})`} />}>
+          <Panel id="t-refused" title="Refused pledges by this fund" tags={<SrcTag tag={tag} source={`get_attempts_page({"fund_id":"${fundId}","from_index":0,"limit":50})`} />}>
             {f.attemptList.length === 0 ? <p className="dim">None. This fund never tried to pledge a loan another fund holds.</p> : (
               <ul className="plain">{f.attemptList.map((a: { attempt_id: string; at_ms: number }) => <li key={a.attempt_id} className="note n-bad"><b className="mono">{a.attempt_id}</b> {whenFull(a.at_ms)}: tried to pledge a loan another fund already holds. Refused with "already pledged elsewhere".</li>)}</ul>
             )}

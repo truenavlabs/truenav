@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { isWhatIf, runWhatIf, T1_PRESET } from "../../../data/whatif.mjs";
 import { teeStoreFrom } from "../../../data/recompute.mjs";
 import { FIXTURES, LOAN_MAP } from "../../shell/engine";
-import { assetLabel, fundName, usdWhole } from "../../shell/fmt";
+import { assetLabel, fundName, usdM, usdWhole } from "../../shell/fmt";
 import { Band, FeatureFrame, Note, PageHead, Panel, SrcTag, StatusChip } from "../../shell/kit";
 import { useRegistry } from "../../shell/store";
 
@@ -55,7 +55,7 @@ export default function Engine({ q }: { q?: URLSearchParams }) {
               <div className="kpirow" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}>
                 <div className="kpi"><div className="kl">Raw score</div><div className="kval">{(r.rawX100 / 100).toFixed(2)}</div>{r.rawX100 !== b.rawX100 ? <div className="ks">certified {(b.rawX100 / 100).toFixed(2)}</div> : null}</div>
                 <div className="kpi"><div className="kl">TrueVal</div><div className="kval">{usdWhole(r.trueVal)}</div></div>
-                <div className="kpi"><div className="kl">TrueRange</div><div className="kval" style={{ fontSize: 14 }}>{usdWhole(r.trueRangeLow)} to {usdWhole(r.trueRangeHigh)}</div></div>
+                <div className="kpi"><div className="kl">TrueRange</div><div className="kval kval-wrap" title={`${usdWhole(r.trueRangeLow)} to ${usdWhole(r.trueRangeHigh)}`}>{usdM(r.trueRangeLow * 100)} to<br />{usdM(r.trueRangeHigh * 100)}</div></div>
                 <div className="kpi"><div className="kl">Reported NAV</div><div className="kval">{usdWhole(r.headline)}</div></div>
               </div>
               <div className="mt">

@@ -58,13 +58,13 @@ export function Panel({ title, sub, tags, right, children, className, id, pad = 
   );
 }
 
-export function Kpi({ label, value, sub, tag, source, tone, term }: {
-  label: string; value: ReactNode; sub?: ReactNode; tag: Tag; source?: string; tone?: "g" | "y" | "r" | "c"; term?: string;
+export function Kpi({ label, value, sub, tag, source, tone, term, wrap }: {
+  label: string; value: ReactNode; sub?: ReactNode; tag: Tag; source?: string; tone?: "g" | "y" | "r" | "c"; term?: string; wrap?: boolean;
 }) {
   return (
     <div className={`kpi${tone ? " t-" + tone : ""}`}>
       <div className="kl">{term ? <Q id={term}>{label}</Q> : label}</div>
-      <div className="kval num">{value}</div>
+      <div className={`kval num${wrap ? " kval-wrap" : ""}`}>{value}</div>
       <div className="ks">
         <SrcTag tag={tag} source={source} />
         {sub ? <span>{sub}</span> : null}
@@ -131,7 +131,7 @@ export function Skel({ rows = 3, h = 14 }: { rows?: number; h?: number }) {
 }
 
 export function Note({ tone = "info", children }: { tone?: "info" | "warn" | "bad" | "ok" | "demo"; children: ReactNode }) {
-  return <div className={`note n-${tone}`}>{children}</div>;
+  return <div className={`note n-${tone}`}><div className="nb">{children}</div></div>;
 }
 
 export function ErrorBox({ error, retry }: { error: string; retry?: () => void }) {

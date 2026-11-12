@@ -10,7 +10,7 @@ import * as mods from "../../modules/index.mjs";
 import { useRegistry, type Registry } from "../shell/store";
 import { fundName, whenFull } from "../shell/fmt";
 import { A, navigate } from "../ui";
-import { Note, PageHead } from "../shell/kit";
+import { Note, PageHead, Panel, SrcTag } from "../shell/kit";
 
 // The modules are plain JS with optional props; type them loosely at this one boundary.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -97,9 +97,33 @@ export function Manager() {
     <>
       <PageHead title="Fund manager view" lead="View as a fund. Nothing is signed or sent." right={<select value={id} onChange={(e) => setId(e.target.value)}>{FUNDS.map((f) => <option key={f.fund_id} value={f.fund_id}>{fundName(f.fund_id)}</option>)}</select>} />
       <Root><ManagerView fund={demoFund(id)} /></Root>
+      <ManagerLive fundId={id} />
     </>
   );
 }
+/** Live chain state for the chosen fund: what the module above describes, read from the registry. */
+function ManagerLive({ fundId }: { fundId: string }) {
+  const { view, tag } = useRegistry();
+  const f = view.funds.find((x) => x.fund_id === fundId);
+  const loans = view.loans.filter((l) => l.fund_id === fundId);
+  const attempts = (f?.attempts?.attempts || []) as { attempt_id: string; at_ms: number }[];
+  const alerts = (f?.alerts || []) as number[];
+  const pass = loans.filter((l) => l.latest?.verdict === "pass").length, flag = loans.filter((l) => l.latest?.verdict === "flag").length;
+  return (
+    <div className="grid2">
+      <Panel title="My attempts and alerts" tags={<SrcTag tag={tag} source="get_attempts_page, get_alerts_page" />}>
+        {attempts.length ? <ul className="plain">{attempts.map((a) => <li key={a.attempt_id}><span className="bad">Refused pledge</span> {a.attempt_id}, {whenFull(a.at_ms)}</li>)}</ul> : <p className="dim">No refused pledges. {alerts.length ? "" : "No alerts."}</p>}
+        {alerts.length ? <p className="dim mt">{alerts.length} alert{alerts.length === 1 ? "" : "s"} stored on this fund: {alerts.map((t) => whenFull(t)).join("; ")}.</p> : null}
+      </Panel>
+      <Panel title="My loans and verdicts" tags={<SrcTag tag={tag} source="nft_tokens, get_latest_verdict" />}>
+        <p>{loans.length} pledged loans: {pass} pass, {flag} flag, {loans.length - pass - flag} with no verdict.</p>
+        <p className="mt"><A href={`/funds/${fundId}?tab=verdicts`}>All verdicts</A> · <A href={`/funds/${fundId}?tab=loans`}>Loan book</A> · <A href={`/account/${f?.fund?.account_id ?? ""}`}>View as the fund account</A></p>
+        <p className="dim mt">Pledging needs a fresh servicer signature and is sent by the fund's own account: pledge_loan(loan_hash, asset_type, fund_account, nonce, expiry_ms, servicer_signature, ticket_signature). In this demo the servicer is TrueNav Labs.</p>
+      </Panel>
+    </div>
+  );
+}
+
 export function Auditor() {
   return <><PageHead title="Auditor view" lead="How to re-check every number." /><Root><AuditorView funds={FUNDS} /></Root></>;
 }

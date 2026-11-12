@@ -1,4 +1,4 @@
-// RT2 red team (local, not committed). N6: stamp_failure (lib.rs:950) skips stamping when the head's stored text
+// RT2 red team. N6: stamp_failure (lib.rs:950) skips stamping when the head's stored text
 // contains the substring "head_status":"failed" anywhere. Reachability check for v3: can a body that is not a
 // failed head carry that substring and still pass the v3 validator that accept_v3 runs before storing?
 use near_sdk::serde_json::{self, json, Value};

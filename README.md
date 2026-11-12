@@ -169,6 +169,8 @@ PASS published attestation report tee/fixtures/attestation-report-368aa2.json.b6
 
 Real output on 12 Nov 2026. The days-left figures count down. The command fails once any fixture has fewer than 10 days left.
 
+At those figures the four 718ca9 sets reach the 10 day minimum around 27 Nov 2026 and the 368aa2 set around 1 Dec 2026, after judging (16 to 18 Nov). From then on `check:fixtures`, judge S1 and `npm test` fail by design until the sets are re-signed.
+
 ### Optional: read the live testnet registry (no keys)
 
 These commands use public network reads only (NEAR testnet RPC; the attestation and fingerprint commands also call Intel and NVIDIA attestation services). No keys and no transactions.
@@ -179,6 +181,13 @@ On-chain refusals from that run:
 
 - a public test-key certificate was refused with `signer not registered`: [Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ](https://explorer.testnet.near.org/transactions/Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ)
 - a second pledge of an already pledged loan was refused with `already pledged elsewhere`: [8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs](https://explorer.testnet.near.org/transactions/8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs)
+
+| Account | Role |
+|---|---|
+| [`registry.tnlab-368aa2.testnet`](https://testnet.nearblocks.io/address/registry.tnlab-368aa2.testnet) | Live registry: TEE signer, attestation report hash, 16 verdicts. Default for every live read. |
+| [`tnlab-368aa2.testnet`](https://testnet.nearblocks.io/address/tnlab-368aa2.testnet) | Admin and registrar of the live registry. |
+| [`registry.tnlab-718ca9.testnet`](https://testnet.nearblocks.io/address/registry.tnlab-718ca9.testnet) | Earlier registry instance. Recorded history, read by labelled CI steps. |
+| [`receipts.tnlab-718ca9.testnet`](https://testnet.nearblocks.io/address/receipts.tnlab-718ca9.testnet) | Receipts account pinned in receipts v3 and OutLayer engine-v3; scope of the recorded loan fingerprints. |
 
 `registry.tnlab-718ca9.testnet` is the earlier instance. Its on-chain metadata names source commit `d37b9d2` (code hash `Foc9f2oJ8Ja1ddKSt91kXTxVm33nRBMjx3e4LHMP13EW`), and tag `registry-tnlab-718ca9` points at `d37b9d2`. The live reads below default to the current registry, `registry.tnlab-368aa2.testnet`, which holds its own TEE signer, attestation report hash, 16 verdicts and 16 `submit_verdict` calls. The earlier instance keeps its own recorded history; each command below shows the flag that reads it instead.
 
@@ -311,7 +320,7 @@ A mainnet move would change this:
 - The TEE signer is registered by the registrar after an off-chain attestation check that anyone can repeat (`npm run verify:attestation`). The contract does not verify the hardware quote itself.
 - Live instance (testnet RPC `get_roles` and `view_access_key_list`, 12 Nov 2026; key counts only): admin and registrar are `tnlab-368aa2.testnet`, pauser is `pauser.tnlab-368aa2.testnet`, servicer is `servicer.tnlab-368aa2.testnet`. `registry.tnlab-368aa2.testnet`, `tnlab-368aa2.testnet`, `servicer.tnlab-368aa2.testnet` and `pauser.tnlab-368aa2.testnet` each have 1 full-access key and no function-call keys. CI job `judge-path` checks the registry and its parent account with `npm run rt17:check`. Role calls attach 1 yoctoNEAR, so role holders use full-access keys.
 - The registry contract has no upgrade method. The 1 full-access key on `registry.tnlab-368aa2.testnet` is its upgrade authority: whoever holds it can deploy new code to that account.
-- On the earlier instance, `registry.tnlab-718ca9.testnet` has 2 full-access keys and no function-call keys (testnet RPC, 12 Nov 2026). The default live reads, the demo and `npm run judge` do not use that instance; CI re-reads its recorded history in separate, labelled earlier-instance steps.
+- The default live reads, the demo and `npm run judge` do not use the earlier instance (`tnlab-718ca9`); CI re-reads its recorded history in separate, labelled earlier-instance steps.
 - The demo agent, when used on testnet, signs with its own account. It refuses the master, `receipts.`, `query.`, `runner.` and `api.` accounts. `runAgent` buys nothing unless it is called with `execute: true`.
 - Never put a seed phrase or private key in the repo, in chat, or in a command.
 

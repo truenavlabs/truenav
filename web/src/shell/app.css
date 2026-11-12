@@ -284,3 +284,5 @@
 .tn .pill-bar.neg .tr i { background: var(--red); }
 .tn .wi { border: 1px solid var(--yellow); }
 .tn .dt td select, .tn .dt td input[type=number] { padding: 2px 6px; font-size: 12px; }
+/* depth modules embedded in the shell */
+.tn .tn-root.tn-embed { --tn-sans: var(--sans); --tn-mono: var(--mono); background: transparent; padding: 0; max-width: none; font-size: 13px; margin: 0; }

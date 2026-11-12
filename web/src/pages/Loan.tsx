@@ -8,6 +8,7 @@ import { ErrorBox, Hash, Note, PageHead, Panel, Q, Skel, SrcTag } from "../shell
 import { useAsync, useRegistry } from "../shell/store";
 import { sha256Hex } from "../lib/webhash";
 import { A } from "../ui";
+import { SLOTS } from "../shell/slots";
 
 export default function Loan({ hash }: { hash: string }) {
   const { view, tag, now } = useRegistry();
@@ -108,6 +109,8 @@ export default function Loan({ hash }: { hash: string }) {
                 ))}</tbody></table>
             </Panel>
           ) : null}
+
+          {SLOTS.LoanExtra ? <SLOTS.LoanExtra hash={hash} /> : null}
 
           <Panel className="mt" title="Privacy">
             <p>On chain: the loan hash, the holder, the verdict, anomaly codes, the request and response hashes. Not on chain: the document or the borrower. Someone who already holds the document can recompute the request hash and so link it to this loan and fund.</p>

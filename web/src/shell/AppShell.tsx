@@ -15,6 +15,11 @@ const NAV: { group: string; items: Item[] }[] = [
     { href: "/loans", label: "Loans", match: /^\/loans/ },
     ...(SLOTS.Markets ? [{ href: "/markets", label: "Markets" }] : []),
   ] },
+  ...(SLOTS.roleHome ? [{ group: "Views", items: [
+    ...(SLOTS.roleHome.investor ? [{ href: "/investor", label: "Investor" }] : []),
+    ...(SLOTS.roleHome.manager ? [{ href: "/manager", label: "Fund manager" }] : []),
+    ...(SLOTS.roleHome.auditor ? [{ href: "/auditor", label: "Auditor" }] : []),
+  ] }] : []),
   { group: "Verify it yourself", items: [
     { href: "/verify", label: "Verifier" },
     { href: "/features", label: "All features", match: /^\/features$/ },

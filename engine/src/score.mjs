@@ -206,10 +206,11 @@ export function validTeeStore(x) {
 /**
  * TEE status of one pledged loan (owner decisions 6 Nov 2026): the latest stored verdict counts. A flag makes the
  * loan unverified ("TEE flag: <codes>"). With no verdict the loan is pending for 7 days after its on-chain pledge
- * time, then unverified ("TEE check overdue"). A loan with no loan_hash or no store entry is "not checked" and its
+ * time, then unverified ("TEE check overdue"). A verdict whose expires_at_ms is before the verdict clock is "expired": not a
+ * pass, the loan is unverified ("TEE verdict expired"); expiry equal to the clock is still current. A loan with no loan_hash or no store entry is "not checked" and its
  * score is unchanged.
  */
-function teeStatus(teeStore, l, nowMs) {
+function teeStatus(teeStore, l, nowMs, verdictNowMs = nowMs) {
   if (!teeStore) return { status: "not checked" };
   if (!isId(l.loan_hash)) return { status: "not checked" };
   const e = own(teeStore, String(l.loan_hash));
@@ -217,13 +218,16 @@ function teeStatus(teeStore, l, nowMs) {
   // C2 (decided by owner 6 Nov 2026): a verdict counts only if stored at or after the current pledge time.
   const raw = e.latest && typeof e.latest === "object" ? e.latest : null;
   const v = raw && (!isNum(e.pledged_at_ms) || (isNum(raw.at_ms) && raw.at_ms >= e.pledged_at_ms)) ? raw : null;
+  // N-02: a verdict past its expiry no longer counts, whether pass or flag: the loan is unverified ("TEE verdict
+  // expired") until a fresh verdict is stored. A verdict without expires_at_ms is read as before.
+  if (v && isNum(v.expires_at_ms) && v.expires_at_ms < verdictNowMs) return { status: "expired" };
   if (v && v.verdict === "flag") return { status: "flag", anomalies: Array.isArray(v.anomalies) ? v.anomalies.map(String) : [] };
   if (v && v.verdict === "pass") return { status: "pass" };
   if (isNum(e.pledged_at_ms) && nowMs - e.pledged_at_ms > THRESHOLDS.teeGraceDays * 86400000) return { status: "overdue" };
   return { status: "pending" };
 }
 
-function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now()) {
+function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now(), verdictNowMs = nowMs) {
   const pdT = (model && model.pd) || {};
   const lgdT = (model && model.lgd) || {};
   const md = fund.policy_markdown && typeof fund.policy_markdown === "object" ? fund.policy_markdown : {};
@@ -308,9 +312,10 @@ function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now(
     }
 
     // TEE underwriter verdict for a pledged loan (owner decisions 6 Nov 2026).
-    const tee = nftHeld ? teeStatus(teeStore, l, nowMs) : { status: "not pledged" };
+    const tee = nftHeld ? teeStatus(teeStore, l, nowMs, verdictNowMs) : { status: "not pledged" };
     if (tee.status === "flag") push(`TEE flag: ${tee.anomalies.join(", ")}`);
     if (tee.status === "overdue") push("TEE check overdue");
+    if (tee.status === "expired") push("TEE verdict expired");
 
     const excluded = reasons.length > 0;
     const anomaly = l.anomaly === true;
@@ -483,7 +488,10 @@ export function scoreFund(model, fund, opts = {}) {
   const teeStore = validTeeStore(opts.teeStore) ? opts.teeStore : null;
   if (!teeStore) flags.push("TEE verdicts not checked");
   if (!teeStore) flags.push("ownership not checkable (no chain data)");
-  const { lines } = assessLoans(model, f, sharedNfts, teeStore, now);
+  // Verdict expiry is judged at opts.verdictNow (the time the chain was read; live readers pass the wall clock), or at
+  // the valuation time when it is not given, so replays of fixed fixtures stay deterministic.
+  const verdictNow = opts.verdictNow === undefined ? now : resolveNow(opts.verdictNow);
+  const { lines } = assessLoans(model, f, sharedNfts, teeStore, now, verdictNow);
   if (lines.some((l) => l.reasons && l.reasons.includes("nft_id listed by several funds"))) flags.push("nft_id listed by several funds");
   const open = lines.filter((l) => l.open);
   const verified = open.filter((l) => l.verified);
@@ -654,6 +662,7 @@ export function scoreFund(model, fund, opts = {}) {
       flag: open.filter((l) => l.tee === "flag").length,
       pending: open.filter((l) => l.tee === "pending").length,
       overdue: open.filter((l) => l.tee === "overdue").length,
+      expired: open.filter((l) => l.tee === "expired").length,
       notChecked: open.filter((l) => l.tee === "not checked").length,
       loans: open.filter((l) => l.tee && l.tee !== "not pledged").map((l) => ({ id: l.id, status: l.tee })),
     },

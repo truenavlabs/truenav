@@ -102,3 +102,41 @@ test("the hostile bucket-style keys cannot reach prototype entries", () => {
   const h = by(run(store, fs), "harbor-credit-fund");
   assert.equal(h.tee.notChecked, 1);
 });
+
+// N-02: a verdict past its expiry is not a current pass. The clock is opts.verdictNow (the chain read time).
+test("a verdict 1 second past its expiry counts as expired; 1 second before counts as current", () => {
+  const READ_MS = NOW_MS + 3 * DAY;
+  const withExpiry = (expiresAt) => {
+    const s = allPass();
+    for (const e of Object.values(s)) e.latest.expires_at_ms = expiresAt;
+    return s;
+  };
+  const at = (store) => E.scorePortfolio(model, funds(), { now: NOW, certStore: STORE, teeStore: store, verdictNow: READ_MS });
+
+  const past = by(at(withExpiry(READ_MS - 1000)), "harbor-credit-fund");
+  assert.equal(past.tee.expired, 11);
+  assert.equal(past.tee.pass, 0);
+  assert.ok(past.unverified.reasons.some((x) => x.reason === "TEE verdict expired"));
+  assert.ok(past.raw < 99.17);
+
+  const current = by(at(withExpiry(READ_MS + 1000)), "harbor-credit-fund");
+  assert.equal(current.tee.expired, 0);
+  assert.equal(current.tee.pass, 11);
+  assert.equal(r2(current.raw), 99.17);
+  assert.equal(current.band, "green");
+
+  // equal to the clock is still current; a flag past expiry is expired too, not a flag
+  assert.equal(by(at(withExpiry(READ_MS)), "harbor-credit-fund").tee.pass, 11);
+  const flagged = withExpiry(READ_MS - 1000);
+  for (const e of Object.values(flagged)) { e.latest.verdict = "flag"; e.latest.anomalies = ["amount_mismatch"]; }
+  const fl = by(at(flagged), "harbor-credit-fund");
+  assert.equal(fl.tee.flag, 0); assert.equal(fl.tee.expired, 11);
+});
+
+test("without verdictNow, expiry is judged at the valuation time (fixed replays stay deterministic)", () => {
+  const s = allPass();
+  for (const e of Object.values(s)) e.latest.expires_at_ms = NOW_MS + 1000;
+  assert.equal(by(run(s), "harbor-credit-fund").tee.pass, 11);
+  for (const e of Object.values(s)) e.latest.expires_at_ms = NOW_MS - 1000;
+  assert.equal(by(run(s), "harbor-credit-fund").tee.expired, 11);
+});

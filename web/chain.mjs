@@ -90,10 +90,18 @@ export async function loadChainState({ funds, loans, contract = DEFAULT_CONTRACT
     return { ...l, lock, latest, verdicts, flags, holder: token ? token.owner_id : null };
   }));
   // The engine's TEE verdict store (NAV_SPEC R25): latest verdict counts, pledge time starts the 7-day grace.
+  // N-02: get_latest_verdict returns a verdict even after its expiry, so expires_at_ms is kept and the scorer
+  // reports an expired verdict as expired, not as a pass.
   const teeStore = {};
   for (const l of loanRows) {
     if (!l.lock) continue;
-    teeStore[l.loan_hash] = { fund_id: l.lock.fund_id, pledged_at_ms: l.lock.locked_at_ms, latest: l.latest ? { verdict: l.latest.verdict, anomalies: l.latest.anomalies, at_ms: l.latest.at_ms } : null };
+    teeStore[l.loan_hash] = { fund_id: l.lock.fund_id, pledged_at_ms: l.lock.locked_at_ms, latest: l.latest ? { verdict: l.latest.verdict, anomalies: l.latest.anomalies, at_ms: l.latest.at_ms, ...expiryOf(l.latest) } : null };
   }
   return { contract, rpc: url, codeHash: hash, sourceMetadata, signers, teeSigners, funds: fundRows, loans: loanRows, teeStore, readAt: new Date().toISOString() };
+}
+
+/** { expires_at_ms } as a number when the stored verdict carries one (u64 may arrive as a string), else {}. */
+export function expiryOf(v) {
+  const n = v && v.expires_at_ms !== undefined && v.expires_at_ms !== null ? Number(v.expires_at_ms) : NaN;
+  return Number.isFinite(n) ? { expires_at_ms: n } : {};
 }

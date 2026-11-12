@@ -42,6 +42,18 @@ test("a set that is fully on chain passes every check", async () => {
   assert.ok(chain.calls.every((c) => c.contract === REGISTRY && ["get_tee_signers", "get_verdicts_page"].includes(c.method)), "only these two views are called");
 });
 
+// N-02: the set's expiry is the expiry of every stored verdict (the per-record check requires them equal). One second
+// past it the check fails with the set reported as expired, before the chain is read; one second before it is current.
+test("a verdict set 1 second past expiry is reported as expired; 1 second before is current", async () => {
+  const file = syntheticSet();
+  let r = await run(file, chainFor(file), { nowMs: file.expires_at_ms + 1000 });
+  assert.equal(r.ok, false);
+  assert.ok(failing(r).some((t) => /expired/.test(t)), failing(r).join("; "));
+  r = await run(file, chainFor(file), { nowMs: file.expires_at_ms - 1000 });
+  assert.deepEqual(failing(r), []);
+  assert.equal(r.checks.filter((c) => /: on chain, pass/.test(c.text)).length, 2);
+});
+
 test("the signer, its model and its attestation hash on chain must be the file's", async () => {
   const file = syntheticSet();
   let r = await run(file, chainFor(file, { signer: "0x" + "1".repeat(40) }));

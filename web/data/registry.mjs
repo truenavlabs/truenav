@@ -205,6 +205,7 @@ export const VIEW_METHODS = Object.freeze([
   ["get_verdict_count", { loan_hash: "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc" }],
   ["get_verdicts_page", { loan_hash: "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc", from_index: 0, limit: 10 }],
   ["get_flag_count", { loan_hash: "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc" }],
+  ["pledge_message_used", { message: "paste a signed pledge message" }],
   ["nft_token", { token_id: "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc" }],
   ["nft_tokens", { from_index: "0", limit: 20 }], ["nft_tokens_for_owner", { account_id: "harbor.tnlab-368aa2.testnet", from_index: "0", limit: 20 }],
   ["nft_supply_for_owner", { account_id: "harbor.tnlab-368aa2.testnet" }], ["nft_total_supply", {}], ["nft_metadata", {}], ["contract_source_metadata", {}],

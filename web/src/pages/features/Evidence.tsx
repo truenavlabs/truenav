@@ -1,16 +1,18 @@
 import replay from "../../../data/recorded/judge-replay.json";
 import counts from "../../../data/recorded/test-counts.json";
+import { when } from "../../shell/fmt";
 import { FeatureFrame, Note, PageHead, Panel, SrcTag, StatusChip } from "../../shell/kit";
 
 type Stage = { id: string; name: string; status: string; claim: string; evidence: string; label?: string };
 
 export default function Evidence() {
   const stages = (replay as { stages: Stage[] }).stages;
+  const eph = (replay as unknown as { ephemeral: { generated_at: string; wall_ms: number } }).ephemeral;
   const passed = stages.filter((s) => s.status === "pass").length;
   const tryIt = (
     <>
       <div className="kpirow">
-        <div className="kpi"><div className="kl">Judge stages</div><div className="kval ok">{passed} of {stages.length}</div><div className="ks">offline replay, commit {replay.commit.slice(0, 7)}</div></div>
+        <div className="kpi"><div className="kl">Judge stages</div><div className="kval ok">{passed} of {stages.length}</div><div className="ks">offline replay, commit {replay.commit.slice(0, 7)}, {when(eph.generated_at)}, {(eph.wall_ms / 1000).toFixed(1)} s</div></div>
         <div className="kpi"><div className="kl">Tests</div><div className="kval">{counts.tests}</div><div className="ks">{counts.pass} pass, {counts.fail} fail, {counts.skipped} skipped</div></div>
         <div className="kpi"><div className="kl">Measured on</div><div className="kval" style={{ fontSize: 16 }}>{counts.commit}</div><div className="ks">{counts.command}, Node {counts.node}</div></div>
       </div>

@@ -63,7 +63,7 @@ test("report lists every key, its permission and the full-access count, and prep
   });
 });
 
-test("--check passes with one full-access key and fails with two", async () => {
+test("--check passes with exactly one full-access key and fails with two or none", async () => {
   const [a, b, c] = [pub(), pub(), pub()];
   await withRpc([fa(a, 1), fc(c, 5)], async ({ url }) => {
     const r = await run(["--check", "--contract", ACCOUNT, "--rpc", url]);
@@ -74,8 +74,25 @@ test("--check passes with one full-access key and fails with two", async () => {
     assert.equal(r.code, 1); assert.match(r.stdout, /FAIL .* 2 full-access keys/);
   });
   await withRpc([fc(c, 5)], async ({ url }) => {
-    assert.equal((await run(["--check", "--contract", ACCOUNT, "--rpc", url])).code, 0);
+    const r = await run(["--check", "--contract", ACCOUNT, "--rpc", url]);
+    assert.equal(r.code, 1); assert.match(r.stdout, /FAIL .* 0 full-access keys, expected exactly 1/);
   });
+});
+
+test("--check takes several --contract values and fails if any one of them is wrong", async () => {
+  const [a, b] = [pub(), pub()];
+  await withRpc([fa(a, 1)], async ({ url }) => {
+    const r = await run(["--check", "--contract", ACCOUNT, "--contract", "tnlab-keyaudit-test.testnet", "--rpc", url]);
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal((r.stdout.match(/^PASS /gm) || []).length, 2);
+  });
+  await withRpc([fa(a, 1), fa(b, 2)], async ({ url }) => {
+    const r = await run(["--check", "--contract", ACCOUNT, "--contract", "tnlab-keyaudit-test.testnet", "--rpc", url]);
+    assert.equal(r.code, 1);
+    assert.equal((r.stdout.match(/^FAIL /gm) || []).length, 2);
+  });
+  // several accounts are only for --check
+  assert.equal((await run(["--contract", ACCOUNT, "--contract", "tnlab-keyaudit-test.testnet"])).code, 2);
 });
 
 test("--backup-key or --owner-key with exactly two full-access keys prints the exact DeleteKey transaction", async () => {

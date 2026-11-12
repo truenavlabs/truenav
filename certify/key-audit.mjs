@@ -1,7 +1,7 @@
 // RT-17 helper: list the access keys on a registry account, read only. No keys, no signing, no transactions sent.
 //
 //   node certify/key-audit.mjs [--contract <account>] [--rpc <url>] [--owner-key <pub>] [--backup-key <pub>]
-//   node certify/key-audit.mjs --check [--contract <account>] [--rpc <url>]
+//   node certify/key-audit.mjs --check [--contract <account>]... [--rpc <url>]
 //
 // Default report: every access key on the account with its permission and nonce, and how many are full access.
 // The chain does not say which full-access key belongs to whom. If you name one of two full-access keys with
@@ -10,8 +10,9 @@
 // is only printed, as JSON and as base64 of the borsh bytes. This file has no code that signs or broadcasts, and it
 // refuses a value that is a secret key.
 //
-// --check: exit 0 if the account has at most one full-access key, exit 1 if it has more, exit 2 on a usage or
-// network error. It is an npm script (npm run rt17:check), not a CI job.
+// --check: exit 0 if every named account has exactly one full-access key, exit 1 if any has none or more than one,
+// exit 2 on a usage or network error. --contract may be given more than once with --check. CI runs it for the
+// current 368aa2 registry and its master (npm run rt17:check).
 //
 // Only the RPC methods `query` (view_access_key_list) are called.
 import { PublicKey, createTransaction, actions, encodeTransaction, baseDecode } from "near-api-js";
@@ -32,18 +33,20 @@ export function parsePublicKey(text, flag) {
 }
 
 export function parseArgs(argv, env = process.env) {
-  const out = { contract: env.TRUENAV_CONTRACT || DEFAULT_CONTRACT, rpc: env.TRUENAV_RPC || DEFAULT_RPC, ownerKey: null, backupKey: null, check: false };
+  const out = { contracts: [], contract: env.TRUENAV_CONTRACT || DEFAULT_CONTRACT, rpc: env.TRUENAV_RPC || DEFAULT_RPC, ownerKey: null, backupKey: null, check: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const val = () => { if (i + 1 >= argv.length || argv[i + 1].startsWith("--")) throw new UsageError(`${a} needs a value`); return argv[++i]; };
     if (a === "--check") out.check = true;
-    else if (a === "--contract") out.contract = val();
+    else if (a === "--contract") { out.contract = val(); out.contracts.push(out.contract); }
     else if (a === "--rpc") out.rpc = val();
     else if (a === "--owner-key") out.ownerKey = parsePublicKey(val(), "--owner-key");
     else if (a === "--backup-key") out.backupKey = parsePublicKey(val(), "--backup-key");
     else throw new UsageError(`unknown argument ${a}`);
   }
-  if (!/^[a-z0-9._-]{2,64}$/.test(out.contract)) throw new UsageError("--contract must be a NEAR account id");
+  if (!out.contracts.length) out.contracts.push(out.contract);
+  for (const c of out.contracts) if (!/^[a-z0-9._-]{2,64}$/.test(c)) throw new UsageError("--contract must be a NEAR account id");
+  if (!out.check && out.contracts.length > 1) throw new UsageError("--contract may be repeated only with --check");
   if (out.ownerKey && out.backupKey && out.ownerKey === out.backupKey) throw new UsageError("--owner-key and --backup-key are the same key");
   if (out.check && (out.ownerKey || out.backupKey)) throw new UsageError("--check does not take --owner-key or --backup-key");
   return out;
@@ -104,16 +107,24 @@ export function identify(keys, { ownerKey, backupKey }) {
 
 export async function main(argv, env = process.env, out = console.log) {
   const a = parseArgs(argv, env);
+  if (a.check) {
+    let code = 0;
+    for (const account of a.contracts) {
+      const { block_hash, block_height, keys } = await loadKeys(account, a.rpc);
+      const fa = keys.filter((k) => k.full_access);
+      out(`access keys on ${account} (final block ${block_height}, ${block_hash}):`);
+      for (const k of keys) out(`  ${k.public_key}  ${k.permission}  nonce ${k.nonce}`);
+      out(`full-access keys: ${fa.length}`);
+      if (fa.length !== 1) { out(`FAIL ${account} has ${fa.length} full-access keys, expected exactly 1 (RT-17)`); code = 1; }
+      else out(`PASS ${account} has 1 full-access key`);
+    }
+    return code;
+  }
   const { block_hash, block_height, keys } = await loadKeys(a.contract, a.rpc);
   const fa = keys.filter((k) => k.full_access);
   out(`access keys on ${a.contract} (final block ${block_height}, ${block_hash}):`);
   for (const k of keys) out(`  ${k.public_key}  ${k.permission}  nonce ${k.nonce}`);
   out(`full-access keys: ${fa.length}`);
-  if (a.check) {
-    if (fa.length > 1) { out(`FAIL ${a.contract} has ${fa.length} full-access keys, expected at most 1 (RT-17)`); return 1; }
-    out(`PASS ${a.contract} has ${fa.length} full-access key${fa.length === 1 ? "" : "s"}`);
-    return 0;
-  }
   const id = identify(keys, a);
   if (!id.owner) { out(`no transaction prepared: ${id.why}`); return 0; }
   const tx = buildDeleteKey({ account: a.contract, signingKey: id.owner.public_key, signingNonce: id.owner.nonce, deleteKey: id.backup.public_key, blockHash: block_hash });
@@ -122,7 +133,7 @@ export async function main(argv, env = process.env, out = console.log) {
   out("unsigned DeleteKey transaction (NOT SENT; this script cannot sign or send):");
   out(JSON.stringify(tx.json, null, 2));
   out(`unsigned transaction, borsh, base64: ${tx.borsh_base64}`);
-  out("Sign it offline with the owner key and broadcast it yourself. After it lands, run: npm run rt17:check");
+  out(`Sign it offline with the owner key and broadcast it yourself. After it lands, run: node certify/key-audit.mjs --check --contract ${a.contract}`);
   out("The block hash is valid for about a day; re-run this script for a fresh one.");
   return 0;
 }

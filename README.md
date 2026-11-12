@@ -11,11 +11,11 @@ TrueNav informs only. It does not block any transfer. Testnet and fictional data
 No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Steps 1 to 6 were first recorded from a fresh clone of this repository with Node v24.22.1 on 11 Nov 2026 (Asia/Bangkok, UTC+7). The `npm test` counts below were re-verified on 11 Nov 2026 with Rust 1.99.0 on `PATH` and without Python `jsonschema`. Full expected output for each step is in [Expected output](#expected-output).
 
 1. Do: `npm ci`
-   See: exit 0 and `added 506 packages` (11 Nov 2026).
+   See: exit 0 and `added 505 packages` on a fresh Linux x64 clone (11 Nov 2026; 506 was recorded the same day on another machine, so the count can differ by platform, cause unverified). It ends with an `npm audit` summary of the whole tree including dev tools (37 vulnerabilities on that fresh install). That is not the production audit: `npm audit --omit=dev --audit-level=high` exits 0 and prints `2 low severity vulnerabilities`.
 2. Do: `npm run judge -- --replay`
-   See: one `PASS` line for each of 10 stages (S1 fixtures, S2 tamper, S3 engine, S4 v3 pin, S5 failed head, S6 paid report, S7 dashboard data, S8 mirror, S9 attest local subset, S10 stamp), then `judge: 10 of 10 stages PASS, 0 skipped not verified, ok true`, and exit 0. It runs offline in about 13 s (12.4, 12.5 and 12.9 s measured) and writes `out/judge-replay.json`. Details in [Step 2](#step-2-npm-run-judge-----replay).
+   See: one `PASS` line for each of 10 stages (S1 fixtures, S2 tamper, S3 engine, S4 v3 pin, S5 failed head, S6 paid report, S7 dashboard data, S8 mirror, S9 attest local subset, S10 stamp), then `judge: 10 of 10 stages PASS, 0 skipped not verified, ok true`, and exit 0. It runs offline in about 13 s (12.4, 12.5 and 12.9 s measured; 18.6 s on a slower Linux container) and writes `out/judge-replay.json`. Details in [Step 2](#step-2-npm-run-judge-----replay).
 3. Do: `npm test`
-   See: `ℹ tests 417`, `ℹ pass 413`, `ℹ fail 0`, `ℹ skipped 4`, then `All worked example numbers match.` Takes about 100 to 110 s (104.3, 102.5 and 104.4 s measured on 11 Nov 2026 with Rust 1.99.0 on `PATH` and no Python `jsonschema`). The 4 skipped tests are the Python schema checks, which need `TRUENAV_PYTHON` set to a Python 3 with `jsonschema` 4.23.0. Without Rust 1.99.0 as well, the OutLayer output-parity helper is also skipped (5 skipped).
+   See: `ℹ tests 417`, `ℹ pass 413`, `ℹ fail 0`, `ℹ skipped 4`, then `All worked example numbers match.` Takes about 100 to 110 s (104.3, 102.5 and 104.4 s measured on 11 Nov 2026 with Rust 1.99.0 on `PATH` and no Python `jsonschema`; 192 s on a slower Linux container). The 4 skipped tests are the Python schema checks. They run when `python3` (or the interpreter in `TRUENAV_PYTHON`) can import `jsonschema`, and are skipped otherwise; CI pins 4.23.0, and 4.26.0 also passed. On a fresh Linux clone with `jsonschema` 4.26.0 installed and Rust 1.99.0 on `PATH` (11 Nov 2026), the counts are `tests 417`, `pass 417`, `fail 0`, `skipped 0`. Without Rust 1.99.0 as well, the OutLayer output-parity helper is also skipped (5 skipped). When the output is not a terminal, the same counts print as `# tests 417`, `# pass 413`.
 4. Do: `npm run demo`
    See: `T1-altered-amount ... -> flag amount_mismatch`, `T2-hidden-injection ... -> flag amount_mismatch, injection_attempt`, `T3-duplicate-as-new ... -> flag duplicate_document`, `honest documents: 16 of 16 pass, every signature checked`, then Harbor `99.17 green` and, after the T1 flag, `51.59 red`.
 5. Do: `npm run eval`
@@ -69,7 +69,7 @@ judge: wrote out/judge-replay.json, wall 12.5 s
 ### Step 3: `npm test`
 
 ```bash
-export TRUENAV_PYTHON=python3   # or the interpreter that has jsonschema 4.23.0
+export TRUENAV_PYTHON=python3   # optional: the interpreter that has jsonschema (CI pins 4.23.0); python3 is the default
 npm test
 ```
 
@@ -110,7 +110,7 @@ Meridian Yield Fund
 All worked example numbers match.
 ```
 
-The 4 skipped checks (verified on 11 Nov 2026 with Rust 1.99.0 and no `jsonschema`) are the four Python files: `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` (need `jsonschema` 4.23.0). Without Rust 1.99.0 the OutLayer output-parity helper is also skipped, so 5 tests are skipped. The suite still exits 0.
+The 4 skipped checks (verified on 11 Nov 2026 with Rust 1.99.0 and no `jsonschema`) are the four Python files: `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` (need an importable `jsonschema`). Without Rust 1.99.0 the OutLayer output-parity helper is also skipped, so 5 tests are skipped. The suite still exits 0.
 
 ### Step 4: `npm run demo`
 

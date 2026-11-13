@@ -234,6 +234,7 @@ function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now(
   const md = fund.policy_markdown && typeof fund.policy_markdown === "object" ? fund.policy_markdown : {};
   const loansIn = Array.isArray(fund.loans) ? fund.loans : [];
   const seenNft = new Set();
+  const seenLoanHash = new Set();
   const lines = [];
 
   loansIn.forEach((input, i) => {
@@ -303,6 +304,12 @@ function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now(
       // Offline fallback (6a, decided by owner 6 Nov 2026): with no chain data, an nft_id verified in more than one
       // fund counts as verified in neither. With chain data the on-chain pledge holder decides (below).
       if (!teeStore && sharedNfts && sharedNfts.has(nftId)) push("nft_id listed by several funds");
+    }
+    // Duplicate loan_hash: first occurrence may verify, later copies are excluded.
+    if (isId(l.loan_hash)) {
+      const h = String(l.loan_hash);
+      if (seenLoanHash.has(h)) push("duplicate loan");
+      else seenLoanHash.add(h);
     }
     // 6a (decided by owner 6 Nov 2026): with chain data, a loan counts as verified only for the fund whose on-chain
     // pledge holds it. A rival listing the same loan is unverified for the rival only.

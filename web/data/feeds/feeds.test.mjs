@@ -177,3 +177,37 @@ test("committed snapshot stays under 100 KB and stamps fetchedAt", () => {
     if (row.mode !== "error") assert.notEqual(row.value, 0);
   }
 });
+
+test("parsers drop objects, unbounded strings and non-finite numbers from hostile feeds", async () => {
+  const f = await import("./feeds.mjs");
+  const fiscal = f.parseFiscalRates({ data: [
+    { record_date: "2026-11-01", security_desc: { a: 1 }, avg_interest_rate_amt: "4.1" },
+    { record_date: "2026-11-01", security_desc: "x".repeat(50000), avg_interest_rate_amt: "4.25" },
+    { record_date: "2026-11-01", security_desc: "Treasury Bills", avg_interest_rate_amt: "abc" },
+  ] });
+  assert.equal(fiscal.rows.length, 1);
+  assert.equal(fiscal.rows[0].security_desc.length, 80);
+  assert.equal(fiscal.rows[0].avg_interest_rate_amt, "4.25");
+  const stats = f.parseNearblocksStats({ stats: { nodes_online: { a: 1 }, tps: "12", block: "x" } });
+  assert.deepEqual(stats, { nodes: null, tps: 12, near_price_usd: null, block_height: null });
+  assert.equal(f.parseNyFed({ refRates: [{ percentRate: "abc" }] }), null);
+  assert.equal(f.parseNyFed({ refRates: [{ percentRate: "4.33", type: { x: 1 } }] }).percent_rate, 4.33);
+  const good = "8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs";
+  const txns = f.parseNearblocksTxns({ txns: [
+    { transaction_hash: good, method: "pledge_loan", signer_account_id: "a.testnet" },
+    { transaction_hash: "javascript:alert(1)", method: { a: 1 }, signer_account_id: ["x"] },
+    { hash: "0".repeat(44), method: "m".repeat(500) },
+  ] });
+  assert.equal(txns[0].explorer, `https://testnet.nearblocks.io/txns/${good}`);
+  assert.equal(txns[1].explorer, null);
+  assert.equal(txns[1].hash, null);
+  assert.equal(txns[1].method, null);
+  assert.equal(txns[1].signer, null);
+  assert.equal(txns[2].explorer, null, "0 is not base58");
+  assert.equal(txns[2].method.length, 64);
+  const st = f.parseStablecoins({ peggedAssets: [{ symbol: { a: 1 }, name: "N".repeat(500), circulating: { peggedUSD: 5 } }] });
+  assert.equal(st.top[0].symbol.length, 16);
+  assert.equal(st.top[0].name.length, 64);
+  assert.equal(f.parseNearStatus({ sync_info: { latest_block_height: { a: 1 } } }), null);
+  assert.equal(f.parseNearStatus({ sync_info: { latest_block_height: 5, latest_block_hash: "<b>" } }).latest_block_hash, null);
+});

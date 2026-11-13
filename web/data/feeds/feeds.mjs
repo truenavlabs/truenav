@@ -275,13 +275,30 @@ export function presentFeed({ id, live, snapshot, now = Date.now() }) {
   };
 }
 
+// Feed values are untrusted. Parsers keep bounded strings and finite numbers only, null otherwise,
+// so a hostile or broken response cannot put an object into the page or stretch the layout.
+export function str(x, n = 64) {
+  return typeof x === "string" ? x.slice(0, n) : null;
+}
+export function num(x) {
+  if (typeof x !== "number" && typeof x !== "string") return null;
+  if (typeof x === "string" && !/^\s*-?\d+(\.\d+)?([eE][-+]?\d+)?\s*$/.test(x)) return null;
+  const v = Number(x);
+  return Number.isFinite(v) ? v : null;
+}
+const BASE58_HASH = /^[1-9A-HJ-NP-Za-km-z]{43,44}$/;
+/** A NEAR transaction or block hash: base58, 43 or 44 characters. */
+export function nearHash(x) {
+  return typeof x === "string" && BASE58_HASH.test(x) ? x : null;
+}
+
 export function parseCoinGeckoSimple(json) {
   const ids = ["near", "bitcoin", "ethereum", "usd-coin"];
   const out = {};
   for (const id of ids) {
     const row = json && json[id];
-    if (!row || typeof row.usd !== "number") return null;
-    out[id] = { usd: row.usd, usd_24h_change: typeof row.usd_24h_change === "number" ? row.usd_24h_change : null };
+    if (!row || num(row.usd) == null || typeof row.usd !== "number") return null;
+    out[id] = { usd: row.usd, usd_24h_change: typeof row.usd_24h_change === "number" ? num(row.usd_24h_change) : null };
   }
   return out;
 }
@@ -298,7 +315,7 @@ export function parseDefiLlamaCoins(json) {
   const out = {};
   for (const [id, key] of Object.entries(map)) {
     const row = coins[key];
-    if (!row || typeof row.price !== "number") return null;
+    if (!row || typeof row.price !== "number" || num(row.price) == null) return null;
     out[id] = { usd: row.price };
   }
   return out;
@@ -307,12 +324,13 @@ export function parseDefiLlamaCoins(json) {
 export function parseStablecoins(json) {
   const assets = json && (json.peggedAssets || json.assets);
   if (!Array.isArray(assets)) return null;
-  const rows = assets.map((a) => {
+  const rows = assets.filter((a) => a && typeof a === "object").map((a) => {
     const circ = a.circulating && typeof a.circulating === "object" ? a.circulating.peggedUSD : a.circulating;
+    const symbol = str(a.symbol, 16) || str(a.name, 16) || "";
     return {
-      symbol: a.symbol || a.name || "",
-      name: a.name || a.symbol || "",
-      circulating_usd: typeof circ === "number" ? circ : null,
+      symbol,
+      name: str(a.name, 64) || symbol,
+      circulating_usd: typeof circ === "number" ? num(circ) : null,
     };
   }).filter((a) => a.circulating_usd != null && a.symbol);
   if (!rows.length) return null;
@@ -324,12 +342,17 @@ export function parseStablecoins(json) {
 export function parseFiscalRates(json) {
   const rows = json && json.data;
   if (!Array.isArray(rows) || !rows.length) return null;
-  const latestDate = rows[0].record_date;
-  const latest = rows.filter((r) => r.record_date === latestDate).map((r) => ({
-    record_date: r.record_date,
-    security_desc: r.security_desc,
-    avg_interest_rate_amt: r.avg_interest_rate_amt,
-  }));
+  const latestDate = rows[0] && str(rows[0].record_date, 10);
+  if (!latestDate) return null;
+  const latest = rows.filter((r) => r && r.record_date === latestDate).map((r) => {
+    const rate = num(r.avg_interest_rate_amt);
+    return {
+      record_date: latestDate,
+      security_desc: str(r.security_desc, 80),
+      avg_interest_rate_amt: rate == null ? null : String(rate),
+    };
+  }).filter((r) => r.security_desc && r.avg_interest_rate_amt != null);
+  if (!latest.length) return null;
   return { record_date: latestDate, rows: latest.slice(0, 12) };
 }
 
@@ -337,14 +360,14 @@ export function parseNyFed(json) {
   const rows = json && (json.refRates || json.refRate || json.data);
   const row = Array.isArray(rows) ? rows[0] : rows;
   if (!row || typeof row !== "object") return null;
-  const rate = row.percentRate ?? row.rate ?? row.effectiveRate;
-  if (rate === undefined || rate === null) return null;
+  const rate = num(row.percentRate ?? row.rate ?? row.effectiveRate);
+  if (rate == null) return null;
   return {
-    type: row.type || row.rateType || null,
-    effective_date: row.effectiveDate || row.effective_date || null,
-    percent_rate: Number(rate),
-    target_low: row.targetRateFrom ?? row.target_low ?? null,
-    target_high: row.targetRateTo ?? row.target_high ?? null,
+    type: str(row.type, 16) || str(row.rateType, 16),
+    effective_date: str(row.effectiveDate, 10) || str(row.effective_date, 10),
+    percent_rate: rate,
+    target_low: num(row.targetRateFrom ?? row.target_low),
+    target_high: num(row.targetRateTo ?? row.target_high),
   };
 }
 
@@ -353,19 +376,20 @@ export function parseFrankfurter(json) {
   const want = ["EUR", "THB", "GBP", "JPY"];
   const rates = {};
   for (const k of want) {
-    if (typeof json.rates[k] !== "number") return null;
+    if (typeof json.rates[k] !== "number" || num(json.rates[k]) == null) return null;
     rates[k] = json.rates[k];
   }
-  return { date: json.date || null, base: json.base || "USD", rates };
+  return { date: str(json.date, 10), base: str(json.base, 3) || "USD", rates };
 }
 
 export function parseNearStatus(json) {
   const sync = json && (json.sync_info || (json.result && json.result.sync_info));
-  if (!sync || sync.latest_block_height == null) return null;
+  const height = sync ? num(sync.latest_block_height) : null;
+  if (height == null) return null;
   return {
-    chain_id: (json.chain_id || (json.result && json.result.chain_id) || "testnet"),
-    latest_block_height: sync.latest_block_height,
-    latest_block_hash: sync.latest_block_hash || null,
+    chain_id: str(json.chain_id, 16) || str(json.result && json.result.chain_id, 16) || "testnet",
+    latest_block_height: height,
+    latest_block_hash: nearHash(sync.latest_block_hash),
   };
 }
 
@@ -373,7 +397,7 @@ export function parseNearblocksStats(json) {
   const src = json && json.stats ? json.stats : json && json.data && typeof json.data === "object" && !Array.isArray(json.data) ? json.data : json;
   if (!src || typeof src !== "object") return null;
   const pick = (keys) => {
-    for (const k of keys) if (src[k] != null) return src[k];
+    for (const k of keys) if (src[k] != null) return num(src[k]);
     return null;
   };
   return {
@@ -387,23 +411,28 @@ export function parseNearblocksStats(json) {
 export function parseNearblocksTxns(json) {
   const list = Array.isArray(json) ? json : json && (json.txns || json.txnsList || json.data);
   if (!Array.isArray(list)) return null;
-  return list.slice(0, 25).map((tx) => ({
-    hash: tx.transaction_hash || tx.hash || tx.id || null,
-    signer: tx.signer_account_id || tx.signer || tx.predecessor_account_id || null,
-    receiver: tx.receiver_account_id || tx.receiver || null,
-    method: tx.method || (tx.actions && tx.actions[0] && (tx.actions[0].method || tx.actions[0].action)) || null,
-    block_timestamp: tx.block_timestamp || tx.timestamp || null,
-    explorer: tx.transaction_hash || tx.hash ? `https://testnet.nearblocks.io/txns/${tx.transaction_hash || tx.hash}` : null,
-  }));
+  return list.slice(0, 25).filter((tx) => tx && typeof tx === "object").map((tx) => {
+    const hash = nearHash(tx.transaction_hash) || nearHash(tx.hash);
+    const act = Array.isArray(tx.actions) && tx.actions[0] && typeof tx.actions[0] === "object" ? tx.actions[0] : null;
+    const ts = tx.block_timestamp ?? tx.timestamp;
+    return {
+      hash,
+      signer: str(tx.signer_account_id, 64) || str(tx.signer, 64) || str(tx.predecessor_account_id, 64),
+      receiver: str(tx.receiver_account_id, 64) || str(tx.receiver, 64),
+      method: str(tx.method, 64) || (act && (str(act.method, 64) || str(act.action, 64))) || null,
+      block_timestamp: typeof ts === "number" ? num(ts) : str(ts, 32),
+      explorer: hash ? `https://testnet.nearblocks.io/txns/${hash}` : null,
+    };
+  });
 }
 
 export function parsePoolChart(json) {
   const list = Array.isArray(json) ? json : json && (json.data || json.chart);
   if (!Array.isArray(list)) return null;
-  const points = list.slice(-30).map((p) => ({
-    timestamp: p.timestamp || p.date || null,
-    apy: typeof p.apy === "number" ? p.apy : null,
-    tvl_usd: typeof p.tvlUsd === "number" ? p.tvlUsd : (typeof p.tvl === "number" ? p.tvl : null),
+  const points = list.slice(-30).filter((p) => p && typeof p === "object").map((p) => ({
+    timestamp: str(p.timestamp, 32) || str(p.date, 32),
+    apy: typeof p.apy === "number" ? num(p.apy) : null,
+    tvl_usd: typeof p.tvlUsd === "number" ? num(p.tvlUsd) : (typeof p.tvl === "number" ? num(p.tvl) : null),
   }));
   return { points };
 }
@@ -412,10 +441,10 @@ export function trimRwaProtocols(json) {
   const list = Array.isArray(json) ? json : json && json.protocols;
   if (!Array.isArray(list)) return null;
   return list
-    .filter((p) => p && p.category === "RWA" && typeof p.tvl === "number")
+    .filter((p) => p && p.category === "RWA" && typeof p.tvl === "number" && num(p.tvl) != null && str(p.name, 64))
     .sort((a, b) => b.tvl - a.tvl)
     .slice(0, 15)
-    .map((p) => ({ name: p.name, symbol: p.symbol || null, tvl_usd: p.tvl }));
+    .map((p) => ({ name: str(p.name, 64), symbol: str(p.symbol, 16), tvl_usd: p.tvl }));
 }
 
 export function trimTbillYields(json) {

@@ -177,7 +177,7 @@ function NearBlock({ near }) {
     txns.length ? h("table", { className: "tn-table" },
       h("thead", null, h("tr", null, h("th", null, "Method"), h("th", null, "Signer"), h("th", null, "Time"))),
       h("tbody", null, txns.slice(0, 8).map((tx) => h("tr", { key: tx.hash || tx.method },
-        h("td", null, tx.explorer ? h("a", { href: tx.explorer }, tx.method || "txn") : (tx.method || "")),
+        h("td", null, tx.explorer ? h("a", { href: tx.explorer, target: "_blank", rel: "noopener noreferrer" }, tx.method || "txn") : (tx.method || "")),
         h("td", { className: "tn-mono" }, tx.signer || ""),
         h("td", null, nearTime(tx.block_timestamp)))))) : h(Empty, null, "No registry transactions in this read."));
 }

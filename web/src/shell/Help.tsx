@@ -27,7 +27,7 @@ export function HelpBubble({ page }: { page: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
   const ask = async () => {
-    const question = q.trim().slice(0, 2000);
+    const question = q.trim().slice(0, 1000);
     if (!question) return;
     setHits(search(question, 3));
     setAi(null);
@@ -65,7 +65,7 @@ export function HelpBubble({ page }: { page: string }) {
             {tab === "ask" ? (
               <>
                 <form onSubmit={(e) => { e.preventDefault(); void ask(); }} className="hp-ask">
-                  <input ref={inputRef} value={q} maxLength={2000} onChange={(e) => setQ(e.target.value)} placeholder="Ask about TrueNav, a score, a check..." aria-label="Question" />
+                  <input ref={inputRef} value={q} maxLength={1000} onChange={(e) => setQ(e.target.value)} placeholder="Ask about TrueNav, a score, a check..." aria-label="Question" />
                   <button className="xb sm" type="submit">Ask</button>
                 </form>
                 {fallback || !SLOTS.ask ? <p className="hp-note">AI help is unavailable right now. These are the closest answers from the TrueNav docs, searched in your browser.</p> : <p className="hp-note">Do not paste personal data. TrueNav runs on NEAR testnet. The demo funds, loans and documents are fictional.</p>}

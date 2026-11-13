@@ -8,16 +8,23 @@ export const ISSUE_TITLE = "Support request";
 export const MAX_ISSUE_URL_CHARS = 6000;
 
 const ACCOUNT_RE = /^[a-z0-9._-]{2,64}$/;
-const MAX_PATH_CHARS = 10000;
+const MAX_PATH_CHARS = 200;
 
-/** Keep a site path only. Drops query, hash and control characters. */
+const PATH_RE = /^\/[A-Za-z0-9_./-]*$/;
+
+/**
+ * Keep a plain site path only: query and hash dropped, then anything outside [A-Za-z0-9_./-]
+ * becomes "/", so no Markdown, spaces or encoded text reach the issue. Account pages become
+ * /account/:id so the wallet id never rides along without the opt-in.
+ */
 export function sanitizePath(raw) {
   if (typeof raw !== "string" || !raw.trim()) return "/";
-  let s = raw.trim().split(/[?#]/)[0].replace(/[\u0000-\u001F\u007F]/g, "").replace(/\\/g, "/");
+  let s = raw.trim().split(/[?#]/)[0];
   if (!s.startsWith("/")) s = `/${s}`;
   s = s.replace(/^\/+/, "/");
-  if (s.length > MAX_PATH_CHARS) s = s.slice(0, MAX_PATH_CHARS);
-  return s || "/";
+  if (s.length > MAX_PATH_CHARS || !PATH_RE.test(s)) return "/";
+  if (/^\/account\/.+/.test(s)) return "/account/:id";
+  return s;
 }
 
 /** Accept a NEAR account id only. Reject keys and anything else. */

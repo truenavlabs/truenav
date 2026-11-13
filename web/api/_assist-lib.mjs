@@ -1,7 +1,7 @@
 // Pure help-function logic. The Vercel handler is a thin wrapper.
 // The API key is read only from process.env.NEARAI_API_KEY (or a test env object).
 // It is never logged, never returned, and never sent to the client.
-import { systemPrompt } from "./grounding.mjs";
+import { systemPrompt } from "./_grounding.mjs";
 
 export const ENV_KEY = "NEARAI_API_KEY";
 export const NEAR_AI_ENDPOINT = "https://cloud-api.near.ai/v1/chat/completions";
@@ -11,19 +11,39 @@ export const NEAR_AI_ENDPOINT = "https://cloud-api.near.ai/v1/chat/completions";
 // Qwen/Qwen3-VL-30B-A3B-Instruct is on the current list, Private (TEE), and returns content.
 export const NEAR_AI_MODEL = "Qwen/Qwen3-VL-30B-A3B-Instruct";
 
-export const MAX_MESSAGE_CHARS = 2000;
-export const MAX_HISTORY = 8;
+// Abuse limits. /api/assist is public and spends NEAR AI credit, so every input is capped
+// before the model call and the output is capped by max_tokens.
+export const MAX_MESSAGE_CHARS = 1000; // the current question
+export const MAX_HISTORY = 8; // prior turns the client may send (4 question and answer pairs)
+export const MAX_HISTORY_ITEM_BYTES = 2000; // one prior turn, UTF-8 bytes; a 400 token English answer fits
+export const MAX_HISTORY_TOTAL_BYTES = 8000; // all prior turns together, UTF-8 bytes
+/** @deprecated names kept for callers; the limits are in UTF-8 bytes. */
+export const MAX_HISTORY_ITEM_CHARS = MAX_HISTORY_ITEM_BYTES;
+export const MAX_HISTORY_TOTAL_CHARS = MAX_HISTORY_TOTAL_BYTES;
 export const MAX_PAGE_CHARS = 200;
-export const MAX_TOKENS = 400;
+export const MAX_BODY_BYTES = 16 * 1024; // request body: content-length, raw text, or the parsed body re-serialized
+export const MAX_TOKENS = 400; // hard cap on the model output per request
 export const TIMEOUT_MS = 15000;
-export const RATE_LIMIT_MAX = 8;
-export const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+// Rate limits live in this function instance's memory only. They are per instance and best
+// effort: a cold start or a second instance starts from zero, and there is no shared store.
+// They bound a single abuser on a warm instance, not a distributed attack.
+// Order: the per-IP slot is taken first (so junk requests cost the sender), the global slot only just
+// before the model call (so junk cannot lock everyone out). IPv6 clients are keyed by their /64.
+export const RATE_LIMIT_MAX = 10; // per client IP (IPv6: per /64)
+export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+export const GLOBAL_RATE_LIMIT_MAX = 20; // model calls from all IPs together, per instance
+export const GLOBAL_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_TRACKED_IPS = 5000;
+const GLOBAL_KEY = "*global*";
 
 const GENERIC_UNAVAILABLE = "The help service is unavailable. Try the FAQ tab.";
 const NOT_CONFIGURED = "The help service is not configured. Try the FAQ tab.";
 const INVALID = "Invalid request.";
 const FORBIDDEN = "This request is not allowed.";
 const TOO_MANY = "Too many questions from this address. Try again later, or use the FAQ tab.";
+const BUSY = "The help service is busy. Try again in a minute, or use the FAQ tab.";
+const TOO_LARGE = "Request too large. Keep questions under 1000 characters.";
+const INTERNAL = "Something went wrong. Try the FAQ tab.";
 const METHOD = "Method not allowed.";
 
 const LOCAL_ORIGINS = Object.freeze([
@@ -33,7 +53,15 @@ const LOCAL_ORIGINS = Object.freeze([
   "http://localhost:4173",
 ]);
 
-/** In-memory per-IP counts. Best effort across serverless instances. */
+/** Marker the Vercel wrapper sets when the platform body parser rejects the JSON. */
+export const BAD_JSON = Symbol("bad_json");
+
+/** Generic 500 for the wrapper. No error text, no stack. */
+export function internalError() {
+  return json(500, { error: INTERNAL });
+}
+
+/** In-memory per-IP counts. Per instance and best effort across serverless instances. */
 const defaultStore = new Map();
 
 export function resetRateLimit(store = defaultStore) {
@@ -50,6 +78,46 @@ function header(headers, name) {
     }
   }
   return "";
+}
+
+/** Expand an IPv6 address to 8 groups, or return null. */
+function ipv6Groups(ip) {
+  if (!/^[0-9a-f:.]+$/i.test(ip) || !ip.includes(":")) return null;
+  let tail = [];
+  let s = ip;
+  const v4 = s.match(/(\d+\.\d+\.\d+\.\d+)$/);
+  if (v4) {
+    const o = v4[1].split(".").map(Number);
+    if (o.some((n) => n > 255)) return null;
+    tail = [((o[0] << 8) | o[1]).toString(16), ((o[2] << 8) | o[3]).toString(16)];
+    s = s.slice(0, -v4[1].length).replace(/:$/, "") || ":";
+    if (s.endsWith(":") && !s.endsWith("::")) s += ":";
+  }
+  const halves = s.split("::");
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(":") : [];
+  const rest = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const fill = 8 - tail.length - head.length - rest.length;
+  if (halves.length === 1 && fill !== 0) return null;
+  if (fill < 0) return null;
+  const groups = [...head, ...Array(halves.length === 2 ? fill : 0).fill("0"), ...rest, ...tail];
+  if (groups.length !== 8 || groups.some((g) => !/^[0-9a-f]{1,4}$/i.test(g))) return null;
+  return groups.map((g) => g.toLowerCase().replace(/^0+(?=.)/, ""));
+}
+
+/**
+ * Rate-limit key for a client address. IPv4 as is. IPv6 by its /64 (first four groups), since one
+ * client usually holds a whole /64; an IPv4-mapped IPv6 address is keyed as its IPv4 address.
+ */
+export function rateKey(ip) {
+  const raw = String(ip || "").trim().replace(/^\[|\]$/g, "").replace(/%.*$/, "");
+  const g = ipv6Groups(raw);
+  if (!g) return raw.slice(0, 128) || "unknown";
+  if (g.slice(0, 5).every((x) => x === "0") && g[5] === "ffff") {
+    const a = parseInt(g[6], 16), b = parseInt(g[7], 16);
+    return `${a >> 8}.${a & 255}.${b >> 8}.${b & 255}`;
+  }
+  return `${g.slice(0, 4).join(":")}::/64`;
 }
 
 export function clientIp(headers, socketIp = "") {
@@ -69,7 +137,8 @@ function originOf(value) {
 }
 
 export function allowedOrigins(headers, env = {}) {
-  const set = new Set(LOCAL_ORIGINS);
+  // Local dev origins only off Vercel: on a deploy a page on a visitor's own localhost is not us.
+  const set = new Set(env && env.VERCEL ? [] : LOCAL_ORIGINS);
   const host = header(headers, "x-forwarded-host") || header(headers, "host");
   const proto = header(headers, "x-forwarded-proto") || (host.startsWith("127.0.0.1") || host.startsWith("localhost") ? "http" : "https");
   if (host) set.add(`${proto}://${host.split(",")[0].trim()}`);
@@ -87,26 +156,83 @@ export function isSameOrigin(headers, env = {}) {
   return fromRef ? allowed.has(fromRef) : false;
 }
 
-export function takeRateLimit(ip, now, store = defaultStore, max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS) {
+/**
+ * Sliding-window limiter over timestamps kept in `store` (a Map in function memory).
+ * Returns 0 when the request is allowed, or the seconds to wait (at least 1) when it is not.
+ * Per instance and best effort, see RATE_LIMIT_MAX.
+ */
+export function rateLimitWait(key, now, store = defaultStore, max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS) {
   const t = now();
-  const row = store.get(ip) || [];
+  const row = store.get(key) || [];
   const fresh = row.filter((ts) => t - ts < windowMs);
   if (fresh.length >= max) {
-    store.set(ip, fresh);
-    return false;
+    store.set(key, fresh);
+    return Math.max(1, Math.ceil((fresh[0] + windowMs - t) / 1000));
   }
+  if (!store.has(key) && store.size >= MAX_TRACKED_IPS) pruneStore(store, t, windowMs);
   fresh.push(t);
-  store.set(ip, fresh);
-  return true;
+  store.set(key, fresh);
+  return 0;
+}
+
+/** Keep memory bounded: drop expired rows, then the oldest rows if still too many. */
+function pruneStore(store, t, windowMs) {
+  for (const [k, row] of store) {
+    if (k === GLOBAL_KEY) continue;
+    if (!row.length || t - row[row.length - 1] >= windowMs) store.delete(k);
+  }
+  while (store.size >= MAX_TRACKED_IPS) {
+    const first = store.keys().next().value;
+    if (first === GLOBAL_KEY) {
+      const v = store.get(first);
+      store.delete(first);
+      store.set(first, v);
+      continue;
+    }
+    store.delete(first);
+  }
+}
+
+/** Back-compat boolean form. */
+export function takeRateLimit(ip, now, store = defaultStore, max = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS) {
+  return rateLimitWait(ip, now, store, max, windowMs) === 0;
+}
+
+/**
+ * Size checks on the parsed body. Returns "" when within limits, or a reason code.
+ * Over-limit input is rejected with 413, not silently cut, so the cost per request is bounded
+ * and the client sees why.
+ */
+export function sizeProblem(payload) {
+  const message = typeof payload.message === "string" ? payload.message.trim() : "";
+  if (message.length > MAX_MESSAGE_CHARS) return "message_too_long";
+  if (Buffer.byteLength(JSON.stringify(payload), "utf8") > MAX_BODY_BYTES) return "body_too_large";
+  const history = payload.history;
+  if (history == null) return "";
+  if (!Array.isArray(history)) return "history_not_array";
+  if (history.length > MAX_HISTORY) return "history_too_many";
+  let total = 0;
+  for (const item of history) {
+    const content = item && typeof item.content === "string" ? item.content : "";
+    const bytes = Buffer.byteLength(content, "utf8");
+    if (bytes > MAX_HISTORY_ITEM_BYTES) return "history_item_too_long";
+    total += bytes;
+  }
+  if (total > MAX_HISTORY_TOTAL_BYTES) return "history_too_large";
+  return "";
 }
 
 function asObject(body) {
   if (body == null || body === "") return {};
   if (typeof body === "object" && !Buffer.isBuffer(body) && !(body instanceof Uint8Array)) return body;
   const text = typeof body === "string" ? body : Buffer.from(body).toString("utf8");
-  if (text.length > 32_000) throw new Error("too large");
-  return JSON.parse(text);
+  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) throw new TooLarge();
+  const parsed = JSON.parse(text);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+  return parsed;
 }
+
+class TooLarge extends Error {}
 
 export function sanitizePage(page) {
   if (typeof page !== "string") return "";
@@ -124,7 +250,7 @@ export function sanitizeHistory(history) {
     if (!item || typeof item !== "object") continue;
     const role = item.role === "assistant" ? "assistant" : item.role === "user" ? "user" : null;
     if (!role) continue; // drop system and any other role
-    const content = typeof item.content === "string" ? item.content.slice(0, MAX_MESSAGE_CHARS) : "";
+    const content = typeof item.content === "string" ? item.content.slice(0, MAX_HISTORY_ITEM_CHARS) : "";
     if (!content) continue;
     out.push({ role, content });
     if (out.length >= MAX_HISTORY) break;
@@ -197,16 +323,39 @@ export async function handleAssist({
     return json(403, { error: FORBIDDEN });
   }
 
-  const ip = clientIp(headers, socketIp);
-  if (!takeRateLimit(ip, now, store)) {
-    return json(429, { error: TOO_MANY });
+  const declared = Number(header(headers, "content-length"));
+  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
+    logAssist({ type: "too_large", status: 413 });
+    return json(413, { error: TOO_LARGE });
+  }
+
+  const ip = rateKey(clientIp(headers, socketIp));
+  const ipWait = rateLimitWait(ip, now, store, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+  if (ipWait) {
+    logAssist({ type: "rate_limited_ip", status: 429 });
+    return json(429, { error: TOO_MANY }, { "Retry-After": String(ipWait) });
   }
 
   let payload;
   try {
+    if (body && typeof body === "object" && body[BAD_JSON]) throw new Error("bad json");
     payload = asObject(body);
-  } catch {
+  } catch (err) {
+    if (err instanceof TooLarge) {
+      logAssist({ type: "too_large", status: 413 });
+      return json(413, { error: TOO_LARGE });
+    }
+    logAssist({ type: "bad_json", status: 400 });
     return json(400, { error: INVALID });
+  }
+  if (typeof payload !== "object" || payload == null || Array.isArray(payload)) {
+    return json(400, { error: INVALID });
+  }
+
+  const tooBig = sizeProblem(payload);
+  if (tooBig) {
+    logAssist({ type: tooBig, status: 413 });
+    return json(413, { error: TOO_LARGE });
   }
 
   const message = typeof payload.message === "string" ? payload.message : "";
@@ -224,6 +373,13 @@ export async function handleAssist({
   const key = env && typeof env[ENV_KEY] === "string" ? env[ENV_KEY] : "";
   if (!key) {
     return json(503, { error: NOT_CONFIGURED, code: "not_configured" });
+  }
+
+  // Global slot last, just before the model call, so invalid requests never use it.
+  const globalWait = rateLimitWait(GLOBAL_KEY, now, store, GLOBAL_RATE_LIMIT_MAX, GLOBAL_RATE_LIMIT_WINDOW_MS);
+  if (globalWait) {
+    logAssist({ type: "rate_limited_global", status: 429 });
+    return json(429, { error: BUSY }, { "Retry-After": String(globalWait) });
   }
 
   const ctl = typeof AbortController === "function" ? new AbortController() : null;

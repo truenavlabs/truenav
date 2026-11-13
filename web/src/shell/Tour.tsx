@@ -24,7 +24,7 @@ export const TOUR: Step[] = [
     const tv = Number(c.true_val_cents), tr = Number(c.true_range_cents);
     return <>Meridian reports {usdM(Number(c.headline_cents))}. TrueVal says {usdM(tv - tr)} to {usdM(tv + tr)}. Its score is {c.score ?? "n/a"}, {c.band}.</>;
   } },
-  { path: `/funds/${MERIDIAN}?tab=pledges`, target: "#t-refused", title: "A double pledge, refused on chain", secs: 20, body: () => <>Meridian tried to pledge a loan Harbor already holds. The contract refused it and recorded one blocked attempt and one alert against Meridian. <a href={txUrl(KNOWN_TXS.refusedPledge.hash)} target="_blank" rel="noreferrer">See the transaction</a>.</> },
+  { path: `/funds/${MERIDIAN}?tab=pledges`, target: "#t-refused", title: "A double pledge, refused on chain", secs: 20, body: () => <>Meridian tried to pledge a loan Harbor already holds. The contract refused it and recorded one blocked attempt and one alert against Meridian. <a href={txUrl(KNOWN_TXS.refusedPledge.hash)} target="_blank" rel="noopener noreferrer">See the transaction</a>.</> },
   { path: `/funds/${MERIDIAN}`, target: "#t-recompute", title: "Recompute the score yourself", secs: 20, body: (v) => {
     const c = cert(v, MERIDIAN);
     return <>Your browser just ran the public scoring engine on chain data and compared every number with the signed certificate{c ? ` (score ${c.score})` : ""}. Each row says match or differs.</>;

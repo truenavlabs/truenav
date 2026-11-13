@@ -17,3 +17,14 @@ regexes = [
   '''^c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2$''',
   '''^4e376db0cd17ef7f11f0d8602ed9367e66905c4cb4443bae881615a5cedf28eb$''',
 ]
+
+[[allowlists]]
+description = "Recorded public snapshot of registry.tnlab-368aa2.testnet, and the live-read helper's example view-call arguments. gitleaks 8.30.1 reports 18 generic-api-key hits, all in commit 17fd17ae (Web A2). 16 are token_id values in web/data/recorded/registry-368aa2.json (each equal to that loan's public loan_hash, 64 lowercase hex). One is pledgeKey in the same file, the registry's on-chain servicer pledge address from get_servicer_pledge_key (0x plus 40 hex, an Ethereum-style public address, not a private key). One is the example token_id in web/data/registry.mjs used for the nft_token view call (the same public loan_hash). This entry covers only those two files, only generic-api-key, and only a token_id set to 64 lowercase hex or a pledgeKey set to a 0x-plus-40-hex address; any other value or rule is still reported."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^web/data/recorded/registry-368aa2\.json$''', '''^web/data/registry\.mjs$''']
+regexTarget = "match"
+regexes = [
+  '''^token_id"?\s*:\s*"[0-9a-f]{64}"$''',
+  '''^pledgeKey"\s*:\s*"0x[0-9a-fA-F]{40}"$''',
+]

@@ -159,13 +159,25 @@ async function main() {
   const pages = only ? only.split(",").map((p) => [p, named.get(p) ?? (p.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "root")]) : args.includes("--key") ? PAGES.filter(([p]) => KEY.includes(p)) : PAGES;
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}`;
-  const prof = mkdtempSync(join(tmpdir(), "tn-visual-"));
-  const proc = spawn(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--remote-debugging-port=0", `--user-data-dir=${prof}`, `--window-size=${WIDTH},1000`, "about:blank"], { stdio: "ignore" });
+  // Engine CI starts this after a long npm test run. Chrome can take more than the old 10 s
+  // window to write DevToolsActivePort; retry a few times rather than fail the suite.
+  async function startChrome() {
+    let last = new Error("Chrome did not start");
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const prof = mkdtempSync(join(tmpdir(), "tn-visual-"));
+      const proc = spawn(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--remote-debugging-port=0", `--user-data-dir=${prof}`, `--window-size=${WIDTH},1000`, "about:blank"], { stdio: "ignore" });
+      let port;
+      for (let i = 0; i < 300 && !port; i++) { await sleep(100); const f = join(prof, "DevToolsActivePort"); if (existsSync(f)) port = readFileSync(f, "utf8").split("\n")[0]; }
+      if (port) return { proc, prof, port };
+      proc.kill("SIGKILL");
+      rmSync(prof, { recursive: true, force: true });
+      last = new Error("Chrome did not start");
+    }
+    throw last;
+  }
+  const { proc, prof, port } = await startChrome();
   let fail = 0;
   try {
-    let port;
-    for (let i = 0; i < 100 && !port; i++) { await sleep(100); const f = join(prof, "DevToolsActivePort"); if (existsSync(f)) port = readFileSync(f, "utf8").split("\n")[0]; }
-    if (!port) throw new Error("Chrome did not start");
     const ver = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
     const c = await cdp(ver.webSocketDebuggerUrl);
     if (SHOTS) mkdirSync(SHOTS, { recursive: true });

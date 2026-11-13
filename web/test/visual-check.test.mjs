@@ -24,13 +24,15 @@ test("visual check: flags overlap, clipping and ellipsis; passes a clean page", 
   const good = site(`<p>One line</p><p>Another line</p><table><tr><td>a</td><td>b</td></tr></table>`);
   try {
     const b = run(bad);
-    assert.equal(b.status, 1, b.stdout + b.stderr);
-    assert.match(b.stdout, /overlap: span "Pledge label" x span "Funds table"/);
-    assert.match(b.stdout, /clipped: div "clipped text/);
-    assert.match(b.stdout, /truncated: div "TrueRange/);
+    const bOut = b.stdout + b.stderr;
+    assert.equal(b.status, 1, bOut);
+    assert.match(bOut, /overlap: span "Pledge label" x span "Funds table"/);
+    assert.match(bOut, /clipped: div "clipped text/);
+    assert.match(bOut, /truncated: div "TrueRange/);
     const g = run(good);
-    assert.equal(g.status, 0, g.stdout + g.stderr);
-    assert.match(g.stdout, /1 of 1 pages clean/);
+    const gOut = g.stdout + g.stderr;
+    assert.equal(g.status, 0, gOut);
+    assert.match(gOut, /1 of 1 pages clean/);
   } finally {
     rmSync(bad, { recursive: true, force: true });
     rmSync(good, { recursive: true, force: true });

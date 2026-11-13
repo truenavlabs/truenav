@@ -20,7 +20,9 @@ import { homedir } from "node:os";
 import { createHash, randomBytes } from "node:crypto";
 import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } from "near-api-js";
 import { scorePortfolio } from "../engine/src/score.mjs";
+import { expiryOf } from "../web/chain.mjs";
 import { replyProblem } from "../tee/reply.mjs";
+import { verdictExpired } from "../tee/expiry.mjs";
 import { toCertificate, signCertificate, signEip191, addressOf, newSecretKey } from "./certificate.mjs";
 import { plainCallArgs, pledgeArgs as buildPledgeArgs } from "./call-args.mjs";
 import { buildRunRecord, runRecordSummary } from "./testnet-record.mjs";
@@ -233,7 +235,7 @@ if (!tee) {
     if (pubSha !== tee.attestation.report_sha256) stop([`The published attestation report (sha256 ${pubSha.slice(0, 16)}...) is not the one this verdict set was signed under (${String(tee.attestation.report_sha256).slice(0, 16)}...). Re-sign the set: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts.json`]);
   }
   const left = tee.expires_at_ms - Date.now();
-  expect(left > 0, `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
+  expect(!verdictExpired(tee.expires_at_ms, Date.now()), `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
   const teeSigners = await view("get_tee_signers");
   if (!teeSigners.some((t) => t.address === teeSigner)) {
     await call(admin, "add_tee_signer (registrar; attested NEAR AI Cloud model TEE)", "add_tee_signer", { address: teeSigner, model_id: tee.model, attestation_ref: `tee/attest.mjs nonce ${tee.attestation.nonce} at ${tee.attestation.checked_at}`, attestation_sha256: tee.attestation.report_sha256 });
@@ -268,12 +270,12 @@ const teeStore = {};
 for (const l of demo) {
   const lock = await view("get_lock", { loan_hash: l.loan_hash });
   const latest = await view("get_latest_verdict", { loan_hash: l.loan_hash });
-  teeStore[l.loan_hash] = { fund_id: lock ? lock.fund_id : null, pledged_at_ms: lock ? lock.locked_at_ms : null, latest: latest ? { verdict: latest.verdict, anomalies: latest.anomalies, at_ms: latest.at_ms } : null };
+  teeStore[l.loan_hash] = { fund_id: lock ? lock.fund_id : null, pledged_at_ms: lock ? lock.locked_at_ms : null, latest: latest ? { verdict: latest.verdict, anomalies: latest.anomalies, at_ms: latest.at_ms, ...expiryOf(latest) } : null };
   const loan = funds.find((f) => f.fund_id === l.fund_id).loans.find((x) => x.id === l.loan_id);
   loan.loan_hash = l.loan_hash;
 }
-const results = scorePortfolio({ pd: fx.pd, lgd: fx.lgd }, funds, { now: fx.valuation_time, certStore: fx.cert_store, teeStore });
-for (const r of results) expect(r.tee.checked && r.tee.flag === 0 && r.tee.overdue === 0 && (!tee || r.tee.pending === 0), `${r.fundId} TEE from chain: ${r.tee.pass} pass, ${r.tee.pending} pending, ${r.tee.flag} flag`);
+const results = scorePortfolio({ pd: fx.pd, lgd: fx.lgd }, funds, { now: fx.valuation_time, certStore: fx.cert_store, teeStore, verdictNow: Date.now() });
+for (const r of results) expect(r.tee.checked && r.tee.flag === 0 && r.tee.overdue === 0 && r.tee.expired === 0 && (!tee || r.tee.pending === 0), `${r.fundId} TEE from chain: ${r.tee.pass} pass, ${r.tee.pending} pending, ${r.tee.flag} flag`);
 
 // ---------- 3. signed certificates ----------
 // Scores are computed as of the fixture valuation time (the demo pins); the certificate is signed now, because
@@ -392,7 +394,7 @@ const out = buildRunRecord({
   engine_commit: engineCommit,
   signed_at_ms: nowMs,
   double_pledge_loan_hash: loanHash,
-  scores_from_chain: results.map((r) => ({ fund_id: r.fundId, status: r.status, raw: Math.round(r.raw * 100) / 100, band: r.band, tee: { pass: r.tee.pass, pending: r.tee.pending, flag: r.tee.flag, overdue: r.tee.overdue } })),
+  scores_from_chain: results.map((r) => ({ fund_id: r.fundId, status: r.status, raw: Math.round(r.raw * 100) / 100, band: r.band, tee: { pass: r.tee.pass, pending: r.tee.pending, flag: r.tee.flag, overdue: r.tee.overdue, expired: r.tee.expired } })),
   steps: log,
 });
 mkdirSync(new URL("out/", root), { recursive: true });

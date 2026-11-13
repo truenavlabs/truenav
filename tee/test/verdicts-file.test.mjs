@@ -67,6 +67,14 @@ test("the recorded sets in the repository validate against their own contract", 
   }
 });
 
+// Expiry boundary, same rule as the contract (expires_at_ms >= now is current): equal is current, +1 ms is expired.
+test("a verdict set whose expiry equals now is current; now = expiry + 1 ms is expired", () => {
+  const exp = SIGNED_AT + VERDICT_TTL_MS;
+  assert.equal(has(check(syntheticSet(), { nowMs: exp, minDays: undefined }), "expired"), false);
+  assert.deepEqual(check(syntheticSet(), { nowMs: exp, minDays: undefined }).problems, []);
+  assert.ok(has(check(syntheticSet(), { nowMs: exp + 1, minDays: undefined }), "the verdict set is expired"));
+});
+
 test("tee/fixtures/verdicts-368aa2.json, once it exists, validates for the 368aa2 registry (skipped while it is absent)", { skip: !existsSync(new URL("../fixtures/verdicts-368aa2.json", import.meta.url)) && "no tee/fixtures/verdicts-368aa2.json yet" }, () => {
   const file = JSON.parse(readFileSync(new URL("../fixtures/verdicts-368aa2.json", import.meta.url), "utf8"));
   assert.deepEqual(validateVerdictsFile(file, { contract: REGISTRY }).problems, []);

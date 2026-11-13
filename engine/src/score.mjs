@@ -207,7 +207,8 @@ export function validTeeStore(x) {
  * TEE status of one pledged loan (owner decisions 6 Nov 2026): the latest stored verdict counts. A flag makes the
  * loan unverified ("TEE flag: <codes>"). With no verdict the loan is pending for 7 days after its on-chain pledge
  * time, then unverified ("TEE check overdue"). A verdict whose expires_at_ms is before the verdict clock is "expired": not a
- * pass, the loan is unverified ("TEE verdict expired"); expiry equal to the clock is still current. A loan with no loan_hash or no store entry is "not checked" and its
+ * pass, the loan is unverified ("TEE verdict expired"); expiry equal to the clock is still current. A verdict stored in
+ * the same millisecond as the pledge is "ambiguous" (NEW-05): the loan is unverified ("pledge generation ambiguous"). A loan with no loan_hash or no store entry is "not checked" and its
  * score is unchanged.
  */
 function teeStatus(teeStore, l, nowMs, verdictNowMs = nowMs) {
@@ -215,9 +216,13 @@ function teeStatus(teeStore, l, nowMs, verdictNowMs = nowMs) {
   if (!isId(l.loan_hash)) return { status: "not checked" };
   const e = own(teeStore, String(l.loan_hash));
   if (!e || typeof e !== "object") return { status: "not checked" };
-  // C2 (decided by owner 6 Nov 2026): a verdict counts only if stored at or after the current pledge time.
+  // C2 (decided by owner 6 Nov 2026): a verdict counts only if stored after the current pledge time.
+  // NEW-05: the deployed registry also returns a verdict stored in the same millisecond as the pledge, which can be
+  // the previous pledge's verdict (verdict, release and new pledge all at time T). Equal times cannot tell the
+  // generation apart, so the loan is "ambiguous" and excluded. Not null: a null verdict would be pending in grace.
   const raw = e.latest && typeof e.latest === "object" ? e.latest : null;
-  const v = raw && (!isNum(e.pledged_at_ms) || (isNum(raw.at_ms) && raw.at_ms >= e.pledged_at_ms)) ? raw : null;
+  if (raw && isNum(e.pledged_at_ms) && isNum(raw.at_ms) && raw.at_ms === e.pledged_at_ms) return { status: "ambiguous" };
+  const v = raw && (!isNum(e.pledged_at_ms) || (isNum(raw.at_ms) && raw.at_ms > e.pledged_at_ms)) ? raw : null;
   // N-02: a verdict past its expiry no longer counts, whether pass or flag: the loan is unverified ("TEE verdict
   // expired") until a fresh verdict is stored. A verdict without expires_at_ms is read as before. Same rule as the
   // contract (expires_at_ms >= now is current) and tee/expiry.mjs: expiry equal to the clock is current, +1 ms expired.
@@ -317,6 +322,7 @@ function assessLoans(model, fund, sharedNfts, teeStore = null, nowMs = Date.now(
     if (tee.status === "flag") push(`TEE flag: ${tee.anomalies.join(", ")}`);
     if (tee.status === "overdue") push("TEE check overdue");
     if (tee.status === "expired") push("TEE verdict expired");
+    if (tee.status === "ambiguous") push("pledge generation ambiguous");
 
     const excluded = reasons.length > 0;
     const anomaly = l.anomaly === true;

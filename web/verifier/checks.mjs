@@ -191,7 +191,7 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
   });
 
   await run("onchain-verdicts", "On-chain verdicts match signed replies", rpcSrc("get_latest_verdict"), async () => {
-    const src = rpcSrc("get_latest_verdict");
+    const src = rpcSrc("get_latest_verdict, get_lock");
     const recs = Array.isArray(file.results) ? file.results : [];
     const byResp = new Map(recs.filter((r) => r?.onchain?.response_body).map((r) => [sha256Hex(r.onchain.response_body), r]));
     const hashes = [...new Set(recs.map((r) => r.loan_hash))];
@@ -201,6 +201,13 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
     for (const h of hashes) {
       const v = await c.view("get_latest_verdict", { loan_hash: h });
       if (v === null || v === undefined) { absent++; continue; }
+      // NEW-05: the deployed registry also returns a verdict stored in the same millisecond as the current pledge,
+      // which can be the previous pledge's verdict. Same rule as engine/src/score.mjs: strictly after the lock.
+      const lock = await c.view("get_lock", { loan_hash: h });
+      if (!lock || !(Number(v.at_ms) > Number(lock.locked_at_ms))) {
+        problems.push(`${h.slice(0, 12)}... latest verdict is not after the current pledge time (pledge generation ambiguous)`);
+        continue;
+      }
       const r = byResp.get(v.response_sha256);
       const ok = r && r.loan_hash === h && checkRecord(file, r, teeSigner).sig === null && String(v.signer).toLowerCase() === teeSigner && v.model_id === file.model && v.request_sha256 === r.onchain.request_sha256 && v.attestation_sha256 === status.report_sha256 && v.verdict === r.verdict?.verdict && JSON.stringify(v.anomalies) === JSON.stringify(r.verdict?.anomalies);
       if (ok) matched++;

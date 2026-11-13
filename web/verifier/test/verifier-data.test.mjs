@@ -24,6 +24,7 @@ function fakeChain(ev, over = {}) {
     get_signers: () => [...ev.liveRegistry.certificate_signers],
     get_servicer_pledge_key: () => ev.liveRegistry.servicer_pledge_address,
     get_latest_verdict: ({ loan_hash }) => (firstByLoan.has(loan_hash) ? stored(firstByLoan.get(loan_hash)) : null),
+    get_lock: ({ loan_hash }) => (firstByLoan.has(loan_hash) ? { fund_id: firstByLoan.get(loan_hash).fund_id, locked_at_ms: 0 } : null),
     get_latest_certificate: ({ fund_id }) => ({ certificate: { fund_id, band: "green", score: 90 }, signer: ev.liveRegistry.certificate_signers[0], stored_at_ms: 1 }),
     ...over,
   };
@@ -195,4 +196,17 @@ test("the data layer imports nothing from node: (it must load in a browser)", ()
   }
   // web/chain.mjs keeps a Buffer fallback behind a typeof btoa guard; it must still import nothing from node:
   assert.doesNotMatch(readFileSync(new URL("web/chain.mjs", root), "utf8"), /from\s+["']node:|require\(/);
+});
+
+// NEW-05: the deployed registry returns a verdict stored in the same millisecond as the current pledge, which can be
+// the previous pledge's verdict. The verifier accepts a latest verdict only when it is strictly after the lock time.
+test("NEW-05: a latest verdict stored at the lock millisecond fails the on-chain match as pledge generation ambiguous", async () => {
+  const ev = await fresh();
+  const same = { get_lock: () => ({ fund_id: "f", locked_at_ms: 1 }) }; // the fake stores every verdict at at_ms 1
+  const r = byId(await runVerifierChecks({ evidence: ev, chain: fakeChain(ev, same), now: NOW }));
+  assert.equal(r["onchain-verdicts"].state, "fail");
+  assert.match(r["onchain-verdicts"].detail, /pledge generation ambiguous/);
+  assert.equal(summarize(Object.values(r)).green, false);
+  const after = byId(await runVerifierChecks({ evidence: ev, chain: fakeChain(ev, { get_lock: () => ({ fund_id: "f", locked_at_ms: 0 }) }), now: NOW }));
+  assert.equal(after["onchain-verdicts"].state, "live");
 });

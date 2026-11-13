@@ -155,3 +155,31 @@ test("without verdictNow, expiry is judged at the valuation time (fixed replays 
   for (const e of Object.values(s)) e.latest.expires_at_ms = NOW_MS - 1000;
   assert.equal(by(run(s), "harbor-credit-fund").tee.expired, 11);
 });
+
+// NEW-05: the deployed registry compares millisecond times (verdict at_ms >= locked_at_ms). A verdict stored in the
+// same millisecond as a release and a new pledge reads as the new pledge's verdict. The engine accepts a verdict
+// only when it is strictly after the pledge time; on equality it cannot tell the generation, so it excludes the
+// loan ("pledge generation ambiguous") instead of nulling the verdict (null would count as pending in grace).
+test("NEW-05: a verdict at the exact pledge millisecond excludes the loan as pledge generation ambiguous", () => {
+  const store = allPass(2); // pledged 2 days ago: a null verdict would be pending and change nothing
+  const h1 = loans.find((l) => l.loan_id === "H-RE-01").loan_hash;
+  store[h1] = { ...store[h1], latest: { verdict: "pass", anomalies: [], at_ms: store[h1].pledged_at_ms } };
+  const h = by(run(store), "harbor-credit-fund");
+  assert.ok(h.raw < 99.17, `raw ${h.raw}`);
+  assert.equal(h.tee.pass, 10);
+  assert.equal(h.tee.pending, 0, "equality is not pending");
+  assert.ok(h.unverified.reasons.some((x) => x.id === "H-RE-01" && x.reason === "pledge generation ambiguous"));
+  assert.ok(h.tee.loans.some((x) => x.id === "H-RE-01" && x.status === "ambiguous"));
+});
+
+test("NEW-05: an equal-time flag is also ambiguous, not a flag; 1 ms after the pledge counts", () => {
+  const store = allPass(2);
+  const h1 = loans.find((l) => l.loan_id === "H-RE-01").loan_hash;
+  const p = store[h1].pledged_at_ms;
+  store[h1] = { ...store[h1], latest: { verdict: "flag", anomalies: ["amount_mismatch"], at_ms: p } };
+  const eq = by(run(store), "harbor-credit-fund");
+  assert.equal(eq.tee.flag, 0);
+  assert.ok(eq.unverified.reasons.some((x) => x.id === "H-RE-01" && x.reason === "pledge generation ambiguous"));
+  store[h1] = { ...store[h1], latest: { verdict: "pass", anomalies: [], at_ms: p + 1 } };
+  assert.equal(r2(by(run(store), "harbor-credit-fund").raw), 99.17);
+});

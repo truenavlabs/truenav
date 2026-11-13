@@ -114,6 +114,8 @@ export async function loadChainState({ funds, loans, contract = DEFAULT_CONTRACT
     return { ...l, lock, latest, verdicts, flags, holder: token ? token.owner_id : null };
   }));
   // The engine's TEE verdict store (NAV_SPEC R25): latest verdict counts, pledge time starts the 7-day grace.
+  // NEW-05: pledged_at_ms and at_ms are passed through as read; the engine counts a verdict only when it is strictly
+  // after the pledge time and excludes the loan on equal times (the deployed registry cannot tell the generation).
   // N-02: get_latest_verdict returns a verdict even after its expiry, so expires_at_ms is kept and the scorer
   // reports an expired verdict as expired, not as a pass.
   const teeStore = {};

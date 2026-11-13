@@ -719,6 +719,30 @@ test("V7 duplicate NFT: second copy excluded, counted once in NAVs, at max(mark,
   assert.equal(m.exclusions[0].reason, "incomplete data");
 });
 
+test("two rows with the same loan_hash and different nft_ids: second excluded as duplicate loan, counted once in NAV", () => {
+  const hash = "0xabc1111111111111111111111111111111111111111111111111111111111111";
+  const f = fund({
+    fund_id: "fund-loan-dedupe",
+    loans: [
+      loan({ id: "A", nft_id: "nft-a", loan_hash: hash, principal: 100000, accrued: 0, repaid: 0 }),
+      loan({ id: "B", nft_id: "nft-b", loan_hash: hash, principal: 100000, accrued: 0, repaid: 0 }),
+    ],
+    headline_nav: 200000,
+  });
+  const teeStore = {
+    [hash]: {
+      fund_id: "fund-loan-dedupe",
+      pledged_at_ms: NOW_MS - 30 * 24 * 3600 * 1000,
+      latest: { verdict: "pass", anomalies: [], at_ms: NOW_MS - 29 * 24 * 3600 * 1000 },
+    },
+  };
+  const r = score(f, { teeStore });
+  assert.equal(r.exclusions.filter((e) => e.id === "A").length, 0);
+  assert.deepEqual(r.exclusions.map((e) => [e.id, e.reason]), [["B", "duplicate loan"]]);
+  assert.equal(r.unverified.loans, 100000);
+  assert.equal(r.policyNav, 100000);
+});
+
 test("V8 future-dated as-of: clamped to age 0, cannot refresh a stale book", () => {
   const f = harbor();
   f.loans[0].servicer_asof = new Date(NOW_MS + 10 * 365 * 24 * 3600 * 1000).toISOString();

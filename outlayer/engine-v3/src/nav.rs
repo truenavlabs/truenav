@@ -189,6 +189,10 @@ pub fn score(fund: &Value, now: i64, history: &Value) -> Nav {
                     0.0
                 }
             }
+        } else if !known {
+            // R1 / R13: with principal, accrued or repaid missing the fund's mark is not computable, so the line
+            // stays in the listed book at 0. principal + accrued is only its exposure in the 50% test (v50 below).
+            0.0
         } else {
             let md = fund["policy_markdown"]
                 .get(bucket)

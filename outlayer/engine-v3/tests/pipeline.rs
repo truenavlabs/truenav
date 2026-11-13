@@ -1316,3 +1316,77 @@ fn a01_invisible_u180f_must_not_hide_a_foreign_lock() {
             .contains(&json!("pledge_conflict")));
     }
 }
+
+/// Codex differential audit (14 Nov 2026): the JS engine and this NAV port must agree on the shared fixture,
+/// which tests/security/nav-differential.test.mjs checks against JS. D1: an excluded loan with a missing repaid
+/// is exposure for the 50% test only (R13), never a mark in the listed book (R1). D2: an expired claimed cash
+/// attestation sets freshness to 0, also at cash 0 (R8).
+#[test]
+fn nav_differential_cases_match_the_js_engine() {
+    let fx: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/nav-differential.json"
+    ))
+    .unwrap();
+    let now = truenav_v3_core::timestamp(fx["now"].as_str().unwrap()).unwrap();
+    let cents = |x: f64| (x * 100.0).round() as i64;
+    for c in fx["cases"].as_array().unwrap() {
+        let name = c["name"].as_str().unwrap();
+        let e = &c["expected"];
+        let n = nav::score(&c["fund"], now, &json!([]));
+        assert_eq!(n.status, e["status"].as_str().unwrap(), "{name}");
+        let scored = n.status == "scored";
+        let score = nav::half_up(n.raw);
+        let band = if score >= 85 {
+            "green"
+        } else if score >= 60 {
+            "yellow"
+        } else {
+            "red"
+        };
+        assert_eq!(
+            if scored { json!(score) } else { Value::Null },
+            e["score"],
+            "{name}"
+        );
+        assert_eq!(
+            if scored { json!(band) } else { Value::Null },
+            e["band"],
+            "{name}"
+        );
+        if let Some(f) = e["freshness"].as_f64() {
+            assert_eq!(n.fresh, f, "{name}");
+        }
+        if let Some(l) = e["listed_book"].as_f64() {
+            assert_eq!(cents(n.listed), cents(l), "{name}");
+        }
+        if let Some(d) = e["share_denominator"].as_f64() {
+            let uv = e["unverified_value"].as_f64().unwrap();
+            assert_eq!(cents(n.unverified_share.unwrap() * d), cents(uv), "{name}");
+        }
+    }
+}
+
+/// D1 through the full signed v3 pipeline: loans whose signed tape omits repaid must not enter the listed book
+/// at principal + accrued. Before the fix the fake marks raised the 50% denominator and the fund scored.
+#[test]
+fn d1_missing_repaid_is_not_a_valuation_mark_in_the_signed_pipeline() {
+    let (c, mut sources, p, r) = temporal_setup();
+    let honest = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(honest.envelope["status"], "scored");
+    for i in 50..90 {
+        sources[0].payload["loans"][i]
+            .as_object_mut()
+            .unwrap()
+            .remove("repaid");
+    }
+    for s in &mut sources {
+        sign(s);
+    }
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(
+        out.envelope["status"], "disclaimed",
+        "missing repaid scored {} {}",
+        out.envelope["score"], out.envelope["band"]
+    );
+    assert_eq!(out.envelope["score"], Value::Null);
+}

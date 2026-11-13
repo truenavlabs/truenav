@@ -1,0 +1,36 @@
+{
+  "_note": "Codex differential audit (14 Nov 2026), JS score.mjs vs Rust outlayer/engine-v3 nav.rs. Both engines must give the expected result. Default model, empty certificate history.",
+  "now": "2026-11-14T00:00:00Z",
+  "cases": [
+    {
+      "name": "D1 excluded loan with missing repaid is exposure, not a mark (R1, R13)",
+      "fund": {
+        "fund_id": "audit-fund",
+        "headline_nav": 107,
+        "nav_report_date": "2026-11-14T00:00:00Z",
+        "certificate": { "data_asof": "2026-11-14T00:00:00Z" },
+        "loans": [
+          { "id": "good", "principal": 100, "accrued": 0, "repaid": 0, "asset": "real_estate", "bucket": "current", "nft": true, "nft_id": "good", "servicer_asof": "2026-11-14T00:00:00Z" },
+          { "id": "incomplete", "principal": 47, "accrued": 0, "asset": "real_estate", "bucket": "current", "nft": false, "servicer_asof": "2026-11-14T00:00:00Z" }
+        ]
+      },
+      "expected": { "status": "disclaimed", "score": null, "band": null, "listed_book": 100, "unverified_value": 54, "share_denominator": 107 }
+    },
+    {
+      "name": "D2 expired claimed cash attestation zeroes freshness, also at cash 0 (R8)",
+      "fund": {
+        "fund_id": "audit-fund",
+        "headline_nav": 100,
+        "cash": 0,
+        "cash_attested": true,
+        "cash_asof": "2026-11-01T00:00:00Z",
+        "nav_report_date": "2026-11-14T00:00:00Z",
+        "certificate": { "data_asof": "2026-11-14T00:00:00Z" },
+        "loans": [
+          { "id": "L", "principal": 100, "accrued": 0, "repaid": 0, "asset": "real_estate", "bucket": "current", "nft": true, "nft_id": "N", "servicer_asof": "2026-11-14T00:00:00Z" }
+        ]
+      },
+      "expected": { "status": "scored", "score": 80, "band": "yellow", "freshness": 0 }
+    }
+  ]
+}

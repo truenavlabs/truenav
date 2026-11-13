@@ -17,3 +17,11 @@ regexes = [
   '''^c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2$''',
   '''^4e376db0cd17ef7f11f0d8602ed9367e66905c4cb4443bae881615a5cedf28eb$''',
 ]
+
+[[allowlists]]
+description = "schema/vectors/engine-v3-derived.json: gitleaks with only its default rules reports 27 generic-api-key hits in this file across 4 commits (red-team final pass, 13 Nov 2026). Every one is an engine_version_key value, a public engine v3 wasm build sha256 (61fe33a0, 0ffb3e31, 8e3d8925, c3299ccf, all listed above). This entry covers only that file, only generic-api-key, and only an engine_version_key set to 64 lowercase hex characters; any other key or rule in the file is still reported."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^schema/vectors/engine-v3-derived\.json$''']
+regexTarget = "match"
+regexes = ['''^engine_version_key"\s*:\s*"[0-9a-f]{64}"?$''']

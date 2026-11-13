@@ -12,8 +12,9 @@
 //! - Loan pledges: a registered fund pledges a loan by its hash. The servicer's registered secp256k1 key must
 //!   sign a canonical message naming this contract, this network, the loan hash, the fund account, the asset
 //!   type, a nonce and an expiry. The first pledge locks the loan and mints a NEP-171 token to the fund. A
-//!   later pledge by another fund is refused with "already pledged elsewhere". A refusal does not record a
-//!   blocked attempt or an alert against the fund the servicer signed for, or against the current holder.
+//!   later pledge by another fund is refused with "already pledged elsewhere". That refusal, a valid signed pledge
+//!   from the fund it names, stores one blocked attempt and one alert under the refused fund's id; the holder's
+//!   records are not changed. A call whose caller is not the fund named in the signature stores nothing.
 //!   When a pledge-ticket signer is registered, the same message also needs a ticket signature. The servicer
 //!   releases the loan on repayment, which burns the token.
 //!
@@ -116,8 +117,9 @@ pub struct Attempt {
     pub at_ms: u64,
 }
 
-/// Result of a pledge. A refusal is a normal return, not a panic. It does not record a blocked attempt
-/// or an alert for the fund named in the servicer signature, or for the fund that already holds the loan.
+/// Result of a pledge. A refusal is a normal return, not a panic. "already pledged elsewhere" stores one blocked
+/// attempt and one alert under the refused fund's id (attempt_id names it); the holder's records are not changed.
+/// "caller is not the fund named in the servicer signature" stores nothing (attempt_id "none").
 #[near(serializers = [json])]
 #[derive(Clone, Debug, PartialEq)]
 #[serde(tag = "outcome", rename_all = "snake_case")]
@@ -820,8 +822,8 @@ impl Registry {
         }
     }
 
-    /// Times previously stored as holder alerts. New refusals do not append to this list. Oldest first
-    /// (limit capped at PAGE_MAX).
+    /// Alert times stored under this fund_id: one per "already pledged elsewhere" refusal of this fund's signed
+    /// pledge, appended at the block time of the refusal. Oldest first (limit capped at PAGE_MAX).
     pub fn get_alerts_page(&self, fund_id: String, from_index: u32, limit: u32) -> Vec<u64> {
         match self.alerts.get(&fund_id) {
             Some(list) => page(list, from_index, limit).cloned().collect(),

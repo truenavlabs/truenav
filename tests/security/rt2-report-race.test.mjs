@@ -29,7 +29,7 @@ test("RT2-07 a head that fails during the spend still yields a 200 report of the
   const chain = {
     async view(_c, m, a) { if (m === "get_latest") { latestReads += 1; return head; } if (m === "get_entitlement") return ents.get(a.request_id) || null; throw new Error(m); },
     async nowNs() { return NOW; },
-    async accessKeys() { return [{ public_key: buyerKey.getPublicKey().toString() }]; },
+    async accessKeys() { return [{ public_key: buyerKey.getPublicKey().toString(), access_key: { nonce: 1, permission: "FullAccess" } }]; },
     async redeem(rid) { head = failedHead(token, { v3: true }); const x = ents.get(rid); x.uses_left -= 1; return x.uses_left; },
   };
   const spendStore = await initSpendStore(mkdtempSync(join(tmpdir(), "rt2-race-")), { create: true });

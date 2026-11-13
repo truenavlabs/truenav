@@ -41,7 +41,7 @@ const chain = {
     return NOW;
   },
   async accessKeys() {
-    return [{ public_key: buyerKey.getPublicKey().toString() }];
+    return [{ public_key: buyerKey.getPublicKey().toString(), access_key: { nonce: 1, permission: "FullAccess" } }];
   },
   async redeem(id, hash) {
     const e = ents.get(id);

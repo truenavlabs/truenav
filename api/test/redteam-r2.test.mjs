@@ -38,7 +38,7 @@ function queryChain(rec, {redeemDelayMs = 0} = {}) {
     buy(buyer, id, kind, token) { ents.set(id, {request_id: id, buyer, kind, query_hash: queryHash(kind, token), expires_ns: '999999999999999999999', uses_left: kind === 'report' ? 1 : 20}); },
     chain: {
       async view(_c, m, a) { if (m === 'get_latest') return rec; if (m === 'get_entitlement') { const e = ents.get(a.request_id); return e ? {...e} : null; } return null; },
-      async accessKeys(account) { return account === 'buyer.testnet' ? [{public_key: buyerKey.getPublicKey().toString()}] : []; },
+      async accessKeys(account) { return account === 'buyer.testnet' ? [{public_key: buyerKey.getPublicKey().toString(), access_key: {nonce: 1, permission: 'FullAccess'}}] : []; },
       async nowNs() { return 0n; },
       async redeem(id, qh) {
         redeemCalls++;

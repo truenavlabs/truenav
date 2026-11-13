@@ -54,7 +54,7 @@ function world(head) {
     async signSpend(message) { return Buffer.from(key.sign(message).signature).toString("base64"); },
     async nowMs() { return Number(NOW_NS / 1_000_000n); },
     async nowNs() { return NOW_NS; },
-    async accessKeys() { return [{ public_key: key.getPublicKey().toString() }]; },
+    async accessKeys() { return [{ public_key: key.getPublicKey().toString(), access_key: { nonce: 1, permission: "FullAccess" } }]; },
     async redeem(id) { calls.redeem += 1; const e = ents.get(id); e.uses_left -= 1; return e.uses_left; },
   };
   return { chain, calls };

@@ -31,6 +31,7 @@ test("every page gets the security headers", () => {
   assert.equal(headers["X-Content-Type-Options"], "nosniff");
   assert.equal(headers["Referrer-Policy"], "strict-origin-when-cross-origin");
   assert.equal(headers["X-Frame-Options"], "DENY");
+  assert.equal(headers["Cross-Origin-Opener-Policy"], "same-origin-allow-popups");
   assert.match(headers["Strict-Transport-Security"], /^max-age=\d{8,}/);
   for (const f of ["camera=()", "microphone=()", "geolocation=()"]) assert.ok(headers["Permissions-Policy"].includes(f), f);
 });
@@ -51,6 +52,14 @@ test("CSP locks the dangerous directives", () => {
       assert.equal(v.startsWith("http:"), false, `${name} allows plain http: ${v}`);
     }
   }
+});
+
+test("script-src is 'self' plus the wallet iframe nonce, no 'unsafe-inline'", () => {
+  const ts = readFileSync(join(root, "src", "lib", "wallet.ts"), "utf8");
+  const nonce = ts.match(/WALLET_CSP_NONCE = "([A-Za-z0-9+/=]+)"/)?.[1];
+  assert.ok(nonce && nonce.length >= 22, "wallet.ts exports a nonce of at least 128 bits");
+  assert.match(ts, /cspNonce: WALLET_CSP_NONCE/);
+  assert.deepEqual(csp["script-src"], ["'self'", `'nonce-${nonce}'`]);
 });
 
 test("connect-src allows every RPC and every live feed host the browser calls", () => {

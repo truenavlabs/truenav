@@ -7,6 +7,7 @@ import { Product } from "./site/Product";
 import { Technology } from "./site/Technology";
 import { AppShell } from "./shell/AppShell";
 import { RegistryProvider } from "./shell/store";
+import { WalletProvider } from "./shell/wallet";
 import { Skel } from "./shell/kit";
 import { usePath } from "./ui";
 import { appRoute } from "./routes";
@@ -79,10 +80,12 @@ export function App() {
   const done = useCallback(() => setLoading(false), []);
   return (
     <RegistryProvider>
-      <div ref={appRef} className={`app${loading ? " loading" : ""} fade-${phase}`} aria-hidden={loading || undefined}>
-        {isSite ? <Site key={pageOf(shown)} path={shown} /> : <AppPage key={pageOf(shown)} path={shown} />}
-      </div>
-      {loading ? <Loader ready={ready} app={appRef} onDone={done} /> : null}
+      <WalletProvider>
+        <div ref={appRef} className={`app${loading ? " loading" : ""} fade-${phase}`} aria-hidden={loading || undefined}>
+          {isSite ? <Site key={pageOf(shown)} path={shown} /> : <AppPage key={pageOf(shown)} path={shown} />}
+        </div>
+        {loading ? <Loader ready={ready} app={appRef} onDone={done} /> : null}
+      </WalletProvider>
     </RegistryProvider>
   );
 }

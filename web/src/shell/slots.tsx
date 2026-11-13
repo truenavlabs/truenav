@@ -21,7 +21,7 @@ export type Slots = {
   LoanExtra?: ComponentType<{ hash: string }>;
   /** Report bundle download button for a fund. */
   ReportButton?: ComponentType<{ fundId: string }>;
-  /** Wallet button in the top bar (NEP-413 sign-in), pending the dependency approval. */
+  /** Wallet button in the top bar. Filled by shell/wallet.tsx once the provider is imported. */
   Wallet?: ComponentType;
   /** AI answer backend for the help bubble. Absent: the bubble answers from the FAQ and glossary in the browser. */
   ask?: (question: string, page: string) => Promise<{ answer: string; sources: string[] } | null>;

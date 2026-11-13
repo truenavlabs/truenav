@@ -9,7 +9,7 @@ const ITEMS: [string, string, string][] = [
   ["Pinned image measurements", "Compare MRTD, RTMR0 to RTMR2 and the compose hash with published expected values (N-06), and verify the NVIDIA token fully (N-05).", "README, Known limits"],
   ["Reproducible registry build", "A registry build that matches the on-chain code hash.", "SECURITY.md"],
   ["Liability oracle", "Independent source for fund liabilities.", "spec/nav/NAV_SPEC.md section 7"],
-  ["Wallet sign-in", "NEP-413 message signing to show a fund manager their own fund, with no transactions.", "needs a wallet library, not added yet"],
+  ["Wallet sign-in", "NEP-413 message signing to show a fund manager their own fund, with no transactions.", "@hot-labs/near-connect 0.12.0 is in web/. The NEP-413 manager view is not wired yet"],
 ];
 
 export default function Roadmap() {

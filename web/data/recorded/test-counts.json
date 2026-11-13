@@ -1,11 +1,11 @@
 {
   "note": "Counts from one run of the root npm test (node --test over every listed file, then node spec/nav/check.mjs). Written from the run output, not typed by hand. Re-measure with npm test.",
-  "commit": "97e82cf",
-  "measured_at": "2026-11-13T16:11:00+07:00",
+  "commit": "1434af7",
+  "measured_at": "2026-11-13T16:23:00+07:00",
   "command": "npm test",
   "node": "v24",
-  "tests": 663,
-  "pass": 663,
+  "tests": 675,
+  "pass": 675,
   "fail": 0,
   "skipped": 0,
   "skipped_why": "none on this run (Linux x64, Node v24, with web/node_modules present). Without web/node_modules, as in the root CI job, the near-connect manifest host check in web/test/headers.test.mjs skips. OutLayer output parity still skips without the Rust 1.99.0 toolchain."

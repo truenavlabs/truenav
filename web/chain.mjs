@@ -8,6 +8,8 @@
 export const DEFAULT_RPC = "https://test.rpc.fastnear.com"; // public testnet RPC (docs.near.org RPC providers)
 /** Backups from the same docs page, tried in order when the default fails or rate-limits. */
 export const BACKUP_RPCS = ["https://near-testnet.drpc.org", "https://testnet-rpc.intea.rs"];
+/** Historical tx and old block reads. Hot RPCs drop testnet history after a short window. */
+export const ARCHIVAL_RPCS = ["https://archival-rpc.testnet.fastnear.com", "https://archival-rpc.testnet.near.org"];
 export const DEFAULT_CONTRACT = "registry.tnlab-368aa2.testnet";
 
 /** Per-endpoint timeout. A hung endpoint is abandoned so the failover list keeps going. */

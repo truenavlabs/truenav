@@ -1,7 +1,7 @@
 // Read one transaction from NEAR RPC (`tx`, read-only) and decode what a judge needs: who called what, with which
 // arguments, and what came back (a return value or a panic message).
 import { makeRpc } from "./registry.mjs";
-import { DEFAULT_RPC } from "../chain.mjs";
+import { ARCHIVAL_RPCS, DEFAULT_RPC } from "../chain.mjs";
 
 const b64 = (s) => { try { return new TextDecoder().decode(Uint8Array.from(atob(s), (c) => c.charCodeAt(0))); } catch { return null; } };
 const json = (s) => { try { return JSON.parse(s); } catch { return null; } };
@@ -29,10 +29,26 @@ export function decodeTx(r) {
   };
 }
 
+function isPrunedTx(e) {
+  return /UNKNOWN_TRANSACTION|UNKNOWN_BLOCK|doesn't exist|DB Not Found Error: BLOCK/i.test(String((e && (e.rpcCause || e.message)) || e));
+}
+
 /** Live read: the transaction and its block time. */
 export async function loadTx(hash, sender, { url = DEFAULT_RPC, fetchImpl } = {}) {
-  const rpc = makeRpc({ url, fetchImpl });
-  const r = await rpc.call("tx", { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" });
+  const urls = [url, ...ARCHIVAL_RPCS.filter((u) => u !== url)];
+  let rpc, r, last;
+  for (const u of urls) {
+    rpc = makeRpc({ url: u, fetchImpl });
+    try {
+      r = await rpc.call("tx", { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" });
+      last = null;
+      break;
+    } catch (e) {
+      last = e;
+      if (!isPrunedTx(e)) throw e;
+    }
+  }
+  if (!r) throw last || new Error("transaction not available");
   const d = decodeTx(r);
   let blockTimeMs = null, blockHeight = null;
   if (d.blockHash) {

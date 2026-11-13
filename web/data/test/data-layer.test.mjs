@@ -283,6 +283,50 @@ test("tx decoding: the recorded refused pledge returns a value; the refused cert
   assert.equal(c.failure, "Smart contract panicked: signer not registered");
 });
 
+test("loadTx: a pruned hot RPC result is retried on archival; a non-pruned error is not", async () => {
+  const { loadTx } = await import("../tx.mjs");
+  const { ARCHIVAL_RPCS } = await import("../../chain.mjs");
+  const accepted = json("web/data/recorded/tx-cert-accepted.json");
+  const hash = "5tFsYFpqbriyUrzicrrSyPqbpEut32DMSR75hBKj4qKx";
+  const sender = "tnlab-368aa2.testnet";
+  const archival = ARCHIVAL_RPCS[0];
+  const hot = "http://hot-rpc.test";
+  const seen = [];
+  const fetchImpl = async (url, init) => {
+    const body = JSON.parse(init.body);
+    seen.push({ url, method: body.method });
+    if (url === hot && body.method === "tx") {
+      return { ok: true, json: async () => ({ jsonrpc: "2.0", id: "x", error: { name: "HANDLER_ERROR", cause: { name: "UNKNOWN_TRANSACTION", info: { requested_transaction_hash: hash } }, code: -32000, message: "Server error", data: `Transaction ${hash} doesn't exist` } }) };
+    }
+    if (url === archival && body.method === "tx") {
+      return { ok: true, json: async () => ({ jsonrpc: "2.0", id: "x", result: accepted.txs[hash] }) };
+    }
+    if (body.method === "block") {
+      return { ok: true, json: async () => ({ jsonrpc: "2.0", id: "x", result: { header: { height: 277235263, timestamp_nanosec: "1794411689266000000", hash: "J2JF9ad1E2SKZCcPioGtp8h4cdqqSmYj9doxrAH3Yju8" } } }) };
+    }
+    throw new Error(`unexpected ${url} ${body.method}`);
+  };
+  const d = await loadTx(hash, sender, { url: hot, fetchImpl });
+  assert.equal(d.ok, true);
+  assert.equal(d.method, "submit_certificate");
+  assert.equal(d.signer, sender);
+  assert.equal(d.receiver, "registry.tnlab-368aa2.testnet");
+  assert.equal(d.args.certificate.fund_id, "harbor-credit-fund");
+  assert.equal(d.endpoint, archival);
+  assert.equal(d.blockHeight, 277235263);
+  assert.ok(seen.some((s) => s.url === hot && s.method === "tx"));
+  assert.ok(seen.some((s) => s.url === archival && s.method === "tx"));
+
+  const seenHotOnly = [];
+  const noRetry = async (url) => {
+    seenHotOnly.push(url);
+    if (url === hot) return { ok: false, status: 500, json: async () => ({}) };
+    throw new Error("archival should not be called");
+  };
+  await assert.rejects(loadTx(hash, sender, { url: hot, fetchImpl: noRetry }), /HTTP 500/);
+  assert.deepEqual(seenHotOnly, [hot]);
+});
+
 test("attestation hash with WebCrypto: live on the committed report, fail on a changed report or a changed status hash", async () => {
   const { attestationHashWebCrypto } = await import("../verify.mjs");
   const ev = await loadEvidence((p) => readFileSync(new URL(p, root), "utf8"));

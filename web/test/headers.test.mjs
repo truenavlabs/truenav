@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FEEDS } from "../data/feeds/feeds.mjs";
-import { BACKUP_RPCS, DEFAULT_RPC } from "../chain.mjs";
+import { ARCHIVAL_RPCS, BACKUP_RPCS, DEFAULT_RPC } from "../chain.mjs";
 import { siteHeaders } from "../scripts/csp-check.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -64,7 +64,7 @@ test("script-src is 'self' plus the wallet iframe nonce, no 'unsafe-inline'", ()
 
 test("connect-src allows every RPC and every live feed host the browser calls", () => {
   const allowed = new Set(csp["connect-src"]);
-  for (const u of [DEFAULT_RPC, ...BACKUP_RPCS]) assert.ok(allowed.has(origin(u)), u);
+  for (const u of [DEFAULT_RPC, ...BACKUP_RPCS, ...ARCHIVAL_RPCS]) assert.ok(allowed.has(origin(u)), u);
   for (const [id, f] of Object.entries(FEEDS)) {
     if (id === "defillama-pool-chart") continue; // not polled in the browser (src/depth/impl.tsx)
     assert.ok(allowed.has(origin(f.url)), `${id} ${f.url}`);

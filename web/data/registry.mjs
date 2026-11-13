@@ -31,7 +31,11 @@ export function makeRpc({ url = DEFAULT_RPC, fetchImpl = globalThis.fetch, timeo
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
       if (j.error) {
-        const e = new Error(j.error.cause?.info?.error_message || j.error.message || JSON.stringify(j.error).slice(0, 200));
+        const cause = j.error.cause && typeof j.error.cause === "object" ? j.error.cause : {};
+        const data = typeof j.error.data === "string" ? j.error.data : "";
+        const generic = !j.error.message || j.error.message === "Server error";
+        const e = new Error(cause.info?.error_message || (!generic ? j.error.message : "") || data || j.error.message || JSON.stringify(j.error).slice(0, 200));
+        e.rpcCause = cause.name || null;
         e.contractError = j.error.name === "HANDLER_ERROR" || /does not exist|CodeDoesNotExist|wasm execution failed/i.test(JSON.stringify(j.error));
         throw e;
       }

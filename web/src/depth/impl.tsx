@@ -11,6 +11,7 @@ import { useRegistry, type Registry } from "../shell/store";
 import { fundName, whenFull } from "../shell/fmt";
 import { A, navigate } from "../ui";
 import { Note, PageHead, Panel, SrcTag } from "../shell/kit";
+import { ReceiptRunAction } from "../shell/ReceiptRunAction";
 
 // The modules are plain JS with optional props; type them loosely at this one boundary.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -89,15 +90,16 @@ function alertsFrom(view: Registry) {
 }
 export function Investor() {
   const { view } = useRegistry();
-  return <><PageHead title="Investor view" lead="Same public data as every role. No access control." /><Root><InvestorView funds={FUNDS} alerts={alertsFrom(view)} /></Root></>;
+  return <><PageHead title="Investor view" lead="Same public data as every role. No access control." /><Root><InvestorView funds={FUNDS} alerts={alertsFrom(view)} /></Root><ReceiptRunAction role="investor" /></>;
 }
 export function Manager() {
   const [id, setId] = useState(FUNDS[0]?.fund_id);
   return (
     <>
-      <PageHead title="Fund manager view" lead="View as a fund. Nothing is signed or sent." right={<select value={id} onChange={(e) => setId(e.target.value)}>{FUNDS.map((f) => <option key={f.fund_id} value={f.fund_id}>{fundName(f.fund_id)}</option>)}</select>} />
+      <PageHead title="Fund manager view" lead="View as a fund. The only testnet write is request_run below, shown in full before your wallet signs." right={<select value={id} onChange={(e) => setId(e.target.value)}>{FUNDS.map((f) => <option key={f.fund_id} value={f.fund_id}>{fundName(f.fund_id)}</option>)}</select>} />
       <Root><ManagerView fund={demoFund(id)} /></Root>
       <ManagerLive fundId={id} />
+      <ReceiptRunAction role="manager" />
     </>
   );
 }

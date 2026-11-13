@@ -1,23 +1,28 @@
 // React glue over src/lib/wallet.ts: one provider, one hook, and the top-bar button.
-// Pages such as Investor and Fund manager can call useWallet() later for function calls.
-// This build does not sign or send a transaction.
+// Pages get connect, disconnect, the account id and one write function, sendReceiptsCall, which runs
+// the allowlist guard in lib/near.mjs (receipts contract only, listed methods, capped gas and deposit)
+// before the wallet shows the call. The raw wallet and connector are not exposed.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { EventMap } from "@hot-labs/near-connect";
 import { A } from "../ui";
 import { short } from "./fmt";
 import { SLOTS } from "./slots";
-import { accountIdOf, getWalletConnector, WALLET_NETWORK, type NearConnector, type NearWalletBase, type WalletNetwork } from "../lib/wallet";
+import { accountIdOf, clearUnsafeHash, getWalletConnector, WALLET_NETWORK, type NearConnector, type NearWalletBase, type WalletNetwork } from "../lib/wallet";
+import { buildSignAndSendTransaction, RECEIPTS_CONTRACT } from "../lib/near.mjs";
+
+/** gas in gas units and depositYocto in yoctoNEAR, both decimal digit strings. */
+export type ReceiptsCallOpts = { gas?: string; depositYocto?: string };
 
 export type WalletCtx = {
   network: WalletNetwork;
   loading: boolean;
   busy: boolean;
   signedAccountId: string;
-  wallet: NearWalletBase | null;
-  connector: NearConnector | null;
   error: string | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** Sign and send one function call to the receipts contract. Throws before the wallet on a guard failure. */
+  sendReceiptsCall: (method: string, args?: Record<string, unknown>, opts?: ReceiptsCallOpts) => Promise<unknown>;
 };
 
 const WalletContext = createContext<WalletCtx | null>(null);
@@ -42,8 +47,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     const onIn = (payload: EventMap["wallet:signIn"]) => {
       if (cancelled) return;
-      setWallet(payload.wallet);
-      setSignedAccountId(accountIdOf(payload.accounts));
+      const id = accountIdOf(payload.accounts);
+      setWallet(id ? payload.wallet : null);
+      setSignedAccountId(id);
       setError(null);
     };
     const onOut = () => {
@@ -84,10 +90,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setBusy(true);
     setError(null);
     try {
+      clearUnsafeHash();
       const connected = await connector.connect();
       const accounts = await connected.getAccounts();
-      setWallet(connected);
-      setSignedAccountId(accountIdOf(accounts));
+      const id = accountIdOf(accounts);
+      setWallet(id ? connected : null);
+      setSignedAccountId(id);
+      if (!id) setError("That wallet did not return a NEAR testnet account");
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -110,9 +119,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [connector, wallet]);
 
+  const sendReceiptsCall = useCallback(
+    async (method: string, args: Record<string, unknown> = {}, opts: ReceiptsCallOpts = {}) => {
+      if (!wallet || !signedAccountId) throw new Error("Connect a testnet wallet first");
+      const payload = buildSignAndSendTransaction({ receiverId: RECEIPTS_CONTRACT, methodName: method, args, gas: opts.gas, depositYocto: opts.depositYocto });
+      return wallet.signAndSendTransaction({ network: WALLET_NETWORK, signerId: signedAccountId, receiverId: RECEIPTS_CONTRACT, actions: payload.actions as never });
+    },
+    [wallet, signedAccountId],
+  );
+
   const value = useMemo<WalletCtx>(
-    () => ({ network: WALLET_NETWORK, loading, busy, signedAccountId, wallet, connector, error, signIn, signOut }),
-    [loading, busy, signedAccountId, wallet, connector, error, signIn, signOut],
+    () => ({ network: WALLET_NETWORK, loading, busy, signedAccountId, error, signIn, signOut, sendReceiptsCall }),
+    [loading, busy, signedAccountId, error, signIn, signOut, sendReceiptsCall],
   );
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }

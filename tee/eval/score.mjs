@@ -43,8 +43,15 @@ function metricsOf(rows, key) {
 let failed = false;
 // npm run eval                  scores the current runs of the main and hold-out sets and writes metrics.json
 // npm run eval -- 2026-11-06    replays the kept 6 Nov run of the main set (old prompt) and prints its numbers only
-const archived = process.argv[2];
-const runs = archived ? [[`main, run of ${archived}`, "tee/eval", `results-${archived}.json`]] : [["main", "tee/eval", "results.json"], ["holdout", "tee/eval/holdout", "results.json"]];
+// npm run eval -- live-injection  scores the live injection set (tee/eval/live-injection) and writes its metrics.json
+const arg = process.argv[2];
+const live = arg === "live-injection";
+const archived = live ? undefined : arg;
+const runs = live
+  ? [["live-injection", "tee/eval/live-injection", "results.json"]]
+  : archived
+    ? [[`main, run of ${archived}`, "tee/eval", `results-${archived}.json`]]
+    : [["main", "tee/eval", "results.json"], ["holdout", "tee/eval/holdout", "results.json"]];
 for (const [set, dir, file] of runs) {
   if (!existsSync(new URL(`${dir}/${file}`, root))) {
     console.log(`${set}: no recorded run yet (${dir}/results.json); run it with npm run eval:run -- ${set}`);

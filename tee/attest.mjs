@@ -56,7 +56,7 @@ export async function checkNearReport(report, nonceHex) {
   const add = (check, pass, detail = "") => out.push({ check, pass: !!pass, detail });
   let quote;
   try {
-    const verified = await getCollateralAndVerify(hexBytes(report.intel_quote));
+    const verified = await getCollateralAndVerify(hexBytes(report.intel_quote), pccsUrl());
     add("Intel TDX quote signature and collateral", true, `TCB ${verified.status}`);
     add(`TCB status accepted (${ACCEPTED_TCB.join(", ")})`, ACCEPTED_TCB.includes(verified.status), `${verified.status}${verified.advisory_ids && verified.advisory_ids.length ? " " + verified.advisory_ids.join(",") : ""}`);
     if (verified.report.type !== "td10") throw new Error("expected a TDX quote");
@@ -83,16 +83,24 @@ export async function checkNearReport(report, nonceHex) {
   return out;
 }
 
+export const NRAS_URL = "https://nras.attestation.nvidia.com/v3/attest/gpu";
+/** TRUENAV_NRAS_URL overrides NRAS for outage tests; a reply from any other URL is never counted as a pass. */
+export const nrasUrl = (env = process.env) => env.TRUENAV_NRAS_URL || NRAS_URL;
+/** TRUENAV_PCCS_URL overrides the collateral server (default Phala PCCS). Collateral is Intel-signed and verified either way. */
+export const pccsUrl = (env = process.env) => env.TRUENAV_PCCS_URL || undefined;
+
 /** NVIDIA GPU evidence through NVIDIA's attestation service (NRAS), as the docs describe. */
 export async function checkGpu(report, nonceHex) {
   if (!report.nvidia_payload) return [{ check: "NVIDIA GPU attestation", pass: false, detail: "no GPU evidence returned" }];
   const payload = JSON.parse(report.nvidia_payload);
   if (String(payload.nonce || "").toLowerCase() !== nonceHex.toLowerCase()) return [{ check: "NVIDIA GPU attestation", pass: false, detail: "GPU evidence nonce mismatch" }];
   try {
-    const r = await fetch("https://nras.attestation.nvidia.com/v3/attest/gpu", { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const r = await fetch(nrasUrl(), { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const body = await r.json();
     const jwt = body[0][1];
     const claims = JSON.parse(Buffer.from(jwt.split(".")[1], "base64url").toString());
+    // An overridden NRAS URL is for outage tests only: its answer never counts as a pass.
+    if (nrasUrl() !== NRAS_URL) return [{ check: "NVIDIA GPU attestation (NRAS) with our nonce", pass: false, detail: "TRUENAV_NRAS_URL is set: not the NVIDIA service, not counted" }];
     return [{ check: "NVIDIA GPU attestation (NRAS) with our nonce", pass: claims["x-nvidia-overall-att-result"] === true, detail: `overall ${claims["x-nvidia-overall-att-result"]}` }];
   } catch (e) {
     return [{ check: "NVIDIA GPU attestation (NRAS) with our nonce", pass: false, detail: e.message }];

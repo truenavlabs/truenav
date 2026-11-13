@@ -108,11 +108,11 @@ test("GET is rejected, wrong origin is rejected, and there is no CORS wildcard",
   assertNoKeyLeak(bad.result);
 });
 
-test("overlong messages and empty bodies are 400", async () => {
+test("empty bodies are 400 and overlong messages are 413", async () => {
   const empty = await post({ message: "  " }, { fetchImpl: async () => { throw new Error("no"); } });
   assert.equal(empty.result.status, 400);
   const long = await post({ message: "x".repeat(MAX_MESSAGE_CHARS + 1) }, { fetchImpl: async () => { throw new Error("no"); } });
-  assert.equal(long.result.status, 400);
+  assert.equal(long.result.status, 413);
 });
 
 test("a mocked success returns the answer, uses the documented endpoint and model, and never returns the key", async () => {

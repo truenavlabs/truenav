@@ -14,7 +14,7 @@
 // .keys/ (gitignored). Owner decision 6 Nov: the live contract never trusts the public fixed test key; the
 // script also submits one certificate signed with that public key (32 bytes of 0x07) to show the contract
 // rejects it. The TEE signer from NEAR AI Cloud replaces the test key later.
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { homedir } from "node:os";
 import { createHash, randomBytes } from "node:crypto";
@@ -132,7 +132,12 @@ function expect(cond, what) {
 
 // ---------- 1. accounts and deploy ----------
 console.log(`Testnet run as ${master} (RPC ${RPC})`);
-await ensureSub(ids.registry, "4");
+// The registry pays for its own storage: code at 1e19 yoctoNEAR per byte (1 NEAR per 100 kB) plus every pledge,
+// verdict, nonce, attempt and certificate this run writes. A flat 4 NEAR left only about 1 to 2 kB of headroom over
+// a roughly 375 kB wasm, so the per-pledge generation boundary (NEW-05) ran the account out of balance for state
+// (LackBalanceForState) at the double-pledge step. Fund the code size rounded up plus 1 NEAR for state.
+const registryNear = String(Math.ceil(statSync(wasmPath).size / 100_000) + 1);
+await ensureSub(ids.registry, registryNear);
 await ensureSub(ids.harbor, "0.3");
 await ensureSub(ids.meridian, "0.3");
 await ensureSub(ids.pauser, "0.2");

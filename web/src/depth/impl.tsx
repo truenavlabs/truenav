@@ -138,13 +138,13 @@ function startFeeds() {
   let snap: Record<string, unknown> = {};
   const publish = () => {
     const out: FeedMap = {};
-    for (const id of Object.keys(FEEDS)) if (id !== "defillama-pool-charts") out[id] = presentFeed({ id, live: live[id], snapshot: snap[id] });
+    for (const id of Object.keys(FEEDS)) if (id !== "defillama-pool-chart") out[id] = presentFeed({ id, live: live[id], snapshot: snap[id] });
     shared.feeds = out;
     shared.subs.forEach((s) => s(out));
   };
   fetch("/feeds/snapshot.json").then((r) => r.json()).then((j) => { snap = j.feeds || {}; publish(); }).catch(() => publish());
   for (const id of Object.keys(FEEDS)) {
-    if (id === "defillama-pool-charts") continue;
+    if (id === "defillama-pool-chart") continue;
     startPoll(id, { hidden: () => document.hidden, onResult: (r: unknown) => { live[id] = r; publish(); } });
   }
 }

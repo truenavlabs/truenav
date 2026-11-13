@@ -1238,3 +1238,81 @@ fn redteam_r2_migration_alias_must_be_able_to_match_a_historical_v1_lock() {
         "lookup still pretends the historical v1 pipe string is a loan-terms-v2 hash"
     );
 }
+
+/// Registry keyed by fingerprint, like `get_lock`: an unknown fingerprint reads as an empty row.
+struct KeyedRead {
+    snapshot: Snapshot,
+    rows: BTreeMap<String, LockRead>,
+}
+impl RegistryReader for KeyedRead {
+    fn read(&self, _: &Scope, fp: &[String], _: &str) -> truenav_v3_core::Result<Snapshot> {
+        let mut s = self.snapshot.clone();
+        s.locks = fp
+            .iter()
+            .map(|f| {
+                self.rows
+                    .get(f)
+                    .cloned()
+                    .unwrap_or_else(|| registry_lock(f, None, None))
+            })
+            .collect();
+        Ok(s)
+    }
+}
+
+/// Codex audit A01: an invisible U+180F in signed terms gave a second fingerprint, hid another fund's
+/// lock and moved the fund from 59 conflict red to 97 green. The variant must still hit the foreign lock.
+#[test]
+fn a01_invisible_u180f_must_not_hide_a_foreign_lock() {
+    let (c, sources, p, r) = temporal_setup();
+    let mut rows: BTreeMap<String, LockRead> = r
+        .snapshot
+        .locks
+        .iter()
+        .map(|l| (l.fingerprint.clone(), l.clone()))
+        .collect();
+    let foreign = r.snapshot.locks[5].fingerprint.clone();
+    let row = rows.get_mut(&foreign).unwrap();
+    row.owner = Some("other.sim.testnet".into());
+    row.fund_token_id = Some("other-simulated-fund".into());
+    let keyed = KeyedRead {
+        snapshot: r.snapshot.clone(),
+        rows: rows.clone(),
+    };
+    let honest = evaluate(&c, &sources, &p, &keyed, &TestMac, &salt()).unwrap();
+    assert_eq!(honest.envelope["pledge_result"], "conflict");
+    assert_eq!(honest.envelope["score"], 59);
+    assert_eq!(honest.envelope["band"], "red");
+    for invisible in ['\u{180f}', '\u{2065}', '\u{e0002}'] {
+        let variant = LoanTerms {
+            version: "loan-terms-v2".into(),
+            borrower_namespace: "demo".into(),
+            borrower_id: "TEST TEMPORAL 5".into(),
+            origination_date: "2026-01-01".into(),
+            principal_cents: "10000000".into(),
+            currency: "USD".into(),
+            collateral_namespace: "demo".into(),
+            collateral_ref: format!("TEST TEMPORAL{invisible} 5"),
+        };
+        let tv = canonical_terms(&variant, &[]).unwrap();
+        let mut s = sources.clone();
+        s[0].payload["loans"][5]["terms"] = tv.clone();
+        s[3].payload["loan_terms"][5]["terms"] = tv;
+        for src in &mut s {
+            sign(src);
+        }
+        let out = evaluate(&c, &s, &p, &keyed, &TestMac, &salt()).unwrap();
+        let cp = invisible as u32;
+        assert_eq!(
+            out.envelope["pledge_result"], "conflict",
+            "U+{cp:04X} hid the foreign lock: score {} band {}",
+            out.envelope["score"], out.envelope["band"]
+        );
+        assert_eq!(out.envelope["score"], 59, "U+{cp:04X} lifted the score");
+        assert_eq!(out.envelope["band"], "red", "U+{cp:04X} changed the band");
+        assert!(out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")));
+    }
+}

@@ -283,35 +283,53 @@ pub struct LoanTerms {
     pub collateral_namespace: String,
     pub collateral_ref: String,
 }
-/// Unicode Default_Ignorable_Code_Point, plus variation selectors and tag characters.
+/// Unicode Default_Ignorable_Code_Point, every range in DerivedCoreProperties-18.0.0.txt
+/// (https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt, dated 2026-08-07),
+/// including the code points Unicode reserves for future ignorables. The same lines are kept in
+/// tests/fixtures/unicode-18.0.0-default-ignorable.txt and tests/redteam_a01.rs checks this table
+/// against them (Codex audit A01: the earlier hand list missed U+180F and the reserved ranges).
+const DEFAULT_IGNORABLE: [(u32, u32); 27] = [
+    (0x00AD, 0x00AD),   // Cf       SOFT HYPHEN
+    (0x034F, 0x034F),   // Mn       COMBINING GRAPHEME JOINER
+    (0x061C, 0x061C),   // Cf       ARABIC LETTER MARK
+    (0x115F, 0x1160),   // Lo   [2] HANGUL CHOSEONG FILLER..HANGUL JUNGSEONG FILLER
+    (0x17B4, 0x17B5),   // Mn   [2] KHMER VOWEL INHERENT AQ..KHMER VOWEL INHERENT AA
+    (0x180B, 0x180D), // Mn   [3] MONGOLIAN FREE VARIATION SELECTOR ONE..MONGOLIAN FREE VARIATION SELECTOR THREE
+    (0x180E, 0x180E), // Cf       MONGOLIAN VOWEL SEPARATOR
+    (0x180F, 0x180F), // Mn       MONGOLIAN FREE VARIATION SELECTOR FOUR
+    (0x200B, 0x200F), // Cf   [5] ZERO WIDTH SPACE..RIGHT-TO-LEFT MARK
+    (0x202A, 0x202E), // Cf   [5] LEFT-TO-RIGHT EMBEDDING..RIGHT-TO-LEFT OVERRIDE
+    (0x2060, 0x2064), // Cf   [5] WORD JOINER..INVISIBLE PLUS
+    (0x2065, 0x2065), // Cn       <reserved-2065>
+    (0x2066, 0x206F), // Cf  [10] LEFT-TO-RIGHT ISOLATE..NOMINAL DIGIT SHAPES
+    (0x3164, 0x3164), // Lo       HANGUL FILLER
+    (0xFE00, 0xFE0F), // Mn  [16] VARIATION SELECTOR-1..VARIATION SELECTOR-16
+    (0xFEFF, 0xFEFF), // Cf       ZERO WIDTH NO-BREAK SPACE
+    (0xFFA0, 0xFFA0), // Lo       HALFWIDTH HANGUL FILLER
+    (0xFFF0, 0xFFF8), // Cn   [9] <reserved-FFF0>..<reserved-FFF8>
+    (0x1BCA0, 0x1BCA3), // Cf   [4] SHORTHAND FORMAT LETTER OVERLAP..SHORTHAND FORMAT UP STEP
+    (0x1D173, 0x1D17A), // Cf   [8] MUSICAL SYMBOL BEGIN BEAM..MUSICAL SYMBOL END PHRASE
+    (0xE0000, 0xE0000), // Cn       <reserved-E0000>
+    (0xE0001, 0xE0001), // Cf       LANGUAGE TAG
+    (0xE0002, 0xE001F), // Cn  [30] <reserved-E0002>..<reserved-E001F>
+    (0xE0020, 0xE007F), // Cf  [96] TAG SPACE..CANCEL TAG
+    (0xE0080, 0xE00FF), // Cn [128] <reserved-E0080>..<reserved-E00FF>
+    (0xE0100, 0xE01EF), // Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
+    (0xE01F0, 0xE0FFF), // Cn [3600] <reserved-E01F0>..<reserved-E0FFF>
+];
+/// Dropped before A01 although not in Default_Ignorable_Code_Point; kept so existing ids do not move.
+const EXTRA_IGNORABLE: [(u32, u32); 2] = [
+    (0xFFF9, 0xFFFB),   // Cf interlinear annotation anchor..terminator
+    (0x13430, 0x13438), // Cf Egyptian hieroglyph format controls
+];
+/// Unicode Default_Ignorable_Code_Point plus the two extra ranges above.
 /// These are removed so they cannot mint a second pledge id.
 pub fn is_default_ignorable(c: char) -> bool {
-    matches!(
-        c,
-        '\u{00ad}'
-            | '\u{034f}'
-            | '\u{061c}'
-            | '\u{115f}'
-            | '\u{1160}'
-            | '\u{17b4}'
-            | '\u{17b5}'
-            | '\u{180b}'..='\u{180e}'
-            | '\u{200b}'..='\u{200f}'
-            | '\u{202a}'..='\u{202e}'
-            | '\u{2060}'..='\u{2064}'
-            | '\u{2066}'..='\u{206f}'
-            | '\u{3164}'
-            | '\u{fe00}'..='\u{fe0f}'
-            | '\u{feff}'
-            | '\u{ffa0}'
-            | '\u{fff9}'..='\u{fffb}'
-            | '\u{13430}'..='\u{13438}'
-            | '\u{1bca0}'..='\u{1bca3}'
-            | '\u{1d173}'..='\u{1d17a}'
-            | '\u{e0001}'
-            | '\u{e0020}'..='\u{e007f}'
-            | '\u{e0100}'..='\u{e01ef}'
-    )
+    let cp = c as u32;
+    DEFAULT_IGNORABLE
+        .iter()
+        .chain(EXTRA_IGNORABLE.iter())
+        .any(|(a, b)| (*a..=*b).contains(&cp))
 }
 fn is_dropped_char(c: char) -> bool {
     c.is_whitespace() || c.is_control() || is_default_ignorable(c)
@@ -337,24 +355,23 @@ fn latin_lookalike(c: char) -> char {
         _ => c,
     }
 }
-/// NFKC, drop whitespace and default-ignorable characters, fold a short Latin lookalike set,
-/// then Unicode lowercase plus the casefold pairs the ASCII lowercase table misses.
-/// A full confusable skeleton crate is not linked.
-pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
-    let nfkc: String = s.nfkc().collect();
-    let mut n = String::new();
-    for c in nfkc.chars() {
-        if !is_dropped_char(c) {
-            n.push(latin_lookalike(c));
-        }
+/// Lowercase forms whose uppercase is in `latin_lookalike`, so case folding cannot undo the fold
+/// (Codex audit A01: `Ε` became `e` but `ε` stayed `ε`).
+fn lowercase_lookalike(c: char) -> char {
+    match c {
+        'ε' => 'e',
+        'η' => 'h',
+        'μ' => 'm',
+        'ρ' => 'p',
+        'ϲ' => 'c',
+        _ => latin_lookalike(c),
     }
-    if n.is_empty() || n.len() > 512 {
-        return Err("loan_terms_invalid");
-    }
-    if case_sensitive {
-        return Ok(n);
-    }
-    let lower = n.to_lowercase();
+}
+/// One case-folding pass: Unicode uppercase then lowercase (so `µ`, `ı`, `ͅ`, `ᾈ` meet their pairs),
+/// NFKD, the casefold pairs the lowercase table misses, the lowercase lookalike set on base letters,
+/// then NFKC.
+fn fold_case(n: &str) -> String {
+    let lower: String = n.to_uppercase().to_lowercase().nfkd().collect();
     let mut out = String::new();
     for c in lower.chars() {
         if c == '\u{0307}' && out.ends_with('i') {
@@ -363,10 +380,39 @@ pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
         match c {
             'ς' => out.push('σ'),
             'ß' => out.push_str("ss"),
-            other => out.push(other),
+            other => out.push(lowercase_lookalike(other)),
         }
     }
-    if out.is_empty() || out.len() > 512 {
+    out.nfkc().collect()
+}
+/// NFKC, drop whitespace and default-ignorable characters, fold a short Latin lookalike set on the
+/// decomposed base letters, then NFKC so a letter and its mark compose even when an ignorable sat
+/// between them, then (unless the namespace is case-sensitive) case folding to a fixed point.
+/// A full confusable skeleton crate is not linked.
+pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
+    let nfkc: String = s.nfkc().collect();
+    let kept: String = nfkc.chars().filter(|c| !is_dropped_char(*c)).collect();
+    let n: String = kept
+        .nfkd()
+        .map(latin_lookalike)
+        .collect::<String>()
+        .nfkc()
+        .collect();
+    if n.is_empty() || n.len() > 512 {
+        return Err("loan_terms_invalid");
+    }
+    if case_sensitive {
+        return Ok(n);
+    }
+    let mut out = fold_case(&n);
+    for _ in 0..4 {
+        let next = fold_case(&out);
+        if next == out {
+            break;
+        }
+        out = next;
+    }
+    if out.is_empty() || out.len() > 512 || fold_case(&out) != out {
         return Err("loan_terms_invalid");
     }
     Ok(out)

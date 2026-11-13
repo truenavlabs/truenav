@@ -1,12 +1,12 @@
 {
   "note": "Counts from one run of the root npm test (node --test over every listed file, then node spec/nav/check.mjs). Written from the run output, not typed by hand. Re-measure with npm test.",
-  "commit": "e5d74b8",
-  "measured_at": "2026-11-13T15:03:00+07:00",
+  "commit": "1028bd0",
+  "measured_at": "2026-11-13T16:48:00+07:00",
   "command": "npm test",
   "node": "v24",
-  "tests": 624,
-  "pass": 624,
+  "tests": 657,
+  "pass": 657,
   "fail": 0,
   "skipped": 0,
-  "skipped_why": "none on this run (Linux x64, Node v24). OutLayer output parity still skips without the Rust 1.99.0 toolchain."
+  "skipped_why": "none on this run (Linux x64, Node v24, with web/node_modules present). OutLayer output parity still skips without the Rust 1.99.0 toolchain."
 }

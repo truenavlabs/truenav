@@ -89,6 +89,38 @@ export function eip191Recover(text, sigHex) {
   return `0x${Buffer.from(keccak_256(pub.subarray(1)).subarray(12)).toString("hex")}`;
 }
 
+/** Recover each recorded verdict's EIP-191 signature over "<model>:<request sha256>:<response sha256>"
+ *  and require it to be the attested key. Fail closed on a missing or bad signature, or a mismatched key. */
+export function checkVerdictSignatures(tee, attestedSigner) {
+  const attested = String(attestedSigner || "").toLowerCase();
+  const problems = [];
+  if (!attested) problems.push("no attested signer");
+  const results = Array.isArray(tee?.results) ? tee.results : [];
+  if (!results.length) problems.push("no recorded verdicts");
+  for (const [i, r] of results.entries()) {
+    const on = r?.onchain || {};
+    const id = r?.loan_id || on.loan_hash || String(i);
+    if (!on.signature) {
+      problems.push(`result ${id}: missing signature`);
+      continue;
+    }
+    const model = on.model_id || tee?.model;
+    if (!model || !on.request_sha256 || typeof on.response_body !== "string") {
+      problems.push(`result ${id}: missing signed fields`);
+      continue;
+    }
+    let recovered;
+    try {
+      recovered = eip191Recover(`${model}:${on.request_sha256}:${sha256hex(on.response_body)}`, on.signature);
+    } catch {
+      problems.push(`result ${id}: bad signature`);
+      continue;
+    }
+    if (recovered !== attested) problems.push(`result ${id}: signature does not recover to the attested key`);
+  }
+  return { ok: problems.length === 0, problems, count: results.length };
+}
+
 /** Parse the model's verdict out of the exact response bytes. */
 export function readVerdict(responseBytes) {
   const content = JSON.parse(responseBytes.toString("utf8")).choices[0].message.content.trim();

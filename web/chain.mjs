@@ -45,7 +45,7 @@ async function rpcOnce(url, method, params, fetchImpl, timeoutMs) {
     r = await fetchImpl(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "truenav", method, params }), signal: c.signal });
   } catch (e) {
     const name = e && e.name;
-    throw new Error(name === "TimeoutError" || name === "AbortError" ? `RPC ${method} timed out after ${timeoutMs} ms` : `RPC ${method} failed: network error`);
+    throw new Error(name === "TimeoutError" || name === "AbortError" ? `RPC ${method} timed out after ${timeoutMs} ms` : `RPC ${method} failed: network error`, { cause: e }); // message stays fixed; cause lets the CLI net guard see a NetworkError
   } finally {
     clearTimeout(t);
   }

@@ -35,20 +35,19 @@ export async function rpcCall(url, method, params, { fetchImpl = (...a) => globa
   throw last;
 }
 
-function timeoutSignal(ms) {
-  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
-  const c = new AbortController();
-  setTimeout(() => c.abort(), ms);
-  return c.signal;
-}
-
 async function rpcOnce(url, method, params, fetchImpl, timeoutMs) {
   let r;
+  // Referenced setTimeout, not AbortSignal.timeout: Node 22's timeout signal is unref'd, so a hung
+  // fetch with no other handles never aborts (node:test then cancels the test).
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), timeoutMs);
   try {
-    r = await fetchImpl(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "truenav", method, params }), signal: timeoutSignal(timeoutMs) });
+    r = await fetchImpl(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "truenav", method, params }), signal: c.signal });
   } catch (e) {
     const name = e && e.name;
     throw new Error(name === "TimeoutError" || name === "AbortError" ? `RPC ${method} timed out after ${timeoutMs} ms` : `RPC ${method} failed: network error`);
+  } finally {
+    clearTimeout(t);
   }
   if (!r.ok) throw new Error(`RPC ${method} failed: HTTP ${r.status}`);
   const j = await r.json();

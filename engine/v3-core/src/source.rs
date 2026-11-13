@@ -385,12 +385,24 @@ fn fold_case(n: &str) -> String {
     }
     out.nfkc().collect()
 }
-/// NFKC, drop whitespace and default-ignorable characters, fold a short Latin lookalike set on the
+/// Fold the lookalike set on the canonically decomposed input first, because NFKC rewrites some
+/// mapped letters (U+03F9 and U+03F2 become sigma) before a later map could see them. Then NFKC,
+/// drop whitespace and default-ignorable characters, fold the Latin lookalike set again on the
 /// decomposed base letters, then NFKC so a letter and its mark compose even when an ignorable sat
 /// between them, then (unless the namespace is case-sensitive) case folding to a fixed point.
 /// A full confusable skeleton crate is not linked.
 pub fn normalized_id(s: &str, case_sensitive: bool) -> Result<String> {
-    let nfkc: String = s.nfkc().collect();
+    let folded: String = s
+        .nfd()
+        .map(|c| {
+            if case_sensitive {
+                latin_lookalike(c)
+            } else {
+                lowercase_lookalike(c)
+            }
+        })
+        .collect();
+    let nfkc: String = folded.nfkc().collect();
     let kept: String = nfkc.chars().filter(|c| !is_dropped_char(*c)).collect();
     let n: String = kept
         .nfkd()

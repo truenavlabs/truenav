@@ -1390,3 +1390,100 @@ fn d1_missing_repaid_is_not_a_valuation_mark_in_the_signed_pipeline() {
     );
     assert_eq!(out.envelope["score"], Value::Null);
 }
+
+/// Codex audit A01 follow-up: U+03F9 (and U+03F2) are documented `c` lookalikes, but NFKC turned them
+/// into sigma before the lookalike map ran, so the signed conflict case went from 59 red to 97 green.
+/// Every documented lookalike written into the foreign-locked ref must keep the conflict cap.
+#[test]
+fn a01_every_documented_lookalike_keeps_the_conflict_cap() {
+    #[rustfmt::skip]
+    const LOOKALIKES: &[(char, char)] = &[
+        ('А', 'a'), ('а', 'a'), ('Α', 'a'), ('α', 'a'),
+        ('В', 'b'), ('в', 'b'), ('Β', 'b'), ('β', 'b'),
+        ('Е', 'e'), ('е', 'e'), ('Ε', 'e'), ('ε', 'e'),
+        ('К', 'k'), ('к', 'k'), ('Κ', 'k'), ('κ', 'k'),
+        ('М', 'm'), ('м', 'm'), ('Μ', 'm'), ('μ', 'm'),
+        ('Н', 'h'), ('н', 'h'), ('Η', 'h'), ('η', 'h'),
+        ('О', 'o'), ('о', 'o'), ('Ο', 'o'), ('ο', 'o'),
+        ('Р', 'p'), ('р', 'p'), ('Ρ', 'p'), ('ρ', 'p'),
+        ('С', 'c'), ('с', 'c'), ('Ϲ', 'c'), ('ϲ', 'c'),
+        ('Т', 't'), ('т', 't'), ('Τ', 't'), ('τ', 't'),
+        ('У', 'y'), ('у', 'y'),
+        ('Х', 'x'), ('х', 'x'), ('Χ', 'x'), ('χ', 'x'),
+        ('І', 'i'), ('і', 'i'), ('Ι', 'i'), ('ι', 'i'),
+        ('Ј', 'j'), ('ј', 'j'),
+        ('Ѕ', 's'), ('ѕ', 's'),
+    ];
+    const REF: &str = "TEST ABCEHIJKMOPSTXY 5";
+    let terms = |collateral_ref: String| LoanTerms {
+        version: "loan-terms-v2".into(),
+        borrower_namespace: "demo".into(),
+        borrower_id: "TEST TEMPORAL 5".into(),
+        origination_date: "2026-01-01".into(),
+        principal_cents: "10000000".into(),
+        currency: "USD".into(),
+        collateral_namespace: "demo".into(),
+        collateral_ref,
+    };
+    let (c, mut sources, p, mut r) = temporal_setup();
+    // Loan 5 carries a ref holding every Latin target letter; another fund holds its lock.
+    let honest = terms(REF.into());
+    let tv = canonical_terms(&honest, &[]).unwrap();
+    sources[0].payload["loans"][5]["terms"] = tv.clone();
+    sources[3].payload["loan_terms"][5]["terms"] = tv;
+    for s in &mut sources {
+        sign(s);
+    }
+    let foreign = fingerprint(&honest, "real_estate", &[], &TestMac).unwrap();
+    r.snapshot.locks[5].fingerprint = foreign.clone();
+    let mut rows: BTreeMap<String, LockRead> = r
+        .snapshot
+        .locks
+        .iter()
+        .map(|l| (l.fingerprint.clone(), l.clone()))
+        .collect();
+    let row = rows.get_mut(&foreign).unwrap();
+    row.owner = Some("other.sim.testnet".into());
+    row.fund_token_id = Some("other-simulated-fund".into());
+    let keyed = KeyedRead {
+        snapshot: r.snapshot.clone(),
+        rows,
+    };
+    let base = evaluate(&c, &sources, &p, &keyed, &TestMac, &salt()).unwrap();
+    assert_eq!(base.envelope["pledge_result"], "conflict");
+    assert_eq!(base.envelope["score"], 59);
+    assert_eq!(base.envelope["band"], "red");
+    let mut bad = Vec::new();
+    for &(l, t) in LOOKALIKES {
+        let upper = t.to_ascii_uppercase();
+        let at = REF[5..].find(upper).unwrap() + 5;
+        let variant = format!("{}{l}{}", &REF[..at], &REF[at + 1..]);
+        let tv = canonical_terms(&terms(variant.clone()), &[]).unwrap();
+        let mut s = sources.clone();
+        s[0].payload["loans"][5]["terms"] = tv.clone();
+        s[3].payload["loan_terms"][5]["terms"] = tv;
+        for src in &mut s {
+            sign(src);
+        }
+        let out = evaluate(&c, &s, &p, &keyed, &TestMac, &salt()).unwrap();
+        let score = out.envelope["score"].as_u64();
+        if out.envelope["pledge_result"] != "conflict"
+            || score.is_none_or(|x| x > 59)
+            || out.envelope["band"] == "green"
+        {
+            bad.push(format!(
+                "U+{:04X} in {variant:?}: {} {} {}",
+                l as u32,
+                out.envelope["pledge_result"],
+                out.envelope["score"],
+                out.envelope["band"]
+            ));
+        }
+    }
+    assert!(
+        bad.is_empty(),
+        "{} lookalikes escaped the cap: {:#?}",
+        bad.len(),
+        bad
+    );
+}

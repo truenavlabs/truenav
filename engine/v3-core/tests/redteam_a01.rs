@@ -249,3 +249,70 @@ fn a01_ascii_ids_unchanged() {
     assert_eq!(normalized_id("Parcel-1", true).unwrap(), "Parcel-1");
     assert_eq!(fp("PARCEL-1"), fp("parcel-1"), "ASCII casefold");
 }
+
+/// Every lookalike documented in source.rs (`latin_lookalike` and `lowercase_lookalike`) with its Latin
+/// target. Kept as a plain list here so the test does not trust the engine's own table.
+#[rustfmt::skip]
+pub const DOCUMENTED_LOOKALIKES: &[(char, char)] = &[
+    ('А', 'a'), ('а', 'a'), ('Α', 'a'), ('α', 'a'),
+    ('В', 'b'), ('в', 'b'), ('Β', 'b'), ('β', 'b'),
+    ('Е', 'e'), ('е', 'e'), ('Ε', 'e'), ('ε', 'e'),
+    ('К', 'k'), ('к', 'k'), ('Κ', 'k'), ('κ', 'k'),
+    ('М', 'm'), ('м', 'm'), ('Μ', 'm'), ('μ', 'm'),
+    ('Н', 'h'), ('н', 'h'), ('Η', 'h'), ('η', 'h'),
+    ('О', 'o'), ('о', 'o'), ('Ο', 'o'), ('ο', 'o'),
+    ('Р', 'p'), ('р', 'p'), ('Ρ', 'p'), ('ρ', 'p'),
+    ('С', 'c'), ('с', 'c'), ('Ϲ', 'c'), ('ϲ', 'c'),
+    ('Т', 't'), ('т', 't'), ('Τ', 't'), ('τ', 't'),
+    ('У', 'y'), ('у', 'y'),
+    ('Х', 'x'), ('х', 'x'), ('Χ', 'x'), ('χ', 'x'),
+    ('І', 'i'), ('і', 'i'), ('Ι', 'i'), ('ι', 'i'),
+    ('Ј', 'j'), ('ј', 'j'),
+    ('Ѕ', 's'), ('ѕ', 's'),
+];
+
+/// Codex audit A01 follow-up: `["c","\u{3f9}"]` kept two pledge ids because NFKC turned U+03F9 into
+/// U+03A3 before the lookalike map ran. Every documented lookalike must give the same id as its Latin
+/// letter, in either case, alone and inside a ref, and the same fingerprint.
+#[test]
+fn a01_every_documented_lookalike_keeps_one_pledge_id() {
+    let mut bad = Vec::new();
+    for &(l, t) in DOCUMENTED_LOOKALIKES {
+        let upper = t.to_ascii_uppercase();
+        for (a, b) in [
+            (l.to_string(), t.to_string()),
+            (format!("PARCEL-{l}-1"), format!("PARCEL-{t}-1")),
+            (format!("PARCEL-{l}-1"), format!("PARCEL-{upper}-1")),
+        ] {
+            if document_root(&a) != document_root(&b) || fp(&a) != fp(&b) {
+                bad.push(format!(
+                    "U+{:04X} {a:?} -> {:?} vs {b:?} -> {:?}",
+                    l as u32,
+                    document_root(&a),
+                    document_root(&b)
+                ));
+            }
+        }
+    }
+    // Case-sensitive namespaces apply the same map except the lowercase-only Greek forms.
+    for &(l, t) in DOCUMENTED_LOOKALIKES {
+        if matches!(l, 'ε' | 'η' | 'μ' | 'ρ' | 'ϲ') {
+            continue;
+        }
+        let (a, b) = (format!("Parcel-{l}-1"), format!("Parcel-{t}-1"));
+        if normalized_id(&a, true) != normalized_id(&b, true) {
+            bad.push(format!(
+                "case-sensitive U+{:04X} {:?} vs {:?}",
+                l as u32,
+                normalized_id(&a, true),
+                normalized_id(&b, true)
+            ));
+        }
+    }
+    assert!(
+        bad.is_empty(),
+        "{} lookalikes forked: {:#?}",
+        bad.len(),
+        bad
+    );
+}

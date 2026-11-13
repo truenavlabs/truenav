@@ -130,6 +130,36 @@
       "name": "two choices",
       "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null},{\"index\":1,\"message\":{\"role\":\"assistant\",\"content\":\"x\"}}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
       "accept": false
+    },
+    {
+      "name": "tool_calls in the message",
+      "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\",\"tool_calls\":[{\"id\":\"call_1\",\"type\":\"function\",\"function\":{\"name\":\"lookup\",\"arguments\":\"{\\\"document_id\\\":\\\"TITLE-1\\\"}\"}}]},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
+      "accept": false
+    },
+    {
+      "name": "think block before the json",
+      "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The deed says USD 1,250,000.00 for TITLE-1.</think>\\n{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
+      "accept": false
+    },
+    {
+      "name": "NUL character inside the binding",
+      "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\u0000\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
+      "accept": false
+    },
+    {
+      "name": "lone surrogate inside the binding",
+      "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\ud800\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
+      "accept": false
+    },
+    {
+      "name": "evidence line above u64",
+      "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"fail\\\",\\\"duplicate_evidence_line\\\":18446744073709551616,\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"flag\\\",\\\"anomalies\\\":[\\\"duplicate_document\\\"]}\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
+      "accept": false
+    },
+    {
+      "name": "trailing text after the json",
+      "body": "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"loan_hash\\\":\\\"35dc13ed 5a80fc57 2ef03276 6416d30d 67083674 f4b31371 73171a6f 7f7c8dcc\\\",\\\"binding\\\":\\\"truenav-verdict-v1|registry.x.testnet|testnet|1796574097740\\\",\\\"id_mismatch\\\":\\\"ok\\\",\\\"asset_mismatch\\\":\\\"ok\\\",\\\"amount_mismatch\\\":\\\"ok\\\",\\\"duplicate_document\\\":\\\"ok\\\",\\\"duplicate_evidence_line\\\":\\\"ok\\\",\\\"injection_attempt\\\":\\\"ok\\\",\\\"unreadable\\\":\\\"ok\\\",\\\"verdict\\\":\\\"pass\\\",\\\"anomalies\\\":[]}\\nDocument id: TITLE-1\"},\"finish_reason\":\"stop\",\"logprobs\":null}],\"model\":\"m\",\"created\":1,\"usage\":{}}",
+      "accept": false
     }
   ]
 }

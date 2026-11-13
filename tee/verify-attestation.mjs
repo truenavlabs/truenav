@@ -58,5 +58,9 @@ const signer = (res.signers[0] || {}).signing_address?.toLowerCase();
 const verdictSigners = new Set(tee.results.map((r) => r.onchain.signer.toLowerCase()));
 line(signer && verdictSigners.size === 1 && verdictSigners.has(signer), `the attested model key signed all ${tee.results.length} recorded verdicts`);
 line(onchain && signer === onchain.address, "the contract accepts exactly that key");
-console.log(ok ? "Attestation verified: the key that signs TrueNav verdicts runs in an attested NEAR AI Cloud TEE." : "Attestation NOT verified.");
+// Claim only what the lines above checked. Image measurements are not pinned (README Known limits, N-06) and the NRAS
+// token signature is not verified (N-05), so this does not show which image or model build holds the key.
+console.log(ok
+  ? "Attestation checks passed: the report hash is on chain, the TDX quote and TCB status verify, debug is off, the signing key and our nonce are bound in the quote, MRCONFIGID and RTMR3 match the report's own app_compose and event log, and the NVIDIA NRAS verdict is true. MRTD, RTMR0 to RTMR2 and the compose hash are not compared with published values, and the NRAS token signature is not verified, so this does not prove which image runs."
+  : "Attestation NOT verified.");
 process.exitCode = ok ? 0 : 1;

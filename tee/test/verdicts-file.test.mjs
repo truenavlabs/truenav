@@ -75,7 +75,9 @@ test("a verdict set whose expiry equals now is current; now = expiry + 1 ms is e
   assert.ok(has(check(syntheticSet(), { nowMs: exp + 1, minDays: undefined }), "the verdict set is expired"));
 });
 
-test("tee/fixtures/verdicts-368aa2.json, once it exists, validates for the 368aa2 registry (skipped while it is absent)", { skip: !existsSync(new URL("../fixtures/verdicts-368aa2.json", import.meta.url)) && "no tee/fixtures/verdicts-368aa2.json yet" }, () => {
+// The live set is committed, so this always runs: a missing file is a failure, not a skip.
+test("tee/fixtures/verdicts-368aa2.json validates for the 368aa2 registry", () => {
+  assert.ok(existsSync(new URL("../fixtures/verdicts-368aa2.json", import.meta.url)), "tee/fixtures/verdicts-368aa2.json is missing");
   const file = JSON.parse(readFileSync(new URL("../fixtures/verdicts-368aa2.json", import.meta.url), "utf8"));
   assert.deepEqual(validateVerdictsFile(file, { contract: REGISTRY }).problems, []);
 });

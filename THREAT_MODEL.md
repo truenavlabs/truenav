@@ -4,7 +4,7 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 
 | # | Attack | Mitigation | Test |
 | --- | --- | --- | --- |
-| 1 | Pledge the same loan to a second fund, or count a rival's refusal against the holder | servicer signature over contract, network, loan hash, fund, asset, nonce and expiry; lock per loan_hash; refusal returns "already pledged elsewhere" and does not record an attempt or an alert | `redteam_r2_squat_does_not_penalise_the_real_holder`; `npm run e2e:testnet` |
+| 1 | Pledge the same loan to a second fund, or count a rival's refusal against the holder | servicer signature over contract, network, loan hash, fund, asset, nonce and expiry; lock per loan_hash; refusal returns "already pledged elsewhere" and stores one attempt and one alert under the refused fund's id, never the holder's; a call whose caller is not the fund named in the signature stores nothing | `redteam_r2_squat_does_not_penalise_the_real_holder`; `npm run e2e:testnet` |
 | 2 | Move a pledge token to another fund | `nft_transfer` and `nft_transfer_call` always panic | `pledge_tokens_cannot_be_transferred` |
 | 3 | Forge or edit a score certificate | EIP-191 signature from a registered signer over every field | `tampered_certificate_fails_the_signature_check` |
 | 4 | Replay a certificate on another deployment or an older one | contract id inside the message; `signed_at` must increase per fund | `replayed_or_older_certificate_is_rejected` |

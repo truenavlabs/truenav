@@ -46,7 +46,7 @@ test("title and body are encoded as URL params", () => {
   assert.match(url, /body=Page%3A%20/);
   const { body, title } = parsed(url);
   assert.equal(title, "Support request");
-  assert.match(body, /Page: \/funds\/a&b c/);
+  assert.match(body, /^Page: \/\n/, "a path with & or a space is not a plain path, so it becomes /");
   assert.match(body, /alice\.testnet/);
 });
 
@@ -58,13 +58,23 @@ test("URL length is capped at about 6000 characters", () => {
   const { body } = parsed(url);
   assert.match(body, /^Page: \//);
   assert.match(body, /What happened:/);
-  assert.equal(body.includes("alice.testnet"), false);
+  // Paths over 200 characters become "/", so the opted-in account still fits.
+  assert.match(body, /^Page: \/\n/);
+  assert.match(body, /alice\.testnet/);
 });
 
 test("sanitizePath keeps a path only and sanitizeAccount rejects keys", () => {
   assert.equal(sanitizePath("/funds/meridian-yield-fund?tab=exposure#x"), "/funds/meridian-yield-fund");
   assert.equal(sanitizePath(""), "/");
   assert.equal(sanitizePath("support"), "/support");
+  assert.equal(sanitizePath("/[urgent-verify-here](https://evil.example)"), "/");
+  assert.equal(sanitizePath("/a b"), "/");
+  assert.equal(sanitizePath("/%5Bx%5D"), "/");
+  assert.equal(sanitizePath("/x\\y"), "/");
+  assert.equal(sanitizePath("/" + "a".repeat(300)), "/");
+  assert.equal(sanitizePath("/account/alice.testnet"), "/account/:id");
+  assert.equal(sanitizePath("/account/ed25519:abc"), "/");
+  assert.equal(sanitizePath("/account"), "/account");
   assert.equal(sanitizeAccount("alice.testnet"), "alice.testnet");
   assert.equal(sanitizeAccount("ed25519:FakeKeyMaterial"), "");
   assert.equal(sanitizeAccount("secp256k1:FakeKeyMaterial"), "");
@@ -86,4 +96,12 @@ test("builder never accepts chat history or leftover secrets", () => {
   assert.equal(body.includes("NEARAI_API_KEY"), false);
   assert.equal(body.includes("sk-test"), false);
   assert.equal(body.includes("alice.testnet"), false);
+});
+
+test("an account page never puts the wallet id in the issue without the opt-in", () => {
+  const { body } = parsed(buildIssueUrl({ page: "/account/alice.testnet", accountId: "alice.testnet", includeAccount: false }));
+  assert.equal(body.includes("alice.testnet"), false);
+  assert.match(body, /Page: \/account\/:id/);
+  const md = parsed(buildIssueUrl({ page: "/[urgent](https://evil.example)" })).body;
+  assert.equal(md.includes("evil.example"), false);
 });

@@ -8,6 +8,7 @@ import { Technology } from "./site/Technology";
 import { AppShell } from "./shell/AppShell";
 import { RegistryProvider } from "./shell/store";
 import { WalletProvider } from "./shell/wallet";
+import "./shell/assist";
 import { Skel } from "./shell/kit";
 import { usePath } from "./ui";
 import { appRoute } from "./routes";

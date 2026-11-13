@@ -23,8 +23,12 @@ export type Slots = {
   ReportButton?: ComponentType<{ fundId: string }>;
   /** Wallet button in the top bar. Filled by shell/wallet.tsx once the provider is imported. */
   Wallet?: ComponentType;
-  /** AI answer backend for the help bubble. Absent: the bubble answers from the FAQ and glossary in the browser. */
-  ask?: (question: string, page: string) => Promise<{ answer: string; sources: string[] } | null>;
+  /** AI answer backend for the help bubble. Absent or a null result: the bubble answers from the FAQ in the browser. */
+  ask?: (
+    question: string,
+    page: string,
+    history?: { role: "user" | "assistant"; content: string }[],
+  ) => Promise<{ answer: string; sources: string[] } | null>;
 };
 
 export const SLOTS: Slots = {

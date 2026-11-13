@@ -1,4 +1,4 @@
-// The "?" help bubble on every app page. Ask (keyless FAQ search, or the AI backend when a slot provides one), FAQ, Glossary.
+// The "?" help bubble on every app page. Ask (NEAR AI when configured, otherwise FAQ search in the browser), FAQ, Glossary.
 import { useEffect, useRef, useState } from "react";
 import { FAQ } from "../content/faq";
 import { GLOSSARY } from "../content/glossary";
@@ -15,6 +15,8 @@ export function HelpBubble({ page }: { page: string }) {
   const [hits, setHits] = useState<Doc[] | null>(null);
   const [ai, setAi] = useState<{ answer: string; sources: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [fallback, setFallback] = useState(false);
+  const [history, setHistory] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -24,16 +26,23 @@ export function HelpBubble({ page }: { page: string }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
   const ask = async () => {
-    const question = q.trim().slice(0, 500);
+    const question = q.trim().slice(0, 2000);
     if (!question) return;
     setHits(search(question, 3));
     setAi(null);
+    setFallback(false);
     if (SLOTS.ask) {
       setBusy(true);
       try {
-        setAi(await SLOTS.ask(question, page));
+        const result = await SLOTS.ask(question, page, history);
+        setAi(result);
+        setFallback(!result);
+        if (result) {
+          setHistory((h) => [...h, { role: "user" as const, content: question }, { role: "assistant" as const, content: result.answer }].slice(-8));
+        }
       } catch {
         setAi(null);
+        setFallback(true);
       } finally {
         setBusy(false);
       }
@@ -55,10 +64,10 @@ export function HelpBubble({ page }: { page: string }) {
             {tab === "ask" ? (
               <>
                 <form onSubmit={(e) => { e.preventDefault(); void ask(); }} className="hp-ask">
-                  <input ref={inputRef} value={q} maxLength={500} onChange={(e) => setQ(e.target.value)} placeholder="Ask about TrueNav, a score, a check..." aria-label="Question" />
+                  <input ref={inputRef} value={q} maxLength={2000} onChange={(e) => setQ(e.target.value)} placeholder="Ask about TrueNav, a score, a check..." aria-label="Question" />
                   <button className="xb sm" type="submit">Ask</button>
                 </form>
-                {!SLOTS.ask ? <p className="hp-note">AI answers are off in this build. These are the closest answers from the TrueNav docs, searched in your browser.</p> : <p className="hp-note">Do not paste personal data.</p>}
+                {fallback || !SLOTS.ask ? <p className="hp-note">AI help is unavailable right now. These are the closest answers from the TrueNav docs, searched in your browser.</p> : <p className="hp-note">Do not paste personal data. TrueNav runs on NEAR testnet. The demo funds, loans and documents are fictional.</p>}
                 {busy ? <p className="dim">Thinking...</p> : null}
                 {ai ? <div className="hp-ai"><p>{ai.answer}</p><small className="dim">Sources: {ai.sources.join(", ")}</small></div> : null}
                 {hits && hits.length === 0 ? <p className="dim">Nothing in the docs matches. Try the FAQ tab, or see <A href="/support">Support</A>.</p> : null}

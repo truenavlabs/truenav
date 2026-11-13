@@ -71,7 +71,7 @@ test("with chain data, an unpledged loan is marked not pledged on chain", () => 
   assert.ok(m.unverified.reasons.some((x) => x.id === "M-IN-02" && x.reason === "not pledged on chain"));
 });
 
-test("C2: a verdict stored before the current pledge does not count", () => {
+test("C2: a verdict stored before the current pledge does not count (NEW-05: at the pledge millisecond is ambiguous)", () => {
   const st = chain();
   const k = demo.find((l) => l.loan_id === "H-RE-01").loan_hash;
   st[k] = { ...st[k], latest: { verdict: "flag", anomalies: ["amount_mismatch"], at_ms: st[k].pledged_at_ms - 1 } };
@@ -79,7 +79,9 @@ test("C2: a verdict stored before the current pledge does not count", () => {
   assert.equal(h.tee.flag, 0, "the pre-pledge flag is ignored");
   assert.equal(h.tee.overdue, 1); // pledged 30 days ago with no verdict since: overdue under R25
   assert.ok(h.unverified.reasons.some((x) => x.id === "H-RE-01" && x.reason === "TEE check overdue"));
-  // A verdict at or after the pledge counts.
+  // A verdict strictly after the pledge counts. NEW-05: one at the pledge millisecond is ambiguous and excluded.
   st[k] = { ...st[k], latest: { verdict: "pass", anomalies: [], at_ms: st[k].pledged_at_ms } };
+  assert.ok(by(run(funds(), st), "harbor-credit-fund").unverified.reasons.some((x) => x.id === "H-RE-01" && x.reason === "pledge generation ambiguous"));
+  st[k] = { ...st[k], latest: { verdict: "pass", anomalies: [], at_ms: st[k].pledged_at_ms + 1 } };
   assert.equal(r2(by(run(funds(), st), "harbor-credit-fund").raw), 99.17);
 });

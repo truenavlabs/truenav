@@ -33,6 +33,7 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 | 26 | "Trust us" on the TEE key | published attestation report, re-checkable by anyone | `npm run verify:attestation` |
 | 27 | Read document text out of the public `submit_verdict` arguments (the model echoing fields or quoting evidence) | reply holds only fixed keys and value types; evidence is a line number, never a quote; client, contract and CI reject anything else | `tee/test/reply.test.mjs`, `a_real_tee_signed_reply_from_6_nov_that_echoed_document_fields_is_refused`, sandbox e2e, `npm run check:chain-replies` |
 | 28 | Guess a document id and match it against an on-chain loan_hash or a fingerprint run's attestation | loan_hash is an HMAC under a key held only inside the OutLayer TEE; requests carry a random nonce, so the attestation's input hash is not guessable; the module refuses on-chain calls | `npm run verify:fingerprints`; `outlayer/SPIKE.md` |
+| 29 | Carry a verdict to a new pledge of the same loan in one millisecond (NEW-05: verdict, release and repledge all at time T) | branch only, not deployed: a pledge generation boundary in the contract. Deployed today: the engine and the web verifier count a verdict only when it is strictly after the lock time and exclude the loan on equal times | `new05_*` in `tee_verdicts.rs`; NEW-05 tests in `engine/test/tee.test.mjs` |
 
 ## Open risks (known, not fixed)
 
@@ -42,3 +43,4 @@ Attacker goals against TrueNav and what stops each one today. "Test" names the t
 - The LLM underwriter can be wrong in either direction. With the 7 Nov prompt it flagged no honest document in 60 and missed no tampered one in 66 (one run each, synthetic documents; on 6 Nov it flagged 3 of 40 honest ones); see `tee/eval/REPORT.md`.
 - The servicer chooses which verdicts to submit and can re-run the TEE; an independent servicer is assumed.
 - The contract pays for storage on testnet; mainnet needs storage deposits.
+- NEW-05 (confirmed): the deployed registry can return the previous pledge's verdict when it was stored in the same millisecond as the new pledge. The contract fix is tested on a branch and not deployed; the engine and the web verifier guard against it. Locks made before any upgrade keep the old time rule.

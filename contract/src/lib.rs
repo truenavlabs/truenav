@@ -57,6 +57,24 @@ enum Key {
     FlagCounts,
     PledgeNonces,
     PledgeSigners,
+    /// NEW-05: raw storage prefix for the pledge generation boundary of each locked loan. Appended last so every
+    /// existing prefix and the Registry root layout stay the same.
+    PledgeGenerations,
+}
+
+/// NEW-05: storage key of a loan's pledge generation boundary: the Key::PledgeGenerations prefix byte followed by
+/// the loan hash. The value is the loan's verdict history length (u32, little endian) when its current pledge was
+/// made. Only a verdict appended after that point belongs to the current pledge.
+pub fn pledge_generation_key(loan_hash: &str) -> Vec<u8> {
+    let mut k = near_sdk::borsh::to_vec(&Key::PledgeGenerations).expect("storage key");
+    k.extend_from_slice(loan_hash.as_bytes());
+    k
+}
+
+fn read_pledge_generation(loan_hash: &str) -> Option<u32> {
+    let raw = env::storage_read(&pledge_generation_key(loan_hash))?;
+    let b: [u8; 4] = raw.as_slice().try_into().ok()?;
+    Some(u32::from_le_bytes(b))
 }
 
 /// A fund bound to its account and manager by the admin.
@@ -750,6 +768,10 @@ impl Registry {
         }
 
         self.locks.insert(loan_hash.clone(), Lock { fund_id, locked_at_ms: now });
+        // NEW-05: a new pledge generation starts after every verdict stored so far, so no earlier verdict can count
+        // for it, even one stored in the same millisecond. AlreadyYours and refusals returned above do not reach here.
+        let boundary = self.verdicts.get(&loan_hash).map(|l| l.len()).unwrap_or(0);
+        env::storage_write(&pledge_generation_key(&loan_hash), &boundary.to_le_bytes());
         let meta = TokenMetadata {
             title: Some("TrueNav loan pledge".to_string()),
             description: None,
@@ -776,6 +798,7 @@ impl Registry {
         self.assert_servicer();
         self.assert_not_paused();
         require!(self.locks.remove(&loan_hash).is_some(), "loan not pledged");
+        env::storage_remove(&pledge_generation_key(&loan_hash));
         let owner = self.tokens.owner_by_id.remove(&loan_hash);
         if let Some(meta) = self.tokens.token_metadata_by_id.as_mut() {
             meta.remove(&loan_hash);
@@ -939,14 +962,21 @@ impl Registry {
         stored
     }
 
+    /// The latest verdict of the current pledge generation. A pledge made by this code stores a boundary (the verdict
+    /// count when it was made), and only a verdict appended after it counts. A lock made before this upgrade has no
+    /// boundary and keeps the old time rule (verdict at_ms >= locked_at_ms), which still lets a verdict stored in
+    /// the same millisecond as that pledge count for it (NEW-05, legacy locks only).
     fn latest_for_pledge(&self, loan_hash: &String, lock: &Lock) -> Option<StoredVerdict> {
         let list = self.verdicts.get(loan_hash)?;
         let last = list.get(list.len().checked_sub(1)?)?;
-        if last.at_ms >= lock.locked_at_ms { Some(last.clone()) } else { None }
+        match read_pledge_generation(loan_hash) {
+            Some(boundary) => if list.len() > boundary { Some(last.clone()) } else { None },
+            None => if last.at_ms >= lock.locked_at_ms { Some(last.clone()) } else { None },
+        }
     }
 
     /// The latest verdict for the current pledge counts for the score (owner decisions 6 Nov): None when the loan
-    /// is not pledged or has no verdict since its pledge. The full history stays public (get_verdicts_page).
+    /// is not pledged or has no verdict since its pledge (since its pledge generation boundary, NEW-05). The full history stays public (get_verdicts_page).
     pub fn get_latest_verdict(&self, loan_hash: String) -> Option<StoredVerdict> {
         let lock = self.locks.get(&loan_hash).cloned()?;
         self.latest_for_pledge(&loan_hash, &lock)

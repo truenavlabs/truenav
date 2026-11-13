@@ -65,7 +65,7 @@ Result shape notes (6 Nov): `penaltyDetail.managerDedupedRetries` was removed in
 ## Decided by owner 6 Nov 2026 (TEE underwriter)
 
 - `opts.teeStore` is the TEE verdict store read from the chain: `{ [loan_hash]: { pledged_at_ms, latest: { verdict, anomalies, at_ms } | null } }`. Each fund loan may carry `loan_hash`.
-- A flag makes the loan unverified and excluded ("TEE flag: <codes>"). No verdict: pending (unchanged) for 7 days after the pledge, then unverified and excluded ("TEE check overdue"). No loan_hash or no entry: "not checked", unchanged. No valid store: flagged "TEE verdicts not checked", unchanged.
+- A flag makes the loan unverified and excluded ("TEE flag: <codes>"). A verdict counts only when its `at_ms` is strictly after `pledged_at_ms`; equal times mean the verdict may belong to an earlier pledge of the same loan (NEW-05), so the loan is unverified and excluded ("pledge generation ambiguous"). No verdict: pending (unchanged) for 7 days after the pledge, then unverified and excluded ("TEE check overdue"). No loan_hash or no entry: "not checked", unchanged. No valid store: flagged "TEE verdicts not checked", unchanged.
 - The result carries `tee: { checked, pass, flag, pending, overdue, notChecked, loans }`.
 - Tests: `engine/test/tee.test.mjs`. Rule text: `spec/nav/NAV_SPEC.md` R25.
 

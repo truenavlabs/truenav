@@ -418,3 +418,175 @@ fn a_real_tee_signed_reply_from_6_nov_that_echoed_document_fields_is_refused() {
     ctx_at(&servicer(), t + 1, 1);
     r.submit_verdict(s(rec, "loan_hash"), s(rec, "model_id"), s(rec, "request_sha256"), s(rec, "response_body"), s(rec, "signature"));
 }
+
+// ---------- NEW-05: a verdict belongs to one pledge generation ----------
+// The old rule compared millisecond times (verdict at_ms >= lock locked_at_ms). A verdict submitted at T, then a
+// release and a new pledge in the same millisecond T, let the new pledge inherit the old verdict.
+
+fn nonce_for(seed: u64) -> String {
+    format!("{seed:064x}")
+}
+fn register_meridian(r: &mut Registry, t: u64) {
+    ctx_at(&admin(), t, 1);
+    r.register_fund("meridian-yield-fund".into(), meridian(), "manager-meridian".into());
+}
+fn pledge_as(r: &mut Registry, fund: &AccountId, loan: &str, when: u64, seed: u64) -> truenav_registry::PledgeOutcome {
+    let exp = when + 60_000;
+    let nonce = nonce_for(seed);
+    let sig = pledge_help::sign_pledge(&pledge_help::servicer_key(), CONTRACT, fund.as_str(), loan, "real_estate", &nonce, exp);
+    ctx_at(fund, when, 1);
+    r.pledge_loan(loan.to_string(), "real_estate".into(), fund.clone(), nonce, exp, sig, None)
+}
+#[allow(clippy::too_many_arguments)]
+fn verdict_at(r: &mut Registry, key: &SigningKey, lh: &str, t: u64, when: u64, req: &str, verdict: &str, anomalies: &[&str], salt: &str) -> truenav_registry::StoredVerdict {
+    let b = binding(t, CONTRACT, "mainnet", VERDICT_DOMAIN);
+    let (body, sig) = synthetic(key, "Test/Model", lh, req, verdict, anomalies, &b, salt);
+    ctx_at(&servicer(), when, 1);
+    r.submit_verdict(lh.to_string(), "Test/Model".into(), req.to_string(), body, sig)
+}
+fn release_at(r: &mut Registry, lh: &str, when: u64) {
+    ctx_at(&servicer(), when, 1);
+    r.release_loan(lh.to_string());
+}
+
+#[test]
+fn new05_a_verdict_from_the_release_millisecond_does_not_carry_to_the_next_pledge() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    verdict_at(&mut r, &key, &lh, t, at, &"c".repeat(64), "pass", &[], "g1");
+    assert!(r.get_latest_verdict(lh.clone()).is_some());
+    release_at(&mut r, &lh, at);
+    let out = pledge_as(&mut r, &meridian(), &lh, at, 501);
+    assert_eq!(out, truenav_registry::PledgeOutcome::Pledged { token_id: lh.clone() });
+    assert_eq!(r.get_lock(lh.clone()).unwrap().locked_at_ms, at, "same millisecond as the old verdict");
+    assert!(r.get_latest_verdict(lh.clone()).is_none(), "the new pledge must start without a verdict");
+    assert_eq!(r.get_verdict_count(lh), 1, "history kept");
+}
+
+#[test]
+fn new05_a_genuine_new_verdict_at_the_repledge_millisecond_counts() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    verdict_at(&mut r, &key, &lh, t, at, &"c".repeat(64), "pass", &[], "g1");
+    release_at(&mut r, &lh, at);
+    pledge_as(&mut r, &meridian(), &lh, at, 501);
+    let v = verdict_at(&mut r, &key, &lh, t, at, &"d".repeat(64), "flag", &["amount_mismatch"], "g2");
+    let latest = r.get_latest_verdict(lh.clone()).expect("a verdict stored after the new pledge counts");
+    assert_eq!(latest, v);
+    assert_eq!(latest.verdict, "flag");
+    assert_eq!(r.get_verdict_count(lh), 2);
+}
+
+#[test]
+#[should_panic(expected = "a flag clears only with a pass from a new request")]
+fn new05_a_flag_on_the_new_pledge_still_needs_a_new_request_to_clear() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    verdict_at(&mut r, &key, &lh, t, at, &"c".repeat(64), "pass", &[], "g1");
+    release_at(&mut r, &lh, at);
+    pledge_as(&mut r, &meridian(), &lh, at, 501);
+    let req = "d".repeat(64);
+    verdict_at(&mut r, &key, &lh, t, at, &req, "flag", &["amount_mismatch"], "g2");
+    verdict_at(&mut r, &key, &lh, t, at, &req, "pass", &[], "g3");
+}
+
+#[test]
+fn new05_a_flag_from_the_previous_pledge_does_not_bind_the_new_one() {
+    // The flag belonged to Harbor's pledge. Meridian's pledge starts clean, so the flag-clearing rule does not
+    // look back across the boundary. The flag stays in history and in the flag count.
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    let req = "c".repeat(64);
+    verdict_at(&mut r, &key, &lh, t, at, &req, "flag", &["amount_mismatch"], "g1");
+    release_at(&mut r, &lh, at);
+    pledge_as(&mut r, &meridian(), &lh, at, 501);
+    assert!(r.get_latest_verdict(lh.clone()).is_none());
+    verdict_at(&mut r, &key, &lh, t, at, &req, "pass", &[], "g2");
+    assert_eq!(r.get_latest_verdict(lh.clone()).unwrap().verdict, "pass");
+    assert_eq!(r.get_flag_count(lh), 1);
+}
+
+#[test]
+fn new05_already_yours_does_not_start_a_new_generation() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    let at = t + 100;
+    let v = verdict_at(&mut r, &key, &lh, t, at, &"c".repeat(64), "pass", &[], "g1");
+    let out = pledge_as(&mut r, &harbor(), &lh, at, 502);
+    assert_eq!(out, truenav_registry::PledgeOutcome::AlreadyYours { token_id: lh.clone() });
+    assert_eq!(r.get_latest_verdict(lh.clone()), Some(v));
+    assert_eq!(r.get_lock(lh).unwrap().locked_at_ms, t, "lock unchanged");
+}
+
+#[test]
+fn new05_a_refused_cross_fund_pledge_does_not_start_a_new_generation() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    let v = verdict_at(&mut r, &key, &lh, t, at, &"c".repeat(64), "pass", &[], "g1");
+    let out = pledge_as(&mut r, &meridian(), &lh, at, 503);
+    assert!(matches!(out, truenav_registry::PledgeOutcome::Refused { ref message, .. } if message == "already pledged elsewhere"));
+    assert_eq!(r.get_latest_verdict(lh.clone()), Some(v), "the holder keeps its verdict");
+    assert_eq!(r.get_lock(lh).unwrap().fund_id, "harbor-credit-fund");
+}
+
+#[test]
+fn new05_cross_fund_repledge_at_a_later_time_starts_clean() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    verdict_at(&mut r, &key, &lh, t, t + 1, &"c".repeat(64), "pass", &[], "g1");
+    release_at(&mut r, &lh, t + 2);
+    pledge_as(&mut r, &meridian(), &lh, t + 3, 504);
+    assert!(r.get_latest_verdict(lh.clone()).is_none());
+    verdict_at(&mut r, &key, &lh, t, t + 4, &"d".repeat(64), "pass", &[], "g2");
+    assert_eq!(r.get_latest_verdict(lh.clone()).unwrap().at_ms, t + 4);
+}
+
+#[test]
+fn new05_repeated_generations_in_one_millisecond_each_start_clean() {
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    let funds = [harbor(), meridian(), harbor(), meridian()];
+    // Harbor holds generation 1 from setup. Each round: verdict, release, next fund pledges, all at `at`.
+    for (i, next) in funds.iter().skip(1).enumerate() {
+        verdict_at(&mut r, &key, &lh, t, at, &format!("{:064x}", 0xc0 + i), "pass", &[], &format!("rep{i}"));
+        assert!(r.get_latest_verdict(lh.clone()).is_some(), "generation {} sees its own verdict", i + 1);
+        release_at(&mut r, &lh, at);
+        assert_eq!(pledge_as(&mut r, next, &lh, at, 600 + i as u64), truenav_registry::PledgeOutcome::Pledged { token_id: lh.clone() });
+        assert!(r.get_latest_verdict(lh.clone()).is_none(), "generation {} starts clean", i + 2);
+    }
+    assert_eq!(r.get_verdict_count(lh.clone()), 3);
+    verdict_at(&mut r, &key, &lh, t, at, &"e".repeat(64), "pass", &[], "last");
+    assert!(r.get_latest_verdict(lh).is_some());
+}
+
+#[test]
+fn new05_release_clears_the_boundary() {
+    let (mut r, _key, lh, t) = synthetic_setup();
+    let k = truenav_registry::pledge_generation_key(&lh);
+    assert_eq!(near_sdk::env::storage_read(&k), Some(0u32.to_le_bytes().to_vec()));
+    release_at(&mut r, &lh, t + 1);
+    assert_eq!(near_sdk::env::storage_read(&k), None);
+}
+
+#[test]
+fn new05_a_legacy_lock_without_a_boundary_keeps_the_old_time_rule() {
+    // A lock made before this upgrade has no boundary. Simulate it by removing the boundary. The old rule
+    // (at_ms >= locked_at_ms) applies, so a verdict after the pledge counts, and NEW-05 stays open for such a
+    // lock until it is released and pledged again.
+    let (mut r, key, lh, t) = synthetic_setup();
+    register_meridian(&mut r, t);
+    let at = t + 100;
+    verdict_at(&mut r, &key, &lh, t, at, &"c".repeat(64), "pass", &[], "g1");
+    near_sdk::env::storage_remove(&truenav_registry::pledge_generation_key(&lh));
+    assert!(r.get_latest_verdict(lh.clone()).is_some(), "legacy lock: a later verdict counts");
+    release_at(&mut r, &lh, at);
+    pledge_as(&mut r, &meridian(), &lh, at, 505);
+    assert!(r.get_latest_verdict(lh.clone()).is_none(), "the new pledge has a boundary");
+    near_sdk::env::storage_remove(&truenav_registry::pledge_generation_key(&lh));
+    assert!(r.get_latest_verdict(lh).is_some(), "without a boundary the same-millisecond verdict counts again (legacy rule)");
+}

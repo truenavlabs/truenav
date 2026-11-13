@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrueNav Labs depth modules</title>
+<style>
+/* TrueNav depth modules. Dark institutional terminal. Tokens from the dashboard spec, section 11. */
+:root {
+  --tn-bg: #0b0e13;
+  --tn-panel: #11161d;
+  --tn-raised: #161c25;
+  --tn-border: #1e2630;
+  --tn-text: #e6eaf0;
+  --tn-muted: #8a96a8;
+  --tn-accent: #4cc2ff;
+  --tn-green: #2fbf71;
+  --tn-yellow: #e8b53a;
+  --tn-red: #f0524f;
+  --tn-recorded: #5b8def;
+  --tn-computed: #9b8cff;
+  --tn-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --tn-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+.tn-root {
+  background: var(--tn-bg);
+  color: var(--tn-text);
+  font-family: var(--tn-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.tn-root * { box-sizing: border-box; }
+
+.tn-num, .tn-mono { font-family: var(--tn-mono); font-variant-numeric: tabular-nums; }
+.tn-num { text-align: right; }
+
+.tn-panel {
+  background: var(--tn-panel);
+  border: 1px solid var(--tn-border);
+  border-radius: 6px;
+  margin: 0 0 16px;
+}
+
+.tn-panel-h {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--tn-border);
+}
+
+.tn-panel-h h2, .tn-panel-h h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.tn-panel-b { padding: 12px; }
+.tn-source, .tn-note { color: var(--tn-muted); font-size: 12px; margin: 4px 0 0; }
+.tn-kicker { color: var(--tn-accent); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 8px; }
+
+.tn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--tn-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 12px;
+  color: var(--tn-muted);
+  background: var(--tn-raised);
+  white-space: nowrap;
+}
+
+.tn-chip.live { color: var(--tn-green); }
+.tn-chip.live::before, .tn-dot {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tn-green);
+  display: inline-block;
+}
+.tn-chip.recorded { color: var(--tn-recorded); border-color: #2a3d66; }
+.tn-chip.computed { color: var(--tn-computed); border-color: #3a3470; }
+.tn-chip.demo, .tn-chip.stale, .tn-chip.snapshot {
+  color: var(--tn-yellow);
+  border-color: #6a5420;
+  background: repeating-linear-gradient(45deg, #2a2414, #2a2414 4px, #1c1a12 4px, #1c1a12 8px);
+}
+.tn-chip.external, .tn-chip.snapshot.external { color: var(--tn-muted); }
+.tn-chip.red { color: var(--tn-red); border-color: #6a3030; }
+.tn-chip.green { color: var(--tn-green); border-color: #1e5a3c; }
+.tn-chip.yellow { color: var(--tn-yellow); border-color: #6a5420; }
+
+.tn-dim { opacity: 0.8; }
+
+.tn-explain { position: relative; display: inline-flex; }
+.tn-explain-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--tn-border);
+  background: transparent;
+  color: var(--tn-muted);
+  font-size: 11px;
+  line-height: 14px;
+  padding: 0;
+  cursor: help;
+}
+.tn-explain-pop {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: 22px;
+  width: 260px;
+  padding: 8px;
+  background: var(--tn-raised);
+  color: var(--tn-text);
+  border: 1px solid var(--tn-border);
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: normal;
+}
+.tn-explain:hover .tn-explain-pop,
+.tn-explain:focus-within .tn-explain-pop { display: block; }
+
+.tn-ticker {
+  overflow: hidden;
+  border: 1px solid var(--tn-border);
+  border-radius: 6px;
+  background: var(--tn-panel);
+  margin-bottom: 16px;
+}
+.tn-ticker-track {
+  display: flex;
+  gap: 28px;
+  width: max-content;
+  padding: 8px 12px;
+  animation: tn-marquee 90s linear infinite;
+}
+.tn-ticker:hover .tn-ticker-track { animation-play-state: paused; }
+.tn-tick { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.tn-tick b { font-weight: 600; }
+.tn-up { color: var(--tn-green); }
+.tn-down { color: var(--tn-red); }
+.tn-attr { color: var(--tn-muted); font-size: 12px; padding: 0 12px 8px; }
+
+@keyframes tn-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.tn-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.tn-span-6 { grid-column: span 6; }
+.tn-span-12 { grid-column: span 12; }
+.tn-span-4 { grid-column: span 4; }
+
+.tn-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tn-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--tn-muted);
+  font-size: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--tn-panel);
+}
+.tn-table th, .tn-table td {
+  border-bottom: 1px solid var(--tn-border);
+  padding: 4px 8px;
+  height: 32px;
+}
+.tn-table th.num, .tn-table td.num { text-align: right; }
+.tn-table tr { cursor: pointer; }
+.tn-table tr:hover td { background: var(--tn-raised); }
+.tn-table button.linkish {
+  background: none;
+  border: 0;
+  color: var(--tn-accent);
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tn-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.tn-controls input, .tn-controls select, .tn-btn {
+  background: var(--tn-raised);
+  color: var(--tn-text);
+  border: 1px solid var(--tn-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 13px;
+}
+.tn-btn { cursor: pointer; }
+.tn-btn:focus, .tn-explain-btn:focus, .tn-controls input:focus, .tn-controls select:focus {
+  outline: 2px solid var(--tn-accent);
+  outline-offset: 1px;
+}
+
+.tn-bar { height: 8px; background: #1e2630; border-radius: 4px; overflow: hidden; }
+.tn-bar > span { display: block; height: 100%; background: var(--tn-accent); }
+
+.tn-kv { display: grid; grid-template-columns: 180px 1fr; gap: 4px 12px; font-size: 13px; }
+.tn-kv dt { color: var(--tn-muted); }
+
+.tn-banner {
+  border: 1px solid #6a5420;
+  background: repeating-linear-gradient(45deg, #2a2414, #2a2414 6px, #1c1a12 6px, #1c1a12 12px);
+  color: var(--tn-yellow);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.tn-check {
+  font-family: var(--tn-mono);
+  font-size: 13px;
+  background: var(--tn-raised);
+  border-left: 3px solid var(--tn-yellow);
+  padding: 8px 10px;
+  margin: 8px 0;
+}
+
+.tn-empty { color: var(--tn-muted); padding: 12px 0; }
+
+.tn-report {
+  background: #f7f5f0;
+  color: #1a1d22;
+  padding: 24px;
+  border-radius: 6px;
+  max-width: 800px;
+}
+.tn-report h2, .tn-report h3 { margin: 0 0 8px; }
+.tn-report table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tn-report td, .tn-report th { border-bottom: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+.tn-report .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 900px) {
+  .tn-span-6, .tn-span-4 { grid-column: span 12; }
+  .tn-kv { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tn-ticker-track { animation: none; }
+}
+
+@media print {
+  .tn-noprint { display: none !important; }
+  .tn-report {
+    background: #fff;
+    color: #000;
+    max-width: none;
+    padding: 0;
+  }
+  .tn-report, .tn-report * { box-shadow: none; }
+}
+
+</style>
+</head>
+<body>
+<div class="tn-root"><header><p class="tn-kicker">TrueNav Labs</p><h1>Depth modules harness</h1><p class="tn-note">Static render for review. Testnet demo. Funds, loans and documents are fictional. Market data is a committed snapshot and is context only.</p></header><div class="tn-ticker" id="tn-ticker"><div class="tn-ticker-track"><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>NEAR</b><span class="tn-num">$3.39</span><span class="tn-down">-8.13%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>BTC</b><span class="tn-num">$71,423.00</span><span class="tn-down">-3.92%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>ETH</b><span class="tn-num">$2,006.79</span><span class="tn-down">-3.38%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>USDC</b><span class="tn-num">$0.9995</span><span class="tn-down">-0.01%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="U.S. Department of the Treasury. US Treasury. 2026-11-12T19:43:38.740Z"><b>US 2Y</b><span class="tn-num">4.73%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="U.S. Department of the Treasury. US Treasury. 2026-11-12T19:43:38.740Z"><b>US 10Y</b><span class="tn-num">4.98%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="U.S. Department of the Treasury, Fiscal Data. US Treasury Fiscal Data. 2026-11-12T19:43:38.773Z"><b>Bills</b><span class="tn-num">4.014%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Federal Reserve Bank of New York. Federal Reserve Bank of New York. 2026-11-12T19:43:38.628Z"><b>SOFR</b><span class="tn-num">3.89%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Frankfurter (ECB reference rates). Frankfurter. 2026-11-12T19:43:38.442Z"><b>USD/THB</b><span class="tn-num">33.815</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Frankfurter (ECB reference rates). Frankfurter. 2026-11-12T19:43:38.442Z"><b>EUR per USD</b><span class="tn-num">0.9024</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data from DefiLlama. DefiLlama. 2026-11-12T19:43:38.856Z"><b>Stablecoins</b><span class="tn-num">$289.29B</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data from DefiLlama. DefiLlama. 2026-11-12T19:43:38.625Z"><b>RWA TVL</b><span class="tn-num">$3.14B</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data from DefiLlama. DefiLlama. 2026-11-12T19:43:38.944Z"><b>NEAR DeFi TVL</b><span class="tn-num">$158.99M</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="NEAR testnet RPC (test.rpc.fastnear.com). NEAR testnet RPC. 2026-11-12T19:43:38.628Z"><b>Testnet block</b><span class="tn-num">277,407,766</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>NEAR</b><span class="tn-num">$3.39</span><span class="tn-down">-8.13%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>BTC</b><span class="tn-num">$71,423.00</span><span class="tn-down">-3.92%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>ETH</b><span class="tn-num">$2,006.79</span><span class="tn-down">-3.38%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data provided by CoinGecko. CoinGecko. 2026-11-12T19:43:38.373Z"><b>USDC</b><span class="tn-num">$0.9995</span><span class="tn-down">-0.01%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="U.S. Department of the Treasury. US Treasury. 2026-11-12T19:43:38.740Z"><b>US 2Y</b><span class="tn-num">4.73%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="U.S. Department of the Treasury. US Treasury. 2026-11-12T19:43:38.740Z"><b>US 10Y</b><span class="tn-num">4.98%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="U.S. Department of the Treasury, Fiscal Data. US Treasury Fiscal Data. 2026-11-12T19:43:38.773Z"><b>Bills</b><span class="tn-num">4.014%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Federal Reserve Bank of New York. Federal Reserve Bank of New York. 2026-11-12T19:43:38.628Z"><b>SOFR</b><span class="tn-num">3.89%</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Frankfurter (ECB reference rates). Frankfurter. 2026-11-12T19:43:38.442Z"><b>USD/THB</b><span class="tn-num">33.815</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Frankfurter (ECB reference rates). Frankfurter. 2026-11-12T19:43:38.442Z"><b>EUR per USD</b><span class="tn-num">0.9024</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data from DefiLlama. DefiLlama. 2026-11-12T19:43:38.856Z"><b>Stablecoins</b><span class="tn-num">$289.29B</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data from DefiLlama. DefiLlama. 2026-11-12T19:43:38.625Z"><b>RWA TVL</b><span class="tn-num">$3.14B</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="Data from DefiLlama. DefiLlama. 2026-11-12T19:43:38.944Z"><b>NEAR DeFi TVL</b><span class="tn-num">$158.99M</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span><span class="tn-tick tn-dim" title="NEAR testnet RPC (test.rpc.fastnear.com). NEAR testnet RPC. 2026-11-12T19:43:38.628Z"><b>Testnet block</b><span class="tn-num">277,407,766</span><span class="tn-chip snapshot" title="snapshot">snapshot</span></span></div><p class="tn-attr">Market data is context only. It does not feed a TrueNav score. Data provided by CoinGecko where a CoinGecko price is shown. Other figures cite their source chip.</p></div><div id="tn-markets"><section class="tn-panel"><header class="tn-panel-h"><div><p class="tn-kicker">For comparison</p><h2>RWA market</h2></div><span class="tn-chip snapshot" title="snapshot">snapshot</span><p class="tn-source">Tokenized private credit and treasuries are third-party market caps. snapshot, 2026-11-12T19:43:38.625Z. Not a TrueNav input.</p></header><div class="tn-panel-b"><table class="tn-table"><thead><tr><th>Category</th><th class="num">Market cap</th><th>Note</th></tr></thead><tbody><tr><td>Tokenized Private Credit</td><td class="num tn-num">$26.78B</td><td>Data provided by CoinGecko</td></tr><tr><td>Tokenized Treasuries</td><td class="num tn-num">$8.01B</td><td>Data provided by CoinGecko</td></tr><tr><td>Real World Assets (RWA)</td><td class="num tn-num">$71.42B</td><td>RWA-related tokens. The category includes assets that are not private credit.</td></tr></tbody></table><h3>Top RWA protocols by TVL</h3><table class="tn-table"><thead><tr><th>Protocol</th><th class="num">TVL</th></tr></thead><tbody><tr><td>Re</td><td class="num tn-num">$488.27M</td></tr><tr><td>Ethena USDtb</td><td class="num tn-num">$417.75M</td></tr><tr><td>Huma</td><td class="num tn-num">$346.15M</td></tr><tr><td>OnRe</td><td class="num tn-num">$309.27M</td></tr><tr><td>OpenTrade</td><td class="num tn-num">$237.57M</td></tr><tr><td>Plume Vaults</td><td class="num tn-num">$221.10M</td></tr><tr><td>R25</td><td class="num tn-num">$198.09M</td></tr><tr><td>USD AI</td><td class="num tn-num">$157.27M</td></tr><tr><td>RealT Tokens</td><td class="num tn-num">$155.05M</td></tr><tr><td>Theo Network thUSD</td><td class="num tn-num">$138.56M</td></tr><tr><td>Valos</td><td class="num tn-num">$106.31M</td></tr><tr><td>Lofty</td><td class="num tn-num">$101.13M</td></tr><tr><td>Frax USD</td><td class="num tn-num">$95.12M</td></tr><tr><td>Ember</td><td class="num tn-num">$90.66M</td></tr><tr><td>Usual USD0</td><td class="num tn-num">$79.83M</td></tr></tbody></table><h3>Tokenized T-bill yields</h3><table class="tn-table"><thead><tr><th>Pool</th><th class="num">APY</th><th class="num">TVL</th></tr></thead><tbody><tr><td>USYC circle-usyc</td><td class="num tn-num">3.43%</td><td class="num tn-num">$2.01B</td></tr><tr><td>USDY ondo-yield-assets</td><td class="num tn-num">3.75%</td><td class="num tn-num">$1.29B</td></tr><tr><td>BUIDL blackrock-buidl</td><td class="num tn-num">3.84%</td><td class="num tn-num">$968.20M</td></tr></tbody></table></div></section><section class="tn-panel"><header class="tn-panel-h"><div><h2>Rates</h2></div><span class="tn-chip snapshot" title="snapshot">snapshot</span><p class="tn-source">Treasury par yields are a committed snapshot when the XML is too slow for page load. SOFR and EFFR are the NY Fed Markets API.</p></header><div class="tn-panel-b"><table class="tn-table"><thead><tr><th>Date</th><th class="num">1M</th><th class="num">2Y</th><th class="num">10Y</th><th class="num">30Y</th></tr></thead><tbody><tr><td>2026-11-10 (latest)</td><td class="num tn-num">4.05%</td><td class="num tn-num">4.73%</td><td class="num tn-num">4.98%</td><td class="num tn-num">5.35%</td></tr><tr><td>2026-11-02 (earlier)</td><td class="num tn-num">4.05%</td><td class="num tn-num">4.59%</td><td class="num tn-num">4.91%</td><td class="num tn-num">5.28%</td></tr></tbody></table><p><b>SOFR</b> <span class="tn-num">3.89%</span> on 2026-11-10 <span class="tn-chip snapshot" title="Federal Reserve Bank of New York">snapshot</span></p><p><b>EFFR</b> <span class="tn-num">3.88%</span> on 2026-11-10 <span class="tn-chip snapshot" title="Federal Reserve Bank of New York">snapshot</span></p><table class="tn-table"><thead><tr><th>Average rate 2026-10-31</th><th class="num">Percent</th></tr></thead><tbody><tr><td>Treasury Bills</td><td class="num tn-num">4.014%</td></tr><tr><td>Treasury Notes</td><td class="num tn-num">3.399%</td></tr><tr><td>Treasury Bonds</td><td class="num tn-num">3.483%</td></tr><tr><td>Treasury Inflation-Protected Securities (TIPS)</td><td class="num tn-num">1.227%</td></tr><tr><td>Treasury Floating Rate Notes (FRN)</td><td class="num tn-num">4.170%</td></tr><tr><td>Federal Financing Bank</td><td class="num tn-num">2.383%</td></tr><tr><td>Total Marketable</td><td class="num tn-num">3.570%</td></tr><tr><td>Domestic Series</td><td class="num tn-num">7.577%</td></tr></tbody></table></div></section><section class="tn-panel"><header class="tn-panel-h"><div><h2>Crypto</h2></div><span class="tn-chip snapshot" title="snapshot">snapshot</span><p class="tn-source">Data provided by CoinGecko. Stablecoin supply is DefiLlama.</p></header><div class="tn-panel-b"><table class="tn-table"><thead><tr><th>Asset</th><th class="num">USD</th><th class="num">24h</th></tr></thead><tbody><tr><td>NEAR</td><td class="num tn-num">$3.39</td><td class="num tn-num">-8.13%</td></tr><tr><td>BTC</td><td class="num tn-num">$71,423.00</td><td class="num tn-num">-3.92%</td></tr><tr><td>ETH</td><td class="num tn-num">$2,006.79</td><td class="num tn-num">-3.38%</td></tr><tr><td>USDC</td><td class="num tn-num">$0.9995</td><td class="num tn-num">-0.01%</td></tr></tbody></table><div><p>Total <span class="tn-num">$289.29B</span></p><table class="tn-table"><tbody><tr><td>USDT</td><td class="num tn-num">$175.66B</td></tr><tr><td>USDC</td><td class="num tn-num">$69.64B</td></tr><tr><td>USDS</td><td class="num tn-num">$5.36B</td></tr><tr><td>USDe</td><td class="num tn-num">$4.90B</td></tr><tr><td>DAI</td><td class="num tn-num">$4.66B</td></tr></tbody></table></div></div></section><section class="tn-panel"><header class="tn-panel-h"><div><h2>FX</h2></div><span class="tn-chip snapshot" title="snapshot">snapshot</span><p class="tn-source">Frankfurter, ECB reference rates. USD against EUR, THB, GBP and JPY.</p></header><div class="tn-panel-b"><table class="tn-table"><thead><tr><th>USD on 2026-11-12</th><th class="num">Rate</th></tr></thead><tbody><tr><td>EUR</td><td class="num tn-num">0.9024</td></tr><tr><td>THB</td><td class="num tn-num">33.8150</td></tr><tr><td>GBP</td><td class="num tn-num">0.7544</td></tr><tr><td>JPY</td><td class="num tn-num">159.7000</td></tr></tbody></table></div></section><section class="tn-panel"><header class="tn-panel-h"><div><h2>NEAR network</h2></div><span class="tn-chip snapshot" title="snapshot">snapshot</span><p class="tn-source">Testnet only. Transactions are NearBlocks v3 for registry.tnlab-368aa2.testnet.</p></header><div class="tn-panel-b"><div><p>testnet block <span class="tn-num">277,407,766</span></p><p>NearBlocks testnet: 27 nodes 6 tps</p><p>NEAR DeFi TVL $158.99M (DefiLlama snapshot)</p><table class="tn-table"><thead><tr><th>Method</th><th>Signer</th><th>Time</th></tr></thead><tbody><tr><td><a href="https://testnet.nearblocks.io/txns/FY3aQFNWYcmUgoPF4CmvvCFVcFSP5U6kUacn6RwtNJ5n">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/DYZxDAYSpmf2CB17cfuGzWXh9QkYcSCQ85ZNiHE48JrZ">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/67hr5uzv89EBuv1DGBUryNyLK3dF8P1wuFaat1vz2MZd">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/6nJUmgTRycodY1qd4RQxwhKmcHm6QRgFRgdbtKWkC35j">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/J1fKJd3VHpG83A92EisNuZoNYYu1zfVAMu5Hrnfi2QZV">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/BVQaKmWbNttkRWGFr8iXLbY8Hec3dW2DSxTidsVwsNMG">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/E58PdHJjjFeg1dEZwDUEzCW75TGGDqEzEda1uSnatiAk">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:31 UTC</td></tr><tr><td><a href="https://testnet.nearblocks.io/txns/Bmzc5RU3PYK1W2KAxcxxySsihiwWRmRWS5NMED9nMSA3">submit_verdict</a></td><td class="tn-mono">servicer.tnlab-368aa2.testnet</td><td>2026-11-11 19:30 UTC</td></tr></tbody></table></div></div></section></div><section class="tn-panel" id="tn-nav-history"><header class="tn-panel-h"><div><h2>NAV vs TrueRange</h2></div><span class="tn-chip recorded" title="recorded + demo">recorded + demo</span><p class="tn-source">The last point is the engine certificate pin. Earlier TrueVal marks are a demo backfill, not certified. Confirm the last point with get_latest_certificate before calling it live.</p></header><div class="tn-panel-b"><svg class="chartbox" viewBox="0 0 720 220" width="100%" role="img" aria-label="Reported NAV and demo TrueVal backfill"><polyline fill="none" stroke="#4cc2ff" stroke-width="1.5" points="28,74.952969680305 88.36363636363637,73.99859817672888 148.72727272727275,78.93887419524066 209.09090909090907,80.23008270007897 269.4545454545455,76.58101518640548 329.8181818181818,77.03013118808838 390.18181818181813,76.58101518640548 450.54545454545456,67.22410495047069 510.90909090909093,57.418078712853 571.2727272727273,47.612052475235345 631.6363636363636,37.80602623761769 692,28"></polyline><polyline fill="none" stroke="#e8b53a" stroke-width="1.5" stroke-dasharray="4 4" points="28,132.4617997378642 88.36363636363637,132.24696441203736 148.72727272727275,133.35905440728163 209.09090909090907,133.64971483099083 269.4545454545455,132.82828525945578 329.8181818181818,132.92938375562792 390.18181818181813,132.82828525945578 450.54545454545456,133.44751620430887 510.90909090909093,133.8645501568177 571.2727272727273,131.91839225655576 631.6363636363636,133.44751620430887"></polyline><rect x="686" y="73.85876751125585" width="12" height="118.14123248874415" fill="#4cc2ff" opacity="0.25"></rect><text x="28" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">25-12</text><text x="88.36363636363637" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-01</text><text x="148.72727272727275" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-02</text><text x="209.09090909090907" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-03</text><text x="269.4545454545455" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-04</text><text x="329.8181818181818" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-05</text><text x="390.18181818181813" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-06</text><text x="450.54545454545456" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-07</text><text x="510.90909090909093" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-08</text><text x="571.2727272727273" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-09</text><text x="631.6363636363636" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-10</text><text x="692" y="212" fill="#8a96a8" font-size="10" text-anchor="middle">26-11</text></svg><p class="tn-note">Latest reported $3,735,000, TrueVal $3,092,970, TrueRange $361,435.</p></div></section><section class="tn-panel" id="tn-exposure"><header class="tn-panel-h"><div><h2>Exposure</h2></div><span class="tn-chip live" title="Live chain data + demo detail">Live chain data + demo detail</span><p class="tn-source">Asset type and delinquency use the fixture book. Geography, sector, lien, vintage and maturity use demo fields.</p></header><div class="tn-panel-b"><div class="tn-grid"><div class="tn-span-4"><div><h3>Asset type <span class="tn-chip computed">computed</span></h3><div style="[object Object]"><div style="[object Object]"><span>real_estate</span><span class="tn-num">69.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>invoices</span><span class="tn-num">30.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div><div class="tn-span-4"><div><h3>Geography <span class="tn-chip demo">demo</span></h3><div style="[object Object]"><div style="[object Object]"><span>US / Northeast</span><span class="tn-num">69.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>US / West</span><span class="tn-num">12.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>MX / non-US</span><span class="tn-num">10.3%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>US / South</span><span class="tn-num">7.7%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div><div class="tn-span-4"><div><h3>Sector <span class="tn-chip demo">demo</span></h3><div style="[object Object]"><div style="[object Object]"><span>multifamily</span><span class="tn-num">41.0%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>industrial parts</span><span class="tn-num">30.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>office</span><span class="tn-num">28.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div><div class="tn-span-4"><div><h3>Lien <span class="tn-chip demo">demo</span></h3><div style="[object Object]"><div style="[object Object]"><span>first mortgage</span><span class="tn-num">69.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>receivable</span><span class="tn-num">30.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div><div class="tn-span-4"><div><h3>Vintage <span class="tn-chip demo">demo</span></h3><div style="[object Object]"><div style="[object Object]"><span>2026 Q1</span><span class="tn-num">69.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>2026 Q3</span><span class="tn-num">30.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div><div class="tn-span-4"><div><h3>Maturity <span class="tn-chip demo">demo</span></h3><div style="[object Object]"><div style="[object Object]"><span>3 to 7 years</span><span class="tn-num">69.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>under 1 year</span><span class="tn-num">30.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div><div class="tn-span-4"><div><h3>Delinquency <span class="tn-chip computed">computed</span></h3><div style="[object Object]"><div style="[object Object]"><span>current</span><span class="tn-num">59.0%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>dpd_over_90</span><span class="tn-num">28.2%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div><div style="[object Object]"><div style="[object Object]"><span>dpd_61_90</span><span class="tn-num">12.8%</span></div><div class="tn-bar"><span style="[object Object]"></span></div></div></div></div></div><p class="tn-note">Engine concentration (flag only, no score impact): largest obligor 41.0%, top five 100.0%. S&amp;P AIF para 91 (15% and 50%), as cited by owner; flag only, no score impact</p><p class="tn-note">Demo HHI by borrower alias: 0.281.</p></div></section><section class="tn-panel" id="tn-cash"><header class="tn-panel-h"><div><h2>Cash flows</h2></div><span class="tn-chip demo" title="demo">demo</span><p class="tn-source">Real estate scheduled interest is principal times 6% / 12, copied from the document coupon. A month inside the servicer dpd window is a shortfall. Invoices are a bullet on the document due date. Current-loan accrued interest is earned and not yet due, so it is not a shortfall.</p></header><div class="tn-panel-b"><div><div style="[object Object]"><span class="tn-mono">2026-04</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $0</span></div><div style="[object Object]"><span class="tn-mono">2026-05</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $0</span></div><div style="[object Object]"><span class="tn-mono">2026-06</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $0</span></div><div style="[object Object]"><span class="tn-mono">2026-07</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $0</span></div><div style="[object Object]"><span class="tn-mono">2026-08</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $5,390</span></div><div style="[object Object]"><span class="tn-mono">2026-09</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $5,390</span></div><div style="[object Object]"><span class="tn-mono">2026-10</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $5,390</span></div><div style="[object Object]"><span class="tn-mono">2026-11</span><div class="tn-bar" title="scheduled vs received"><span style="[object Object]"></span></div><span class="tn-num">short $13,390</span></div></div></div></section><section class="tn-panel" id="tn-cash"><header class="tn-panel-h"><div><h2>Cash flows</h2></div><span class="tn-chip demo" title="demo">demo</span><p class="tn-source">Ashgrove is a cash-flow demo fund, not on chain.</p></header><div class="tn-panel-b"><p class="tn-empty">No cash flow months.</p><p class="tn-note">Claimed vs bank-settled (cashflow/run.mjs on cashflow/demo/data.mjs): match 84.62%, never settled $9,167.</p></div></section><section class="tn-panel" id="tn-stress"><header class="tn-panel-h"><div><h2>Stress</h2></div><span class="tn-chip computed" title="computed (demo)">computed (demo)</span><p class="tn-source">These runs are not a score change on chain. Reported NAV is the fixture headline.</p></header><div class="tn-panel-b"><table class="tn-table"><thead><tr><th>Scenario</th><th class="num">TrueVal</th><th class="num">TrueRange</th><th>Reported NAV</th></tr></thead><tbody><tr><td><div>Certified inputs</div><div class="tn-note">Unchanged fixture. Shown so the scenarios have a baseline. This is not a new on-chain score.</div></td><td class="num tn-num">$3,092,970</td><td class="num tn-num">$361,435</td><td><span class="tn-chip red">above the range</span></td></tr><tr><td><div>Default rates double</div><div class="tn-note">Each PD in spec/nav/fixtures.json is doubled and capped at 100%. Demo stress, not a certified score.</div></td><td class="num tn-num">$2,926,940</td><td class="num tn-num">$292,725</td><td><span class="tn-chip red">above the range</span></td></tr><tr><td><div>Loss given default plus 10 points</div><div class="tn-note">Each LGD is increased by 0.10 and capped at 100%.</div></td><td class="num tn-num">$2,956,470</td><td class="num tn-num">$424,826</td><td><span class="tn-chip red">above the range</span></td></tr><tr><td><div>Property values minus 20%</div><div class="tn-note">The certified engine has no LTV input. This demo maps a 20% price drop to a 10 point rise in real estate LGD, capped at 100%.</div></td><td class="num tn-num">$2,979,770</td><td class="num tn-num">$380,149</td><td><span class="tn-chip red">above the range</span></td></tr><tr><td><div>Invoices paid 60 days late</div><div class="tn-note">Invoice dpd increases by 60 and the bucket follows engine/src/score.mjs BUCKET_DPD. Real estate loans stay as in the fixture.</div></td><td class="num tn-num">$3,098,330</td><td class="num tn-num">$388,709</td><td><span class="tn-chip red">above the range</span></td></tr><tr><td><div>Largest obligor defaults</div><div class="tn-note">The open loan with the largest EAD (M-RE-01) moves to dpd_over_90 (PD 100%).</div></td><td class="num tn-num">$2,606,890</td><td class="num tn-num">$334,830</td><td><span class="tn-chip red">above the range</span></td></tr></tbody></table><svg viewBox="0 0 640 160" width="100%" role="img" aria-label="TrueRange under each stress scenario"><g><rect x="203.9838685654869" y="18" width="308.33142251669324" height="14" fill="#4cc2ff" opacity="0.25"></rect><line x1="632" x2="632" y1="16" y2="34" stroke="#f0524f" stroke-width="1.5"></line></g><g><rect x="162.4728743240623" y="40" width="249.7170847784969" height="14" fill="#4cc2ff" opacity="0.25"></rect><line x1="632" x2="632" y1="38" y2="56" stroke="#f0524f" stroke-width="1.5"></line></g><g><rect x="118.72264755638125" y="62" width="362.4088935707854" height="14" fill="#4cc2ff" opacity="0.25"></rect><line x1="632" x2="632" y1="60" y2="78" stroke="#f0524f" stroke-width="1.5"></line></g><g><rect x="147.71723205726934" y="84" width="324.29641192039355" height="14" fill="#4cc2ff" opacity="0.25"></rect><line x1="632" x2="632" y1="82" y2="100" stroke="#f0524f" stroke-width="1.5"></line></g><g><rect x="194.63670705007408" y="106" width="331.59823671504773" height="14" fill="#4cc2ff" opacity="0.25"></rect><line x1="632" x2="632" y1="104" y2="122" stroke="#f0524f" stroke-width="1.5"></line></g><g><rect x="8" y="128" width="285.6356322759523" height="14" fill="#4cc2ff" opacity="0.25"></rect><line x1="632" x2="632" y1="126" y2="144" stroke="#f0524f" stroke-width="1.5"></line></g></svg></div></section><section class="tn-panel" id="tn-loan-book"><header class="tn-panel-h"><div><h2>Loan book</h2></div><span class="tn-chip demo" title="demo">demo</span><p class="tn-source">Demo data room. In production only the manager and the enclave see this. Here it is fictional so you can see what TrueNav checks.</p></header><div class="tn-panel-b"><div class="tn-banner">Demo data room. Fictional per-loan detail. Document text is not shown.</div><div class="tn-controls"><input aria-label="Filter loans" value="" placeholder="Filter"><select aria-label="Asset type" value="all"><option value="all">All assets</option><option value="real_estate">Real estate</option><option value="invoices">Invoices</option></select><select aria-label="Sort" value="loan"><option value="loan">Loan</option><option value="principal">Principal</option><option value="dpd">Days past due</option></select><button type="button" class="tn-btn">CSV</button></div><table class="tn-table"><thead><tr><th class="">Loan</th><th class="">Asset</th><th class="">Geography</th><th class="">Sector</th><th class="num">Principal</th><th class="num">Coupon</th><th class="num">LTV</th><th class="">Status</th><th class="num">DPD</th><th class="">Verdict</th><th class="num">Mark</th><th class="num">Expected loss</th></tr></thead><tbody><tr><td><button type="button" class="linkish">M-IN-01</button></td><td>invoices</td><td>US West</td><td>industrial parts</td><td class="num tn-num">$492,000</td><td class="num tn-num"></td><td class="num tn-num"></td><td>delinquent</td><td class="num tn-num">75</td><td>pass</td><td class="num tn-num">$500,000</td><td class="num tn-num">$150,750</td></tr><tr><td><button type="button" class="linkish">M-IN-02</button></td><td>invoices</td><td>MX non-US</td><td>industrial parts</td><td class="num tn-num">$398,000</td><td class="num tn-num"></td><td class="num tn-num"></td><td>performing</td><td class="num tn-num">0</td><td>pass</td><td class="num tn-num">$400,000</td><td class="num tn-num">$5,360</td></tr><tr><td><button type="button" class="linkish">M-IN-03</button></td><td>invoices</td><td>US South</td><td>industrial parts</td><td class="num tn-num">$298,500</td><td class="num tn-num"></td><td class="num tn-num"></td><td>performing</td><td class="num tn-num">0</td><td>pass</td><td class="num tn-num">$300,000</td><td class="num tn-num">$4,020</td></tr><tr><td><button type="button" class="linkish">M-RE-01</button></td><td>real_estate</td><td>US Northeast</td><td>multifamily</td><td class="num tn-num">$1,592,000</td><td class="num tn-num">6.00%</td><td class="num tn-num">52.64%</td><td>performing</td><td class="num tn-num">0</td><td>pass</td><td class="num tn-num">$1,600,000</td><td class="num tn-num">$9,920</td></tr><tr><td><button type="button" class="linkish">M-RE-02</button></td><td>real_estate</td><td>US Northeast</td><td>office</td><td class="num tn-num">$1,078,000</td><td class="num tn-num">6.00%</td><td class="num tn-num">81.42%</td><td>delinquent</td><td class="num tn-num">104</td><td>pass</td><td class="num tn-num">$935,000</td><td class="num tn-num">$341,000</td></tr></tbody></table></div></section><section class="tn-panel" id="tn-loan-detail"><header class="tn-panel-h"><div><h2>M-IN-03</h2></div><span class="tn-chip demo" title="demo">demo</span><p class="tn-source">tee/fixtures/verdicts-368aa2.json records pass for this loan hash. The chain latest verdict is a live read.</p></header><div class="tn-panel-b"><dl class="tn-kv"><dt>Loan hash</dt><dd class="tn-mono">33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc</dd><dt>Asset</dt><dd>invoices</dd><dt>Verdict</dt><dd>pass <span class="tn-chip recorded" title="recorded">recorded</span></dd><dt>Pledged at</dt><dd>Read live from nft_token. Not stored in the demo file.</dd></dl><div><p class="tn-check">documents: pass (enclave). servicer data: anomaly, excluded from TrueVal.</p><p class="tn-note">spec/nav/fixtures.json sets anomaly true on M-IN-03 (note: Underwriter flagged a tampered invoice). tee/fixtures/verdicts-368aa2.json records an enclave pass. TrueVal excludes the loan because of the servicer anomaly flag, not because the enclave failed. The blocked double-pledge attempt is a different loan: the H-RE-03 fixture note says Meridian tried to pledge that Harbor property and was blocked.</p></div><div><div class="tn-banner">Demo data room. In production only the manager and the enclave see this. Here it is fictional so you can see what TrueNav checks.</div><dl class="tn-kv"><dt>Borrower</dt><dd>Demo Buyer IN-03 Co (fictional)</dd><dt>Sector</dt><dd>industrial parts</dd><dt>Geography</dt><dd>US, South</dd><dt>Principal</dt><dd>$298,500</dd><dt>Accrued</dt><dd>$1,500</dd><dt>Coupon</dt><dd>n/a</dd><dt>LTV</dt><dd>n/a</dd><dt>Advance</dt><dd>83.44%</dd><dt>DSCR</dt><dd>1.24</dd><dt>Bucket</dt><dd>current</dd><dt>Days past due</dt><dd>0</dd><dt>Status</dt><dd>performing</dd><dt>Origination</dt><dd>2026-09-04</dd><dt>Maturity</dt><dd>2026-12-04</dd><dt>EAD</dt><dd>$300,000</dd><dt>Mark</dt><dd>$300,000</dd><dt>Expected loss</dt><dd>$4,020</dd><dt>In TrueVal</dt><dd>no, anomaly flag</dd></dl><p class="tn-note">Document type on file: commercial invoice, enclave pass. Type copied from tee/docs. Enclave verdict is the recorded pass in tee/fixtures/verdicts-368aa2.json. Document text is not included.</p><p class="tn-note">Fixture note: Underwriter flagged a tampered invoice</p></div></div></section><div id="tn-investor"><section class="tn-panel"><header class="tn-panel-h"><div><p class="tn-kicker">Investor</p><h2>Can I trust this NAV?</h2></div><span class="tn-chip recorded" title="recorded">recorded</span><p class="tn-source">Same public data as the other roles. No access control. Watchlist storage is the shell's job and stays in the browser. README: TrueNav informs only and does not move funds.</p></header><div class="tn-panel-b"><article style="[object Object]"><h3>Harbor Credit Fund <span class="tn-chip green" title="green">green</span></h3><p>Score 99. TrueVal $9,665,110. Reported NAV $9,500,000. Reported NAV is inside TrueRange.</p><p class="tn-note">TrueVal is a model estimate, not fair value. TrueRange assumes independent defaults (README, The three numbers).</p></article><article style="[object Object]"><h3>Meridian Yield Fund <span class="tn-chip red" title="red">red</span></h3><p>Score 43. TrueVal $3,092,970. Reported NAV $3,735,000. Reported NAV is above TrueRange.</p><p class="tn-note">TrueVal is a model estimate, not fair value. TrueRange assumes independent defaults (README, The three numbers).</p></article><h3>Alerts</h3><p class="tn-empty">No alert text was passed in. The shell should pass get_alerts_page.</p></div></section></div><div id="tn-manager"><section class="tn-panel"><header class="tn-panel-h"><div><p class="tn-kicker">Fund manager</p><h2>View as Meridian Yield Fund</h2></div><span class="tn-chip recorded" title="recorded">recorded</span><p class="tn-source">This view does not send a transaction. Pledges need a fresh servicer signature and are sent by the fund account (contract pledge_loan). In this demo the servicer is TrueNav Labs.</p></header><div class="tn-panel-b"><p>NAV on record: headline $3,735,000, policy $3,435,000. Reported NAV is above TrueRange.</p><p class="tn-note">There is no NAV submit method. The headline sits inside the certificate. A manager-signed NAV is not built (README, what mainnet would change, and the dashboard spec roadmap).</p><h3>What is public</h3><ul><li>Fund id meridian-yield-fund, account meridian.tnlab-368aa2.testnet.</li><li>5 pledge token hashes. Asset type is on the token. Per-loan principal is not a chain field.</li><li>Attempts, alerts, verdicts and certificates are public chain state (README, Security and limits).</li><li>The data room lens is demo. It is not what an outsider reads from the chain.</li></ul><h3>Loans</h3><ul><li class="tn-mono">M-RE-01 c92bd5...6237 real_estate verdict pass</li><li class="tn-mono">M-RE-02 266070...8e2a real_estate verdict pass</li><li class="tn-mono">M-IN-01 43d472...1b65 invoices verdict pass</li><li class="tn-mono">M-IN-02 f4fc8f...337b invoices verdict pass</li><li class="tn-mono">M-IN-03 33b102...cedc invoices verdict pass</li></ul><p class="tn-note">Blocked attempts on the certificate pin: 1. The list itself is get_attempts_page, which this module does not call.</p></div></section></div><div id="tn-auditor"><section class="tn-panel"><header class="tn-panel-h"><div><p class="tn-kicker">Auditor</p><h2>Re-check it</h2></div><span class="tn-chip recorded" title="recorded">recorded</span><p class="tn-source">Commands below are the ones named in the README. This module does not run them.</p></header><div class="tn-panel-b"><ul><li>npm run chain:read recomputes both scores from chain data.</li><li>npm run verify:attestation checks the published attestation report.</li><li>npm test runs the repository suite. The demo consistency test is web/data/demo/consistency.test.mjs.</li><li>Engine: engine/src/score.mjs. Fixtures: spec/nav/fixtures.json. Loan hashes: tee/loans.json.</li></ul><h3>Certificate pins in this bundle</h3><p class="tn-mono">harbor-credit-fund raw_x100 9917 TrueVal 966511000 cents</p><p class="tn-mono">meridian-yield-fund raw_x100 4284 TrueVal 309297000 cents</p><p class="tn-note">Market feeds are external context. They are not an audit of the score.</p><p class="tn-note">Known limits are listed in README, Known limits and disclosures. Image measurements are not pinned. The certificate key is a test key, not a TEE key.</p></div></section></div><div id="tn-report"><div class="tn-noprint tn-controls"><button type="button" class="tn-btn">Build JSON bundle</button><button type="button" class="tn-btn">Download JSON</button><button type="button" class="tn-btn">Print</button></div><article class="tn-report"><p class="tn-kicker">TrueNav Labs</p><h2>Meridian Yield Fund report</h2><p>Testnet demo. Funds, loans and documents are fictional. This sheet is the print source. Save as PDF from the print dialog. A PDF library is not included.</p><h3>Summary</h3><table><tbody><tr><th>Fund</th><td class="num">meridian-yield-fund</td></tr><tr><th>Score</th><td class="num">43 red (raw_x100 4284)</td></tr><tr><th>Reported NAV</th><td class="num">$3,735,000</td></tr><tr><th>Policy NAV</th><td class="num">$3,435,000</td></tr><tr><th>TrueVal</th><td class="num">$3,092,970</td></tr><tr><th>TrueRange</th><td class="num">$2,731,535 to $3,454,405</td></tr></tbody></table><h3>Loans</h3><table><thead><tr><th>Loan</th><th>Hash</th><th>Asset</th><th>In TrueVal</th></tr></thead><tbody><tr><td>M-RE-01</td><td>c92bd5...6237</td><td>real_estate</td><td>yes</td></tr><tr><td>M-RE-02</td><td>266070...8e2a</td><td>real_estate</td><td>yes</td></tr><tr><td>M-IN-01</td><td>43d472...1b65</td><td>invoices</td><td>yes</td></tr><tr><td>M-IN-02</td><td>f4fc8f...337b</td><td>invoices</td><td>yes</td></tr><tr><td>M-IN-03</td><td>33b102...cedc</td><td>invoices</td><td>anomaly flag</td></tr></tbody></table><h3>Limits</h3><ul><li>TrueNav informs only. The registry makes no cross-contract call, sends no NEAR, and its pledge tokens cannot be transferred. (README, How it works, step 5)</li><li>Testnet and fictional data only. TrueRange assumes independent defaults. (README, Security and limits)</li><li>Pledges, verdicts, attempts, alerts and certificates are public chain state. A refused pledge returns already pledged elsewhere without naming the holder. (README, Security and limits)</li><li>The certificate signer is a test key, not a TEE key. Anyone can recompute the numbers. (README, Roles and keys)</li><li>The contract does not verify the hardware quote. The registrar checks attestation off chain. (README, Roles and keys)</li><li>A TEE proves which code ran, not that the model's judgment is right. (README, Security and limits)</li></ul><h3>How to verify</h3><ol><li>Re-read views with the NEAR CLI or a JSON-RPC query to registry.tnlab-368aa2.testnet. Methods include get_fund, get_latest_certificate, get_lock, nft_token.</li><li>npm run chain:read</li><li>npm run verify:attestation</li><li>Recompute each manifest sha256 from the JSON section with sorted keys.</li></ol><p><b>Bundle section hashes</b><br><span class="tn-mono">{&quot;fund&quot;:&quot;e3585d1d4c4106322e98143c76eaba4bf8176fbc213d1349a2f7ba565fcc5db6&quot;,&quot;certificate&quot;:&quot;abb24dd87d64fef604530ff65d88e91d45a83860d35fc294896f855d1d8165d6&quot;,&quot;derived&quot;:&quot;74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b&quot;,&quot;loans&quot;:&quot;89edafae96bcfde6b87167edf43b7841594090bcc78b71f5ae658ecd93331e4c&quot;,&quot;limits&quot;:&quot;10cd195af1d2d78d5d58f1713595b508d992ad291ed5592adb63804b25cf1f2b&quot;,&quot;how_to_verify&quot;:&quot;d93c390287298a72ec07ebcf79471f4442035c6ad5a9fcdd2e826f2ded61b7e5&quot;}</span></p></article></div></div>
+</body>
+</html>

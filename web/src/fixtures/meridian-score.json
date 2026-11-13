@@ -1,0 +1,60 @@
+{
+  "receipt_version": "3",
+  "token_id": "meridian-yield-fund",
+  "seq": "1",
+  "method_version": "truenav-v3.0.1",
+  "engine_version_key": "0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38",
+  "period_start": "2026-10-01",
+  "period_end": "2026-11-01",
+  "data_as_of": "2026-11-08T12:00:00Z",
+  "valuation_time": "2026-11-10T12:00:00Z",
+  "score": 43,
+  "band": "red",
+  "parts_band": {
+    "coverage": "high",
+    "nav_gap": "low",
+    "freshness": "medium",
+    "penalty": "medium"
+  },
+  "caps": [],
+  "holds": [
+    "recent_pledge_attempt",
+    "concentration_largest_obligor",
+    "concentration_top_five"
+  ],
+  "freshness_band": "gt_24_lte_72h",
+  "currency": "USD",
+  "reported_nav": "374000000",
+  "trueval": "309000000",
+  "truerange_low": "273000000",
+  "truerange_high": "345000000",
+  "nav_result": "outside_high",
+  "nav_gap_band": "gt_5_lte_10pct",
+  "unverified_share_band": "gt_0_lte_10pct",
+  "pledge_scope": {
+    "registry_account": "registry.tnlab-718ca9.testnet",
+    "block_height": "123456",
+    "block_hash": "TEST_ONLY_finalized_block",
+    "scope_id": "loan-terms-v2:first-lien",
+    "coverage_status": "complete"
+  },
+  "pledge_result": "clear",
+  "pledge_coverage_bps": 10000,
+  "loans_checked": "from_5_to_9",
+  "blocked_attempts": "one",
+  "cash_evidence_status": "verified",
+  "cash_match_band": "gte_98_lte_100pct",
+  "yield_gap_band": "gte_0_lt_3pp",
+  "collection_rate_band": "gte_90pct",
+  "late_share_band": "gt_25pct",
+  "late_loan_cohorts": {
+    "dpd_1_30": "suppressed",
+    "dpd_31_60": "suppressed",
+    "dpd_61_90": "lt_5",
+    "dpd_91_plus": "lt_5"
+  },
+  "exceptions": [],
+  "synthetic": true,
+  "receipt_sha256": "e48b633c6299e19b6aa23068db58d0151ab4603ae31401ece282bc45976a66c8",
+  "stored_block": null
+}

@@ -1,0 +1,14 @@
+{
+  "error": "payment_required",
+  "reason": "no entitlement given",
+  "buy": {
+    "contract": "query.tnlab-718ca9.testnet",
+    "method": "buy_query",
+    "args": {
+      "request_id": "<your unique id, 8 to 64 of [A-Za-z0-9_-]>",
+      "query_hash": "89b778637e94517024def2ee9d9bbe85d96c9b2dd6b2c500b2c6d1234e417a4d",
+      "kind": "report"
+    },
+    "attach_yocto": "10000000000000000000000"
+  }
+}

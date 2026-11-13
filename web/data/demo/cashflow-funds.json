@@ -1,0 +1,637 @@
+{
+  "schema": "truenav-cashflow-demo-v1",
+  "generator": "web/data/demo/generate.mjs",
+  "disclaimer": "Demo data. These four funds are not on chain.",
+  "method": "cashflow-v2.1.0",
+  "funds": [
+    {
+      "fund_id": "DEMO-CREDIT",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Ashgrove Private Credit Fund",
+      "kind": "credit",
+      "method": "cashflow-v2.1.0",
+      "score": 58,
+      "band": "red",
+      "uncapped_score": 58,
+      "caps": [
+        "red because the reported yield is at least 3.00 percentage points above the cash yield",
+        "red because more than 2% of the cash the manager reports was never settled by the bank",
+        "red because of unverified collection: 78.57% of contractual dues for 2026-10 were bank-confirmed by 2026-11-07 (at least 90.00% needed)"
+      ],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 5958329,
+        "cash_received_cents": 5041663,
+        "cash_match_bps": 8462,
+        "claimed_not_settled_cents": 916666
+      },
+      "public_metrics": {
+        "reported_yield_bps": 1100,
+        "cash_yield_bps": 592,
+        "collection_rate_bps": 7857,
+        "occupancy_bps": null,
+        "rent_due_cents": null,
+        "rent_collected_cents": null,
+        "net_operating_cash_cents": null,
+        "distributions_cents": null
+      },
+      "roster": [
+        {
+          "loan_id": "DEMO-CREDIT-L00",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L01",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L02",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L03",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L04",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L05",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L06",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L07",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L08",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L09",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L10",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L11",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L12",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L13",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L14",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L15",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L16",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "pik"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L17",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L18",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "DEMO-CREDIT-L19",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        }
+      ]
+    },
+    {
+      "fund_id": "DEMO-RENTAL",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Larkspur Residences",
+      "kind": "rental",
+      "method": "cashflow-v2.1.0",
+      "score": 58,
+      "band": "red",
+      "uncapped_score": 58,
+      "caps": [
+        "red because payouts exceed net cash from rent",
+        "red because part of a payout was funded by a sponsor transfer, not by income",
+        "red because more than 2% of the cash the manager reports was never settled by the bank",
+        "red because of unverified collection: 78.26% of contractual dues for 2026-10 were bank-confirmed by 2026-11-07 (at least 90.00% needed)"
+      ],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 3800000,
+        "cash_received_cents": 3600000,
+        "cash_match_bps": 9474,
+        "claimed_not_settled_cents": 200000
+      },
+      "public_metrics": {
+        "reported_yield_bps": null,
+        "cash_yield_bps": null,
+        "collection_rate_bps": 7826,
+        "occupancy_bps": 9583,
+        "rent_due_cents": 4600000,
+        "rent_collected_cents": 3600000,
+        "net_operating_cash_cents": 2000000,
+        "distributions_cents": 3000000
+      },
+      "roster": [
+        {
+          "unit_id": "DEMO-RENTAL-U00",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U01",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U02",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U03",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U04",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U05",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U06",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U07",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U08",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U09",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U10",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U11",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U12",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U13",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U14",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U15",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U16",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U17",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U18",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U19",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U20",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U21",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U22",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "DEMO-RENTAL-U23",
+          "occupied": false,
+          "rent_cents": 200000
+        }
+      ]
+    },
+    {
+      "fund_id": "HONEST-CREDIT",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Kestrel Lending Fund",
+      "kind": "credit",
+      "method": "cashflow-v2.1.0",
+      "score": 100,
+      "band": "green",
+      "uncapped_score": 100,
+      "caps": [],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 8708327,
+        "cash_received_cents": 9166660,
+        "cash_match_bps": 10000,
+        "claimed_not_settled_cents": 0
+      },
+      "public_metrics": {
+        "reported_yield_bps": 1080,
+        "cash_yield_bps": 1079,
+        "collection_rate_bps": 10000,
+        "occupancy_bps": null,
+        "rent_due_cents": null,
+        "rent_collected_cents": null,
+        "net_operating_cash_cents": null,
+        "distributions_cents": null
+      },
+      "roster": [
+        {
+          "loan_id": "HONEST-CREDIT-L00",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L01",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L02",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L03",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L04",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L05",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L06",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L07",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L08",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L09",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L10",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L11",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L12",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L13",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L14",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L15",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L16",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L17",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L18",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        },
+        {
+          "loan_id": "HONEST-CREDIT-L19",
+          "principal_cents": 50000000,
+          "rate_bps": 1100,
+          "pay_type": "cash"
+        }
+      ]
+    },
+    {
+      "fund_id": "HONEST-RENTAL",
+      "on_chain": false,
+      "tag": "demo, not on chain",
+      "name": "Linden Court",
+      "kind": "rental",
+      "method": "cashflow-v2.1.0",
+      "score": 100,
+      "band": "green",
+      "uncapped_score": 100,
+      "caps": [],
+      "holds": [],
+      "period": "2026-10",
+      "as_of": "2026-11-08T09:00:00Z",
+      "claimed_vs_settled": {
+        "tag": "computed",
+        "source": "cashflow/run.mjs on cashflow/demo/data.mjs",
+        "claimed_cash_cents": 4400000,
+        "cash_received_cents": 4600000,
+        "cash_match_bps": 10000,
+        "claimed_not_settled_cents": 0
+      },
+      "public_metrics": {
+        "reported_yield_bps": null,
+        "cash_yield_bps": null,
+        "collection_rate_bps": 10000,
+        "occupancy_bps": 9583,
+        "rent_due_cents": 4600000,
+        "rent_collected_cents": 4600000,
+        "net_operating_cash_cents": 3300000,
+        "distributions_cents": 2500000
+      },
+      "roster": [
+        {
+          "unit_id": "HONEST-RENTAL-U00",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U01",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U02",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U03",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U04",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U05",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U06",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U07",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U08",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U09",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U10",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U11",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U12",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U13",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U14",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U15",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U16",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U17",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U18",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U19",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U20",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U21",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U22",
+          "occupied": true,
+          "rent_cents": 200000
+        },
+        {
+          "unit_id": "HONEST-RENTAL-U23",
+          "occupied": false,
+          "rent_cents": 200000
+        }
+      ]
+    }
+  ]
+}

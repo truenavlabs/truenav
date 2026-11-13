@@ -1,0 +1,101 @@
+{
+ "source": "tee/loans.json (non-tampered loans only)",
+ "loans": [
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-01",
+   "loan_hash": "8856cc9c5eab32139d5e76dd2efb873e78ef198c259ed9d1d0fac145cc781998",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-02",
+   "loan_hash": "cbab23ee08822e39c1806c55dbad20a9a80992ea19afc7ce2d9edcf1d3fae64b",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-03",
+   "loan_hash": "e179b87de5b28d5fd7eaa2bb191699f4f13368513b307292ae246459463e92b7",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-04",
+   "loan_hash": "fb41a41f0b0d40e24bfad2fce8b6b4c7f786a9f744f43dae8b3b4ff14b8ed1ff",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-05",
+   "loan_hash": "57be7f1b69c3064dd1d39fd3834db2543ab908397c29a23ec18f81a62b6dcc57",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-06",
+   "loan_hash": "736d374c9094b4f4da338ee51adaf2744dfd6907d827037f87b442531be78a14",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-07",
+   "loan_hash": "a3915fdb17399798396b7b8339a06c42cff38093e6f03a2f5146f9077050036e",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-RE-08",
+   "loan_hash": "44b9aeff3d0ac514ee015c8baa8297d97160f883dc0095f3c1234697bdaaa620",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-IN-01",
+   "loan_hash": "834998adbaff7fbd7336465c751e722806ed2139420d89e17f3d08723698b955",
+   "asset_type": "invoices"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-IN-02",
+   "loan_hash": "441f2e6d1497be47eb6757529f53ee158384ea92202e42ca15ba6b77bffeeca4",
+   "asset_type": "invoices"
+  },
+  {
+   "fund_id": "harbor-credit-fund",
+   "loan_id": "H-IN-03",
+   "loan_hash": "972778be582c4c37c5de97146ff93142b2c776497be4dff7dcad706dc337bb79",
+   "asset_type": "invoices"
+  },
+  {
+   "fund_id": "meridian-yield-fund",
+   "loan_id": "M-RE-01",
+   "loan_hash": "c92bd5123715725192333807507a1b9c6120497378bfccc812a9220e502e6237",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "meridian-yield-fund",
+   "loan_id": "M-RE-02",
+   "loan_hash": "266070e04c5bdf512abd611e2e92474f934e185c6b77a6f0010ff7c4c4038e2a",
+   "asset_type": "real_estate"
+  },
+  {
+   "fund_id": "meridian-yield-fund",
+   "loan_id": "M-IN-01",
+   "loan_hash": "43d4722aecaa5271df1c9442bac9a9a36d184bf3c7ad2a18844bf22749851b65",
+   "asset_type": "invoices"
+  },
+  {
+   "fund_id": "meridian-yield-fund",
+   "loan_id": "M-IN-02",
+   "loan_hash": "f4fc8f5178b0bb4f62e959bdf24a6cdc01a05f1e2ae30f3a97f6f8f4e351337b",
+   "asset_type": "invoices"
+  },
+  {
+   "fund_id": "meridian-yield-fund",
+   "loan_id": "M-IN-03",
+   "loan_hash": "33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc",
+   "asset_type": "invoices"
+  }
+ ]
+}

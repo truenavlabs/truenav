@@ -1,0 +1,44 @@
+{
+  "schema": "truenav-judge-dashboard/v1",
+  "label": "data only, no UI",
+  "commit": "17fd17ae1fbd11825143e5267ef2f8be260cd616",
+  "funds": [
+    {
+      "fund": "Harbor Credit Fund",
+      "raw": 99.17,
+      "score": 99,
+      "band": "green",
+      "source": "S3 spec/nav/check.mjs"
+    },
+    {
+      "fund": "Meridian Yield Fund",
+      "raw": 42.84,
+      "score": 43,
+      "band": "red",
+      "source": "S3 spec/nav/check.mjs"
+    }
+  ],
+  "tokens": [
+    {
+      "token": "DEMO-CREDIT",
+      "head": "failed",
+      "api": {
+        "score": 409,
+        "report": 409,
+        "error": "run_failed"
+      },
+      "agent": {
+        "bought": false,
+        "spent_yocto": "0"
+      },
+      "source": "S5 failed-head tests"
+    }
+  ],
+  "paid_report": {
+    "score_free": true,
+    "missing_entitlement": 402,
+    "entitlement_uses": 1,
+    "source": "S6 api tests"
+  },
+  "engine_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb"
+}

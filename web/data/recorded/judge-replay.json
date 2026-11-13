@@ -1,0 +1,127 @@
+{
+  "schema": "truenav-judge-summary/v1",
+  "commit": "17fd17ae1fbd11825143e5267ef2f8be260cd616",
+  "mode": "replay",
+  "with_tests": false,
+  "partial": false,
+  "ok": true,
+  "stages": [
+    {
+      "id": "S1",
+      "name": "fixtures",
+      "status": "pass",
+      "claim": "Recorded verdicts are at least 10 days from expiry and match the published attestation report.",
+      "evidence": "4 of 4 recorded verdict sets at least 10 days from expiry; published attestation report sha256 matches tee/fixtures/verdicts.json; live registry.tnlab-368aa2.testnet set tee/fixtures/verdicts-368aa2.json: 19 records, every signature checked offline, signer 0x2665cce942fa427ef30d87f4b0bff67fb7645462, report sha256 matches",
+      "label": "includes the live registry.tnlab-368aa2.testnet set named in tee/status.json, checked offline"
+    },
+    {
+      "id": "S2",
+      "name": "tamper",
+      "status": "pass",
+      "claim": "The TEE flags an altered amount, a hidden prompt injection and a reused document, and passes 16 of 16 honest documents. Every reply signature is checked.",
+      "evidence": "T1 amount_mismatch, T2 injection_attempt, T3 duplicate_document; honest 16 of 16, every signature checked; Harbor 99.17 green then 51.59 red",
+      "label": null
+    },
+    {
+      "id": "S3",
+      "name": "engine",
+      "status": "pass",
+      "claim": "Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. TEE eval: 126 signed replies, 0 extra fields, 100% precision and recall on this synthetic set.",
+      "evidence": "Harbor 99.17 green (public 99), Meridian 42.84 red (public 43), every worked-example field matches; eval 86+40 signatures verified, 0 extra fields, 100% precision and recall on this set (limits in tee/eval/REPORT.md)",
+      "label": null
+    },
+    {
+      "id": "S4",
+      "name": "v3 pin",
+      "status": "pass",
+      "claim": "The agent accepts only the engine hash pinned in receipts/v3-build.json. Any other engine is declined engine_hash.",
+      "evidence": "allowlist is exactly receipts/v3-build.json engine.sha256 61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb; another engine is declined engine_hash and bought 0, the pinned one bought 1 (fake chain); engine-pin tests 8 of 8 tests ok, 0 skipped; private pins 9917 / 4284 hold, public 99 / 43",
+      "label": null
+    },
+    {
+      "id": "S5",
+      "name": "failed head",
+      "status": "pass",
+      "claim": "On a failed head, /report returns 409 run_failed, the entitlement is not used, and the agent buys nothing.",
+      "evidence": "DEMO-CREDIT failed head: /score and /report 409 {error: \"run_failed\"}, entitlement not redeemed; runAgent(execute) bought false, spent 0; 7 of 7 tests ok, 0 skipped",
+      "label": "local API on a fake chain with a disposable random test key, not an operator key"
+    },
+    {
+      "id": "S6",
+      "name": "paid report",
+      "status": "pass",
+      "claim": "/report without an entitlement returns 402; a one-use entitlement works once.",
+      "evidence": "/score free and unchanged after a purchase; a one-use entitlement returns 200 and the stored public receipt, a second use is refused; no entitlement is 402; 12 of 12 tests ok, 0 skipped",
+      "label": "local API on a fake chain"
+    },
+    {
+      "id": "S7",
+      "name": "dashboard data",
+      "status": "pass",
+      "claim": "Dashboard data: Harbor 99 green, Meridian 43 red, DEMO-CREDIT run_failed.",
+      "evidence": "wrote out/judge-dashboard.json (sha256 4e18fba233b6b96c03c7561d3b918e96cdd2263df9934c8b8215b0eb86e75856): Harbor 99 green, Meridian 43 red, DEMO-CREDIT run_failed",
+      "label": "data only, no UI; the dashboard UI is not in this commit"
+    },
+    {
+      "id": "S8",
+      "name": "mirror",
+      "status": "pass",
+      "claim": "The Base mirror contract accepts only the MPC signer and a rising sequence per token (local EVM, not deployed).",
+      "evidence": "Solidity compiles; local EVM enforces only-MPC and increasing per-token seq; every committed cross-check vector re-encodes; 10 of 10 tests ok, 0 skipped",
+      "label": "local replay on ganache (chain 84532), not deployed"
+    },
+    {
+      "id": "S9",
+      "name": "attest, local subset",
+      "status": "pass",
+      "claim": "Every loan fingerprint in tee/loans.json is the recorded OutLayer fingerprint, and the attestation report is the published one (offline part only).",
+      "evidence": "19 of 19 tee/loans.json hashes match tee/fixtures/fingerprints.json (17 records, wasm 4a7c0e4ed5007ac6720b30906db4105bc302e35fb495003692225f630d1f07e3); attestation report sha256 matches; no RPC, OutLayer or Intel collateral used",
+      "label": "offline slice; the OutLayer, RPC and Intel collateral checks are npm run verify:fingerprints and verify:attestation, run live in CI"
+    },
+    {
+      "id": "S10",
+      "name": "stamp",
+      "status": "pass",
+      "claim": "A wasm swapped after stamping is detected as stale.",
+      "evidence": "a wasm swapped after stamping reads stale and CI throws; one-line, empty and source-only stamps read stale; 6 of 6 tests ok, 0 skipped",
+      "label": "fake wasm in a temp tree, nothing built; this does not show that a real target/ wasm is fresh"
+    }
+  ],
+  "pins": {
+    "harbor_raw": 99.17,
+    "meridian_raw": 42.84,
+    "harbor_score": 99,
+    "meridian_score": 43,
+    "engine_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb"
+  },
+  "skips": [],
+  "expected": {
+    "harbor_raw": 99.17,
+    "meridian_raw": 42.84,
+    "harbor_score": 99,
+    "meridian_score": 43
+  },
+  "offline": {
+    "guard": "judge/no-network.mjs",
+    "refused": []
+  },
+  "ephemeral": {
+    "generated_at": "2026-11-12T19:27:10.697Z",
+    "fixture_days_left_min": 24.3,
+    "wall_ms": 12622,
+    "durations_ms": {
+      "S1": 137,
+      "S2": 139,
+      "S3": 338,
+      "S4": 219,
+      "S5": 655,
+      "S6": 502,
+      "S7": 0,
+      "S8": 10182,
+      "S9": 2,
+      "S10": 432
+    },
+    "node": "v24.22.1"
+  },
+  "evidence_hash": "3bc3d966d5482eeee28b65c7076a9e8b5152f52bda5321f538f13758cb3ad578"
+}

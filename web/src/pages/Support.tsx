@@ -1,5 +1,7 @@
 import { A } from "../ui";
-import { Note, PageHead, Panel } from "../shell/kit";
+import { Ext, Note, PageHead, Panel } from "../shell/kit";
+import { TicketAction } from "../shell/Ticket";
+import { ISSUES_URL } from "../lib/ticket.mjs";
 
 export default function Support() {
   return (
@@ -7,7 +9,9 @@ export default function Support() {
       <PageHead title="Support" lead="How to ask a question, report a problem or report a security issue." />
       <div className="grid2">
         <Panel title="Questions and problems">
-          <p>Open an issue on the TrueNav repository on GitHub. The link is added here when the repository goes public.</p>
+          <p>Open an issue on the TrueNav repository on GitHub.</p>
+          <TicketAction page="/support" />
+          <p className="mt">You can also browse <Ext href={ISSUES_URL}>GitHub Issues</Ext> once the repository is public.</p>
           <p className="mt">Many questions are answered in the <A href="/faq">FAQ</A> and the <A href="/glossary">Glossary</A>, or by the <strong>?</strong> button at the bottom right.</p>
         </Panel>
         <Panel title="Report a security issue">

@@ -5,6 +5,7 @@ import { GLOSSARY } from "../content/glossary";
 import { A } from "../ui";
 import { search, type Doc } from "./search";
 import { SLOTS } from "./slots";
+import { TicketAction } from "./Ticket";
 
 type Tab = "ask" | "faq" | "glossary";
 
@@ -92,6 +93,7 @@ export function HelpBubble({ page }: { page: string }) {
               <dl className="hp-gl">{GLOSSARY.map((t) => <div key={t.id}><dt>{t.term}</dt><dd>{t.text}</dd></div>)}</dl>
             )}
           </div>
+          <TicketAction page={page} compact />
         </div>
       ) : null}
     </>

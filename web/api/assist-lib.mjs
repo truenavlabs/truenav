@@ -5,8 +5,11 @@ import { systemPrompt } from "./grounding.mjs";
 
 export const ENV_KEY = "NEARAI_API_KEY";
 export const NEAR_AI_ENDPOINT = "https://cloud-api.near.ai/v1/chat/completions";
-// Kit skill near-ai-cloud model list: Private (TEE), cost-efficient, instruction following.
-export const NEAR_AI_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507";
+// Live GET /v1/models on 13 Nov 2026: Qwen/Qwen3-30B-A3B-Instruct-2507 is an alias of
+// Qwen/Qwen3.6-35B-A3B-FP8, a reasoning model. With max_tokens 400 it fills
+// reasoning_content and leaves message.content null, which this function treated as 503.
+// Qwen/Qwen3-VL-30B-A3B-Instruct is on the current list, Private (TEE), and returns content.
+export const NEAR_AI_MODEL = "Qwen/Qwen3-VL-30B-A3B-Instruct";
 
 export const MAX_MESSAGE_CHARS = 2000;
 export const MAX_HISTORY = 8;
@@ -147,6 +150,32 @@ function json(status, body, extraHeaders = {}) {
   };
 }
 
+/** Read the assistant text from an OpenAI-shaped chat response. Ignores reasoning_content. */
+export function extractAnswer(data) {
+  const msg = data && data.choices && data.choices[0] && data.choices[0].message;
+  if (!msg) return "";
+  const content = msg.content;
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    const parts = [];
+    for (const part of content) {
+      if (typeof part === "string") parts.push(part);
+      else if (part && typeof part.text === "string") parts.push(part.text);
+    }
+    return parts.join("").trim();
+  }
+  return "";
+}
+
+/** Server log of status and error type only. Never the key, never the prompt, never the answer. */
+export function logAssist(fields) {
+  try {
+    console.log(JSON.stringify({ src: "assist", ...fields }));
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Handle one assist request. `env` and `fetchImpl` are injectable for tests.
  * The API key never appears in the returned body or headers.
@@ -215,12 +244,31 @@ export async function handleAssist({
       }),
       signal: ctl ? ctl.signal : undefined,
     });
-    if (!res || !res.ok) return json(503, { error: GENERIC_UNAVAILABLE });
-    const data = await res.json();
-    const answer = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if (typeof answer !== "string" || !answer.trim()) return json(503, { error: GENERIC_UNAVAILABLE });
-    return json(200, { answer: answer.trim(), sources: ["TrueNav FAQ"] });
-  } catch {
+    const upstreamStatus = res && typeof res.status === "number" ? res.status : 0;
+    if (!res || !res.ok) {
+      logAssist({ type: "upstream_http", upstreamStatus });
+      return json(503, { error: GENERIC_UNAVAILABLE });
+    }
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      logAssist({ type: "parse_error", upstreamStatus });
+      return json(503, { error: GENERIC_UNAVAILABLE });
+    }
+    const answer = extractAnswer(data);
+    if (!answer) {
+      const choice = data && data.choices && data.choices[0];
+      const finishReason = choice && choice.finish_reason ? String(choice.finish_reason).slice(0, 32) : "";
+      const hasReasoning = Boolean(choice && choice.message && choice.message.reasoning_content);
+      logAssist({ type: "empty_content", upstreamStatus, finishReason, hasReasoning });
+      return json(503, { error: GENERIC_UNAVAILABLE });
+    }
+    return json(200, { answer, sources: ["TrueNav FAQ"] });
+  } catch (err) {
+    const errorName = err && err.name ? String(err.name).slice(0, 40) : "Error";
+    const type = errorName === "AbortError" ? "timeout" : "fetch_error";
+    logAssist({ type, errorName });
     return json(503, { error: GENERIC_UNAVAILABLE });
   } finally {
     if (timer) clearTimeout(timer);

@@ -14,6 +14,7 @@ import {
   NEAR_AI_MODEL,
   RATE_LIMIT_MAX,
   buildMessages,
+  extractAnswer,
   handleAssist,
   resetRateLimit,
 } from "../api/assist-lib.mjs";
@@ -143,6 +144,72 @@ test("upstream failures become a generic 503 and do not leak provider text", asy
   assert.equal(blob.includes("secret-upstream-detail"), false);
   assert.match(result.body.error, /unavailable/);
   assertNoKeyLeak(result);
+});
+
+test("the help model is the current Private instruct id, not the retired 2507 alias", () => {
+  assert.equal(NEAR_AI_MODEL, "Qwen/Qwen3-VL-30B-A3B-Instruct");
+  assert.equal(NEAR_AI_MODEL.includes("2507"), false);
+});
+
+test("a 200 with empty content and reasoning_content is a generic 503 and does not leak the reasoning", async () => {
+  const { result } = await post(
+    { message: "What is TrueNav?" },
+    {
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [{
+            finish_reason: "length",
+            message: { role: "assistant", content: null, reasoning_content: "secret-reasoning-trace" },
+          }],
+        }),
+      }),
+    },
+  );
+  assert.equal(result.status, 503);
+  const blob = JSON.stringify(result);
+  assert.equal(blob.includes("secret-reasoning-trace"), false);
+  assert.match(result.body.error, /unavailable/);
+  assertNoKeyLeak(result);
+});
+
+test("extractAnswer reads a string or joins text parts, and ignores reasoning_content", () => {
+  assert.equal(extractAnswer({ choices: [{ message: { content: "  Hello.  " } }] }), "Hello.");
+  assert.equal(extractAnswer({
+    choices: [{ message: { content: [{ type: "text", text: "True" }, { type: "text", text: "Nav" }] } }],
+  }), "TrueNav");
+  assert.equal(extractAnswer({
+    choices: [{ message: { content: null, reasoning_content: "thinking" } }],
+  }), "");
+  assert.equal(extractAnswer({}), "");
+});
+
+test("assist logs status and error type only, never the key or the prompt", async () => {
+  const lines = [];
+  const orig = console.log;
+  console.log = (...args) => { lines.push(args.map(String).join(" ")); };
+  try {
+    await post(
+      { message: "What is TrueNav secret-prompt-text?" },
+      {
+        fetchImpl: async () => ({
+          ok: false,
+          status: 502,
+          json: async () => ({ error: "no" }),
+        }),
+      },
+    );
+  } finally {
+    console.log = orig;
+  }
+  const blob = lines.join("\n");
+  assert.equal(blob.includes(FAKE_KEY), false);
+  assert.equal(blob.includes("secret-prompt-text"), false);
+  assert.equal(blob.includes(ENV_KEY), false);
+  assert.match(blob, /"type":"upstream_http"/);
+  assert.match(blob, /"upstreamStatus":502/);
+  assert.match(blob, /"src":"assist"/);
 });
 
 test("per-IP rate limit returns 429 after the cap", async () => {

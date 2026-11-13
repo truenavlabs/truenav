@@ -22,6 +22,7 @@ import { Account, JsonRpcProvider, KeyPair, actions, nearToYocto, teraToGas } fr
 import { scorePortfolio } from "../engine/src/score.mjs";
 import { expiryOf } from "../web/chain.mjs";
 import { replyProblem } from "../tee/reply.mjs";
+import { verdictExpired } from "../tee/expiry.mjs";
 import { toCertificate, signCertificate, signEip191, addressOf, newSecretKey } from "./certificate.mjs";
 import { plainCallArgs, pledgeArgs as buildPledgeArgs } from "./call-args.mjs";
 import { buildRunRecord, runRecordSummary } from "./testnet-record.mjs";
@@ -234,7 +235,7 @@ if (!tee) {
     if (pubSha !== tee.attestation.report_sha256) stop([`The published attestation report (sha256 ${pubSha.slice(0, 16)}...) is not the one this verdict set was signed under (${String(tee.attestation.report_sha256).slice(0, 16)}...). Re-sign the set: node tee/underwrite.mjs --contract ${ids.registry} --out tee/fixtures/verdicts.json`]);
   }
   const left = tee.expires_at_ms - Date.now();
-  expect(left > 0, `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
+  expect(!verdictExpired(tee.expires_at_ms, Date.now()), `recorded TEE verdicts valid for ${(left / 86400000).toFixed(1)} more days`);
   const teeSigners = await view("get_tee_signers");
   if (!teeSigners.some((t) => t.address === teeSigner)) {
     await call(admin, "add_tee_signer (registrar; attested NEAR AI Cloud model TEE)", "add_tee_signer", { address: teeSigner, model_id: tee.model, attestation_ref: `tee/attest.mjs nonce ${tee.attestation.nonce} at ${tee.attestation.checked_at}`, attestation_sha256: tee.attestation.report_sha256 });

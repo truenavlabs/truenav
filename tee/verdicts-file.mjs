@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { bindingFor, eip191Recover, readVerdict, VERDICT_TTL_MS } from "./underwrite.mjs";
 import { replyProblem, ANOMALY_CODES } from "./reply.mjs";
+import { verdictExpired } from "./expiry.mjs";
 
 const HEX64 = /^[0-9a-f]{64}$/;
 const ADDR = /^0x[0-9a-f]{40}$/;
@@ -40,7 +41,7 @@ export function validateVerdictsFile(file, { contract, nowMs, minDays } = {}) {
   }
   if (nowMs !== undefined && isMs(file.expires_at_ms)) {
     const days = (file.expires_at_ms - nowMs) / 86400000;
-    if (days <= 0) bad("the verdict set is expired");
+    if (verdictExpired(file.expires_at_ms, nowMs)) bad("the verdict set is expired");
     else if (minDays !== undefined && days < minDays) bad(`the verdict set has ${days.toFixed(1)} days left (minimum ${minDays})`);
   }
 

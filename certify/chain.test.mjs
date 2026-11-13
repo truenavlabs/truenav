@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadChainState, view, expiryOf } from "../web/chain.mjs";
+import { verdictExpired } from "../tee/expiry.mjs";
 
 const H = "a".repeat(64);
 const answers = {
@@ -67,6 +68,13 @@ test("the default RPC falls back to the backups when it fails, an explicit RPC d
   } finally {
     globalThis.fetch = saved;
   }
+});
+
+// The shared client rule (tee/expiry.mjs) used by verdicts-file, tee:chain-check and testnet.mjs.
+test("verdictExpired: expiry equal to now is current, now = expiry + 1 ms is expired", () => {
+  assert.equal(verdictExpired(1797016506416, 1797016506416), false);
+  assert.equal(verdictExpired(1797016506416, 1797016506417), true);
+  assert.equal(verdictExpired(1797016506416, 1797016506415), false);
 });
 
 // N-02: the loader keeps each latest verdict's expiry, so the scorer can report an expired verdict as expired.

@@ -54,6 +54,15 @@ test("a verdict set 1 second past expiry is reported as expired; 1 second before
   assert.equal(r.checks.filter((c) => /: on chain, pass/.test(c.text)).length, 2);
 });
 
+test("a verdict set whose expiry equals now is current on chain; expiry + 1 ms is expired", async () => {
+  const file = syntheticSet();
+  let r = await run(file, chainFor(file), { nowMs: file.expires_at_ms });
+  assert.deepEqual(failing(r), []);
+  r = await run(file, chainFor(file), { nowMs: file.expires_at_ms + 1 });
+  assert.equal(r.ok, false);
+  assert.ok(failing(r).some((t) => /expired/.test(t)), failing(r).join("; "));
+});
+
 test("the signer, its model and its attestation hash on chain must be the file's", async () => {
   const file = syntheticSet();
   let r = await run(file, chainFor(file, { signer: "0x" + "1".repeat(40) }));

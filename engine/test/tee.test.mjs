@@ -133,6 +133,21 @@ test("a verdict 1 second past its expiry counts as expired; 1 second before coun
   assert.equal(fl.tee.flag, 0); assert.equal(fl.tee.expired, 11);
 });
 
+// Boundary, same rule as the contract (expires_at_ms >= now is current) and tee/expiry.mjs.
+test("expiry equal to the verdict clock counts as current; clock = expiry + 1 ms counts as expired", () => {
+  const READ_MS = NOW_MS + 3 * DAY;
+  const at = (expiresAt) => {
+    const s = allPass();
+    for (const e of Object.values(s)) e.latest.expires_at_ms = expiresAt;
+    return by(E.scorePortfolio(model, funds(), { now: NOW, certStore: STORE, teeStore: s, verdictNow: READ_MS }), "harbor-credit-fund");
+  };
+  const eq = at(READ_MS);
+  assert.equal(eq.tee.pass, 11); assert.equal(eq.tee.expired, 0); assert.equal(r2(eq.raw), 99.17);
+  const plus1 = at(READ_MS - 1);
+  assert.equal(plus1.tee.pass, 0); assert.equal(plus1.tee.expired, 11);
+  assert.ok(plus1.unverified.reasons.some((x) => x.reason === "TEE verdict expired"));
+});
+
 test("without verdictNow, expiry is judged at the valuation time (fixed replays stay deterministic)", () => {
   const s = allPass();
   for (const e of Object.values(s)) e.latest.expires_at_ms = NOW_MS + 1000;

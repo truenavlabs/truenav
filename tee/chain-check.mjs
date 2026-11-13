@@ -17,6 +17,7 @@ import { pathToFileURL } from "node:url";
 import { validateVerdictsFile } from "./verdicts-file.mjs";
 import { bindingFor } from "./underwrite.mjs";
 import { readStatus } from "./status.mjs";
+import { verdictExpired } from "./expiry.mjs";
 import { view as chainView, DEFAULT_RPC } from "../web/chain.mjs";
 
 const ROOT = new URL("../", import.meta.url);
@@ -49,7 +50,8 @@ export async function chainCheck({ file, contract, reportSha256 = null, view, no
   // 3. binding and expiry
   add(file.binding === bindingFor(contract, file.expires_at_ms), `the binding names ${contract}, testnet or mainnet by suffix, and expiry ${file.expires_at_ms}`);
   const days = (file.expires_at_ms - nowMs) / 86400000;
-  add(days > 0, days > 0 ? `the set has ${days.toFixed(1)} days left` : "the set is expired");
+  const current = !verdictExpired(file.expires_at_ms, nowMs);
+  add(current, current ? `the set has ${days.toFixed(1)} days left` : "the set is expired");
 
   // 4. every verdict
   for (const r of file.results) {

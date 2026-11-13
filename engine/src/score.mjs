@@ -219,7 +219,8 @@ function teeStatus(teeStore, l, nowMs, verdictNowMs = nowMs) {
   const raw = e.latest && typeof e.latest === "object" ? e.latest : null;
   const v = raw && (!isNum(e.pledged_at_ms) || (isNum(raw.at_ms) && raw.at_ms >= e.pledged_at_ms)) ? raw : null;
   // N-02: a verdict past its expiry no longer counts, whether pass or flag: the loan is unverified ("TEE verdict
-  // expired") until a fresh verdict is stored. A verdict without expires_at_ms is read as before.
+  // expired") until a fresh verdict is stored. A verdict without expires_at_ms is read as before. Same rule as the
+  // contract (expires_at_ms >= now is current) and tee/expiry.mjs: expiry equal to the clock is current, +1 ms expired.
   if (v && isNum(v.expires_at_ms) && v.expires_at_ms < verdictNowMs) return { status: "expired" };
   if (v && v.verdict === "flag") return { status: "flag", anomalies: Array.isArray(v.anomalies) ? v.anomalies.map(String) : [] };
   if (v && v.verdict === "pass") return { status: "pass" };

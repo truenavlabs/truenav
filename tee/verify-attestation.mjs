@@ -18,6 +18,7 @@ import { cliGuard, nameEndpoint, reportNetworkAtExit } from "../certify/net-guar
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { verifyReport } from "./attest.mjs";
+import { checkVerdictSignatures } from "./underwrite.mjs";
 import { view, DEFAULT_RPC } from "../web/chain.mjs";
 import { resolveSet } from "./recorded-set.mjs";
 
@@ -63,13 +64,15 @@ for (const s of res.sections) {
   for (const c of s.checks) line(c.pass, `  ${c.check}${c.detail ? "  " + c.detail : ""}`);
 }
 const signer = (res.signers[0] || {}).signing_address?.toLowerCase();
-const verdictSigners = new Set(tee.results.map((r) => r.onchain.signer.toLowerCase()));
-line(signer && verdictSigners.size === 1 && verdictSigners.has(signer), `the attested model key signed all ${tee.results.length} recorded verdicts`);
+const sigs = checkVerdictSignatures(tee, signer);
+line(sigs.ok, sigs.ok
+  ? `the attested model key signed all ${sigs.count} recorded verdicts`
+  : `the attested model key signed all ${sigs.count} recorded verdicts  ${sigs.problems[0] || "signature check failed"}`);
 line(onchain && signer === onchain.address, "the contract accepts exactly that key");
 // Claim only what the lines above checked. Image measurements are not pinned (README Known limits, N-06) and the NRAS
 // token signature is not verified (N-05), so this does not show which image or model build holds the key.
 console.log(ok
-  ? "Attestation checks passed: the report hash is on chain, the TDX quote and TCB status verify, debug is off, the signing key and our nonce are bound in the quote, MRCONFIGID and RTMR3 match the report's own app_compose and event log, and the NVIDIA NRAS verdict is true. MRTD, RTMR0 to RTMR2 and the compose hash are not compared with published values, and the NRAS token signature is not verified, so this does not prove which image runs."
+  ? "Attestation checks passed: the report hash is on chain, the TDX quote and TCB status verify, debug is off, the signing key and our nonce are bound in the quote, MRCONFIGID and RTMR3 match the report's own app_compose and event log, the NVIDIA NRAS verdict is true, and each recorded verdict signature recovers to that key. MRTD, RTMR0 to RTMR2 and the compose hash are not compared with published values, and the NRAS token signature is not verified, so this does not prove which image runs."
   : "Attestation NOT verified.");
 process.exitCode = ok ? 0 : 1;
 if (!ok) reportNetworkAtExit(); // the failure came from an unreachable endpoint: say which, exit 2

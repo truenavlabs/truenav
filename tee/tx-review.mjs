@@ -8,6 +8,7 @@
 // arguments: a verdict's response body is shown as its sha256 and length, never in full), and the result of every
 // receipt. For `add_tee_signer` and `submit_verdict` it compares the arguments with the verdicts file.
 // Exit 0 when the transaction succeeded and every --expect matches, 1 when not, 2 on a usage or network error.
+import { failLine, nameEndpoint } from "../certify/net-guard.mjs"; // first: wraps fetch before other modules load
 import { readFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
@@ -112,12 +113,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const vp = opt("--verdicts");
   if (vp) { if (!existsSync(vp) && !existsSync(new URL(vp, ROOT))) { console.error(`no verdicts file at ${vp}`); process.exit(2); } file = JSON.parse(readFileSync(existsSync(vp) ? vp : new URL(vp, ROOT), "utf8")); }
   try {
-    const { result, header } = await fetchTx(opt("--rpc") || process.env.TRUENAV_RPC || DEFAULT_RPC, hash, opt("--sender"));
+    const rpcUrl = opt("--rpc") || process.env.TRUENAV_RPC || DEFAULT_RPC;
+    nameEndpoint(rpcUrl, "NEAR RPC", "--rpc or TRUENAV_RPC");
+    const { result, header } = await fetchTx(rpcUrl, hash, opt("--sender"));
     const r = reviewTx(result, { file, expectReceiver: opt("--expect-receiver"), expectMethod: opt("--expect-method") });
     for (const l of r.lines) console.log(l);
     if (header) console.log(`block ${header.height} at ${new Date(Number(BigInt(header.timestamp_nanosec) / 1000000n)).toISOString()}`);
     for (const p of r.problems) console.log(`FAIL ${p}`);
     console.log(r.ok ? "PASS the transaction succeeded and matches what was expected" : "FAIL see above");
     process.exit(r.ok ? 0 : 1);
-  } catch (e) { console.error(`error: ${e.message}`); process.exit(2); }
+  } catch (e) { console.error(failLine(e)); process.exit(2); }
 }

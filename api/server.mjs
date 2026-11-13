@@ -20,11 +20,22 @@ import { BUYER_LIMIT, BUYER_WINDOW_MS, createCheapLimiter, reserveSpend } from "
 
 export const queryHash = (kind, token) => createHash("sha256").update(`${kind}|${token}`).digest("hex");
 export { spendMessage };
-function buyerProofOk(keys, message, sigB64) {
+// FullAccess, or a FunctionCall key whose receiver is this query contract. Any other or unknown shape is skipped.
+function buyerKeyAllowed(key, query) {
+  const perm = key?.access_key?.permission;
+  if (perm === "FullAccess") return true;
+  if (!perm || typeof perm !== "object" || Array.isArray(perm)) return false;
+  const names = Object.keys(perm);
+  if (names.length !== 1 || names[0] !== "FunctionCall") return false;
+  const fc = perm.FunctionCall;
+  return !!fc && typeof fc === "object" && !Array.isArray(fc) && typeof fc.receiver_id === "string" && fc.receiver_id === query;
+}
+function buyerProofOk(keys, message, sigB64, query) {
   let sig;
   try { sig = Buffer.from(String(sigB64), "base64"); } catch { return false; }
   if (sig.length !== 64) return false;
   for (const k of keys || []) {
+    if (!buyerKeyAllowed(k, query)) continue;
     try {
       if (PublicKey.from(k.public_key || k).verify(message, sig)) return true;
     } catch { /* skip a key this runtime cannot parse */ }
@@ -103,7 +114,7 @@ export function handler({ chain, receipts, query, fee, spendStore, preIpLimit, p
     if (!Number.isSafeInteger(exp) || exp <= nowMs) return { status: 403, body: { error: "spend proof expired" } };
     if (exp > nowMs + SPEND_TTL_MS) return { status: 403, body: { error: "spend proof expiry is too far" } };
     const keys = await chain.accessKeys(String(e.buyer));
-    if (!buyerProofOk(keys, spendMessage({ audience: query, id, kind, token, nonce, exp: expRaw }), sig)) return { status: 403, body: { error: "buyer proof does not match the entitlement" } };
+    if (!buyerProofOk(keys, spendMessage({ audience: query, id, kind, token, nonce, exp: expRaw }), sig, query)) return { status: 403, body: { error: "buyer proof does not match the entitlement" } };
     try {
       if (!cheap.allow("buyer", String(e.buyer), nowMs)) return { status: 429, body: { error: "buyer rate limit" } };
     } catch (error) {

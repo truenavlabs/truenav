@@ -27,7 +27,7 @@ async function withFailedHead(head, fn) {
       throw new Error(`unexpected view ${method}`);
     },
     async nowNs() { return NOW; },
-    async accessKeys() { return [{ public_key: buyerKey.getPublicKey().toString() }]; },
+    async accessKeys() { return [{ public_key: buyerKey.getPublicKey().toString(), access_key: { nonce: 1, permission: "FullAccess" } }]; },
     async redeem(id) { calls.redeem += 1; const e = ents.get(id); e.uses_left -= 1; return e.uses_left; },
   };
   const server = createServer({ chain, receipts: "receipts.test", query: "query.test", fee: "10000000000000000000000", spendStore });

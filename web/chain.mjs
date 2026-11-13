@@ -10,13 +10,23 @@ export const DEFAULT_RPC = "https://test.rpc.fastnear.com"; // public testnet RP
 export const BACKUP_RPCS = ["https://near-testnet.drpc.org", "https://testnet-rpc.intea.rs"];
 export const DEFAULT_CONTRACT = "registry.tnlab-368aa2.testnet";
 
+/** Per-endpoint timeout. A hung endpoint is abandoned so the failover list keeps going. */
+export const RPC_TIMEOUT_MS = 8000;
+
 async function rpc(url, method, params) {
-  // Only the default endpoint falls back; an explicit endpoint (sandbox, own node) is used as given.
+  return rpcCall(url, method, params);
+}
+
+/**
+ * JSON-RPC with failover. Only the default endpoint falls back; an explicit endpoint (sandbox, own node)
+ * is used as given. fetchImpl and timeoutMs are injectable for tests.
+ */
+export async function rpcCall(url, method, params, { fetchImpl = (...a) => globalThis.fetch(...a), timeoutMs = RPC_TIMEOUT_MS } = {}) {
   const urls = url === DEFAULT_RPC ? [DEFAULT_RPC, ...BACKUP_RPCS] : [url];
   let last;
   for (const u of urls) {
     try {
-      return await rpcOnce(u, method, params);
+      return await rpcOnce(u, method, params, fetchImpl, timeoutMs);
     } catch (e) {
       last = e;
       if (e.contractError) throw e; // the chain answered: do not hide it behind another endpoint
@@ -25,8 +35,21 @@ async function rpc(url, method, params) {
   throw last;
 }
 
-async function rpcOnce(url, method, params) {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "truenav", method, params }) });
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
+
+async function rpcOnce(url, method, params, fetchImpl, timeoutMs) {
+  let r;
+  try {
+    r = await fetchImpl(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "truenav", method, params }), signal: timeoutSignal(timeoutMs) });
+  } catch (e) {
+    const name = e && e.name;
+    throw new Error(name === "TimeoutError" || name === "AbortError" ? `RPC ${method} timed out after ${timeoutMs} ms` : `RPC ${method} failed: network error`);
+  }
   if (!r.ok) throw new Error(`RPC ${method} failed: HTTP ${r.status}`);
   const j = await r.json();
   if (j.error) {

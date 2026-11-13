@@ -61,6 +61,21 @@ export function taskHash(att) {
   return createHash("sha256").update(Buffer.concat(parts)).digest("hex");
 }
 
+const absent = (v) => v === undefined || v === null || v === "";
+// Short bounded secrets_ref: profile or compact JSON, no 64-hex run that could absorb a pinned hash.
+const SECRETS_REF_RE = /^[A-Za-z0-9._:/=@+\-{}[",\]]{1,128}$/;
+const USD_RE = /^[0-9]{1,20}(\.[0-9]{1,20})?$/;
+/** RT3-01: taskHash has no field framing. Free strings outside the pinned block must be absent or tightly bounded. */
+export function framingOk(p, c = {}) {
+  if (!absent(p.repo) || !absent(p.commit)) return false;
+  if (!absent(c.secrets_ref)) {
+    if (p.secrets_ref !== c.secrets_ref) return false;
+  } else if (!absent(p.secrets_ref) && (typeof p.secrets_ref !== "string" || !SECRETS_REF_RE.test(p.secrets_ref) || /[0-9a-f]{64}/.test(p.secrets_ref))) {
+    return false;
+  }
+  return typeof p.attached_usd === "string" && USD_RE.test(p.attached_usd);
+}
+
 const MIXED_ID = /^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/;
 /** One fingerprint over HTTPS. Returns what the verifier needs; the payment key is never returned or logged.
  * `version_key` is the pinned fingerprint wasm. Without it OutLayer runs the project's active version, which is the engine.
@@ -104,6 +119,7 @@ export async function checkFingerprint(rec, att, verifyQuote) {
   const q = quote.length > 632 ? quoteFields(quote) : null;
   const lines = [
     [isCanonicalId(rec.document_id), "document id is canonical"],
+    [framingOk(att), "no unframed free fields in the task hash (RT3-01)"],
     [!!q && q.report_data === taskHash(att) + "0".repeat(64), "the TDX quote's report_data commits to this run (wasm, input, output, caller, project)"],
     [att.executed_wasm_sha256 === FP_WASM_SHA256 && att.wasm_hash === FP_WASM_SHA256, "the pinned fingerprint wasm ran"],
     [(att.project_id === FP_PROJECT && att.caller_account_id === FP_CALLER) || (att.project_id === FP_RECORDED_PROJECT && att.caller_account_id === FP_RECORDED_CALLER), `project ${att.project_id}, caller ${att.caller_account_id}`],

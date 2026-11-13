@@ -8,13 +8,16 @@ export async function askAssist(
 ): Promise<{ answer: string; sources: string[] } | null> {
   const message = question.trim().slice(0, 1000);
   if (!message) return null;
-  // Stay inside the server limits in web/api/assist-lib.mjs (8 turns, 2000 chars each, 8000 total).
+  // Stay inside the server limits in web/api/_assist-lib.mjs (8 turns, 2000 UTF-8 bytes each, 8000 bytes total).
+  const enc = new TextEncoder();
   const trimmed: ChatTurn[] = [];
   let total = 0;
   for (const turn of history.slice(-8).reverse()) {
-    const content = turn.content.slice(0, 2000);
-    if (total + content.length > 8000) break;
-    total += content.length;
+    let content = turn.content.slice(0, 2000);
+    while (enc.encode(content).length > 2000) content = content.slice(0, -50);
+    const bytes = enc.encode(content).length;
+    if (total + bytes > 8000) break;
+    total += bytes;
     trimmed.unshift({ role: turn.role, content });
   }
   try {

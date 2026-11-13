@@ -13,9 +13,11 @@ import {
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_MS,
   handleAssist,
+  buildMessages,
+  rateKey,
   rateLimitWait,
   resetRateLimit,
-} from "../api/assist-lib.mjs";
+} from "../api/_assist-lib.mjs";
 import handler from "../api/assist.mjs";
 
 const FAKE_KEY = "test-key-not-real";
@@ -58,7 +60,7 @@ test("the limits are the documented small values", () => {
   assert.equal(MAX_TOKENS, 400);
   assert.equal(RATE_LIMIT_MAX, 10);
   assert.equal(RATE_LIMIT_WINDOW_MS, 60_000);
-  assert.equal(GLOBAL_RATE_LIMIT_MAX, 60);
+  assert.equal(GLOBAL_RATE_LIMIT_MAX, 20);
 });
 
 test("a question at the limit passes and max_tokens is sent as the hard cap", async () => {
@@ -74,6 +76,9 @@ test("over-limit question, history count, history item and history total are 413
     { message: "hi", history: Array.from({ length: MAX_HISTORY + 1 }, () => ({ role: "user", content: "x" })) },
     { message: "hi", history: [{ role: "assistant", content: "x".repeat(MAX_HISTORY_ITEM_CHARS + 1) }] },
     { message: "hi", history: Array.from({ length: 5 }, () => ({ role: "user", content: "x".repeat(1700) })) },
+    // bytes, not characters: 600 four-byte emoji is 1200 UTF-16 units but 2400 UTF-8 bytes
+    { message: "hi", history: [{ role: "user", content: "\u{1F600}".repeat(600) }] },
+    { message: "hi", history: Array.from({ length: 8 }, () => ({ role: "user", content: "\u00e9".repeat(600) })) },
   ];
   for (const body of cases) {
     const box = {};
@@ -213,4 +218,63 @@ test("the Vercel wrapper turns an unexpected throw into a generic 500", async ()
   }
   assert.equal(res.statusCode, 500);
   assert.equal(JSON.stringify(res.payload).includes("boom"), false);
+});
+
+test("invalid requests from many IPs do not use the global slot, so they cannot lock others out", async () => {
+  const store = new Map();
+  const now = () => 3_000_000;
+  for (let i = 0; i < GLOBAL_RATE_LIMIT_MAX * 3; i++) {
+    const r = await call("x", { store, now, ip: `198.51.100.${i}` });
+    assert.equal(r.status, 400);
+  }
+  for (let i = 0; i < GLOBAL_RATE_LIMIT_MAX * 2; i++) {
+    const r = await call({ message: "x".repeat(MAX_MESSAGE_CHARS + 1) }, { store, now, ip: `192.0.2.${i}` });
+    assert.equal(r.status, 413);
+  }
+  const ok = await call({ message: "hi" }, { store, now, ip: "203.0.113.200" });
+  assert.equal(ok.status, 200);
+});
+
+test("the per-IP slot is taken before parsing, so one sender's junk counts against that sender", async () => {
+  const store = new Map();
+  const now = () => 4_000_000;
+  for (let i = 0; i < RATE_LIMIT_MAX; i++) await call("x", { store, now });
+  assert.equal((await call({ message: "hi" }, { store, now })).status, 429);
+});
+
+test("IPv6 clients share one bucket per /64; IPv4-mapped addresses key as IPv4", async () => {
+  assert.equal(rateKey("2001:db8:1:2::1"), "2001:db8:1:2::/64");
+  assert.equal(rateKey("2001:0db8:0001:0002:ffff:eeee:dddd:cccc"), "2001:db8:1:2::/64");
+  assert.equal(rateKey("[2001:db8:1:2::9]"), "2001:db8:1:2::/64");
+  assert.equal(rateKey("2001:db8::"), "2001:db8:0:0::/64");
+  assert.equal(rateKey("fe80::1%eth0"), "fe80:0:0:0::/64");
+  assert.equal(rateKey("::ffff:203.0.113.9"), "203.0.113.9");
+  assert.equal(rateKey("203.0.113.9"), "203.0.113.9");
+  assert.equal(rateKey(""), "unknown");
+  const store = new Map();
+  const now = () => 5_000_000;
+  const codes = [];
+  for (let i = 0; i < RATE_LIMIT_MAX + 2; i++) codes.push((await call({ message: "hi" }, { store, now, ip: `2001:db8:1:2::${(i + 1).toString(16)}` })).status);
+  assert.deepEqual(codes.slice(-2), [429, 429]);
+  assert.equal((await call({ message: "hi" }, { store, now, ip: "2001:db8:1:3::1" })).status, 200, "a different /64 has its own bucket");
+});
+
+test("a parsed body over 16 KB is 413 even without a content-length", async () => {
+  const r = await call({ message: "hi", pad: "x".repeat(MAX_BODY_BYTES) });
+  assert.equal(r.status, 413);
+});
+
+test("history turns reach the model at up to 2000 characters, not cut to the question cap", async () => {
+  const box = {};
+  const turn = "a".repeat(1500);
+  const r = await call({ message: "hi", history: [{ role: "assistant", content: turn }] }, { box });
+  assert.equal(r.status, 200);
+  assert.equal(box.body.messages[1].content, turn);
+  assert.equal(buildMessages({ message: "q", history: [{ role: "user", content: "b".repeat(5000) }] })[1].content.length, MAX_HISTORY_ITEM_CHARS);
+});
+
+test("local dev origins are refused on Vercel", async () => {
+  const run = (env) => handleAssist({ method: "POST", headers: { origin: "http://localhost:5173", host: "truenav-web.vercel.app", "x-forwarded-for": "203.0.113.77" }, body: { message: "hi" }, env: { [ENV_KEY]: FAKE_KEY, ...env }, fetchImpl: countingFetch({}), store: new Map() });
+  assert.equal((await run({ VERCEL: "1" })).status, 403);
+  assert.equal((await run({})).status, 200);
 });

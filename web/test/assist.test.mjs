@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FAQ } from "../src/content/faq-data.mjs";
-import { systemPrompt } from "../api/grounding.mjs";
+import { systemPrompt } from "../api/_grounding.mjs";
 import {
   ENV_KEY,
   MAX_MESSAGE_CHARS,
@@ -17,7 +17,7 @@ import {
   extractAnswer,
   handleAssist,
   resetRateLimit,
-} from "../api/assist-lib.mjs";
+} from "../api/_assist-lib.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FAKE_KEY = "test-key-not-real";
@@ -294,7 +294,7 @@ test("buildMessages caps history, drops system roles, and keeps the real system 
 
 test("the Vercel wrapper does not print or return the env var name as a value, and the handler source never logs the key", () => {
   const handler = readFileSync(join(here, "..", "api", "assist.mjs"), "utf8");
-  const lib = readFileSync(join(here, "..", "api", "assist-lib.mjs"), "utf8");
+  const lib = readFileSync(join(here, "..", "api", "_assist-lib.mjs"), "utf8");
   assert.match(handler, /NEARAI_API_KEY/);
   assert.equal(/console\.(log|info|debug|error|warn)\([^)]*KEY/.test(handler + lib), false);
   assert.equal(/console\.(log|info|debug|error|warn)\([^)]*key/.test(lib), false);

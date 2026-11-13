@@ -1,7 +1,7 @@
 // Vercel Node function: POST /api/assist
 // Key: process.env.NEARAI_API_KEY only. Never logged, never returned, never sent to the client.
 // Errors return a short JSON message. No stack trace, prompt or provider text is ever returned.
-import { BAD_JSON, MAX_BODY_BYTES, handleAssist, internalError, logAssist } from "./assist-lib.mjs";
+import { BAD_JSON, MAX_BODY_BYTES, handleAssist, internalError, logAssist } from "./_assist-lib.mjs";
 
 /** Read req.body without letting the platform parser throw. Bad JSON becomes a marker (400). */
 function readBody(req, headers) {

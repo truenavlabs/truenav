@@ -2,6 +2,7 @@
 // lib/useReceiptsRun.ts and lib/receipts-write.mjs. Unstyled on purpose: the final UI pass restyles it.
 import { useWallet } from "./wallet";
 import { useReceiptsRun, type RunOutcome } from "../lib/useReceiptsRun";
+import { ReceiptVerify } from "./ReceiptVerify";
 import { Ext, Note, Panel } from "./kit";
 
 /** Role actions that would write somewhere other than receipts request_run. Shown read-only, never wired. */
@@ -19,7 +20,9 @@ export function ReceiptRunAction({ role }: { role: "investor" | "manager" }) {
   const { signedAccountId, sendReceiptsCall, signIn, busy } = useWallet();
   const { tokens, tokenId, setTokenId, state, review, confirm, cancel } = useReceiptsRun({ accountId: signedAccountId, sendReceiptsCall });
   const working = state.phase === "checking" || state.phase === "signing";
+  const prefill = state.phase === "done" && "hash" in state.outcome && state.outcome.hash ? state.outcome.hash : "";
   return (
+    <>
     <Panel title="Testnet action: request a fresh receipt run" sub="receipts request_run, signed by your connected testnet wallet">
       <p className="dim">Asks the receipts contract to run the pinned engine for one token. The contract allows this for runner accounts only.</p>
       {!signedAccountId ? (
@@ -51,6 +54,8 @@ export function ReceiptRunAction({ role }: { role: "investor" | "manager" }) {
       <p className="dim mt">Not wired here, read-only:</p>
       <ul className="plain dim">{NOT_WIRED[role].map((n) => <li key={n.label}>{n.label}: {n.why}</li>)}</ul>
     </Panel>
+    <ReceiptVerify key={prefill || "idle"} initialQuery={prefill} />
+    </>
   );
 }
 

@@ -11,6 +11,7 @@
 //   npm run tee:chain-check [-- --contract <id>] [--verdicts <path>] [--report <path>] [--rpc <url>] [--allow-traps]
 // Exit 0 when every check passes, 1 when one fails, 2 on a usage or network error.
 // It is an optional step of the judge path (not part of `npm run judge`): it needs the network and a verdict set.
+import { failLine, nameEndpoint } from "../certify/net-guard.mjs"; // first: wraps fetch before other modules load
 import { readFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
@@ -96,6 +97,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const verdictsPath = opt("--verdicts") || status.verdicts_file || "tee/fixtures/verdicts-368aa2.json";
   const reportPath = opt("--report") || status.report_file || "tee/fixtures/attestation-report-368aa2.json.b64";
   const rpcUrl = opt("--rpc") || process.env.TRUENAV_RPC || DEFAULT_RPC;
+  nameEndpoint(rpcUrl, "NEAR RPC", "--rpc or TRUENAV_RPC");
   if (!existsSync(new URL(verdictsPath, ROOT)) && !existsSync(verdictsPath)) { console.error(`no verdicts file at ${verdictsPath}: nothing to check yet (TEE status is ${status.tee})`); process.exit(2); }
   const read = (p) => readFileSync(existsSync(p) ? p : new URL(p, ROOT), "utf8");
   const file = JSON.parse(read(verdictsPath));
@@ -106,7 +108,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(r.ok ? `PASS every check: the verdict set in ${verdictsPath} is on ${contract}` : `FAIL the verdict set in ${verdictsPath} is not fully on ${contract}`);
     process.exit(r.ok ? 0 : 1);
   } catch (e) {
-    console.error(`error: ${e.message}`);
+    console.error(failLine(e));
     process.exit(2);
   }
 }

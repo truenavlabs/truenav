@@ -11,6 +11,7 @@
 //
 // Transaction list: FastNEAR transactions API (POST /v0/account, paged with resume_token; full transactions with
 // their receipts from POST /v0/transactions, up to 20 hashes per call; see docs.fastnear.com/tx). No key needed.
+import { cliGuard, nameEndpoint } from "./net-guard.mjs"; // first: wraps fetch before other modules load
 import { replyShapeProblem, verdictConsistencyProblem } from "../tee/reply.mjs";
 import { DEFAULT_RPC, view } from "../web/chain.mjs";
 
@@ -87,6 +88,8 @@ async function main() {
   const network = contract.endsWith(".near") ? "main" : "test";
   const API = process.env.TRUENAV_TX_API || `https://tx.${network}.fastnear.com`;
   const parent = contract.split(".").slice(1).join(".");
+  nameEndpoint(API, "transactions API", "TRUENAV_TX_API");
+  nameEndpoint(process.env.TRUENAV_RPC || DEFAULT_RPC, "NEAR RPC", "TRUENAV_RPC");
   const roles = await view(contract, "get_roles", {}, process.env.TRUENAV_RPC || DEFAULT_RPC);
   const roleHolders = [roles.admin, roles.registrar, roles.pauser, roles.servicer].filter(Boolean);
 
@@ -140,4 +143,7 @@ async function main() {
   process.exitCode = ok ? 0 : 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) await main();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  cliGuard(import.meta.url); // an unreachable endpoint: one line naming it, exit 2, no stack trace
+  await main();
+}

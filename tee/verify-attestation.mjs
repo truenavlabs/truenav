@@ -3,6 +3,9 @@
 //   npm run verify:attestation                                   the current registry's recorded set (tee/status.json)
 //   npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet    the earlier instance's recorded set
 //   (--verdicts <path> and --report <path> override the files; TRUENAV_CONTRACT, TRUENAV_VERDICTS and TRUENAV_REPORT still work)
+//   Endpoints: TRUENAV_RPC (NEAR RPC), TRUENAV_PCCS_URL (collateral, default Phala PCCS), TRUENAV_NRAS_URL (outage tests
+//   only: a reply from a non-default NRAS URL never counts as a pass). An unreachable one ends the report with one
+//   "network failure" line naming it and exits 2 (certify/net-guard.mjs).
 //
 // 1. Decodes the published NEAR AI Cloud attestation report (tee/fixtures/attestation-report-368aa2.json.b64) and checks
 //    its sha256 equals the hash recorded with the verdicts, and the hash the live contract stores for its TEE
@@ -11,6 +14,7 @@
 //    and the request nonce bound in the quote's report data, MRCONFIGID and RTMR3, NVIDIA GPU evidence (NRAS).
 // 3. Checks the attested signing key is the key that signed every recorded verdict, and the key the contract
 //    accepts.
+import { cliGuard, nameEndpoint, reportNetworkAtExit } from "../certify/net-guard.mjs"; // first: wraps fetch before @phala/dcap-qvl keeps its own copy
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { verifyReport } from "./attest.mjs";
@@ -18,6 +22,10 @@ import { view, DEFAULT_RPC } from "../web/chain.mjs";
 import { resolveSet } from "./recorded-set.mjs";
 
 const root = new URL("../", import.meta.url);
+cliGuard(import.meta.url); // an unreachable RPC, PCCS or NRAS: a closing line naming it, exit 2, no stack trace
+nameEndpoint(process.env.TRUENAV_RPC || DEFAULT_RPC, "NEAR RPC", "TRUENAV_RPC");
+if (process.env.TRUENAV_PCCS_URL) nameEndpoint(process.env.TRUENAV_PCCS_URL, "PCCS collateral server", "TRUENAV_PCCS_URL");
+if (process.env.TRUENAV_NRAS_URL) nameEndpoint(process.env.TRUENAV_NRAS_URL, "NRAS", "TRUENAV_NRAS_URL");
 // Which recorded set follows the contract (tee/recorded-set.mjs): no environment variables are needed for the current registry.
 let set;
 try {
@@ -64,3 +72,4 @@ console.log(ok
   ? "Attestation checks passed: the report hash is on chain, the TDX quote and TCB status verify, debug is off, the signing key and our nonce are bound in the quote, MRCONFIGID and RTMR3 match the report's own app_compose and event log, and the NVIDIA NRAS verdict is true. MRTD, RTMR0 to RTMR2 and the compose hash are not compared with published values, and the NRAS token signature is not verified, so this does not prove which image runs."
   : "Attestation NOT verified.");
 process.exitCode = ok ? 0 : 1;
+if (!ok) reportNetworkAtExit(); // the failure came from an unreachable endpoint: say which, exit 2

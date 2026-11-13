@@ -15,6 +15,7 @@
 // current 368aa2 registry and its master (npm run rt17:check).
 //
 // Only the RPC methods `query` (view_access_key_list) are called.
+import { failLine, nameEndpoint } from "./net-guard.mjs"; // first: wraps fetch before other modules load
 import { PublicKey, createTransaction, actions, encodeTransaction, baseDecode } from "near-api-js";
 import { DEFAULT_RPC, BACKUP_RPCS, DEFAULT_CONTRACT } from "../web/chain.mjs";
 
@@ -107,6 +108,7 @@ export function identify(keys, { ownerKey, backupKey }) {
 
 export async function main(argv, env = process.env, out = console.log) {
   const a = parseArgs(argv, env);
+  nameEndpoint(a.rpc, "NEAR RPC", "--rpc or TRUENAV_RPC");
   if (a.check) {
     let code = 0;
     for (const account of a.contracts) {
@@ -140,7 +142,7 @@ export async function main(argv, env = process.env, out = console.log) {
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   main(process.argv.slice(2)).then((code) => { process.exitCode = code; }, (e) => {
-    console.error(e instanceof UsageError ? `usage error: ${e.message}` : `error: ${e.message}`);
+    console.error(e instanceof UsageError ? `usage error: ${e.message}` : failLine(e));
     process.exitCode = 2;
   });
 }

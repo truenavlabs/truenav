@@ -4,6 +4,7 @@
 //
 //   npm run chain:read                     uses the live contract (DEFAULT_CONTRACT in web/chain.mjs) on testnet
 //   TRUENAV_CONTRACT=registry.<you>.testnet npm run chain:read
+import { cliGuard, nameEndpoint } from "./net-guard.mjs"; // first: wraps fetch before other modules load
 import { readFileSync } from "node:fs";
 import { scorePortfolio } from "../engine/src/score.mjs";
 import { loadChainState, DEFAULT_CONTRACT, DEFAULT_RPC } from "../web/chain.mjs";
@@ -11,6 +12,8 @@ import { loadChainState, DEFAULT_CONTRACT, DEFAULT_RPC } from "../web/chain.mjs"
 const root = new URL("../", import.meta.url);
 const contract = process.env.TRUENAV_CONTRACT || DEFAULT_CONTRACT;
 const url = process.env.TRUENAV_RPC || DEFAULT_RPC;
+cliGuard(import.meta.url); // an unreachable RPC: one line naming it, exit 2, no stack trace
+nameEndpoint(url, "NEAR RPC", "TRUENAV_RPC");
 const fx = JSON.parse(readFileSync(new URL("spec/nav/fixtures.json", root), "utf8"));
 const loans = JSON.parse(readFileSync(new URL("tee/loans.json", root), "utf8")).loans.filter((l) => !l.tampered).map(({ fund_id, loan_id, loan_hash }) => ({ fund_id, loan_id, loan_hash }));
 

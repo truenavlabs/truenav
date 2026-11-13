@@ -7,6 +7,7 @@
 // key, pledge-ticket signers) and tee/status.json (the TEE signer, its model and the attestation report sha256; the
 // status must be live). The registered TEE signers must be exactly the one in tee/status.json.
 // Exit 0 when every check passes, 1 when one fails, 2 on a usage or network error.
+import { failLine, nameEndpoint } from "./net-guard.mjs"; // first: wraps fetch before other modules load
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { view as chainView, codeHash as chainCodeHash, DEFAULT_RPC } from "../web/chain.mjs";
@@ -55,6 +56,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const bad = args.find((a, i) => (a.startsWith("--") ? a !== "--rpc" : args[i - 1] !== "--rpc"));
   if (bad || (args.includes("--rpc") && !args[args.indexOf("--rpc") + 1])) { console.error("usage: npm run verify:live-signer [-- --rpc <url>]"); process.exit(2); }
   const rpc = args.includes("--rpc") ? args[args.indexOf("--rpc") + 1] : process.env.TRUENAV_RPC || DEFAULT_RPC;
+  nameEndpoint(rpc, "NEAR RPC", "--rpc or TRUENAV_RPC");
   try {
     const r = await checkLiveRegistry({
       expected: readJson("certify/live-registry.json"),
@@ -66,7 +68,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(r.ok ? "PASS the live registry holds the signers and accounts the repository expects" : "FAIL the live registry differs from what the repository expects");
     process.exit(r.ok ? 0 : 1);
   } catch (e) {
-    console.error(`error: ${e.message}`);
+    console.error(failLine(e));
     process.exit(2);
   }
 }

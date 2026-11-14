@@ -37,6 +37,9 @@ export const PAGES = [
   ["/features/evidence", "f11"], ["/data", "data"], ["/account/meridian.tnlab-368aa2.testnet", "account"], ["/faq", "faq"],
   ["/glossary", "glossary"], ["/app/methodology", "methodology"], ["/trust", "trust"], ["/support", "support"], ["/status", "status"],
   ["/app/roadmap", "roadmap"], ["/nope", "notfound"],
+  ["/", "site-home"], ["/product", "site-product"], ["/investors", "site-investors"], ["/managers", "site-managers"], ["/technology", "site-technology"],
+  ["/built-on-near", "site-built-on-near"], ["/methodology", "site-methodology"], ["/security", "site-security"], ["/evidence", "site-evidence"],
+  ["/roadmap", "site-roadmap"], ["/docs", "site-docs"], ["/about", "site-about"], ["/pilot", "site-pilot"],
   ["/overview?tour=1", "tour-1"], ["/overview?tour=2", "tour-2"], ["/funds/meridian-yield-fund?tab=pledges&tour=3", "tour-3"],
   ["/funds/meridian-yield-fund?tour=4", "tour-4"], ["/loans/33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc?tour=5", "tour-5"],
   ["/verify?tour=6", "tour-6"], ["/reports/meridian-yield-fund?tour=7", "tour-7"],
@@ -87,7 +90,7 @@ async function cdp(wsUrl) {
 const PROBE = String.raw`(() => {
   const out = [];
   const W = document.documentElement.clientWidth;
-  const skip = (el) => !!el.closest('[data-visual-ignore], .tickerslot, .helppanel, script, style, noscript, [aria-hidden="true"] .sr');
+  const skip = (el) => !!el.closest('[data-visual-ignore], .tickerslot, .helppanel, script, style, noscript, [aria-hidden="true"] .sr, .sr-only');
   const closedDetails = (el) => { const d = el.closest("details:not([open])"); return !!d && !el.closest("summary"); };
   const fixed = (el) => { for (let e = el; e && e.nodeType === 1; e = e.parentElement) if (getComputedStyle(e).position === "fixed") return true; return false; };
   const visible = (el) => { for (let e = el; e && e.nodeType === 1; e = e.parentElement) { const s = getComputedStyle(e); if (s.display === "none" || s.visibility === "hidden" || Number(s.opacity) === 0) return false; } return true; };

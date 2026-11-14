@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PUBLIC_V3_FIELDS, publicV3, bandOf } from "../src/public.ts";
@@ -90,4 +91,49 @@ test("fonts are local OFL files", () => {
   assert.match(css, /--font-sans: "Manrope"/);
   assert.match(css, /--font-mono: "JetBrains Mono"/);
   assert.equal(/https?:\/\/fonts\./.test(css), false);
+});
+
+// Copy and placeholder hygiene for the public site and judge text.
+const repoRoot = join(web, "..");
+const tracked = () => spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8" }).stdout.split("\0").filter((f) => f && !f.endsWith("package-lock.json") && !f.endsWith(".pdf") && !f.endsWith(".wasm") && !f.endsWith(".b64") && !f.endsWith(".png") && !f.endsWith(".woff2") && !f.endsWith(".ico"));
+const readRepo = (f) => { try { return readFileSync(join(repoRoot, f), "utf8"); } catch { return ""; } };
+
+test("the old sibling project name appears nowhere in the tracked tree", () => {
+  const needle = new RegExp(["referral", "relay"].join("[ _-]?"), "i");
+  const hits = tracked().filter((f) => needle.test(readRepo(f)) || needle.test(f));
+  assert.deepEqual(hits, []);
+});
+
+test("About names the other entry by name only, links GitHub Issues, and has no placeholder contact", () => {
+  const about = readFileSync(join(src, "site", "About.tsx"), "utf8");
+  assert.match(about, /TendAI Custody/);
+  assert.doesNotMatch(about, /example\.invalid|\(placeholder\)|href=\{?"#"\}?/);
+  assert.match(about, /github\.com\/truenavlabs\/truenav\/issues/);
+  const i = about.indexOf("TendAI Custody");
+  assert.doesNotMatch(about.slice(i - 200, i + 200), /<a\b/, "TendAI Custody is a name only, no link");
+});
+
+test("no visible copy says pending approval, not in this commit, or waits for a public repository", () => {
+  const checked = [...files(src), join(web, "data", "verify.mjs"), join(web, "data", "pledge-sim.mjs")].filter((f) => /\.(tsx?|mjs|json)$/.test(f));
+  for (const f of checked) {
+    const t = readFileSync(f, "utf8");
+    assert.doesNotMatch(t, /pending approval/i, f);
+    assert.doesNotMatch(t, /not in this commit/i, f);
+    assert.doesNotMatch(t, /once the repository is public/i, f);
+  }
+  assert.doesNotMatch(readRepo("judge/stages.mjs"), /not in this commit/i);
+  assert.doesNotMatch(readRepo("web/data/recorded/judge-replay.json"), /not in this commit/i);
+});
+
+test("the Technology page does not show a stale test count or a pending TEE verdict row", () => {
+  const t = readFileSync(join(src, "site", "Technology.tsx"), "utf8");
+  assert.doesNotMatch(t, /pending \/ not run/);
+  assert.doesNotMatch(t, /n: "413"/);
+});
+
+test("the recorded judge replay is self-consistent: its evidence_hash is the sha256 of its canonical hashed part", async () => {
+  const { canonical } = await import("../../judge/lib.mjs");
+  const rec = JSON.parse(readRepo("web/data/recorded/judge-replay.json"));
+  const { ephemeral, evidence_hash, ...hashed } = rec;
+  assert.equal(createHash("sha256").update(canonical(hashed)).digest("hex"), evidence_hash);
 });

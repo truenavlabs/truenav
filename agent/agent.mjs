@@ -128,7 +128,15 @@ export function decide(token, r, { nowMs = Date.now(), maxAgeDays = MAX_AGE_DAYS
   return { action: "approve", reason: "green", detail: `score ${r.score} green, no caps, no holds` };
 }
 
-export const newRequestId = (token, rand) => `agent-${token}-${rand}`.slice(0, 64);
+// The query contract takes 8 to 64 of [A-Za-z0-9_-] and refuses a reused id forever (query/src/lib.rs). Tokens run up
+// to 64 characters, so only the token part is shortened: the random suffix always survives. A random part longer than
+// the room is cut instead, and one character of the token is always kept.
+const REQUEST_ID_MAX = 64;
+const REQUEST_ID_PREFIX = "agent-";
+export const newRequestId = (token, rand) => {
+  const suffix = `-${rand}`.slice(0, REQUEST_ID_MAX - REQUEST_ID_PREFIX.length - 1);
+  return `${REQUEST_ID_PREFIX}${String(token).slice(0, REQUEST_ID_MAX - REQUEST_ID_PREFIX.length - suffix.length)}${suffix}`;
+};
 
 /**
  * Run the agent once for a token. `chain` provides: view(contract, method, args), buyQuery({ requestId, queryHash,

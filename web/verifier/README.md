@@ -18,5 +18,5 @@ Each check is `{ id, label, state, detail, source, evidenceDate? }`, frozen.
 | `unchecked` | not checked here; `detail` says why. A chain read that fails gives `unchecked`, never `live` |
 | `fail` | a comparison failed, or the check could not complete |
 
-Show a green summary only when `summarize(checks).green` is true: nothing failed and every chain check was read live.
+Show a green summary only when `summarize(checks).green` is true: nothing failed and every chain check was read live. The browser wrapper (`web/data/verify.mjs`, `webSummary().runnableGreen`) also needs its `certificate-signatures` row to be live, so unreadable certificate transactions never show green.
 Tests: `web/verifier/test/verifier-data.test.mjs` (RPC cut, HTTP 500, flipped signature byte, changed reply, changed report byte, expiry boundary).

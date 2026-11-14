@@ -8,7 +8,7 @@ import { ReceiptVerify } from "../shell/ReceiptVerify";
 import { A } from "../ui";
 
 type Check = { id: string; label: string; state: "live" | "recorded" | "unchecked" | "fail"; detail: string; source?: string; evidenceDate?: string; pendingLibrary?: boolean; webCrypto?: boolean };
-type Run = { checks: Check[]; summary: { counts: Record<string, number>; pending: string[]; runnableGreen: boolean }; tamper: string; at: number; ms: number };
+type Run = { checks: Check[]; summary: { counts: Record<string, number>; pending: string[]; runnableGreen: boolean; certificateSignatures: string; chainLive: boolean }; tamper: string; at: number; ms: number };
 const STATE_LABEL: Record<string, string> = { live: "Checked now", recorded: "Recorded", unchecked: "Not checked", fail: "Failed" };
 
 export default function Verify({ q }: { q?: URLSearchParams }) {
@@ -43,6 +43,7 @@ export default function Verify({ q }: { q?: URLSearchParams }) {
           <div className="mt">
             {c.fail ? <Note tone="bad">{c.fail} check{c.fail === 1 ? "" : "s"} failed{tamper !== "none" ? ": the tamper was caught." : "."}</Note>
               : run.summary.runnableGreen ? <Note tone="ok">Every check this browser can run passed against the live registry, including signature recovery.{run.summary.pending.length ? ` ${run.summary.pending.length} could not run here.` : ""}</Note>
+              : run.summary.chainLive && run.summary.certificateSignatures !== "live" ? <Note tone="warn">No check failed, but the certificate signature check did not run, so this is not a pass. The certificate transactions could not be read just now. Run again, or see the last row.</Note>
               : <Note tone="warn">No check failed, but some could not run. See the rows below.</Note>}
           </div>
           <Panel className="mt" title={`${run.checks.length} checks`} sub={`Run at ${clock(run.at)} Bangkok in ${run.ms} ms. ${c.live ?? 0} checked now, ${c.recorded ?? 0} recorded, ${c.unchecked ?? 0} not checked, ${c.fail ?? 0} failed.`} pad={false}>

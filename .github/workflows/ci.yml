@@ -46,16 +46,13 @@ jobs:
       - name: Clippy
         working-directory: contract
         run: cargo clippy --locked --tests -- -D warnings
-      - name: Circuit breaker vault tests and clippy
-        working-directory: vault
-        run: cargo test --locked && cargo clippy --locked --tests -- -D warnings
       - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
         with:
           tool: cargo-audit@0.22.2
       - name: RustSec audit every Rust workspace
         run: |
           set -euo pipefail
-          for d in contract receipts query vault engine/v3-core outlayer/engine-v2 outlayer/engine-v3 outlayer/fingerprint outlayer/quote-check mirror/mock-signer receipts/mock-outlayer receipts/tests/outlayer-output-parity; do
+          for d in contract receipts query engine/v3-core outlayer/engine-v2 outlayer/engine-v3 outlayer/fingerprint outlayer/quote-check mirror/mock-signer receipts/mock-outlayer receipts/tests/outlayer-output-parity; do
             echo "cargo audit in $d"
             (cd "$d" && cargo audit)
           done
@@ -232,7 +229,7 @@ jobs:
     # the NEAR AI Cloud attestation, the check that the 368aa2 verdict set is on chain, and the reply check over every
     # submit_verdict on it; then the same attestation and reply checks on the earlier instance tnlab-718ca9
     # (contract commit d37b9d2) through --contract, and every OutLayer fingerprint.
-    # npm test, the demo again and the eval run in the engine job; contract and vault tests, clippy and RustSec in
+    # npm test, the demo again and the eval run in the engine job; contract tests, clippy and RustSec in
     # the contract job; the full flow on a local node in the sandbox job; gitleaks in the secrets job.
     runs-on: ubuntu-24.04
     steps:

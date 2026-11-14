@@ -19,7 +19,7 @@ test('loan-terms-v2 scope is the documented formula applied to both manifests an
   const deploy = readFileSync(new URL('../../receipts/deploy-testnet.mjs', import.meta.url), 'utf8');
   // The deploy script has no default master any more (receipts/deploy-args.mjs). The scope that matters is the one the
   // recorded fingerprints were made under, so the master is read from the fingerprint module; a deploy under another
-  // master gets a different key scope (docs/RECEIPTS_LIVE_PLAN.md).
+  // master gets a different key scope (docs/TRY_IT.md, key scope note).
   assert.doesNotMatch(deploy, /TRUENAV_MASTER \|\|/);
   const master = FP_CALLER.replace(/^receipts\./, '');
   const receipts = `receipts.${master}`;

@@ -18,7 +18,6 @@
 - Testnet and fictional data only. Fixture keys are publicly derivable test keys for reproducibility. PD tables are demo. TrueRange assumes independent defaults.
 - TrueNav informs only. A red score is information. It does not block a subscription, a redemption, or any other transfer.
 - TEE eval limits (from `tee/eval/REPORT.md`): 126 synthetic documents in a small set of templates, written by the same team that wrote the prompt. Real loan documents vary far more. One model, one prompt, one run each. A perfect score here means no failure was found in these documents, not that the underwriter cannot fail.
-- `vault/` is leftover circuit-breaker code from an earlier design and is not part of the product or the demo.
 - A TEE proves which code ran, not that the model's judgment is right. The underwriter is an LLM.
 - The only on-disk state of the API in `api/` is its spend store (`api/spend-store.mjs`). Demo documents are fictional and committed so judges can replay them.
 - Pledges, verdicts, attempts, alerts and certificates are public chain state, not hidden. A refused pledge returns `already pledged elsewhere` without naming the fund that holds the loan (transaction `8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs` above).

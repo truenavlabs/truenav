@@ -70,7 +70,7 @@ Status after the fix pass.
 
 | use | where |
 | --- | --- |
-| NEAR account `private_key` | `~/.near-credentials`, read at `certify/testnet.mjs:57`, `certify/vault-demo.mjs:20`, `receipts/deploy-testnet.mjs:61`, `api/chain.mjs:12` |
+| NEAR account `private_key` | `~/.near-credentials`, read at `certify/testnet.mjs:57`, `receipts/deploy-testnet.mjs:61`, `api/chain.mjs:12` |
 | OutLayer payment key | env `PAYMENT_KEY`, `tee/fingerprint.mjs:54` |
 | NEAR AI Cloud | env `NEAR_AI_CLOUD_API_KEY`, described in `SECURITY.md` |
 | Sealed engine config | env `TRUENAV_DATA_TOKEN`, `TRUENAV_REPORT_STORE_TOKEN`, `TRUENAV_SOURCE_REGISTRY_JSON`, roster and URL vars in `outlayer/engine-v3/src/main.rs` |
@@ -91,7 +91,7 @@ Recorded on this machine after `npm ci`. The first `npm test` before install fai
 - `cargo test --locked --lib` in `receipts`, skipping `redteam_r1`: 25 passed.
 - `cargo test --locked --test contract` in `receipts`, skipping `redteam_r1`: 24 passed.
 - `cargo test --locked` in `query`: 8 passed.
-- `cargo test --locked` in `vault`: 5 passed.
+- `cargo test --locked` in `vault`: 5 passed (that crate has since been removed).
 - `cargo test --locked` in `outlayer/engine-v2`: 21 passed.
 
 Red team repros, all failing on current code:

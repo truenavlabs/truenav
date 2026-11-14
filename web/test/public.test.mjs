@@ -111,7 +111,7 @@ test("About names the other entry by name only, links GitHub Issues, and has no 
   assert.match(about, /github\.com\/truenavlabs\/truenav\/issues/);
   const i = about.indexOf("TendAI Custody");
   const near = about.slice(Math.max(0, i - 200), i + 200);
-  assert.ok(!/<a\b/.test(near) || /href="https:\/\/tendaicustody\.com"/.test(near), "the only link allowed beside TendAI Custody is its own site");
+  assert.ok(!/<a\b/.test(near) || /href="https:\/\/tendaicustody\.app"/.test(near), "the only link allowed beside TendAI Custody is its own site");
 });
 
 test("no visible copy says pending approval, not in this commit, or waits for a public repository", () => {
@@ -180,7 +180,7 @@ test("docs that were moved out of the README exist and the README links each one
 
 test("README has the Q-015 other entry section, About names the other entry with no person reference", () => {
   const t = readRepo("README.md");
-  assert.ok(t.includes("## Other entry (Q-015 disclosure)\n\nThe same submitter also entered [TendAI Custody](https://tendaicustody.com) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other."));
+  assert.ok(t.includes("## Other entry (Q-015 disclosure)\n\nThe same submitter also entered [TendAI Custody](https://tendaicustody.app) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other."));
   assert.doesNotMatch(t, /by the same person/);
   const about = readFileSync(join(src, "site", "About.tsx"), "utf8");
   assert.doesNotMatch(about, /same person/);

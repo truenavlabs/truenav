@@ -177,7 +177,7 @@ fn redteam_r1b_pledge_module_and_engine_must_share_one_mac_key() {
     let deploy = include_str!("../../../receipts/deploy-testnet.mjs");
     // The deploy script has no default master any more (receipts/deploy-args.mjs). The scope that matters is the one the
     // recorded fingerprints were made under, so the account is read from the fingerprint module. A deploy under another
-    // master gets a different key scope (docs/RECEIPTS_LIVE_PLAN.md).
+    // master gets a different key scope (docs/TRY_IT.md, key scope note).
     assert!(!deploy.contains("TRUENAV_MASTER ||"), "the deploy script must not default the master");
     let fp = include_str!("../../../tee/fingerprint.mjs");
     let master = between(fp, "export const FP_CALLER = \"receipts.", "\"");

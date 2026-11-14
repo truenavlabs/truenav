@@ -25,7 +25,7 @@ test("README npm library versions equal package-lock.json", () => {
 test("README near-sdk version equals every Cargo.lock that has near-sdk", () => {
   const said = /near-sdk (\d+\.\d+\.\d+)/.exec(bullet)?.[1];
   assert.ok(said, "README does not give a near-sdk version");
-  for (const crate of ["contract", "receipts", "query", "vault"]) {
+  for (const crate of ["contract", "receipts", "query"]) {
     const m = /name = "near-sdk"\nversion = "([^"]+)"/.exec(read(`${crate}/Cargo.lock`));
     assert.equal(m?.[1], said, `${crate}/Cargo.lock near-sdk`);
   }

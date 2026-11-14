@@ -7,7 +7,9 @@ import { reports } from "../data";
 import { A } from "../ui";
 import { fund, HARBOR, MERIDIAN } from "./facts";
 import { LongPage, type LongSection } from "./Long";
-import { REPO, SiteFooter, SitePage } from "./Shell";
+import { RevealDiagram } from "./diagrams";
+import { Figure } from "./kit";
+import { REPO, SitePage } from "./Shell";
 
 // Recorded on 14 Nov 2026 (Asia/Bangkok): `npm run eval` re-run, and the size of `npm test` at the repo root.
 const RUNS = { date: "14 Nov 2026" };
@@ -38,7 +40,7 @@ export function Technology() {
           <p>Each pledged loan's document is read by a model running inside a NEAR AI Cloud TEE (Intel TDX with NVIDIA confidential computing). It compares the document with the loan data the fund claims.</p>
           <p>The reply may hold fixed keys only: the loan hash, a binding, six check results, a line number for duplicate evidence, the verdict and anomaly codes. The TEE signs that reply. The document never goes on chain.</p>
           <p>A loan's on-chain fingerprint is an HMAC computed inside a TEE with a key nobody holds, so a document id cannot be tested against it.</p>
-          <Facts rows={[["reply rule", "tee/reply.mjs"], ["re-check the TEE", "npm run verify:attestation"], ["re-check fingerprints", "npm run verify:fingerprints"]]} />
+          <Facts rows={[["re-check the TEE", "npm run verify:attestation"], ["re-check fingerprints", "npm run verify:fingerprints"]]} />
         </>
       ),
     },
@@ -53,7 +55,7 @@ export function Technology() {
             <li><b>TrueNav score</b>: {TOOLTIPS.score} 40 points for coverage, 40 for the NAV gap, 20 for freshness.</li>
           </ul>
           <p className="lp-note">PD tables are demo, not calibrated. TrueVal is a model estimate, not fair value.</p>
-          <Facts rows={[[h.name, `${h.score} ${h.band}, reported ${h.reported}, TrueVal ${h.trueval}`], [m.name, `${m.score} ${m.band}, reported ${m.reported}, TrueVal ${m.trueval}`], ["engine", "engine/src/score.mjs"], ["rules", "spec/nav/NAV_SPEC.md"]]} />
+          <Facts rows={[[h.name, `${h.score} ${h.band}, reported ${h.reported}, TrueVal ${h.trueval}`], [m.name, `${m.score} ${m.band}, reported ${m.reported}, TrueVal ${m.trueval}`]]} />
         </>
       ),
     },
@@ -71,7 +73,6 @@ export function Technology() {
             ["double-pledge refusal", <a href="https://explorer.testnet.near.org/transactions/8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs" target="_blank" rel="noopener noreferrer">8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs</a>],
             ["receipt contract", contract],
             ["method", h.method],
-            ["spec", "SPEC_RECEIPT_V3.md"],
           ]} />
         </>
       ),
@@ -82,7 +83,7 @@ export function Technology() {
         <>
           <p>No account and no key are needed. <code>npm run chain:read</code> reads the live registry and recomputes both scores from chain data only. <code>npm run verify:attestation</code> re-checks the published TEE attestation on the earlier instance that still holds the recorded TEE set. The current live registry wasm is a local host (non-reproducible) build; its on-chain code hash is listed under the receipt. A pinned-image / NEP-330 rebuild is not claimed for this deploy.</p>
           <p>The receipt checker in the app walks a receipt through signature, attestation, fund binding and freshness. In this build those checks are simulated on the fixtures, with no network.</p>
-          <Facts rows={[["chain read", "npm run chain:read"], ["deployed code", "README, Verify the deployed code"], ["in the app", "/verify"]]} />
+          <Facts rows={[["chain read", "npm run chain:read"], ["deployed code", <A href="/evidence">see the evidence page</A>], ["in the app", <A href="/verify">the receipt checker</A>]]} />
         </>
       ),
     },
@@ -123,6 +124,16 @@ export function Technology() {
                 <p>Not zero knowledge. Not fair value. The score certificate signer is a test key, not a TEE key. The chain does not verify hardware itself; anyone can re-check the attestation off chain.</p>
               </div>
             </section>
+            <section className="mk-band white">
+              <div className="mk-in">
+                <header className="mk-head">
+                  <span className="lbl">who sees what</span>
+                  <h2>What is revealed to whom.</h2>
+                  <p className="mk-lead">Five hops, with the privacy boundary after the TEE. The reply is public once it is sent, and it holds a verdict only.</p>
+                </header>
+                <Figure caption="what is revealed to whom, hop by hop"><RevealDiagram /></Figure>
+              </div>
+            </section>
             <section className="cta-band">
               <div>
                 <span className="lbl">verify</span>
@@ -133,7 +144,6 @@ export function Technology() {
                 <a href={REPO} className="pillbtn ghost inv" target="_blank" rel="noopener noreferrer">Read the source ↗</a>
               </div>
             </section>
-            <SiteFooter />
           </>
         }
       />

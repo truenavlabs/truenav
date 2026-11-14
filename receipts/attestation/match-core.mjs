@@ -1,7 +1,7 @@
 // Internal capability boundary. Public callers use match.mjs; tests inject simulated capabilities here only.
 import {createHash} from 'node:crypto';
 import {receiptPolicy} from './receipt-policy.mjs';
-import {taskHash} from '../../tee/fingerprint.mjs';
+import {taskHash,framingOk} from '../../tee/fingerprint.mjs';
 export function canonical(x){
  if(x===null||typeof x==='boolean'||typeof x==='string')return JSON.stringify(x);
  if(typeof x==='number'){if(!Number.isSafeInteger(x))throw new Error('unsafe public number');return JSON.stringify(x);}
@@ -51,6 +51,8 @@ export async function matchWithCapabilities({envelope:e,record:r,context:c},caps
   let proof;try{proof=await caps.fetchProof(r.proof_ref);}catch{return result('unavailable','evidence_unavailable');}
   if(typeof c.fund_id!=='string'||!c.fund_id||c.fund_id!==e.fund_id)return result('invalid','fund_id_unbound');
   if(!proof||proof.task_type!=='execute'||proof.build_target!=='wasm32-wasip2'||proof.output_hash!==bodyHash||proof.input_hash!==c.input_hash||proof.wasm_hash!==c.engine_code_sha256||proof.executed_wasm_sha256!==c.engine_code_sha256||proof.caller_account_id!==c.caller_account_id||proof.project_id!==c.project_id)return result('invalid','attestation_unbound');
+  // RT3-01: taskHash has no field framing. Free strings outside the pinned block must be absent or tightly bounded.
+  if(!framingOk(proof,c))return result('invalid','attestation_unbound');
   for(const k of ['task_id','timestamp','block_height'])if(proof[k]!==null&&proof[k]!==undefined&&(!Number.isSafeInteger(proof[k])||proof[k]<0))return result('invalid','attestation_invalid');
   if(typeof proof.tdx_quote!=='string'||proof.tdx_quote.length>100000)return result('invalid','attestation_invalid');
   const quote=Buffer.from(proof.tdx_quote,'base64');const measurement=caps.quoteFields(quote);

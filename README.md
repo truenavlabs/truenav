@@ -518,7 +518,7 @@ Built at NEAR HACKATHON 2026 by TrueNav Labs. Repository: [https://github.com/tr
 
 ## License
 
-Business Source License 1.1. See `LICENSE`. Licensor TrueNav Labs. Non-production use is allowed. Additional use grant: none. On 2030-11-05 the code converts to the Apache License, Version 2.0. The code is public for review and reproduction. BSL 1.1 is source-available, not an OSI open source license.
+MIT License. See `LICENSE`. Copyright 2026 TrueNav Labs.
 
 ## Docs
 

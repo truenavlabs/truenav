@@ -2,7 +2,7 @@
 name = "truenav-receipts"
 version = "0.1.0"
 edition = "2021"
-license = "BUSL-1.1"
+license = "MIT"
 publish = false
 repository = "https://github.com/truenavlabs/truenav"
 description = "TrueNav receipt contract: requests a pinned OutLayer run per token and stores the public checks receipt it returns. Testnet only."

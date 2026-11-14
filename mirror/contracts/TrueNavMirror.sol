@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL-1.1
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
 /// Synthetic-data testnet mirror. The NEAR contract and its MPC-derived address authorize updates.

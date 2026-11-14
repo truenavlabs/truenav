@@ -2,7 +2,7 @@
 name = "truenav-registry"
 version = "0.1.0"
 edition = "2021"
-license = "BUSL-1.1"
+license = "MIT"
 publish = false
 repository = "https://github.com/truenavlabs/truenav"
 description = "TrueNav test registry: signer registry, signed score certificates, one-time loan pledges as NEP-171 tokens, blocked-attempt counter. Testnet only."

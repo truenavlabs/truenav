@@ -2,6 +2,7 @@
 name = "truenav-v3-core"
 version = "3.0.0"
 edition = "2021"
+license = "MIT"
 publish = false
 
 [dependencies]

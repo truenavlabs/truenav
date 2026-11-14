@@ -2,6 +2,7 @@
 name = "truenav-outlayer-output-parity"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 publish = false
 
 # Isolated from the engine's preserve_order feature. Matches the worker's serde_json defaults.

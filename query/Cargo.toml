@@ -2,7 +2,7 @@
 name = "truenav-query"
 version = "0.1.0"
 edition = "2021"
-license = "BUSL-1.1"
+license = "MIT"
 publish = false
 repository = "https://github.com/truenavlabs/truenav"
 description = "TrueNav paid query contract: an agent pays a small testnet fee for a one-use, 24-hour entitlement to a report or a Q&A session. It never touches any score. Testnet only."

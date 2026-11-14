@@ -7,7 +7,7 @@ description = "Published NEAR AI Cloud attestation reports (both encodings; the 
 paths = ['''^tee/fixtures/attestation-report(-368aa2)?\.json(\.b64)?$''']
 
 [[allowlists]]
-description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 61fe33a0 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md). Add a new pin here when it is published, after checking it is a build hash."
+description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 61fe33a0 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md); 360cd473 is the engine v2 build hash (outlayer/engine-v2/BUILD.md), the version_key the live receipts contract stores. Add a new pin here when it is published, after checking it is a build hash."
 targetRules = ["generic-api-key"]
 regexTarget = "secret"
 regexes = [
@@ -16,6 +16,7 @@ regexes = [
   '''^8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad$''',
   '''^c3299ccf5414c351bc3e8fc773ca2bccddeedc1b71974e36a21bfebaee092fb2$''',
   '''^4e376db0cd17ef7f11f0d8602ed9367e66905c4cb4443bae881615a5cedf28eb$''',
+  '''^360cd47346db7060ffb213288e25a6d5e39050133bd4e20ad2f6f9280b1daa57$''',
 ]
 
 [[allowlists]]

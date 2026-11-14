@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // The marketing site tree: every route renders, the routes and links resolve, and the copy rules hold on the rendered
 // text (no dashes, no forbidden names, the testnet notice, informs only, live versus roadmap labels, no repo file names).
 // Rendered on the server with the web app's own Vite and React; skipped when web/node_modules is absent.
@@ -51,7 +52,17 @@ test("no em or en dashes anywhere: rendered text, titles, site source, whitepape
 
 test("forbidden names, NEAR Intents and traction claims appear nowhere", { skip }, async () => {
   const t = await texts();
-  const forbidden = /shepdev|shepshepdev/i;
+  // Banned identity words are kept only as sha256 hashes so this test does not publish them.
+  const BANNED = new Set([
+    "13c945dce632469cd1dbb3123299ac26e77c7d55985527504bf51b0668ff75d6",
+    "43a52bc7d59d42b4020c698b3eff5e35c5f552b81d59eebde76594953a374bcb",
+    "eaa56c180e05434c65e31c7d654cb4f462a6ae281aa16ef107747f984d1be52d",
+    "99b4c037877eee21438b6b13aa6bcd14e8f3baf77fd185eb3ea11f3a0a405be7",
+    "91548a28c0bebc117bd1bb62b942de3ff9df08f15b889c423fb648dec9a03a44",
+    "eeca278742526b4b0cfbb2ab830bb88c740d48f02e18bae0755a149e9c8479bb",
+    "96d9632f363564cc3032521409cf22a852f2032eec099ed5967c0d000cec607a",
+  ]);
+  const forbidden = { test: (s) => s.toLowerCase().split(/[^a-z0-9]+/).some((w) => w && BANNED.has(createHash("sha256").update(w).digest("hex"))) };
   const traction = /trusted by|testimonial|assets under management|\bAUM\b|our clients|our customers/i;
   for (const [p, x] of Object.entries(t)) {
     assert.ok(!forbidden.test(x), `${p} names a forbidden name`);

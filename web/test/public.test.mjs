@@ -188,3 +188,20 @@ test("README has the Q-015 other entry section, About names the other entry with
   assert.match(t, /https:\/\/truenav\.app \(launching after final pass/);
   assert.doesNotMatch(t, /truenav\.app is live/i);
 });
+
+test("the registry storage headroom item is resolved by the 14 Nov top-up everywhere it was open", () => {
+  const TX = "7wjnse7nQxVyZLn29RRH4nxQmVGCNfWDBkucnSwC5Eka";
+  const trust = readFileSync(join(src, "pages", "Trust.tsx"), "utf8");
+  const row = trust.split("\n").find((l) => l.includes("Storage headroom (N-01)"));
+  assert.ok(row, "Trust page keeps the storage headroom row");
+  assert.match(row, /Resolved/);
+  assert.ok(row.includes(TX));
+  assert.doesNotMatch(row, /may fail|Open, Low/);
+  const limits = readRepo("docs/KNOWN_LIMITS.md").split("\n").find((l) => l.includes("Storage headroom (N-01)"));
+  assert.match(limits, /Resolved/);
+  assert.ok(limits.includes(TX));
+  assert.doesNotMatch(limits, /likely to fail|Open, Low/);
+  const readme = readRepo("README.md");
+  assert.doesNotMatch(readme, /628 bytes|next write may fail/);
+  assert.doesNotMatch(readFileSync(join(src, "content", "faq-data.mjs"), "utf8"), /low registry storage headroom/);
+});

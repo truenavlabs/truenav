@@ -147,3 +147,32 @@ test("UPGRADE_V3 states the real status: v3 pinned and CI built, not deployed, l
   assert.match(head, /5f294c9a/);
   assert.match(head, /f32949b3/);
 });
+
+test("WHY_NEAR does not overclaim reproducible builds, stays under 300 words and keeps its doc links", () => {
+  const t = readRepo("WHY_NEAR.md");
+  assert.doesNotMatch(t, /anyone (can )?match the deployed code hash/i);
+  assert.match(t, /receipts and query/i);
+  assert.match(t, /registry/i);
+  assert.match(t, /host build/i);
+  assert.ok(t.split(/\s+/).filter(Boolean).length < 300);
+  assert.match(t, /docs\.near\.org\/smart-contracts\/anatomy\/reproducible-builds/);
+});
+
+test("the README first screen states the platform, the audit scope and no exact test counts", () => {
+  const t = readRepo("README.md");
+  assert.match(t, /Linux or WSL/);
+  assert.match(t, /flock/);
+  assert.match(t, /npm audit --omit=dev/);
+  assert.match(t, /development/i);
+  assert.doesNotMatch(t, /ℹ tests \d+|ℹ pass \d+|tests 819|pass 814|skipped 5\b/);
+  assert.doesNotMatch(t, /Attestation verified:/);
+  assert.ok(t.split("\n").length < 260, "the README stays short; deep detail lives in docs/");
+});
+
+test("docs that were moved out of the README exist and the README links each one", () => {
+  const t = readRepo("README.md");
+  for (const f of ["docs/TRY_IT.md", "docs/CLAIMS.md", "docs/KNOWN_LIMITS.md", "docs/NETWORK.md", "docs/DEPLOYMENT_EVIDENCE.md"]) {
+    assert.ok(readRepo(f).length > 200, f);
+    assert.ok(t.includes(f), `README links ${f}`);
+  }
+});

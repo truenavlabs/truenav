@@ -10,7 +10,8 @@
     "test": "node --test test/*.test.mjs",
     "build:fast": "tsc --noEmit && vite build",
     "check:visual": "node scripts/visual-check.mjs",
-    "check:csp": "node scripts/csp-check.mjs"
+    "check:csp": "node scripts/csp-check.mjs",
+    "check:tour": "node scripts/tour-check.mjs"
   },
   "dependencies": {
     "@hot-labs/near-connect": "0.12.0",

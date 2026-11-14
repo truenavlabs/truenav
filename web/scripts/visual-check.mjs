@@ -40,13 +40,10 @@ export const PAGES = [
   ["/", "site-home"], ["/product", "site-product"], ["/investors", "site-investors"], ["/managers", "site-managers"], ["/technology", "site-technology"],
   ["/built-on-near", "site-built-on-near"], ["/methodology", "site-methodology"], ["/security", "site-security"], ["/evidence", "site-evidence"],
   ["/roadmap", "site-roadmap"], ["/docs", "site-docs"], ["/about", "site-about"], ["/pilot", "site-pilot"],
-  ["/overview?tour=1", "tour-1"], ["/overview?tour=2", "tour-2"], ["/funds/meridian-yield-fund?tab=pledges&tour=3", "tour-3"],
-  ["/funds/meridian-yield-fund?tour=4", "tour-4"], ["/loans/33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc?tour=5", "tour-5"],
-  ["/verify?tour=6", "tour-6"], ["/reports/meridian-yield-fund?tour=7", "tour-7"],
 ];
 
 // The judge path: checked on every npm run build.
-export const KEY = ["/overview", "/funds", "/funds/meridian-yield-fund", "/loans/33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc", "/verify", "/features", "/features/double-pledge", "/features/engine", "/features/certificates", "/faq", "/overview?tour=2"];
+export const KEY = ["/overview", "/funds", "/funds/meridian-yield-fund", "/loans/33b1021e2f696e6a5832226e6512df342213901fdc889c9e189f93db6f89cedc", "/verify", "/features", "/features/double-pledge", "/features/engine", "/features/certificates", "/faq", "/trust"];
 
 function findChrome() {
   if (process.env.CHROME && existsSync(process.env.CHROME)) return process.env.CHROME;
@@ -191,7 +188,7 @@ async function main() {
       await s("Emulation.setDeviceMetricsOverride", { width: WIDTH, height: 1000, deviceScaleFactor: 1, mobile: false });
       await s("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
       await s("Page.enable");
-      await s("Page.navigate", { url: base + path });
+      await s("Page.navigate", { url: base + path + (path.includes("?") ? "&" : "?") + "notour=1" }); // the guided tour starts on a first visit; the captures are of the pages
       // wait until the page settles: no skeletons, no "Reading" buttons, for 2 polls in a row (max 25 s)
       let calm = 0;
       for (let t = 0; t < 100 && calm < 3; t++) {

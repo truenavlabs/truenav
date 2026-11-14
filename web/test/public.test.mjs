@@ -137,3 +137,13 @@ test("the recorded judge replay is self-consistent: its evidence_hash is the sha
   const { ephemeral, evidence_hash, ...hashed } = rec;
   assert.equal(createHash("sha256").update(canonical(hashed)).digest("hex"), evidence_hash);
 });
+
+test("UPGRADE_V3 states the real status: v3 pinned and CI built, not deployed, live receipts is v2", () => {
+  const t = readRepo("UPGRADE_V3.md");
+  const head = t.split("\n").slice(0, 6).join("\n");
+  assert.doesNotMatch(head, /local candidate only/i);
+  assert.match(head, /not deployed/i);
+  assert.match(head, /live v2/i);
+  assert.match(head, /5f294c9a/);
+  assert.match(head, /f32949b3/);
+});

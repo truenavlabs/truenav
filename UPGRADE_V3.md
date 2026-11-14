@@ -1,6 +1,6 @@
 # Receipts v3 gated upgrade
 
-Status: local candidate only. No deploy, transaction, key change, secret setup, OutLayer upload or run has been executed for this task. The owner must approve each later live action separately. Testnet only. The production receipts account and the other shared accounts stay untouched until their specific approval.
+Status: v3 is built and pinned, not deployed. Live receipts is v2 (`f32949b3`, `cashflow-v2.1.0`). The v3 receipts build `5f294c9a` was built in the pinned CI image and its upgrade rehearsal (Level 1B) runs in CI. This file is the gated upgrade plan: nothing in it has been run on a live account, and the owner must approve each later live action separately. Testnet only. The production receipts account and the other shared accounts stay untouched until their specific approval.
 
 ## Evidence and frozen boundary
 

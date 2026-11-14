@@ -37,7 +37,7 @@ The API keeps spent nonces and the buyer rate counter in one directory on one ma
 - If the error says `LOCK` is a symlink or a directory: stop the API, remove that `LOCK` path only, leave `state.json` and `READY`, and start again.
 - The IP limiter reads the socket address. It does not trust `X-Forwarded-For` unless `TRUENAV_TRUST_PROXY=1`. When that is set, the client address is `TRUENAV_PROXY_HOPS` from the right (default 1), never the leftmost. A client can prepend forged hops. Leave the flag unset unless the last hop is your proxy.
 
-## Receipts v3 attestation records, local candidate
+## Receipts v3 attestation records (v3 not deployed)
 
 No hardware quote is validated on-chain. A stored proof locator is not an attestation verdict. Frozen v3 receipts remain immutable with attestation_ref=null. The callback separately binds canonical B through body_sha256. Only the designated OutLayer relayer can append proof records; storage is paid, existing records cannot be deleted or overwritten, and exact retries are idempotent. Admin writer rotation requires a pause and never changes old records.
 

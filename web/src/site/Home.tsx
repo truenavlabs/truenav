@@ -1,11 +1,13 @@
-// Home: one viewport, no page scroll. Line field on the left, three tabs and one statement floating on the right,
-// a corner index top left (the intro's dot lands on its marker) and a bottom bar with testnet fixture counts.
-// Below 1024px the tabs sit in their own scroller above the field; the page itself still does not scroll.
+// Home: the first screen is the hero, unchanged: line field on the left, three tabs and one statement floating on the right,
+// a corner index top left (the intro's dot lands on its marker) and a bottom bar with demo fixture counts. The page now
+// scrolls below it into the vision story (story.tsx). Below 1024px the tabs sit in their own scroller above the field.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { FIELD, HeroField, STAGE_W, type Fit } from "../components/HeroE";
 import { Brand } from "../shell/Brand";
 import { A, navigate } from "../ui";
 import { counts } from "./facts";
+import { Notice } from "./Shell";
+import { HomeStory } from "./story";
 
 const DESK = 1024;
 // Desktop crops the stage to a band around the field and the panel, then fits that band inside the box.
@@ -58,12 +60,6 @@ export function Home({ freezeAt }: { freezeAt?: number }) {
     return () => ro.disconnect();
   }, [desk]);
 
-  // The home page is one screen: the document itself never scrolls here.
-  useEffect(() => {
-    document.documentElement.classList.add("tn-lock");
-    return () => document.documentElement.classList.remove("tn-lock");
-  }, []);
-
   // Keys 1 to 3 follow the tabs, unless a modifier is held or focus is in a field.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -104,13 +100,15 @@ export function Home({ freezeAt }: { freezeAt?: number }) {
   );
 
   return (
+    <div className="mk-home">
+    <Notice />
     <div className={`landing ${desk ? "desk" : "mob"}`} style={vars}>
       {desk ? null : (
         <header className="ld-top">
           <span className="ld-mark" data-tn-dot aria-hidden="true" />
           <Brand />
           <A href="/about" className="ld-about mono">About</A>
-          <A href="/overview" className="pillbtn sm">Open app <span aria-hidden="true">→</span></A>
+          <A href="/overview" className="pillbtn sm">Open demo <span aria-hidden="true">→</span></A>
         </header>
       )}
       {desk ? (
@@ -129,7 +127,7 @@ export function Home({ freezeAt }: { freezeAt?: number }) {
       </div>
       <footer className="ld-bar">
         {desk ? <Brand /> : null}
-        <dl className="ld-counts" aria-label="Testnet fixture counts">
+        <dl className="ld-counts" aria-label="Demo fixture counts">
           {counts().map((c) => (
             <div key={c.label} title={`from ${c.source}`}>
               <dt className="mono">{c.label}</dt>
@@ -138,11 +136,14 @@ export function Home({ freezeAt }: { freezeAt?: number }) {
           ))}
         </dl>
         <div className="ld-meta mono">
-          <span>testnet fixture counts</span>
-          <span>near testnet · synthetic data</span>
+          <span>demo fixture counts, not traction</span>
+          <span>near testnet · fictional funds</span>
         </div>
-        {desk ? <A href="/overview" className="pillbtn">Open app <span aria-hidden="true">→</span></A> : null}
+        <a href="#story" className="ld-down mono">The story <span aria-hidden="true">↓</span></a>
+        {desk ? <A href="/overview" className="pillbtn">Open demo <span aria-hidden="true">→</span></A> : null}
       </footer>
+    </div>
+    <HomeStory />
     </div>
   );
 }

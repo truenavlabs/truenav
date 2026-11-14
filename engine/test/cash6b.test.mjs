@@ -13,7 +13,7 @@ const NOW_MS = Date.parse(NOW);
 const r2 = (x) => Math.round(x * 100) / 100;
 const mk = (over) => fund("C", "mgr-c", [loan("C-1")], 1100000, { cash: 100000, ...over });
 const run = (over) => E.scoreFund(model, mk(over), opts);
-const at = (ms) => new Date(NOW_MS + ms).toISOString();
+const at = (ms) => new Date(NOW_MS + ms).toISOString().replace(/\.\d{3}Z$/, "Z");
 
 test("valid attestation within 168 h attests cash: 100 green", () => {
   const r = run({ cash_attested: true, cash_asof: ago(12) });

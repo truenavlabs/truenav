@@ -72,11 +72,35 @@ const isId = (x) => (typeof x === "string" && x.length > 0) || isNum(x);
 const own = (obj, key) => (obj !== null && typeof obj === "object" && Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined);
 const toCents = (x) => Math.round(x * 100);
 
-/** Strict ISO 8601 date-time with a time zone, as required for cash_asof (6b). */
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:\d{2})$/;
+/**
+ * The one timestamp parser. Accepts exactly YYYY-MM-DDTHH:MM:SSZ (20 ASCII characters, UTC, a real Gregorian date),
+ * like timestamp() in engine/v3-core/src/wire.rs, and returns milliseconds since the epoch. Everything else, including
+ * offsets, fractions, missing seconds, date-only, 24:00, lowercase t or z and non-strings, is NaN: an unknown time.
+ * It never uses Date.parse, so the result cannot depend on the process time zone or on engine-specific date formats.
+ */
+const UTC_SECONDS = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/;
+export function parseUtcMs(x) {
+  if (typeof x !== "string") return NaN;
+  const m = UTC_SECONDS.exec(x);
+  if (!m) return NaN;
+  const [y, mo, d, h, mi, se] = m.slice(1).map(Number);
+  const leap = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+  const monthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+  if (y < 1 || mo < 1 || mo > 12 || d < 1 || d > monthDays || h > 23 || mi > 59 || se > 59) return NaN;
+  // days from civil, the same arithmetic as wire.rs
+  const yy = y - (mo <= 2 ? 1 : 0);
+  const era = Math.floor(yy / 400);
+  const yoe = yy - era * 400;
+  const mp = mo + (mo > 2 ? -3 : 9);
+  const doy = Math.floor((153 * mp + 2) / 5) + d - 1;
+  const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+  const days = era * 146097 + doe - 719468;
+  return (((days * 24 + h) * 60 + mi) * 60 + se) * 1000;
+}
 
+/** A timestamp string is read by parseUtcMs. A finite number is already milliseconds (the engine API takes a numeric `now`). */
 function parseTime(x) {
-  if (typeof x === "string") return Date.parse(x);
+  if (typeof x === "string") return parseUtcMs(x);
   if (isNum(x)) return x;
   return NaN;
 }
@@ -459,7 +483,7 @@ export function scoreFund(model, fund, opts = {}) {
   let cashStatus = cashClaimed ? "valid" : "not claimed";
   let cashAgeH = null;
   if (cashClaimed) {
-    const t = typeof f.cash_asof === "string" && ISO_DATE.test(f.cash_asof) ? Date.parse(f.cash_asof) : NaN;
+    const t = parseUtcMs(f.cash_asof);
     if (!Number.isFinite(t)) {
       cashStatus = "invalid";
       flags.push("attestation date invalid");

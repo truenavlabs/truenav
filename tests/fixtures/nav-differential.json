@@ -1,5 +1,5 @@
 {
-  "_note": "Codex differential audit (14 Nov 2026), JS score.mjs vs Rust outlayer/engine-v3 nav.rs. Both engines must give the expected result. Default model, empty certificate history. D3 (DIFF-03/04): only the exact form YYYY-MM-DDTHH:MM:SSZ is a time (timestamp() in engine/v3-core/src/wire.rs); offsets, fractions and date-only are unknown in both engines.",
+  "_note": "Codex differential audit (14 Nov 2026), JS score.mjs vs Rust outlayer/engine-v3 nav.rs. Both engines must give the expected result. Default model, empty certificate history. D3 (DIFF-03/04): only the exact form YYYY-MM-DDTHH:MM:SSZ is a time (timestamp() in engine/v3-core/src/wire.rs); offsets, fractions and date-only are unknown in both engines. D4 (RT3-04): a verified line counts toward Policy NAV at most its EAD in both engines.",
   "now": "2026-11-14T00:00:00Z",
   "cases": [
     {
@@ -103,6 +103,36 @@
         ]
       },
       "expected": { "status": "scored", "score": 100, "band": "green", "freshness": 20 }
+    },
+    {
+      "name": "D4 verified line marked 9x its EAD counts at its EAD in Policy NAV (RT3-04)",
+      "fund": {
+        "fund_id": "audit-fund",
+        "headline_nav": 2000000,
+        "cash": 0,
+        "nav_report_date": "2026-11-14T00:00:00Z",
+        "certificate": { "data_asof": "2026-11-14T00:00:00Z" },
+        "loans": [
+          { "id": "V", "principal": 1000000, "accrued": 0, "repaid": 0, "reported_value": 9000000, "asset": "real_estate", "bucket": "current", "nft": true, "nft_id": "N", "servicer_asof": "2026-11-14T00:00:00Z" },
+          { "id": "U", "principal": 1000000, "accrued": 0, "repaid": 0, "asset": "real_estate", "bucket": "current", "nft": false, "servicer_asof": "2026-11-14T00:00:00Z" }
+        ]
+      },
+      "expected": { "status": "scored", "score": 24, "band": "red", "freshness": 20 }
+    },
+    {
+      "name": "D4 verified line marked 1000x its EAD counts at its EAD in Policy NAV (RT3-04)",
+      "fund": {
+        "fund_id": "audit-fund",
+        "headline_nav": 2000000,
+        "cash": 0,
+        "nav_report_date": "2026-11-14T00:00:00Z",
+        "certificate": { "data_asof": "2026-11-14T00:00:00Z" },
+        "loans": [
+          { "id": "V", "principal": 1000000, "accrued": 0, "repaid": 0, "reported_value": 1000000000, "asset": "real_estate", "bucket": "current", "nft": true, "nft_id": "N", "servicer_asof": "2026-11-14T00:00:00Z" },
+          { "id": "U", "principal": 1000000, "accrued": 0, "repaid": 0, "asset": "real_estate", "bucket": "current", "nft": false, "servicer_asof": "2026-11-14T00:00:00Z" }
+        ]
+      },
+      "expected": { "status": "scored", "score": 20, "band": "red", "freshness": 20 }
     }
   ]
 }

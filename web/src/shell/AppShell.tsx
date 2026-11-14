@@ -31,14 +31,14 @@ const NAV: { group: string; items: Item[] }[] = [
     { href: "/data", label: "Raw chain data" },
   ] },
   { group: "Learn", items: [
-    { href: "/methodology", label: "Methodology" },
+    { href: "/app/methodology", label: "Methodology" },
     { href: "/trust", label: "Trust and privacy" },
     { href: "/glossary", label: "Glossary" },
     { href: "/faq", label: "FAQ" },
   ] },
   { group: "More", items: [
     { href: "/status", label: "Data status" },
-    { href: "/roadmap", label: "Roadmap" },
+    { href: "/app/roadmap", label: "Roadmap" },
     { href: "/support", label: "Support" },
   ] },
 ];

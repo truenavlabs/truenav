@@ -1,10 +1,7 @@
 import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Loader, shouldShowLoader } from "./components/Loader";
 import { prefersReducedMotion } from "./lib/motion";
-import { About } from "./site/About";
-import { Home } from "./site/Home";
-import { Product } from "./site/Product";
-import { Technology } from "./site/Technology";
+import { SITE_PAGES, SITE_PATHS, siteKey } from "./site/pages";
 import { AppShell } from "./shell/AppShell";
 import { RegistryProvider } from "./shell/store";
 import { WalletProvider } from "./shell/wallet";
@@ -15,17 +12,32 @@ import { appRoute } from "./routes";
 
 const FADE_MS = 200;
 
-function Site({ path }: { path: string }) {
-  const url = new URL(path, "http://truenav.local");
-  const p = url.pathname.replace(/\/+$/, "") || "/";
-  if (p === "/") return <Home freezeAt={url.searchParams.has("t") ? parseFloat(url.searchParams.get("t") || "0") : undefined} />;
-  if (p === "/product") return <Product />;
-  if (p === "/technology") return <Technology />;
-  if (p === "/about") return <About />;
-  return null;
+const DEFAULT_DESC = "TrueNav demo app: independent value checks for tokenized private-credit funds on NEAR testnet. Fictional funds and data.";
+
+function setMeta(title: string, description: string) {
+  document.title = title;
+  let m = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+  if (!m) {
+    m = document.createElement("meta");
+    m.name = "description";
+    document.head.appendChild(m);
+  }
+  m.content = description;
 }
 
-const SITE = new Set(["/", "/product", "/technology", "/about"]);
+function Site({ path }: { path: string }) {
+  const url = new URL(path, "http://truenav.local");
+  const p = siteKey(url.pathname);
+  const def = SITE_PAGES[p];
+  useEffect(() => {
+    if (def) setMeta(def.title, def.description);
+  }, [def]);
+  if (!def) return null;
+  if (p === "/") return <def.C freezeAt={url.searchParams.has("t") ? parseFloat(url.searchParams.get("t") || "0") : undefined} />;
+  return <def.C />;
+}
+
+const SITE = SITE_PATHS;
 const pageOf = (path: string) => path.split(/[?#]/)[0];
 
 function usePageFade(path: string) {
@@ -53,7 +65,7 @@ function usePageFade(path: string) {
 function AppPage({ path }: { path: string }): ReactNode {
   const Page = appRoute(path);
   useEffect(() => {
-    document.title = `${Page.title} · TrueNav (testnet)`;
+    setMeta(`${Page.title} · TrueNav (testnet)`, DEFAULT_DESC);
   }, [Page.title]);
   return (
     <AppShell path={path}>

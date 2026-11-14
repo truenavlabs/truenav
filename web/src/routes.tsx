@@ -63,9 +63,9 @@ export function appRoute(path: string): R {
   if (p === "/glossary") return r(P.Glossary, "Glossary");
   if (p === "/support") return r(P.Support, "Support");
   if (p === "/trust") return r(P.Trust, "Trust and privacy");
-  if (p === "/methodology" || p === "/how") return r(P.Methodology, "Methodology");
+  if (p === "/app/methodology" || p === "/how") return r(P.Methodology, "Methodology");
   if (p === "/status" || p === "/sources") return r(P.Status, "Data status");
-  if (p === "/roadmap") return r(P.Roadmap, "Roadmap");
+  if (p === "/app/roadmap") return r(P.Roadmap, "Roadmap");
   if ((m = p.match(/^\/reports\/([^/]+)$/)) && SLOTS.Report) return r(SLOTS.Report, "Report", { fundId: decodeURIComponent(m[1]) });
   if ((m = p.match(/^\/(investor|manager|auditor)$/)) && SLOTS.roleHome?.[m[1] as "investor"]) return r(SLOTS.roleHome[m[1] as "investor"]!, m[1][0].toUpperCase() + m[1].slice(1));
   if (p === "/markets" && SLOTS.Markets) return r(SLOTS.Markets, "Markets");

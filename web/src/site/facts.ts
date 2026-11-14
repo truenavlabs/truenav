@@ -16,11 +16,11 @@ export function counts(): Count[] {
   const blocked = rows.map((r) => EXACT[r.blocked_attempts]);
   const exact = blocked.every((n) => n !== undefined);
   return [
-    { value: String(rows.length), label: "funds scored", source: "src/fixtures/*-score.json" },
-    { value: String(reports.filter((r) => r.receipt && r.receipt_sha256).length), label: "receipts issued", source: "src/fixtures/*-report.json" },
+    { value: String(rows.length), label: "demo funds scored", source: "src/fixtures/*-score.json" },
+    { value: String(reports.filter((r) => r.receipt && r.receipt_sha256).length), label: "demo receipts issued", source: "src/fixtures/*-report.json" },
     {
       value: exact ? String(blocked.reduce((a, b) => a + b, 0)) : "n/a",
-      label: "double pledges refused",
+      label: "demo double pledges refused",
       source: "blocked_attempts in src/fixtures/*-score.json",
     },
   ];

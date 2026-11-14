@@ -209,8 +209,11 @@ These links will be filled at launch. They are placeholders.
 - **Other chains (Q-002).** TrueNav is not an existing product brought over from another chain. The Base Sepolia mirror is a Chain Signatures path so an EVM reader can see a receipt reference. It lives in `mirror/` and `receipts/src/mirror.rs`. It is not deployed.
 - **Libraries and tools (Q-005).** Pinned in `package-lock.json` and the Cargo lockfiles: near-sdk 5.30.1 and near-contract-standards (Rust), near-api-js 7.3.1, near-sandbox 0.3.4, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0, `@phala/dcap-qvl` 0.7.0, ganache 7.9.2, solc 0.8.30, viem 2.38.5, Python `jsonschema` 4.23.0, cargo-near and the `sourcescan/cargo-near:0.22.0-rust-1.99.0` build image. Runtime services: NEAR AI Cloud (`Qwen/Qwen3-VL-30B-A3B-Instruct`), OutLayer, NVIDIA NRAS for GPU attestation.
 - **AI tools (Q-005).** Code, tests and docs were written with cloud coding agents and AI assistants (including Claude Code, Codex and Cursor cloud agents) under the team's direction and review. Outside models (GPT-5.5, Gemini 3.1 Pro, Claude Opus 5.5 via OpenRouter) gave second opinions on scoring rules and contract audit findings. The findings and the status we gave each are in `AUDIT_FINDINGS.md`.
-- **Other project by the same person (Q-015).** TendAI Custody is a separate, independent NEAR HACKATHON entry by the same person. The two projects share no code, contracts or testnet accounts.
 - **Demo (Q-012).** The demo video, X post and hosted app are not published yet. Placeholders are in [Demo](#demo) and will be filled at launch. Every step in [docs/TRY_IT.md](docs/TRY_IT.md) runs locally with no keys or funds.
+
+## Other entry (Q-015 disclosure)
+
+The same submitter also entered [TendAI Custody](https://tendaicustody.com) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other.
 
 Built at NEAR HACKATHON 2026 by TrueNav Labs. Repository: [https://github.com/truenavlabs/truenav](https://github.com/truenavlabs/truenav).
 

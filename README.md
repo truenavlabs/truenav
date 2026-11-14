@@ -12,7 +12,7 @@ TrueNav informs only. It does not block any transfer. Testnet and fictional data
 
 ## Try it
 
-No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Everything runs offline or against public testnet views. Steps 1 to 6 were re-run from a fresh checkout of `main` at `5833c91` on 12 Nov 2026 (Asia/Bangkok, UTC+7), and step 3 again after the RT2 tests below were added, on Linux x64 with Node v24.22.1, npm 11.21.1, Python `jsonschema` 4.26.0 and system Rust 1.85.1 (no Rust 1.99.0). All six took about 2 min 15 s together; `npm test` is the long step. Full expected output for each step is in [Expected output](#expected-output).
+No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Everything runs offline or against public testnet views. `npm test` was run from `952bad9` on 14 Nov 2026 (Asia/Bangkok, UTC+7) on Linux x64 with Node v24.22.1, npm 11.21.1, system Python 3 with no importable `jsonschema`, and system Rust 1.85.1 (no Rust 1.99.0). Steps 2, 4, 5 and 6 were last recorded from a fresh checkout of `5833c91` on 12 Nov 2026; they were not re-run for `952bad9`. `npm test` is the long step. Full expected output for each step is in [Expected output](#expected-output).
 
 ```bash
 npm ci
@@ -28,7 +28,7 @@ npm run check:fixtures
 2. Do: `npm run judge -- --replay`
    See: one `PASS` line for each of 10 stages (S1 fixtures, S2 tamper, S3 engine, S4 v3 pin, S5 failed head, S6 paid report, S7 dashboard data, S8 mirror, S9 attest local subset, S10 stamp), then `judge: 10 of 10 stages PASS, 0 skipped not verified, ok true`, and exit 0. It runs offline in about 14 s (13.6 and 13.7 s measured on 12 Nov 2026, 14.1 s on a second fresh clone the same day) and writes `out/judge-replay.json`. Details in [Step 2](#step-2-npm-run-judge-----replay).
 3. Do: `npm test`
-   See: `ℹ tests 498`, `ℹ pass 497`, `ℹ fail 0`, `ℹ skipped 1`, then `All worked example numbers match.` Takes about 2 minutes (116.6 s measured on 12 Nov 2026; 114.7 s for the 492 tests before the RT2 tests were added). The 1 skipped test is the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs`. It needs Rust 1.99.0 cargo (`rustup +1.99.0`, or cargo 1.99 on `PATH`) and prints that reason when it is missing. With Rust 1.99.0 on `PATH` the expected counts are `tests 498`, `pass 498`, `skipped 0` (inferred: `492 / 492 / 0` was reported from another machine before the 6 RT2 tests were added; not reproduced on the machine above). The four Python schema tests need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON` (CI pins 4.23.0; 4.26.0 also passes). Without it they are skipped as well, so up to 5 tests can be skipped, and the suite still exits 0. When the output is not a terminal, the same counts print as `# tests 498`, `# pass 497`.
+   See: exit 0 and `fail 0`, then `All worked example numbers match.` The exact test and skip counts move as tests are added, and skips depend on whether Rust 1.99.0 cargo and an importable Python `jsonschema` are on PATH. Recompute with `npm test` (when the output is not a terminal, the same fields print as `# tests`, `# pass`, `# fail`, `# skipped`). On 14 Nov 2026, from `952bad9` on this machine (no Rust 1.99.0, no `jsonschema`): `tests 818`, `pass 813`, `fail 0`, `skipped 5`. CI job `fresh-clone` records the counts. The 5 skipped tests here are the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs` (needs Rust 1.99.0 cargo: `rustup +1.99.0`, or cargo 1.99 on `PATH`) and the four Python files `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` (need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON`; CI pins 4.23.0). With both tools present, those five run as well. The suite still exits 0 when they are skipped.
 4. Do: `npm run demo`
    See: `T1-altered-amount ... -> flag amount_mismatch`, `T2-hidden-injection ... -> flag amount_mismatch, injection_attempt`, `T3-duplicate-as-new ... -> flag duplicate_document`, `honest documents: 16 of 16 pass, every signature checked`, then Harbor `99.17 green` and, after the T1 flag, `51.59 red`.
 5. Do: `npm run eval`
@@ -38,7 +38,7 @@ npm run check:fixtures
 
 ## Expected output
 
-Docker is not needed for these steps. The sandbox end-to-end jobs that need Docker were not run locally. They run in CI. `.github/workflows/ci.yml` has 9 jobs: engine, contract, engine-v2, engine-v3, receipts, sandbox, judge-path, fresh-clone and secrets. All 9 passed on `main` at `5833c91` in [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646) (12 Nov 2026). `receipts-pinned-build.yml` is a separate workflow and is not in that count.
+Docker is not needed for these steps. The sandbox end-to-end jobs that need Docker were not run locally. They run in CI. `.github/workflows/ci.yml` has 9 jobs: engine, contract, engine-v2, engine-v3, receipts, sandbox, judge-path, fresh-clone and secrets. Count them in that file. `receipts-pinned-build.yml` is a separate workflow and is not in that count. Check the Actions run for the commit you have checked out; do not treat an older run as the current result. For history: all 9 passed on `5833c91` in [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646) (12 Nov 2026).
 
 ### Step 2: `npm run judge -- --replay`
 
@@ -67,7 +67,7 @@ How it behaves:
 - Offline. Each stage runs as a child process with a fixed minimal environment (no keys, RPC URLs or accounts from your shell) and loads `judge/no-network.mjs`, which refuses outside network calls. Any refused call fails that stage.
 - Exit 0 only if every selected stage passes; 1 on any failure; 2 on a usage error.
 - `out/judge-replay.json` follows `judge/summary.schema.json`. It has each stage's status, claim and evidence, the pins, any skips, and `evidence_hash`, the sha256 of the canonical summary without its `ephemeral` part (time, durations, Node version, fixture days left). The hash includes the commit id, so it differs per commit.
-- `--with-tests` adds `npm test` as stage TESTS. It ends with `judge: 11 of 11 stages PASS` when every selected npm test passes. Skipped tests, if any, are listed as not verified. The `npm test` counts themselves are in [Step 3](#step-3-npm-test) (12 Nov 2026: 498 tests, 497 pass, 0 fail, 1 skipped without Rust 1.99.0).
+- `--with-tests` adds `npm test` as stage TESTS. It ends with `judge: 11 of 11 stages PASS` when every selected npm test passes. Skipped tests, if any, are listed as not verified. The `npm test` counts themselves are in [Step 3](#step-3-npm-test). Recompute with `npm test`; do not treat an older count as current.
 - `--live` is not built. It prints `--live is not built: live reads run in CI only` and exits 2. The live reads are the optional steps below.
 - If this machine cannot listen on 127.0.0.1, the judge prints a `WARN` line first, saying loopback is unavailable and that S5, S6, S7 and S8 will fail, and each of those failures is labelled "this is a sandbox limit, not a product failure". Those four stages start a local API or a local EVM.
 
@@ -86,14 +86,16 @@ export TRUENAV_PYTHON=python3   # optional: the interpreter that has jsonschema 
 npm test
 ```
 
+On 14 Nov 2026, from `952bad9` on this machine (no Rust 1.99.0, no importable `jsonschema`):
+
 ```
-ℹ tests 498
-ℹ pass 497
+ℹ tests 818
+ℹ pass 813
 ℹ fail 0
-ℹ skipped 1
+ℹ skipped 5
 ```
 
-and then:
+Those counts will move. The rule is exit 0 and `fail 0`. Then the worked-example check prints:
 
 ```
 Harbor Credit Fund
@@ -123,7 +125,7 @@ Meridian Yield Fund
 All worked example numbers match.
 ```
 
-The 1 skipped test on 12 Nov 2026 (no Rust 1.99.0, `jsonschema` 4.26.0 present) is `OutLayer serde_json::to_string(returned B) output_hash equals the stored body_sha256`, with the reason `Rust 1.99.0 cargo not found (rustup +1.99.0 or cargo 1.99 on PATH)`. The four Python files `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` ran and passed. Without an importable `jsonschema` those four are skipped too (5 skipped). The suite still exits 0.
+The 5 skipped tests on this machine on 14 Nov 2026 (no Rust 1.99.0, no importable `jsonschema`) are `OutLayer serde_json::to_string(returned B) output_hash equals the stored body_sha256`, with the reason `Rust 1.99.0 cargo not found (rustup +1.99.0 or cargo 1.99 on PATH)`, and the four Python files `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py`. CI runs those five. The suite still exits 0 when they are skipped.
 
 ### Step 4: `npm run demo`
 
@@ -208,7 +210,7 @@ Two parts are still tied to 718ca9 names on purpose, and do not run on 368aa2:
 
 ## Claims and how to verify each
 
-Contract claims run in CI job `contract` (`cargo test` in `contract/`). It needs the Rust 1.97.0 toolchain from `rust-toolchain.toml` through rustup, so it was not run on the machine above. `contract/tests/*.rs` has 87 `#[test]` functions (counted in source with `rg -c '#\[test\]' contract`, not from a test run).
+Contract claims run in CI job `contract` (`cargo test` in `contract/`). It needs the Rust 1.97.0 toolchain from `rust-toolchain.toml` through rustup, so it was not run on the machine above. Recompute the source count with `rg -c '#\[test\]' contract/tests`. On 14 Nov 2026 that command counted 105 `#[test]` functions in `contract/tests/*.rs`. That is a source count, not a `cargo test` run.
 
 | Claim | How to verify | Status (12 Nov 2026) |
 | --- | --- | --- |
@@ -218,7 +220,7 @@ Contract claims run in CI job `contract` (`cargo test` in `contract/`). It needs
 | The contract stores a TEE verdict only if the signature recovers (`env::ecrecover`) to a registered TEE signer. Edited replies, unregistered signers, wrong contract or network, expired and replayed verdicts are refused. | `contract/src/lib.rs`, `contract/tests/tee_verdicts.rs` | Same CI job |
 | Each role (admin, registrar, pauser, servicer) is refused every other role's job. | `contract/tests/roles.rs` | Same CI job |
 | The TEE flags an altered amount, a hidden prompt injection and a reused document, and passes 16 of 16 honest documents. Every reply signature is checked. | `npm run demo`, judge S2 | Run locally, 12 Nov 2026 |
-| Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. | `npm test` (ends with `node spec/nav/check.mjs`), judge S3 | Run locally on 12 Nov 2026: 498 tests, 497 pass, 0 fail, 1 skipped (OutLayer output parity, needs Rust 1.99.0) |
+| Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. | `npm test` (ends with `node spec/nav/check.mjs`), judge S3 | Run locally on 14 Nov 2026 from `952bad9`: 0 fail (see [Step 3](#step-3-npm-test) for that run's counts and skips). Recompute with `npm test`. |
 | TEE eval: 126 signed replies, 0 extra fields, 100% precision and recall on this synthetic set. | `npm run eval`, judge S3; limits in `tee/eval/REPORT.md` | Run locally, 12 Nov 2026 |
 | Recorded verdicts are at least 10 days from expiry and match the published attestation report. | `npm run check:fixtures`, judge S1 | Run locally, 12 Nov 2026 |
 | On a failed head, `/report` returns 409 `run_failed`, the entitlement is not used, and the agent buys nothing. This holds when the head the API reads is failed: the API refuses before it redeems. One window is open: see RT2-07 in [Security and limits](#security-and-limits). | `api/test/failed-head.test.mjs`, `agent/test/failed-head.test.mjs` (in `npm test`), judge S5; the RT2-07 window in `tests/security/rt2-report-race.test.mjs` | Passed locally, 12 Nov 2026 |
@@ -226,9 +228,9 @@ Contract claims run in CI job `contract` (`cargo test` in `contract/`). It needs
 | The agent accepts only the engine hash pinned in `receipts/v3-build.json`. Any other engine is declined `engine_hash`. | `agent/test/engine-pin.test.mjs` (in `npm test`), judge S4 | Passed locally, 12 Nov 2026 |
 | A wasm swapped after stamping is detected as stale. | `receipts/tests/wasm-stamp-integrity.test.mjs` (in `npm test`), judge S10 | Passed locally, 12 Nov 2026 |
 | The Base mirror contract accepts only the MPC signer and a rising sequence per token (local EVM, not deployed). | `mirror/test/mirror.test.mjs` (in `npm test`), judge S8 | Passed locally, 12 Nov 2026 |
-| Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts`, [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646) on `5833c91`. Not run locally |
-| Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from an earlier CI job `receipts` log: `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR`. Not re-read for `5833c91` (unverified for this commit) |
-| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path, fresh-clone. | CI workflow `.github/workflows/ci.yml` | 9 of 9 jobs green on `5833c91`: [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646), 12 Nov 2026 |
+| Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts` on `5833c91`, [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646) (12 Nov 2026). Not re-checked for `952bad9` (unverified for this commit). Not run locally. |
+| Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from an earlier CI job `receipts` log: `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR`. Not re-read for `952bad9` (unverified for this commit). |
+| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path, fresh-clone. | CI workflow `.github/workflows/ci.yml` (9 jobs; count them in the file) | Check the Actions run for the commit you have checked out. For history: 9 of 9 jobs green on `5833c91` in [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646), 12 Nov 2026. Not claimed for `952bad9` here (unverified in this file). |
 | Production `npm audit` has no high or critical findings. | `npm audit --omit=dev --audit-level=high` | Exit 0 locally on 12 Nov 2026 with `2 low severity vulnerabilities`; also a step of CI job `engine` |
 | The current testnet registry's on-chain scores match a local recompute. TEE verdicts for this contract are on chain (16 pass). | `npm run chain:read` | Exit 0 on 12 Nov 2026 against `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`): Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), 11 + 5 verdicts on chain, all pass. The earlier instance `registry.tnlab-718ca9.testnet` (source `d37b9d2`) still holds recorded TEE verdicts; read it with `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read` |
 

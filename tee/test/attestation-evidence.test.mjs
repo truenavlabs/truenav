@@ -116,7 +116,7 @@ test("it never claims more than the checks prove: the statements are fixed text,
   const all = JSON.stringify([s.proves, s.not_proves, lastVerifiedLine(s)]);
   assert.doesNotMatch(all, /guarantee|trustless|zero.knowledge|tamper.proof|unhackable|fully verified|certified|proves (the )?(model|underwriter) (is|was) correct/i);
   const np = s.not_proves.join(" ");
-  for (const must of ["judgment", "MRTD", "NVIDIA", "TLS", "prompt", "recorded run", "hardware"]) assert.ok(np.includes(must), `not_proves does not mention ${must}`);
+  for (const must of ["judgment", "MRTD", "NVIDIA", "TLS", "prompt", "recorded run", "hardware", "earlier OutLayer project"]) assert.ok(np.includes(must), `not_proves does not mention ${must}`);
   for (const must of ["Intel", "approved", "nonce", "19 recorded verdicts"]) assert.ok(s.proves.join(" ").includes(must), `proves does not mention ${must}`);
   assert.doesNotMatch(JSON.stringify(s), /[\u2013\u2014]/);
 });

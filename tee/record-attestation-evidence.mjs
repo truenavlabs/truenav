@@ -45,6 +45,7 @@ export const NOT_PROVES = [
   "That the report's TLS certificate matches the live HTTPS connection to NEAR AI Cloud.",
   "Which prompt the servicer sent. A signed pass shows that the attested model replied to a request with that hash.",
   "That the registry holds these fingerprints. The fingerprint check reads no pledge state from the chain; it shows where the recorded loan hashes came from.",
+  "That these are the fingerprints a new pledge would use. The recorded runs come from the earlier OutLayer project (servicer.tnlab-718ca9.testnet/truenav-fingerprint); their attestations still verify.",
   "That the hardware itself is sound. Intel TDX and NVIDIA confidential computing, and the vendors' attestation services, are assumptions.",
   "That anything was re-run just now. This is a recorded run; repeat it with the two commands above.",
 ];

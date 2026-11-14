@@ -106,6 +106,22 @@ jobs:
       - run: npm ci
       - name: Pinned engine hash and committed vector conformance
         run: node outlayer/engine-v3/check-local.mjs
+      - name: Engine wasm sha256 and size are printed and must equal receipts/v3-build.json
+        run: |
+          f=outlayer/engine-v3/target/pinned/wasm32-wasip2/release/truenav-engine-v3.wasm
+          got=$(sha256sum "$f" | cut -d' ' -f1)
+          want=$(node -e "process.stdout.write(require('./receipts/v3-build.json').engine.sha256)")
+          bytes=$(stat -c %s "$f")
+          echo "engine-v3 wasm sha256 $got bytes $bytes (pin $want)"
+          echo "engine-v3 wasm: sha256 \`$got\`, $bytes bytes" >> "$GITHUB_STEP_SUMMARY"
+          test -n "$want" && test "$got" = "$want" || { echo "::error::engine-v3 wasm $got does not match the pin $want"; exit 1; }
+      - name: Upload the pinned engine wasm (only after the hash check passed)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: truenav-engine-v3-wasm
+          path: outlayer/engine-v3/target/pinned/wasm32-wasip2/release/truenav-engine-v3.wasm
+          if-no-files-found: error
+          retention-days: 30
       - name: Backend Clippy
         run: |
           cargo +1.99.0 clippy --locked --all-targets --manifest-path engine/v3-core/Cargo.toml -- -D warnings
@@ -183,6 +199,8 @@ jobs:
         run: ulimit -n 65535 && npm run e2e:receipts
       - name: V3 migration and metered callback from the retained v2 wasm
         run: ulimit -n 65535 && node receipts/e2e/v3-sandbox.mjs
+      - name: Level 1B rehearsal of the live upgrade (exact f32949b3 bytes to the pinned 5f294c9a, rollback, code-only re-entry)
+        run: ulimit -n 65535 && node receipts/e2e/v3-rehearsal-l1b.mjs
       - name: Mirror with a mocked signer on the local sandbox
         run: ulimit -n 65535 && npm run e2e:mirror
 

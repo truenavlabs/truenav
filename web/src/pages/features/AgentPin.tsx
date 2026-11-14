@@ -19,14 +19,14 @@ export default function AgentPin() {
         <p className="dim">The agent accepts a v3 score only from the engine build with this hash ({short(pin, 8, 4)}). Anything else is declined as engine_hash and nothing is bought.</p>
       </Panel>
       <div className="hrow mt" style={{ gap: 6, flexWrap: "wrap" }}>
-        {vs.map(([n], i) => <button key={n} className={`chipbtn${i === k ? " on" : ""}`} onClick={() => setK(i)}>{n}</button>)}
+        {vs.map(([n], i) => <button key={n} data-tour={i === 1 ? "agent-variant" : undefined} className={`chipbtn${i === k ? " on" : ""}`} onClick={() => setK(i)}>{n}</button>)}
       </div>
       <div className="twocol mt">
         <div>
           <h3>Receipt the agent reads</h3>
           <pre className="raw">{r ? JSON.stringify({ ...r, version_key: r.version_key ? short(String(r.version_key), 8, 4) : undefined, engine_version_key: r.engine_version_key ? short(String(r.engine_version_key), 8, 4) : undefined, engine_code_sha256: r.engine_code_sha256 ? short(String(r.engine_code_sha256), 8, 4) : undefined }, null, 1) : "none stored"}</pre>
         </div>
-        <div>
+        <div data-tour="agent-decision">
           <h3>Agent decision: {name}</h3>
           <Note tone={tone}><b>{d.action}</b> ({d.reason}): {d.detail}</Note>
           <p className="dim">{d.action === "decline" ? "Nothing is bought." : d.action === "review" ? "Held for a human; nothing is bought automatically." : "The agent may buy the report."}</p>

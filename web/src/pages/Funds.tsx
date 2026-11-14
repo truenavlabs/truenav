@@ -30,7 +30,7 @@ export default function Funds() {
     <>
       <PageHead title="Funds" lead="Every fund registered on the TrueNav testnet registry, with its latest signed certificate and what the chain says about its loans." crumbs={[["Overview", "/overview"], ["Funds"]]} />
       <Panel title="Reported NAV against TrueRange" tags={<SrcTag tag={tag} />}><NavRangeChart funds={all} /></Panel>
-      <Panel className="mt" title="All funds" pad={false} right={
+      <Panel className="mt" title="All funds" pad={false} tour="funds-table" right={
         <div className="hrow">
           <label className="f" style={{ display: "flex", gap: 6, alignItems: "center" }}><Q id="band">Band</Q>
             <select value={band} onChange={(e) => setBand(e.target.value)}><option value="all">all</option><option>green</option><option>yellow</option><option>red</option></select>

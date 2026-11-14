@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { fundSummary, verdictState } from "../../data/derive.mjs";
 import { NavRangeChart } from "../shell/charts";
 import { useRecompute } from "../shell/engine";
@@ -6,7 +5,7 @@ import { accountUrl, assetLabel, countdown, fundName, int, short, usd, usdM, whe
 import { Band, DataTable, Ext, Hash, Kpi, Note, PageHead, Panel, Q, SrcTag, Tabs, type Col } from "../shell/kit";
 import { SLOTS } from "../shell/slots";
 import { useRegistry, type Registry } from "../shell/store";
-import { A } from "../ui";
+import { A, navigate } from "../ui";
 
 type L = Registry["loans"][number];
 
@@ -14,7 +13,9 @@ export default function Fund({ fundId, tab: initialTab }: { fundId: string; tab?
   const { view, tag, now } = useRegistry();
   const f = fundSummary(view, fundId, now);
   const rc = useRecompute(view).find((x) => x.r.fundId === fundId);
-  const [tab, setTab] = useState(initialTab || "overview");
+  const tab = initialTab || "overview";
+  // The tab lives in the URL (other parameters are kept), so a link, the back button and the tour can all set it.
+  const setTab = (t: string) => { const u = new URL(window.location.href); u.searchParams.set("tab", t); navigate(u.pathname + u.search); };
   if (!f || (!f.registered && tag === "live")) {
     return (
       <>
@@ -109,7 +110,7 @@ export default function Fund({ fundId, tab: initialTab }: { fundId: string; tab?
       {tab === "loans" ? (
         <>
           <Note tone="info">Public view: exactly what the chain shows. Loans appear by hash, asset type, pledge time and verdict. Principal, borrower and documents never reach the chain.</Note>
-          <Panel className="mt" title="Pledged loans" pad={false} tags={<SrcTag tag={tag} source="nft_tokens, get_lock, get_latest_verdict, get_flag_count" />}>
+          <Panel className="mt" title="Pledged loans" pad={false} tour="loan-book" tags={<SrcTag tag={tag} source="nft_tokens, get_lock, get_latest_verdict, get_flag_count" />}>
             <DataTable rows={loans} cols={loanCols} csvName={`truenav-${fundId}-loans`} rowKey={(l) => l.loan_hash} onRow={(l) => `/loans/${l.loan_hash}`} initial={{ key: "pledged", dir: 1 }} empty="No pledged loans yet." />
           </Panel>
         </>

@@ -34,7 +34,7 @@ export default function Verify({ q }: { q?: URLSearchParams }) {
       <ReceiptVerify initialQuery={q?.get("tx") || q?.get("receipt") || q?.get("run") || ""} />
       <Panel id="t-tamper" title="Tamper test" sub="Change one piece of the committed evidence in memory, then run every check again. The matching rows must turn red.">
         <div className="hrow" style={{ gap: 6, flexWrap: "wrap" }}>
-          {Object.entries(TAMPERS).map(([k, text]) => <button key={k} className={`chipbtn${tamper === k ? " on" : ""}`} onClick={() => setTamper(k)} title={text as string}>{k === "none" ? "No tamper" : k === "signer" ? "Change the TEE signer" : k === "reply" ? "Edit a signed reply" : k === "cert" ? "Corrupt a certificate signature" : "Shift the verdict expiry"}</button>)}
+          {Object.entries(TAMPERS).map(([k, text]) => <button key={k} data-tamper={k} className={`chipbtn${tamper === k ? " on" : ""}`} onClick={() => setTamper(k)} title={text as string}>{k === "none" ? "No tamper" : k === "signer" ? "Change the TEE signer" : k === "reply" ? "Edit a signed reply" : k === "cert" ? "Corrupt a certificate signature" : "Shift the verdict expiry"}</button>)}
         </div>
         <p className="dim mt">{TAMPERS[tamper as keyof typeof TAMPERS]}</p>
       </Panel>

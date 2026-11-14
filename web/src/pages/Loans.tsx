@@ -25,7 +25,7 @@ export default function Loans({ q = "" }: { q?: string }) {
   return (
     <>
       <PageHead title="Loans" crumbs={[["Overview", "/overview"], ["Loans"]]} lead="Every pledge token on the registry. A loan appears by its hash only: the chain never stores the borrower, the amount or the document." chips={<SrcTag tag={tag} source="nft_tokens, get_lock, get_latest_verdict, get_flag_count" />} />
-      <Panel title={`${rows.length} of ${view.loans.length} pledged loans`} pad={false} right={
+      <Panel title={`${rows.length} of ${view.loans.length} pledged loans`} pad={false} tour="loans-table" right={
         <div className="hrow">
           <input placeholder="hash prefix or loan id" value={text} onChange={(e) => setText(e.target.value)} aria-label="Filter by hash" />
           <select value={fund} onChange={(e) => setFund(e.target.value)} aria-label="Fund"><option value="all">all funds</option>{view.funds.map((f) => <option key={f.fund_id} value={f.fund_id}>{fundName(f.fund_id)}</option>)}</select>

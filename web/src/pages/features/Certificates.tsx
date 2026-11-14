@@ -15,7 +15,7 @@ function CertSignatures() {
   const latest = Object.fromEntries(view.funds.map((f) => [f.fund_id, f.certificate]));
   const { data, error, loading, retry } = useAsync(() => checkCertificates({ signers, latest, live: true, flip }) as unknown as Promise<CertRow[]>, [flip, signers.join(), view.funds.length]);
   return (
-    <Panel className="mt" title="Recover each certificate's signer in your browser" sub="The contract checks the signature when the certificate is submitted and does not store it, so this reads the signature from the submit_certificate transaction, rebuilds the signed message exactly as lib.rs canonical_message does and recovers the key with secp256k1." tags={<SrcTag tag="computed" source="RPC tx args; data/sigs.mjs" />} right={<button className={`xb sm ${flip ? "" : "ghost"}`} onClick={() => setFlip((x) => !x)}>{flip ? "Undo the flipped byte" : "Flip one signature byte"}</button>} pad={false}>
+    <Panel className="mt" title="Recover each certificate's signer in your browser" sub="The contract checks the signature when the certificate is submitted and does not store it, so this reads the signature from the submit_certificate transaction, rebuilds the signed message exactly as lib.rs canonical_message does and recovers the key with secp256k1." tags={<SrcTag tag="computed" source="RPC tx args; data/sigs.mjs" />} right={<button data-tour="flip-cert" className={`xb sm ${flip ? "" : "ghost"}`} onClick={() => setFlip((x) => !x)}>{flip ? "Undo the flipped byte" : "Flip one signature byte"}</button>} pad={false}>
       {loading ? <div style={{ padding: 12 }}><Skel rows={2} /></div> : error ? <ErrorBox error={error} retry={retry} /> : (
         <div className="tscroll"><table className="dt">
           <thead><tr><th>Fund</th><th>Transaction</th><th>Recovered signer</th><th>Registered signer</th><th>Same as stored certificate</th></tr></thead>
@@ -30,7 +30,7 @@ function CertSignatures() {
           ))}</tbody>
         </table></div>
       )}
-      {flip ? <div style={{ padding: "0 12px 12px" }}><Note tone="bad">One byte of each signature changed. They now recover to other keys, which are not on the signer list, so the contract would refuse them.</Note></div> : null}
+      {flip ? <div data-tour="cert-flip-note" style={{ padding: "0 12px 12px" }}><Note tone="bad">One byte of each signature changed. They now recover to other keys, which are not on the signer list, so the contract would refuse them.</Note></div> : null}
     </Panel>
   );
 }

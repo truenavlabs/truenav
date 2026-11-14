@@ -13,7 +13,7 @@ Labels used below: **repo** means a statement checked against a file in this rep
 | Fingerprint client | `tee/fingerprint.mjs` calls project `receipts.tnlab-718ca9.testnet/truenav-engine` (domain `truenav-fp-v4`) and accepts an attestation only if its project and caller are that pair or the recorded `servicer.tnlab-718ca9.testnet` pair. | repo |
 | Receipts contract | No live receipts contract on 368aa2. Receipts are synthetic fixtures. | repo (README) |
 | Deploy script | `receipts/deploy-testnet.mjs` D0 to D4, print-only by default, master from `--master` or `TRUENAV_MASTER`, no default. | repo (this branch) |
-| Pinned builds | receipts `dcb46bd0...2129d2259`, query `dee5f216...8169d09`, reproduced byte for byte by the `receipts-pinned-build` workflow. | repo (`receipts/pinned-builds.json`) |
+| Pinned builds | receipts `5f294c9a...f52e8606f`, query `dee5f216...8169d09`, reproduced byte for byte by the `receipts-pinned-build` workflow. Still a local build candidate, not deployed. | repo (`receipts/pinned-builds.json`) |
 
 ## 2. Why a fresh run cannot reproduce the pledged hashes
 

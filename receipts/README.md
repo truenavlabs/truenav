@@ -83,11 +83,13 @@ Command: `cargo near build non-reproducible-wasm --locked` (not `reproducible-wa
 `.github/workflows/ci.yml`.
 
 These are the pins of the local receipts v3 candidate (migration, combined receipts, mirror fixes, canonical body
-binding, append-only attestation metadata), refreshed from the pinned-image build in CI at 8cc9ede. Not deployed:
+binding, append-only attestation metadata). The receipts pin was refreshed after A01 changed engine/v3-core, from
+the pinned-image build in CI at 6482300. The query pin is unchanged from 8cc9ede. Still a local build candidate,
+not deployed:
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |
-| receipts | `dcb46bd0645749948a72b42e5b35c670433a86e86a692e1947841c21129d2259` | 555924 |
+| receipts | `5f294c9a447d515d6b56fd8b2396b5c00e83dee4f622ac3ceede2edf52e8606f` | 555924 |
 | query | `dee5f216c7ed6a0b75e597b2c5dce643dfcb88dc6517e71e85c5bb96f8169d09` | 162201 |
 
 `receipts/pinned-builds.json` holds the same hashes; the deploy script refuses any other bytes, and the `receipts` job
@@ -98,7 +100,7 @@ and uploads them as the artifact `truenav-pinned-wasm`. Inside the artifact the 
 and set `TRUENAV_WASM_DIR` to it to deploy from a machine without Docker. The committed `receipts/dist` is stale: it
 does not match these pins (see its note in `pinned-builds.json`), so the deploy script refuses it.
 
-Previous pins, kept as history and not current. The mirror recovery and civil-date validation candidate based on
+Previous pins, kept as history and not current. The pre-A01 receipts pin from the pinned-image build in CI at 8cc9ede: `dcb46bd0645749948a72b42e5b35c670433a86e86a692e1947841c21129d2259` (555924 bytes). The mirror recovery and civil-date validation candidate based on
 c1152b6 (includes the gas-cap fix, built locally in the pinned image): receipts `c19fc647d96d13f288d928d6495901c1e542a1e0ff043408c6ec3791a08508f1`
 (305346 bytes) and query `ec1f9f3a67e69b802efa7be64feee15ac869cf12a1e73014defaf45c52505156` (155543 bytes, query
 source f9379a2). Earlier receipts pins: `c0be4258...` (4918c2a, initial mirror candidate), `f32949b3...` (29e13f2,

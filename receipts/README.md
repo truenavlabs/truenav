@@ -45,7 +45,7 @@ informational, as `code_hash` is (spec 8.2).
 (cd receipts && cargo test --locked)     # 96 pass, 1 ignored (55 unit, 29 contract, 12 mirror; the wasm test is ignored): signing recovery, civil-date validation, mirror encoding, signatures, old-state loading and the 4 real engine receipts and a rental in severe arrears (late_share_bps 40000), closed-schema rejections with fixed codes, malformed UTF-8 dates, JSON-string receipts, admission vs run failure refunds, storage charge, method snapshot, roles, contract-built input
 (cd query && cargo test --locked)        # 8: exact fee, 24 h, uses, redeemer, withdraw bound, 1 yocto admin calls
 node --test api/test/api.test.mjs        # 12: free score, 402, one-use report, ask spends nothing, score unchanged
-npm run e2e:receipts                     # 109 PASS lines on a local sandbox, engine run natively as the worker (counted from CI job receipts in run 43614626104 on 04116ec; not re-run locally)
+npm run e2e:receipts                     # 109 PASS lines on a local sandbox, engine run natively as the worker (counted from CI job receipts in run 43620647260 on 04116ec; not re-run locally)
 ```
 
 ## Demo agent (agents track)
@@ -170,7 +170,7 @@ master on chain; the pinned wasm bytes; which accounts exist; the master balance
 | --- | --- | --- |
 | D0 | read-only checks | none |
 | D1 | create `receipts.` (6), `query.` (1.7), `runner.` (0.4) and `api.` (0.1) sub-accounts of `<master>` with fresh keys | 8.2 NEAR moved to our own accounts, plus gas; the preflight needs 8.25 (8.2 plus a 0.05 gas margin) |
-| D2 | deploy the receipts wasm and `new(...)` (admin and pauser `<master>`, engine pin `360cd473...`). This initializes the compatibility v2 path, not the v3 migration | code storage alone is about 5.56 NEAR for 555924 bytes (script: bytes / 100000); storage after D2 and D3 on the sandbox was 558,867 bytes, 5.5887 NEAR locked of the 6.0 NEAR D1 gives `receipts.` (CI run 43614626104 on 04116ec, `receipts` job log; the e2e checks it fits) |
+| D2 | deploy the receipts wasm and `new(...)` (admin and pauser `<master>`, engine pin `360cd473...`). This initializes the compatibility v2 path, not the v3 migration | code storage alone is about 5.56 NEAR for 555924 bytes (script: bytes / 100000); storage after D2 and D3 on the sandbox was 558,867 bytes, 5.5887 NEAR locked of the 6.0 NEAR D1 gives `receipts.` (CI run 43620647260 on 04116ec, `receipts` job log; the e2e checks it fits) |
 | D3 | register the 4 synthetic tokens, set the runner (1 yocto each) | gas |
 | D4 | deploy and init the query contract (fee 0.01 NEAR, redeemer `api.`) | about 1.6 NEAR code storage (from D1 funds) |
 

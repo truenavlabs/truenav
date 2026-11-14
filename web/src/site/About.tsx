@@ -1,7 +1,7 @@
 // About: long page. Team is TrueNav Labs. Contact is GitHub Issues. The hackathon section is the origin story:
 // where TrueNav was built, never an award or an endorsement.
 import { A } from "../ui";
-import { HACKATHON_URL, TENDAI } from "./content";
+import { HACKATHON_URL } from "./content";
 import { LongPage, type LongSection } from "./Long";
 import { ISSUES, REPO, SitePage } from "./Shell";
 
@@ -31,7 +31,7 @@ export function About() {
             <li><b>13 to 14 Nov.</b> The web app and verifier, security hardening, the whitepaper and the MIT licence.</li>
           </ul>
           <p className="lp-note">TrueNav Labs is an entrant. This is not an award, a partnership or an endorsement by the event.</p>
-          <p>The same submitter also entered <a href={TENDAI} className="ln" target="_blank" rel="noopener noreferrer">TendAI Custody</a>.</p>
+          <p>The same submitter also entered <a href="https://tendaicustody.app" className="ln" target="_blank" rel="noopener noreferrer">TendAI Custody</a>.</p>
         </>
       ),
     },

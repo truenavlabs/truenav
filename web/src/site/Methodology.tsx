@@ -70,7 +70,7 @@ export function MethodologyPage() {
       <Band tone="white" label="TEE verdicts" title="How the private checks enter the score.">
         <p className="mk-p">A model in an attested TEE reads each pledged loan's private document, compares it with the fund's claim and signs a verdict-only reply. A flag makes the loan unverified and excludes it. With no verdict, a loan is pending for 7 days after its on-chain pledge time, then unverified. The engine reads verdicts from the chain and never calls the TEE itself.</p>
         <p className="mk-p">One flag on one Harbor loan takes the demo fund from green to red. Reproduce it from a fresh clone:</p>
-        <Code>{`npm run demo   # Harbor 99.17 green, then 51.59 red after one TEE flag`}</Code>
+        <Code>{`npm run demo   # Harbor scores 99 green, then about 52 red after one TEE flag`}</Code>
         <Facts rows={[["what moves a score", "a new TEE flag or an overdue verdict · a blocked double pledge · older data · a headline NAV outside TrueRange"], ["try it", <A href="/features/engine?preset=t1">the engine page in the demo app</A>]]} />
       </Band>
 

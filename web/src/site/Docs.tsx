@@ -1,4 +1,4 @@
-// Docs hub: the whitepaper and the public docs. Open, no gate. Links to the public repository use plain titles.
+// Docs hub: the whitepaper and the public docs. Open to read. Links to the public repository use plain titles.
 import { A } from "../ui";
 import { DOCS_BASE } from "./content";
 import { Band, Cta, Ext, Hero, Pill, PillExt } from "./kit";
@@ -22,7 +22,7 @@ export function Docs() {
     <SitePage route="docs">
       <Hero
         label="docs"
-        title="Everything is public. Nothing is gated."
+        title="Everything is public. Nothing is behind a login."
         lead="The design paper, the method, the trust model and the code. Read them without an account."
         actions={<><a href={WHITEPAPER_PDF} className="pillbtn" target="_blank" rel="noopener noreferrer">Read the whitepaper <span aria-hidden="true">→</span></a><PillExt href={REPO} kind="ghost">Source code ↗</PillExt></>}
       />

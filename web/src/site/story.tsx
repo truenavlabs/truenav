@@ -45,8 +45,8 @@ export function HomeStory() {
           </Card>
         </Grid>
         <div className="hs-num" aria-label="One altered loan document moves a demo fund from green to red">
-          <div><div className="big mono g">99.17</div><span className="mono">Harbor Credit Fund, green (demo fund)</span></div>
-          <div><div className="big mono r">51.59</div><span className="mono">after a TEE flag on one altered loan document</span></div>
+          <div><div className="big mono g">99</div><span className="mono">Harbor Credit Fund, green (demo fund)</span></div>
+          <div><div className="big mono r">52</div><span className="mono">after a TEE flag on one altered loan document</span></div>
         </div>
         <p className="mk-p" style={{ marginTop: 14 }}>
           Replayed from recorded, TEE-signed replies on fictional data. TrueNav informs only: it never moves or blocks money.

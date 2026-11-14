@@ -60,8 +60,8 @@ npm run verify:fingerprints`}</Code>
           caption="Expected output"
           rows={[
             [<code key="a">npm run judge -- --replay</code>, "judge: 10 of 10 stages PASS, 0 skipped not verified, ok true. About 13 seconds, offline."],
-            [<code key="b">npm run demo</code>, "The recorded, TEE-signed trap case: Harbor 99.17 green, then 51.59 red after one altered document is flagged. It does not call the TEE."],
-            [<code key="c">npm run chain:read</code>, "Harbor: TrueNav score 99 green (raw 99.17). Meridian: 43 red (raw 42.84). Each followed by: matches the recomputed score."],
+            [<code key="b">npm run demo</code>, "The recorded, TEE-signed trap case: Harbor scores 99 green, then about 52 red after one altered document is flagged. It does not call the TEE."],
+            [<code key="c">npm run chain:read</code>, "Harbor: TrueNav score 99 green. Meridian: 43 red. Each followed by: matches the recomputed score."],
             [<code key="d">npm run verify:attestation</code>, "Attestation checks passed: the report hash is on chain, the TDX quote and TCB status verify, debug is off. It also states what it does not prove."],
             [<code key="e">npm run verify:fingerprints</code>, "The recorded demo loan fingerprints are checked against Intel collateral."],
           ]}

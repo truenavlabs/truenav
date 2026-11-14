@@ -100,7 +100,7 @@ export function BuiltOnNear() {
           rows={[
             ["Private inference a contract can check", "You bring your own private compute and your own way to prove it ran. Checking a signature on chain is not special to any chain.", "A first-party service, NEAR AI Cloud, runs open models in TEEs and signs each response with a key that never leaves the enclave. The registry checks that signature. No custom enclave to build or trust."],
             ["Private compute a contract can call", "Off-chain workers or oracles you assemble yourself.", "OutLayer runs code in a TEE with an attestation per run, and calls back into the receipts contract."],
-            ["Roles and standards", "Custom role contracts and custom token events.", "Access keys gate admin, servicer and pledge calls. NEP-171 tokens that wallets and explorers already read. Named sub-accounts per fund."],
+            ["Roles and standards", "Custom role contracts and custom token events.", "Access keys limit who can make admin, servicer and pledge calls. NEP-171 tokens that wallets and explorers already read. Named sub-accounts per fund."],
             ["Verify it yourself", "Often an archive node or a paid indexer.", "Public RPC views, a command line check and a receipt checker. On testnet, a judge needs no account and no funds."],
           ]}
         />

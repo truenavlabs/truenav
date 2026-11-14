@@ -12,7 +12,7 @@ import { REPO, SiteFooter, SitePage } from "./Shell";
 // Recorded on 14 Nov 2026 (Asia/Bangkok): `npm run eval` re-run, and the size of `npm test` at the repo root.
 const RUNS = { date: "14 Nov 2026" };
 const CHECKS: { n: string; of?: string; label: string; cmd: string }[] = [
-  { n: "0", of: "about 819", label: "tests fail in the full suite (a few skip without Docker or Rust)", cmd: "npm test" },
+  { n: "0", of: "800+", label: "tests fail in the full suite (a few skip without Rust or Python jsonschema)", cmd: "npm test" },
   { n: "86", of: "86", label: "signed TEE replies verified against the attested key", cmd: "npm run eval" },
   { n: "46", of: "46", label: "tampered loan documents flagged", cmd: "npm run eval" },
   { n: "0", of: "40", label: "honest documents flagged", cmd: "npm run eval" },

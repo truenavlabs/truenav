@@ -8,7 +8,7 @@ export const model = { pd: fixtures.pd, lgd: fixtures.lgd };
 export const NOW = fixtures.valuation_time;
 const NOW_MS = Date.parse(NOW);
 export const STORE = fixtures.cert_store;
-export const ago = (h) => new Date(NOW_MS - h * 3600 * 1000).toISOString();
+export const ago = (h) => new Date(NOW_MS - h * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
 const clone = (x) => JSON.parse(JSON.stringify(x));
 export const harbor = () => clone(fixtures.funds.find((f) => f.fund_id === "harbor-credit-fund"));
 export const signed = (f, signer) => {

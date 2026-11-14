@@ -1487,3 +1487,31 @@ fn a01_every_documented_lookalike_keeps_the_conflict_cap() {
         bad
     );
 }
+
+/// RT3-04: a verified line counts toward Policy NAV at most its EAD, so a reported_value above EAD cannot buy
+/// coverage or gap. Same rule as the JS engine (tests/fixtures/nav-differential.json cases D4 check both).
+#[test]
+fn rt304_over_marked_verified_line_is_capped_at_ead() {
+    let t = "2026-11-14T00:00:00Z";
+    let now = truenav_v3_core::timestamp(t).unwrap();
+    let fund = |rv: Option<f64>| {
+        let mut v = json!({"id":"V","principal":1000000,"accrued":0,"repaid":0,"asset":"real_estate","bucket":"current","nft":true,"nft_id":"N","servicer_asof":t});
+        if let Some(x) = rv {
+            v["reported_value"] = json!(x);
+        }
+        json!({"fund_id":"audit-fund","headline_nav":2000000,"cash":0,"nav_report_date":t,"certificate":{"data_asof":t},
+            "loans":[v,{"id":"U","principal":1000000,"accrued":0,"repaid":0,"asset":"real_estate","bucket":"current","nft":false,"servicer_asof":t}]})
+    };
+    let honest = nav::score(&fund(None), now, &json!([]));
+    assert_eq!(honest.policy, 1_000_000.0);
+    assert_eq!(honest.coverage, 20.0);
+    for rv in [9_000_000.0, 1e9] {
+        let n = nav::score(&fund(Some(rv)), now, &json!([]));
+        assert_eq!(n.policy, 1_000_000.0, "reported_value {rv} counted above EAD");
+        assert!(n.coverage <= honest.coverage, "coverage {} > {}", n.coverage, honest.coverage);
+        assert!(n.raw <= honest.raw, "raw {} > {}", n.raw, honest.raw);
+    }
+    // a mark at or below EAD is unchanged
+    let below = nav::score(&fund(Some(900_000.0)), now, &json!([]));
+    assert_eq!(below.policy, 900_000.0);
+}

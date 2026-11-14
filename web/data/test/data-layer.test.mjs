@@ -360,7 +360,7 @@ test("paid report simulation: /score free, /report 402 then 200 once, then 402 a
 test("agent decision port: only the pinned engine is accepted; order matches agent/agent.mjs", async () => {
   const { decide, variants } = await import("../agent-sim.mjs");
   const pin = json("receipts/v3-build.json").engine.sha256;
-  assert.match(pin, /^4ce9e539/);
+  assert.match(pin, /^098f5d86/);
   const now = "2026-11-13T00:00:00Z";
   const got = Object.fromEntries(variants(pin, now).map(([name, r]) => [name, decide("HONEST-CREDIT", r, { nowMs: Date.parse(now), pins: new Set([pin]) }).reason]));
   assert.deepEqual(got, {

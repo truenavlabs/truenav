@@ -7,10 +7,12 @@ description = "Published NEAR AI Cloud attestation reports (both encodings; the 
 paths = ['''^tee/fixtures/attestation-report(-368aa2)?\.json(\.b64)?$''']
 
 [[allowlists]]
-description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 61fe33a0 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md); 360cd473 is the engine v2 build hash (outlayer/engine-v2/BUILD.md), the version_key the live receipts contract stores. Add a new pin here when it is published, after checking it is a build hash."
+description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 098f5d86 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 4ce9e539, 61fe33a0, 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md); 360cd473 is the engine v2 build hash (outlayer/engine-v2/BUILD.md), the version_key the live receipts contract stores. Add a new pin here when it is published, after checking it is a build hash."
 targetRules = ["generic-api-key"]
 regexTarget = "secret"
 regexes = [
+  '''^098f5d86a94288d13fac1ca66b8aba9c20a2dc1b3585a64ef91d5bba5aa68788$''',
+  '''^4ce9e539b5bed2eb9dbcc0037168633297a337843d0f86ec0790e8d8342677a0$''',
   '''^61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb$''',
   '''^0ffb3e314f2a3881bd28ab70cb9ba01a6f9b6f6fe41af8ef81b0455ce9ca8d38$''',
   '''^8e3d892547c23b8c4a0c84717a3c54de596ecb6ba72f9ca264a0488297a6c4ad$''',

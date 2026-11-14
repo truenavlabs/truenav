@@ -11,7 +11,7 @@ const fixtures = JSON.parse(readFileSync(new URL("../../spec/nav/fixtures.json",
 const model = { pd: fixtures.pd, lgd: fixtures.lgd };
 const NOW = fixtures.valuation_time;
 const NOW_MS = Date.parse(NOW);
-const ago = (h) => new Date(NOW_MS - h * 3600 * 1000).toISOString();
+const ago = (h) => new Date(NOW_MS - h * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const harbor = () => clone(fixtures.funds.find((f) => f.fund_id === "harbor-credit-fund"));
 const meridian = () => clone(fixtures.funds.find((f) => f.fund_id === "meridian-yield-fund"));
@@ -745,11 +745,11 @@ test("two rows with the same loan_hash and different nft_ids: second excluded as
 
 test("V8 future-dated as-of: clamped to age 0, cannot refresh a stale book", () => {
   const f = harbor();
-  f.loans[0].servicer_asof = new Date(NOW_MS + 10 * 365 * 24 * 3600 * 1000).toISOString();
+  f.loans[0].servicer_asof = new Date(NOW_MS + 10 * 365 * 24 * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
   const r = score(f);
   close(r.dataAgeHours, 30, 1e-9);
   close(r.pillars.freshness, score(harbor()).pillars.freshness, 1e-12);
-  const g = fund({ loans: [loan({ servicer_asof: new Date(NOW_MS + 1e9).toISOString() }), loan({ servicer_asof: ago(500) })], headline_nav: 2000000 });
+  const g = fund({ loans: [loan({ servicer_asof: new Date(NOW_MS + 1e9).toISOString().replace(/\.\d{3}Z$/, "Z") }), loan({ servicer_asof: ago(500) })], headline_nav: 2000000 });
   assert.equal(score(g).pillars.freshness, 0);
 });
 

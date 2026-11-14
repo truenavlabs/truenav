@@ -9,7 +9,7 @@ const model = { pd: fixtures.pd, lgd: fixtures.lgd };
 const NOW = fixtures.valuation_time;
 const NOW_MS = Date.parse(NOW);
 const STORE = fixtures.cert_store;
-const ago = (h) => new Date(NOW_MS - h * 3600 * 1000).toISOString();
+const ago = (h) => new Date(NOW_MS - h * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, "Z");
 const clone = (x) => JSON.parse(JSON.stringify(x));
 const harbor = () => clone(fixtures.funds.find((f) => f.fund_id === "harbor-credit-fund"));
 const meridian = () => clone(fixtures.funds.find((f) => f.fund_id === "meridian-yield-fund"));

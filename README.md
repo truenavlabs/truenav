@@ -132,7 +132,6 @@ TrueNav is a testnet prototype. What is missing before a real user could rely on
 - The underwriter is an LLM. A TEE proves which code ran, not that the model's judgment is right. The eval is 126 synthetic documents written by the team that wrote the prompt; a perfect score means no failure was found there, not that it cannot fail.
 - TEE signer registration and certificate signing are phase-1 trust: registrar and operator keys, not on-chain quote verification. The attestation checks do not pin MRTD or RTMR0 to RTMR2, so they do not prove which image runs.
 - One full-access key on the live registry can replace its code. No multisig or DAO.
-- The registry has about 628 bytes of storage headroom on 14 Nov 2026, so the next write may fail until it is topped up.
 - No stored receipt on the live receipts contract; v3 and the v3 OutLayer engine are pinned and not deployed. The Base mirror is not deployed.
 - The live registry wasm is a host build, not a reproducible one.
 

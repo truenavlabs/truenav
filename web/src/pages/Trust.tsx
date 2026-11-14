@@ -21,7 +21,7 @@ const LIMITS: [string, string, string][] = [
   ["Shared signer and pledge key (N-07)", "The certificate signer and the servicer pledge key are the same test address. Domain prefixes stop a signature for one being used as the other: role concentration, not a bypass.", "Open, Low"],
   ["TEE signer age", "A registered TEE signer has no expiry on chain; the registrar removes one by hand.", "Open"],
   ["Upgrade authority", "One full-access key on the registry account can replace the contract code. No multisig.", "Disclosed"],
-  ["Storage headroom (N-01)", "The registry has little storage balance left; the next write may fail until it is topped up. Reads are not affected.", "Open, Low"],
+  ["Storage headroom (N-01)", "The registry had 628 bytes of storage headroom. A 1 testnet NEAR top-up on 14 Nov 2026 (transaction 7wjnse7nQxVyZLn29RRH4nxQmVGCNfWDBkucnSwC5Eka) raised the balance to 4.9969 NEAR, which leaves about 100 KB of headroom for new writes.", "Resolved"],
 ];
 
 export default function Trust() {

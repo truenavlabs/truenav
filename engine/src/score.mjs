@@ -551,7 +551,9 @@ export function scoreFund(model, fund, opts = {}) {
   const lih = headline + liabilities - attestedCash;
 
   // R4.
-  const policyNav = verified.reduce((s, l) => s + l.mark, 0);
+  // RT3-04: a verified line counts toward Policy NAV at most its EAD, so a reported_value above EAD cannot buy
+  // coverage, gap or R10 shell size (same cap as the 50% test, hole 2). Marks at or below EAD are unchanged.
+  const policyNav = verified.reduce((s, l) => s + Math.min(l.mark, Math.max(0, l.ead)), 0);
   const trueVal = verified.reduce((s, l) => s + l.ead * (1 - l.pd * l.lgd), 0);
   const variance = verified.reduce((s, l) => s + l.ead ** 2 * l.lgd ** 2 * l.pd * (1 - l.pd), 0);
   const trueRange = THRESHOLDS.z * Math.sqrt(variance);

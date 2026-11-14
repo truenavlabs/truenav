@@ -40,7 +40,7 @@ test("each recorded transaction was read from RPC and NearBlocks and the two agr
     assert.match(e.signer, /\.testnet$/);
     assert.match(e.receiver, /\.testnet$/);
     assert.ok(Number.isInteger(e.block_height) && e.block_height > 277_000_000, e.id);
-    assert.match(e.block_hash, B58_TX.source.replace("43,44", "43,44"));
+    assert.match(e.block_hash, B58_TX);
   }
 });
 
@@ -109,28 +109,6 @@ test("evidence_hash covers the entries and ignores the generated-at time", () =>
 
 // buildLedger with stubbed fetchers: it must refuse a transaction that is missing, differs between the two sources, or is not what the entry says
 const nb = (e, over = {}) => ({ txns: [{ transaction_hash: e.tx_hash, signer_account_id: e.signer, receiver_account_id: e.receiver, block: { block_height: e.block_height }, block_timestamp: e.block_time_ns, ...over }] });
-function stub(entries, { nbOver = {}, rpcOver = {}, missing = null } = {}) {
-  const l = ledger();
-  const rec = new Map(l.entries.map((e) => [e.tx_hash, e]));
-  return {
-    nearblocks: async (h) => (h === missing ? { txns: [] } : nb(rec.get(h), nbOver[h])),
-    rpc: async (method, params) => {
-      if (method === "block") {
-        const e = [...rec.values()].find((x) => x.block_hash === params.block_id);
-        return { header: { height: e.block_height, timestamp_nanosec: e.block_time_ns } };
-      }
-      const e = rec.get(params.tx_hash);
-      if (params.sender_account_id !== e.signer) throw new Error("wrong sender");
-      return {
-        final_execution_status: "FINAL",
-        transaction: { signer_id: e.signer, receiver_id: e.receiver, actions: e.__rpcActions },
-        transaction_outcome: { block_hash: e.block_hash },
-        status: e.__rpcStatus,
-        ...rpcOver[params.tx_hash],
-      };
-    },
-  };
-}
 function withRaw() {
   // the stub needs RPC-shaped actions and status, rebuilt from the recorded entry
   const l = ledger();

@@ -31,7 +31,7 @@ export const GLOSSARY: Term[] = [
   { id: "testnet", term: "Testnet", text: "NEAR's public test network. Tokens have no value. Everything here runs on testnet with fictional funds." },
   { id: "rpc", term: "RPC", text: "The public NEAR endpoint your browser reads the registry from. Read-only view calls, no keys." },
   { id: "code-hash", term: "Code hash", text: "The hash of the contract code deployed on chain. Compared with the hash the repository expects." },
-  { id: "entitlement", term: "Entitlement", text: "A one-use right to fetch a paid report, bought for 0.01 testnet NEAR. Built and tested; contracts not deployed." },
+  { id: "entitlement", term: "Entitlement", text: "A one-use right to fetch a paid report, bought for 0.01 testnet NEAR. Query is live on its pin. Receipts is live v2; v3 is pinned, not deployed." },
 ];
 
 export const TERM = Object.fromEntries(GLOSSARY.map((t) => [t.id, t])) as Record<string, Term>;

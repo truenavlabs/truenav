@@ -2,7 +2,7 @@ import { PageHead, Panel } from "../shell/kit";
 
 const ITEMS: [string, string, string][] = [
   ["Correlated defaults", "Replace the independent-default TrueRange with a one-factor Monte Carlo run in the TEE with a published seed.", "spec/nav/NAV_SPEC.md section 7"],
-  ["Paid reports on chain", "Deploy the receipts and query contracts so an agent can buy a one-use report entitlement for 0.01 testnet NEAR. Built and tested; not deployed.", "receipts/README.md"],
+  ["Paid reports on chain", "Query is live on its pin. Receipts is live v2; the v3 receipts build is pinned, not deployed. A live agent buy against those contracts is still outstanding.", "receipts/README.md"],
   ["Receipts mirrored to Base", "Chain Signatures sign the public score fields to an EVM contract that accepts only the MPC signer and a rising sequence.", "mirror/README.md"],
   ["Manager-signed NAV", "Let a fund account publish its own reported NAV, so the engine scores the manager's own signed figure.", "contract/src/lib.rs has no NAV submit method today"],
   ["Certificates from a TEE key", "Today the certificate key is a test key held by TrueNav Labs.", "README, Roles and keys"],

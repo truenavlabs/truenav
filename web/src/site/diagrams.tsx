@@ -89,36 +89,36 @@ export function StackDiagram() {
     <Frame id="dg-stack" w={900} h={440} title="TrueNav end to end stack"
       desc="Private loan documents are read inside a NEAR AI Cloud TEE, which returns a signed verdict only. An OutLayer TEE computes loan fingerprints and cash evidence checks. Both feed contracts on NEAR testnet. The public score engine, the verifier and anyone can read the results. A dashed line marks the privacy boundary. A Base mirror is built but not deployed.">
       <text x="30" y="28" className="dg-h">Private, inside TEEs</text>
-      <text x="350" y="28" className="dg-h">Public, on NEAR testnet</text>
-      <text x="670" y="28" className="dg-h">Public, anyone</text>
+      <text x="380" y="28" className="dg-h">Public, on NEAR testnet</text>
+      <text x="690" y="28" className="dg-h">Public, anyone</text>
       <line x1="322" y1="14" x2="322" y2="424" className="dg-dashline" />
       <text x="316" y="436" textAnchor="end" className="dg-m">privacy boundary</text>
 
-      <Box x={30} y={56} w={250} h={64} title="Loan documents" lines={["stay with the fund"]} tone="priv" />
-      <Box x={30} y={160} w={250} h={92} title="NEAR AI Cloud TEE" lines={["a model reads the document", "and signs a verdict"]} chip="live" />
-      <Box x={30} y={292} w={250} h={104} title="OutLayer TEE" lines={["loan fingerprint (HMAC),", "cash evidence checks"]} chip="v2" />
+      <Box x={30} y={56} w={240} h={64} title="Loan documents" lines={["stay with the fund"]} tone="priv" />
+      <Box x={30} y={160} w={240} h={92} title="NEAR AI Cloud TEE" lines={["a model reads the document", "and signs a verdict"]} chip="live" />
+      <Box x={30} y={292} w={240} h={104} title="OutLayer TEE" lines={["loan fingerprint (HMAC),", "cash evidence checks"]} chip="v2" />
 
-      <Box x={350} y={112} w={250} h={116} title="Registry contract" lines={["pledge, verdict, certificate", "refuses a second pledge"]} chip="live" />
-      <Box x={350} y={292} w={250} h={104} title="Receipts contract" lines={["public checks receipt"]} chip="v2" />
+      <Box x={380} y={112} w={240} h={116} title="Registry contract" lines={["pledge, verdict, certificate", "refuses a second pledge"]} chip="live" />
+      <Box x={380} y={292} w={240} h={104} title="Receipts contract" lines={["public checks receipt"]} chip="v2" />
 
-      <Box x={670} y={56} w={210} h={80} title="Score engine" lines={["open code, deterministic"]} />
-      <Box x={670} y={166} w={210} h={80} title="Verifier" lines={["no key, no account"]} />
-      <Box x={670} y={292} w={210} h={104} title="Base mirror" lines={["via Chain Signatures"]} chip="built" tone="dash" />
+      <Box x={690} y={56} w={190} h={80} title="Score engine" lines={["open code, deterministic"]} />
+      <Box x={690} y={166} w={190} h={80} title="Verifier" lines={["no key, no account"]} />
+      <Box x={690} y={292} w={190} h={104} title="Base mirror" lines={["via Chain Signatures"]} chip="built" tone="dash" />
 
-      <line x1="155" y1="120" x2="155" y2="156" {...arrow} />
-      <line x1="280" y1="184" x2="346" y2="184" {...arrow} />
-      <text x="286" y="176" className="dg-m">signed verdict</text>
-      <text x="286" y="200" className="dg-m">only</text>
-      <path d="M280 318H312V218H346" fill="none" {...arrow} />
+      <line x1="150" y1="120" x2="150" y2="156" {...arrow} />
+      <line x1="270" y1="184" x2="376" y2="184" {...arrow} />
+      <text x="276" y="176" className="dg-m">signed verdict</text>
+      <text x="276" y="200" className="dg-m">only</text>
+      <path d="M270 318H300V218H376" fill="none" {...arrow} />
       <text x="188" y="276" className="dg-m">HMAC loan id</text>
-      <line x1="280" y1="344" x2="346" y2="344" {...arrow} />
-      <text x="282" y="336" className="dg-m">cash evidence</text>
+      <line x1="270" y1="344" x2="376" y2="344" {...arrow} />
+      <text x="276" y="336" className="dg-m">cash evidence</text>
 
-      <path d="M670 96H475V108" fill="none" className="dg-line" markerEnd={`url(#${a}-a)`} markerStart={`url(#${a}-a)`} />
-      <text x="500" y="88" className="dg-m">reads chain, writes certificate</text>
-      <line x1="666" y1="206" x2="604" y2="206" {...arrow} />
-      <text x="616" y="198" className="dg-m">reads</text>
-      <line x1="604" y1="344" x2="666" y2="344" className="dg-dashline" markerEnd={`url(#${a}-a)`} />
+      <path d="M690 96H500V108" fill="none" className="dg-line" markerEnd={`url(#${a}-a)`} markerStart={`url(#${a}-a)`} />
+      <text x="680" y="88" textAnchor="end" className="dg-m">reads chain, writes certificate</text>
+      <line x1="686" y1="206" x2="624" y2="206" {...arrow} />
+      <text x="634" y="198" className="dg-m">reads</text>
+      <line x1="624" y1="344" x2="686" y2="344" className="dg-dashline" markerEnd={`url(#${a}-a)`} />
     </Frame>
   );
 }

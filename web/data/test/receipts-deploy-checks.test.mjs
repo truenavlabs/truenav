@@ -292,3 +292,65 @@ test("deploymentStatus names the receipts account, code hash, engine version, an
   const page = read("web/src/pages/Verify.tsx");
   assert.match(page, /deploymentStatus/, "the Verify page must show the deployment line beside the summary note");
 });
+
+// Plan B: the live contract is the known v2 build, v3 is pinned and not deployed. That is an expected
+// state shown as info, not a failure. Anything else that differs from the v3 pin still fails.
+async function evidenceV2() {
+  const ev = await evidence();
+  ev.receipts.liveV2 = { sha256: LIVE.code_sha256, method: LIVE.get_config.config.method, version_key: LIVE.get_config.config.version_key };
+  return ev;
+}
+
+test("plan B: the known live v2 build shows both receipts rows as info, never failed", async () => {
+  const ev = await evidenceV2();
+  const chain = withReceipts(fakeRegistryChain(ev), LIVE);
+  const r = await withTxFetch("ok", () => runWebChecks({ evidence: ev, chain, now: NOW }));
+  const c = byId(r.checks);
+  assert.equal(c["receipts-code"].state, "info", c["receipts-code"].detail);
+  assert.equal(c["receipts-config"].state, "info", c["receipts-config"].detail);
+  assert.match(c["receipts-code"].detail, /v3 pinned, not deployed/i);
+  assert.match(c["receipts-config"].detail, /v3 pinned, not deployed/i);
+  assert.match(c["receipts-code"].detail, /expected/i);
+  assert.ok(c["receipts-code"].detail.includes(LIVE.code_hash), c["receipts-code"].detail);
+  assert.ok(c["receipts-code"].detail.includes(EXPECTED_CODE_HASH), c["receipts-code"].detail);
+  assert.match(c["receipts-config"].detail, /cashflow-v2\.1\.0/);
+  assert.doesNotMatch(`${c["receipts-code"].detail} ${c["receipts-config"].detail}`, /[\u2013\u2014]/);
+  assert.equal(r.summary.counts.fail, 0, JSON.stringify(r.checks.filter((x) => x.state === "fail")));
+  assert.equal(r.summary.counts.info, 2);
+  assert.equal(r.summary.planB, true);
+  assert.equal(r.summary.okWithPlanB, true);
+  // info is never a pass: the strict green flags stay false.
+  assert.equal(r.summary.runnableGreen, false);
+  assert.equal(summarize(r.checks).green, false);
+});
+
+test("plan B does not hide a real failure: an unknown receipts build or a changed v2 config still fails", async () => {
+  const ev = await evidenceV2();
+  const unknownCode = byId(await runVerifierChecks({ evidence: ev, chain: withReceipts(fakeRegistryChain(ev), { ...LIVE, code_hash: codeHashFromHex("11".repeat(32)) }), now: NOW }));
+  assert.equal(unknownCode["receipts-code"].state, "fail");
+  assert.equal(unknownCode["receipts-config"].state, "fail", "v2 config on an unknown build is not the known v2 deployment");
+  const changed = structuredClone(LIVE);
+  changed.get_config.config.version_key = "22".repeat(32);
+  const cfg = byId(await runVerifierChecks({ evidence: ev, chain: withReceipts(fakeRegistryChain(ev), changed), now: NOW }));
+  assert.equal(cfg["receipts-code"].state, "info");
+  assert.equal(cfg["receipts-config"].state, "fail");
+  const r = await withTxFetch("ok", () => runWebChecks({ evidence: ev, chain: withReceipts(fakeRegistryChain(ev), changed), now: NOW }));
+  assert.equal(r.summary.okWithPlanB, false);
+  assert.equal(r.summary.counts.fail > 0, true);
+});
+
+test("plan B tamper: a failing registry check still fails the page while receipts stay info", async () => {
+  const ev = await evidenceV2();
+  const chain = withReceipts(fakeRegistryChain(ev), LIVE);
+  const r = await withTxFetch("ok", () => runWebChecks({ evidence: ev, chain, now: NOW, tamper: "signer" }));
+  assert.equal(r.summary.counts.fail > 0, true);
+  assert.equal(r.summary.okWithPlanB, false);
+});
+
+test("the Verify page loads the known v2 build into its evidence and has a plan B banner that is not the failed banner", async () => {
+  const ev = read("web/src/shell/evidence.ts");
+  assert.match(ev, /liveV2/);
+  const page = read("web/src/pages/Verify.tsx");
+  assert.match(page, /okWithPlanB/);
+  assert.match(page, /info/);
+});

@@ -4,6 +4,7 @@ import liveRegistryJson from "../../../certify/live-registry.json";
 import verdictsJson from "../../../tee/fixtures/verdicts-368aa2.json";
 import v3BuildJson from "../../../receipts/v3-build.json";
 import pinnedBuildsJson from "../../../receipts/pinned-builds.json";
+import receiptsLiveJson from "../../data/recorded/receipts-live.json";
 
 export type VerdictRecord = {
   loan_id: string; fund_id: string; loan_hash: string; tampered: { id: string; expected_anomaly: string } | null;
@@ -22,6 +23,8 @@ export async function loadVerifierEvidence() {
   const reportB64 = (await import("../../../tee/fixtures/attestation-report-368aa2.json.b64?raw")).default as string;
   const build = v3BuildJson as { method_version?: string; engine?: { sha256?: string } };
   const pinned = pinnedBuildsJson as { receipts?: string };
+  // The known live v2 build (plan B), from the committed read of the live contract. v3 is pinned, not deployed.
+  const live = receiptsLiveJson as { code_sha256?: string; get_config?: { config?: { method?: string; version_key?: string } } };
   return {
     status: statusJson,
     liveRegistry: liveRegistryJson,
@@ -36,6 +39,7 @@ export async function loadVerifierEvidence() {
       outlayer_tgas: 200,
       callback_tgas: 80,
       outlayer: "outlayer.testnet",
+      liveV2: { sha256: live.code_sha256, method: live.get_config?.config?.method, version_key: live.get_config?.config?.version_key },
     },
     paths: { status: "tee/status.json", liveRegistry: "certify/live-registry.json", verdicts: STATUS.verdicts_file, report: STATUS.report_file, receiptsPin: "receipts/pinned-builds.json", receiptsBuild: "receipts/v3-build.json" },
   };

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PUBLIC_V3_FIELDS, publicV3, bandOf } from "../src/public.ts";
@@ -90,4 +91,117 @@ test("fonts are local OFL files", () => {
   assert.match(css, /--font-sans: "Manrope"/);
   assert.match(css, /--font-mono: "JetBrains Mono"/);
   assert.equal(/https?:\/\/fonts\./.test(css), false);
+});
+
+// Copy and placeholder hygiene for the public site and judge text.
+const repoRoot = join(web, "..");
+const tracked = () => spawnSync("git", ["ls-files", "-z"], { cwd: repoRoot, encoding: "utf8" }).stdout.split("\0").filter((f) => f && !f.endsWith("package-lock.json") && !f.endsWith(".pdf") && !f.endsWith(".wasm") && !f.endsWith(".b64") && !f.endsWith(".png") && !f.endsWith(".woff2") && !f.endsWith(".ico"));
+const readRepo = (f) => { try { return readFileSync(join(repoRoot, f), "utf8"); } catch { return ""; } };
+
+test("the old sibling project name appears nowhere in the tracked tree", () => {
+  const needle = new RegExp(["referral", "relay"].join("[ _-]?"), "i");
+  const hits = tracked().filter((f) => needle.test(readRepo(f)) || needle.test(f));
+  assert.deepEqual(hits, []);
+});
+
+test("About names the other entry by name only, links GitHub Issues, and has no placeholder contact", () => {
+  const about = readFileSync(join(src, "site", "About.tsx"), "utf8");
+  assert.match(about, /TendAI Custody/);
+  assert.doesNotMatch(about, /example\.invalid|\(placeholder\)|href=\{?"#"\}?/);
+  assert.match(about, /github\.com\/truenavlabs\/truenav\/issues/);
+  const i = about.indexOf("TendAI Custody");
+  const near = about.slice(Math.max(0, i - 200), i + 200);
+  assert.ok(!/<a\b/.test(near) || /href="https:\/\/tendaicustody\.com"/.test(near), "the only link allowed beside TendAI Custody is its own site");
+});
+
+test("no visible copy says pending approval, not in this commit, or waits for a public repository", () => {
+  const checked = [...files(src), join(web, "data", "verify.mjs"), join(web, "data", "pledge-sim.mjs")].filter((f) => /\.(tsx?|mjs|json)$/.test(f));
+  for (const f of checked) {
+    const t = readFileSync(f, "utf8");
+    assert.doesNotMatch(t, /pending approval/i, f);
+    assert.doesNotMatch(t, /not in this commit/i, f);
+    assert.doesNotMatch(t, /once the repository is public/i, f);
+  }
+  assert.doesNotMatch(readRepo("judge/stages.mjs"), /not in this commit/i);
+  assert.doesNotMatch(readRepo("web/data/recorded/judge-replay.json"), /not in this commit/i);
+});
+
+test("the Technology page does not show a stale test count or a pending TEE verdict row", () => {
+  const t = readFileSync(join(src, "site", "Technology.tsx"), "utf8");
+  assert.doesNotMatch(t, /pending \/ not run/);
+  assert.doesNotMatch(t, /n: "413"/);
+});
+
+test("the recorded judge replay is self-consistent: its evidence_hash is the sha256 of its canonical hashed part", async () => {
+  const { canonical } = await import("../../judge/lib.mjs");
+  const rec = JSON.parse(readRepo("web/data/recorded/judge-replay.json"));
+  const { ephemeral, evidence_hash, ...hashed } = rec;
+  assert.equal(createHash("sha256").update(canonical(hashed)).digest("hex"), evidence_hash);
+});
+
+test("UPGRADE_V3 states the real status: v3 pinned and CI built, not deployed, live receipts is v2", () => {
+  const t = readRepo("UPGRADE_V3.md");
+  const head = t.split("\n").slice(0, 6).join("\n");
+  assert.doesNotMatch(head, /local candidate only/i);
+  assert.match(head, /not deployed/i);
+  assert.match(head, /live v2/i);
+  assert.match(head, /5f294c9a/);
+  assert.match(head, /f32949b3/);
+});
+
+test("WHY_NEAR does not overclaim reproducible builds, stays under 300 words and keeps its doc links", () => {
+  const t = readRepo("WHY_NEAR.md");
+  assert.doesNotMatch(t, /anyone (can )?match the deployed code hash/i);
+  assert.match(t, /receipts and query/i);
+  assert.match(t, /registry/i);
+  assert.match(t, /host build/i);
+  assert.ok(t.split(/\s+/).filter(Boolean).length < 300);
+  assert.match(t, /docs\.near\.org\/smart-contracts\/anatomy\/reproducible-builds/);
+});
+
+test("the README first screen states the platform, the audit scope and no exact test counts", () => {
+  const t = readRepo("README.md");
+  assert.match(t, /Linux or WSL/);
+  assert.match(t, /flock/);
+  assert.match(t, /npm audit --omit=dev/);
+  assert.match(t, /development/i);
+  assert.doesNotMatch(t, /ℹ tests \d+|ℹ pass \d+|tests 819|pass 814|skipped 5\b/);
+  assert.doesNotMatch(t, /Attestation verified:/);
+  assert.ok(t.split("\n").length < 260, "the README stays short; deep detail lives in docs/");
+});
+
+test("docs that were moved out of the README exist and the README links each one", () => {
+  const t = readRepo("README.md");
+  for (const f of ["docs/TRY_IT.md", "docs/CLAIMS.md", "docs/KNOWN_LIMITS.md", "docs/NETWORK.md", "docs/DEPLOYMENT_EVIDENCE.md"]) {
+    assert.ok(readRepo(f).length > 200, f);
+    assert.ok(t.includes(f), `README links ${f}`);
+  }
+});
+
+test("README has the Q-015 other entry section, About names the other entry with no person reference", () => {
+  const t = readRepo("README.md");
+  assert.ok(t.includes("## Other entry (Q-015 disclosure)\n\nThe same submitter also entered [TendAI Custody](https://tendaicustody.com) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other."));
+  assert.doesNotMatch(t, /by the same person/);
+  const about = readFileSync(join(src, "site", "About.tsx"), "utf8");
+  assert.doesNotMatch(about, /same person/);
+  assert.match(about, /TendAI Custody/);
+  assert.match(t, /https:\/\/truenav\.app \(launching after final pass/);
+  assert.doesNotMatch(t, /truenav\.app is live/i);
+});
+
+test("the registry storage headroom item is resolved by the 14 Nov top-up everywhere it was open", () => {
+  const TX = "7wjnse7nQxVyZLn29RRH4nxQmVGCNfWDBkucnSwC5Eka";
+  const trust = readFileSync(join(src, "pages", "Trust.tsx"), "utf8");
+  const row = trust.split("\n").find((l) => l.includes("Storage headroom (N-01)"));
+  assert.ok(row, "Trust page keeps the storage headroom row");
+  assert.match(row, /Resolved/);
+  assert.ok(row.includes(TX));
+  assert.doesNotMatch(row, /may fail|Open, Low/);
+  const limits = readRepo("docs/KNOWN_LIMITS.md").split("\n").find((l) => l.includes("Storage headroom (N-01)"));
+  assert.match(limits, /Resolved/);
+  assert.ok(limits.includes(TX));
+  assert.doesNotMatch(limits, /likely to fail|Open, Low/);
+  const readme = readRepo("README.md");
+  assert.doesNotMatch(readme, /628 bytes|next write may fail/);
+  assert.doesNotMatch(readFileSync(join(src, "content", "faq-data.mjs"), "utf8"), /low registry storage headroom/);
 });

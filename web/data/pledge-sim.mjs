@@ -1,7 +1,7 @@
 // Browser port of the registry's pledge_loan decision order (contract/src/lib.rs pledge_loan, lines 699 to 768).
 // A simulation: it runs on the live lock and role state you pass in and returns what the contract would answer.
 // It sends nothing. Signatures are modelled as a choice (valid from the registered key, from another key, or
-// unreadable) because recovering them needs a crypto library that is pending approval.
+// unreadable) because recovering them needs a crypto library this build does not include.
 
 export const PLEDGE_TTL_MS = 24 * 3600 * 1000;
 const HEX64 = /^[0-9a-f]{64}$/;

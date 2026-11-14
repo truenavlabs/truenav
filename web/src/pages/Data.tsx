@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { rawView, VIEW_METHODS } from "../../data/registry.mjs";
-import { Copy, ErrorBox, Ext, Note, PageHead, Panel, SrcTag } from "../shell/kit";
+import { Copy, ErrorBox, Ext, PageHead, Panel, SrcTag } from "../shell/kit";
 import { srcUrl, when } from "../shell/fmt";
 import { useRegistry } from "../shell/store";
 
@@ -66,7 +66,6 @@ export default function Data() {
           <li><Ext href={srcUrl("tee/status.json")}>tee/status.json</Ext></li>
           <li><Ext href={srcUrl("certify/live-registry.json")}>certify/live-registry.json (expected registry setup)</Ext></li>
         </ul>
-        <Note tone="info">Repository links work once the repository is public.</Note>
       </Panel>
     </>
   );

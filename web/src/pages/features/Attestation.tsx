@@ -53,7 +53,7 @@ export default function Attestation() {
         <table className="dt"><thead><tr><th>Edit</th><th>Check that catches it</th><th>Result</th></tr></thead>
           <tbody>{MUTATIONS.map(([m, c]) => <tr key={m}><td>{m}</td><td>{c}</td><td><span className="bad">fails closed</span></td></tr>)}</tbody></table>
       </Panel>
-      <Note tone="info">Rerun all of it yourself: npm run verify:attestation (needs network for Intel collateral and NVIDIA). In-browser Intel quote checking needs a further library and is pending approval.</Note>
+      <Note tone="info">Rerun all of it yourself: npm run verify:attestation (needs network for Intel collateral and NVIDIA). The Intel quote is not checked in the browser.</Note>
     </>
   );
   return (

@@ -1,13 +1,10 @@
-// About: long page. Team is TrueNav Labs. Contact is a placeholder until a public address exists.
+// About: long page. Team is TrueNav Labs. Contact is GitHub Issues.
 import { INFORMS } from "../copy";
 import { A } from "../ui";
 import { LongPage, type LongSection } from "./Long";
 import { REPO, SiteFooter, SitePage } from "./Shell";
 
-// TODO: replace with the Referral Relay public URL once it is published.
-const REFERRAL_RELAY_URL = "#";
-// TODO: replace with a real public contact address. This placeholder does not receive mail.
-const CONTACT = "contact@example.invalid";
+const ISSUES = "https://github.com/truenavlabs/truenav/issues";
 
 export function About() {
   const sections: LongSection[] = [
@@ -25,10 +22,7 @@ export function About() {
       body: (
         <>
           <p>TrueNav is built by TrueNav Labs for NEAR HACKATHON 2026, in the Privacy and Private AI and the Open Innovation tracks. It runs on NEAR testnet, and every fund, loan and document in it is fictional.</p>
-          <p>
-            Our sibling project is{" "}
-            <a href={REFERRAL_RELAY_URL} className="ln">Referral Relay</a>.
-          </p>
+          <p>The same submitter also entered <a href="https://tendaicustody.com" className="ln" target="_blank" rel="noopener noreferrer">TendAI Custody</a>.</p>
         </>
       ),
     },
@@ -46,7 +40,7 @@ export function About() {
       body: (
         <>
           <p>Questions from judges, funds or builders are welcome.</p>
-          <p className="mono"><span className="ln">{CONTACT}</span> <span className="lp-note">(placeholder)</span></p>
+          <p><a href={ISSUES} className="ln" target="_blank" rel="noopener noreferrer">github.com/truenavlabs/truenav/issues ↗</a></p>
         </>
       ),
     },

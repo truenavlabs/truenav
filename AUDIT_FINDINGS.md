@@ -6,7 +6,7 @@ Every finding from the reviews of 6 Nov 2026, with what happened to it. Reviews:
 | --- | --- | --- | --- | --- |
 | 1 | pledge_loan panics without a storage deposit | Gemini pass 1 and 2 | **Rejected (false)**: the mint passes no refund account; the contract pays storage | `audit_1_*`; live pledges on testnet |
 | 2 | release_loan keeps a deposit / leaks approval storage | Gemini pass 1 and 2 | **Rejected (false)**: no deposit is taken; the standard mint writes no approvals | `audit_4_*` |
-| 3 | Refused pledges grow storage the contract pays for | Gemini pass 1 | **Accepted for the demo**: only allowlisted funds can pledge; mainnet needs storage deposits | `audit_2_*`; README "Roles, pause, upgrades and storage" |
+| 3 | Refused pledges grow storage the contract pays for | Gemini pass 1 | **Accepted for the demo**: only allowlisted funds can pledge; mainnet needs storage deposits | `audit_2_*`; docs/KNOWN_LIMITS.md "Roles and keys" |
 | 4 | Full-list views can run out of view gas | Gemini, checklist | **Fixed**: full-list views removed, paged views only, stored flag counter | `audit_3_*`, `get_flag_count` |
 | 5 | A pipe inside a field could make two certificates sign alike | own review | **Fixed**: `|` rejected in fund_id, manager_id, engine_commit | `audit_pipe_*` |
 | 6 | Certificate money as u128 numbers in JSON | checklist (JSON integer types) | **Fixed**: U128 strings | `certify/certify.test.mjs` |

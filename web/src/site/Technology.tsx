@@ -9,10 +9,10 @@ import { fund, HARBOR, MERIDIAN } from "./facts";
 import { LongPage, type LongSection } from "./Long";
 import { REPO, SiteFooter, SitePage } from "./Shell";
 
-// Recorded on 11 Nov 2026 (Asia/Bangkok) from this branch: `npm test` at the repo root and `npm run eval`.
-const RUNS = { date: "11 Nov 2026" };
+// Recorded on 14 Nov 2026 (Asia/Bangkok): `npm run eval` re-run, and the size of `npm test` at the repo root.
+const RUNS = { date: "14 Nov 2026" };
 const CHECKS: { n: string; of?: string; label: string; cmd: string }[] = [
-  { n: "413", of: "417", label: "tests pass, 0 fail, 4 skipped", cmd: "npm test" },
+  { n: "0", of: "800+", label: "tests fail in the full suite (a few skip without Rust or Python jsonschema)", cmd: "npm test" },
   { n: "86", of: "86", label: "signed TEE replies verified against the attested key", cmd: "npm run eval" },
   { n: "46", of: "46", label: "tampered loan documents flagged", cmd: "npm run eval" },
   { n: "0", of: "40", label: "honest documents flagged", cmd: "npm run eval" },
@@ -67,7 +67,7 @@ export function Technology() {
           <Facts rows={[
             ["registry", "registry.tnlab-368aa2.testnet"],
             ["code hash", "9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o"],
-            ["TEE verdicts", "pending / not run"],
+            ["TEE verdicts", "16 honest verdicts on chain, signed by the attested key"],
             ["double-pledge refusal", <a href="https://explorer.testnet.near.org/transactions/8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs" target="_blank" rel="noopener noreferrer">8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs</a>],
             ["receipt contract", contract],
             ["method", h.method],

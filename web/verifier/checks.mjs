@@ -3,6 +3,7 @@
 //   live       read from the live registry over public RPC now, or a signature / hash computed now from the published files
 //   recorded   taken from a committed evidence file; evidenceDate says when that evidence was captured
 //   unchecked  honestly not checked here (the detail says why and where it can be checked)
+//   info       an expected, documented state that is neither a pass nor a failure (plan B: receipts live on the known v2 build, v3 pinned and not deployed). Never counts toward green.
 //   fail       a comparison failed: wrong hash, bad signature, wrong signer, expired binding, unreadable evidence
 // Rules: a chain read that fails never yields live (it yields unchecked), a local comparison that fails yields fail even
 // when the chain is unreachable, and an exception anywhere in a check yields fail, never a pass.
@@ -11,7 +12,7 @@ import { view as chainView, codeHash as chainCodeHash, DEFAULT_CONTRACT, DEFAULT
 import { replyProblem, replyObject } from "../../tee/reply.mjs";
 import { eip191Recover, sha256Hex, base64ToBytes } from "./eip191.mjs";
 
-export const STATES = Object.freeze(["live", "recorded", "unchecked", "fail"]);
+export const STATES = Object.freeze(["live", "recorded", "unchecked", "info", "fail"]);
 /** Same constant as tee/underwrite.mjs VERDICT_TTL_MS (the test checks they agree). */
 export const VERDICT_TTL_MS = 30 * 24 * 3600 * 1000;
 /** Same format as tee/underwrite.mjs bindingFor (the test checks they agree). */
@@ -65,6 +66,15 @@ function nearFromYocto(y) {
   return f ? `${i}.${f}` : i;
 }
 
+/** The known live v2 build (plan B), from committed evidence. Absent means no state counts as the expected plan B state. */
+function knownV2(v) {
+  if (!v || typeof v !== "object") return null;
+  const sha256 = String(v.sha256 || "").toLowerCase();
+  const versionKey = String(v.version_key || "").toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(sha256) || !/^[0-9a-f]{64}$/.test(versionKey) || !v.method) return null;
+  return { sha256, codeHash: codeHashFromSha256(sha256), method: String(v.method), versionKey };
+}
+
 function receiptsExpect(ev) {
   const r = ev.receipts || {};
   const paths = ev.paths || {};
@@ -79,6 +89,7 @@ function receiptsExpect(ev) {
     sha256,
     engineSha256,
     method: r.method || "truenav-v3.0.1",
+    liveV2: knownV2(r.liveV2),
     storage_deposit: String(r.storage_deposit || STORAGE_DEPOSIT_V3),
     outlayer_tgas: Number(r.outlayer_tgas ?? 200),
     callback_tgas: Number(r.callback_tgas ?? 80),
@@ -185,14 +196,21 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
   try { expectedReceipts = receiptsExpect(ev); } catch (e) { expectedReceipts = { error: e }; }
   const receiptsSrc = (m) => `${c.url || "rpc"} ${m} on ${(expectedReceipts.account || DEFAULT_RECEIPTS)}`;
 
+  let receiptsIsKnownV2 = false;
   await run("receipts-code", "Deployed receipts contract code hash", receiptsSrc("view_account"), async () => {
     if (expectedReceipts.error) throw expectedReceipts.error;
     const api = receiptsApi(c, expectedReceipts.account);
     const h = await api.receiptsCodeHash();
     const src = receiptsSrc("view_account");
-    return h === expectedReceipts.codeHash
-      ? result("receipts-code", "Deployed receipts contract code hash", "live", `${expectedReceipts.account} code hash ${h} equals the pinned receipts build (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath})`, src)
-      : result("receipts-code", "Deployed receipts contract code hash", "fail", `${expectedReceipts.account} code hash ${h} differs from the pinned v3 receipts build ${expectedReceipts.codeHash} (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath}). Live v2, v3 pinned not deployed.`, src);
+    if (h === expectedReceipts.codeHash) {
+      return result("receipts-code", "Deployed receipts contract code hash", "live", `${expectedReceipts.account} code hash ${h} equals the pinned receipts build (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath})`, src);
+    }
+    const v2 = expectedReceipts.liveV2;
+    if (v2 && h === v2.codeHash) {
+      receiptsIsKnownV2 = true;
+      return result("receipts-code", "Deployed receipts contract code hash", "info", `${expectedReceipts.account} code hash ${h} is the known v2 build (${v2.method}, sha256 ${v2.sha256}). v3 pinned, not deployed (v3 code hash ${expectedReceipts.codeHash}, sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath}). This is the expected state, not a failure.`, src);
+    }
+    return result("receipts-code", "Deployed receipts contract code hash", "fail", `${expectedReceipts.account} code hash ${h} differs from the pinned v3 receipts build ${expectedReceipts.codeHash} (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath}) and is not the known v2 build. Live v2, v3 pinned not deployed.`, src);
   });
 
   await run("receipts-config", "Receipts contract config", receiptsSrc("get_config"), async () => {
@@ -212,6 +230,10 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
     if (Number(cfg.callback_tgas) !== expectedReceipts.callback_tgas) diffs.push(`callback_tgas ${cfg.callback_tgas ?? "missing"} (expected ${expectedReceipts.callback_tgas})`);
     if (cfg.outlayer !== expectedReceipts.outlayer) diffs.push(`outlayer ${cfg.outlayer || "missing"} (expected ${expectedReceipts.outlayer})`);
     const src = receiptsSrc("get_config");
+    const v2 = expectedReceipts.liveV2;
+    if (diffs.length && receiptsIsKnownV2 && v2 && cfg.method === v2.method && String(cfg.version_key || "").toLowerCase() === v2.versionKey) {
+      return result("receipts-config", "Receipts contract config", "info", `get_config on ${expectedReceipts.account} is the known v2 config (${v2.method}, version_key ${v2.versionKey}). v3 pinned, not deployed (${expectedReceipts.method}, version_key ${expectedReceipts.engineSha256}). This is the expected state, not a failure.`, src);
+    }
     if (diffs.length) {
       return result("receipts-config", "Receipts contract config", "fail", `get_config on ${expectedReceipts.account} does not match the expected v3 config (live v2, v3 pinned not deployed): ${diffs.join(", ")}.`, src);
     }
@@ -406,7 +428,7 @@ export function deploymentStatus(results) {
   const keyRe = /version_key ([0-9a-f]{64})/i;
   const codeHash = (code && code.detail && (code.detail.match(hashRe) || [])[1]) || "";
   const engineVersion = (cfg && cfg.detail && (cfg.detail.match(keyRe) || [])[1]) || "";
-  const pendingRedeploy = (code && code.state === "fail") || (cfg && cfg.state === "fail") || false;
+  const pendingRedeploy = ["fail", "info"].includes(code && code.state) || ["fail", "info"].includes(cfg && cfg.state);
   const parts = [account];
   if (codeHash) parts.push(`code hash ${codeHash}`);
   if (engineVersion) parts.push(`engine version ${engineVersion}`);

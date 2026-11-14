@@ -775,18 +775,30 @@ function txChecks(tx, norm, parsed) {
   if (!tx) return out;
   if (tx.failed) {
     out.push(checkState("tx-status", "Transaction status", "fail", `The transaction failed: ${tx.detail || "no failure text"}.`, src));
-  } else if (tx.success || tx.hash) {
+  } else if (tx.success) {
     out.push(
       checkState(
         "tx-status",
         "Transaction status",
         "live",
         tx.receiverId
-          ? `Transaction ${tx.hash} succeeded on ${tx.receiverId}.`
-          : `Transaction ${tx.hash || parsed.hash} was returned by the RPC.`,
+          ? `Transaction ${tx.hash || parsed.hash} succeeded on ${tx.receiverId}.`
+          : `Transaction ${tx.hash || parsed.hash} succeeded.`,
         src,
       ),
     );
+  } else {
+    // A03: a hash alone is not a result. Pending or unknown is not a pass, and the checks that read the tx are skipped.
+    out.push(
+      checkState(
+        "tx-status",
+        "Transaction status",
+        "unchecked",
+        `Transaction ${tx.hash || parsed.hash} is pending or its status is unknown, so it is not counted as a pass. Wait a few seconds and check again.`,
+        src,
+      ),
+    );
+    return out;
   }
   if (tx.receiverId && tx.receiverId !== RECEIPTS_CONTRACT) {
     out.push(checkState("tx-receiver", "Transaction receiver", "fail", `The transaction receiver is ${tx.receiverId}, not ${RECEIPTS_CONTRACT}.`, src));

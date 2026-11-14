@@ -55,7 +55,6 @@ export function BuiltOnNear() {
             ["Would someone use it next month?", "Allocators and administrators doing diligence on tokenized private credit.", "For investors, For managers", <>{S("limit")} Testnet only.</>],
           ]}
         />
-        <p className="mk-p" style={{ marginTop: 14 }}>In our search we found no NEAR project that checks private loan documents in a TEE and also refuses a second fund's pledge of the same loan. That is a search result, not proof that none exists.</p>
       </Band>
 
       <Band tone="tint" label="the stack" title="How it works, end to end." lead="Six steps. The dashed line in the diagram is the privacy boundary.">

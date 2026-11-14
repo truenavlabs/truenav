@@ -4,6 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { placePopover } from "../src/shell/tour-place.ts";
 import { TOUR_STEPS, TOUR_KEY, parseTour, tourHref, tourStart, shouldAutoStart, pathnameOf } from "../src/shell/tour-steps.ts";
 
 const read = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
@@ -129,4 +130,52 @@ test("every action target and done selector is a plain selector the page can mat
   for (const s of TOUR_STEPS) {
     for (const sel of [s.target, s.mobileTarget, s.done?.selector].filter(Boolean)) assert.doesNotMatch(sel, /[{};]|<|>$/, `${s.id}: ${sel}`);
   }
+});
+
+test("path actions land on the next step's page, so the tour can advance from the click itself", () => {
+  TOUR_STEPS.forEach((s, i) => {
+    if (s.done?.kind !== "path") return;
+    assert.equal(pathnameOf(TOUR_STEPS[i + 1].path), s.done.path, `${s.id} does not lead to the next step's page`);
+  });
+});
+
+const inside = (p, w, h, m = 8) => p.left >= m && p.top >= m && p.left + p.w <= w - m && p.top + p.h <= h - m;
+const overlaps = (p, t) => p.left < t.left + t.width && p.left + p.w > t.left && p.top < t.top + t.height && p.top + p.h > t.top;
+
+test("placePopover: next to the target, never over it, always on screen, flipping when a side is full", () => {
+  const pop = { w: 340, h: 230 };
+  const view = { w: 1440, h: 900 };
+  const cases = [
+    { left: 600, top: 300, width: 200, height: 40 }, // room everywhere
+    { left: 600, top: 20, width: 200, height: 40 }, // no room above: must go below
+    { left: 600, top: 840, width: 200, height: 40 }, // no room below: must go above
+    { left: 0, top: 0, width: 232, height: 900 }, // a full height sidebar: must go right
+    { left: 1300, top: 300, width: 130, height: 40 }, // at the right edge: still on screen
+    { left: 10, top: 450, width: 100, height: 30 }, // at the left edge: still on screen
+  ];
+  for (const t of cases) {
+    const p = placePopover(t, pop, view);
+    assert.ok(inside({ ...p, w: pop.w, h: pop.h }, view.w, view.h), `off screen for ${JSON.stringify(t)}: ${JSON.stringify(p)}`);
+    assert.equal(overlaps({ ...p, w: pop.w, h: pop.h }, t), false, `covers the target ${JSON.stringify(t)}`);
+  }
+  assert.equal(placePopover(cases[1], pop, view).side, "bottom");
+  assert.equal(placePopover(cases[2], pop, view).side, "top");
+  assert.equal(placePopover(cases[3], pop, view).side, "right");
+});
+
+test("placePopover at phone width: full width target goes above or below, arrow stays inside the card", () => {
+  const view = { w: 390, h: 844 };
+  const pop = { w: 366, h: 250 };
+  for (const t of [{ left: 12, top: 100, width: 366, height: 180 }, { left: 12, top: 600, width: 366, height: 120 }, { left: 12, top: 8, width: 44, height: 40 }]) {
+    const p = placePopover(t, pop, view);
+    assert.ok(["top", "bottom"].includes(p.side), JSON.stringify(p));
+    assert.ok(inside({ ...p, w: pop.w, h: pop.h }, view.w, view.h), JSON.stringify(p));
+    assert.equal(overlaps({ ...p, w: pop.w, h: pop.h }, t), false);
+    assert.ok(p.arrow >= 14 && p.arrow <= pop.w - 14, `arrow ${p.arrow}`);
+  }
+});
+
+test("placePopover says so when nothing fits, instead of pretending", () => {
+  const p = placePopover({ left: 0, top: 0, width: 390, height: 844 }, { w: 366, h: 250 }, { w: 390, h: 844 });
+  assert.equal(p.side, "over");
 });

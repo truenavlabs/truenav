@@ -1,5 +1,5 @@
 // App frame: sidebar, top bar (search, Testnet pill, live data pill, wallet slot), ticker slot, footer, help bubble.
-import { Tour } from "./Tour";
+import { Tour, tourStart } from "./Tour";
 import { useEffect, useState, type ReactNode } from "react";
 import { A, navigate } from "../ui";
 import { Brand } from "./Brand";
@@ -100,6 +100,7 @@ export function AppShell({ path, children }: { path: string; children: ReactNode
           ))}
         </nav>
         <div className="sbf">
+          <A href={tourStart()} className="xb sm ghost sbtour">Take the tour</A>
           <span className="netpill">NEAR testnet</span>
           <p>Testnet demo. Funds, loans and documents are fictional. TrueNav informs; it does not hold or move funds.</p>
         </div>

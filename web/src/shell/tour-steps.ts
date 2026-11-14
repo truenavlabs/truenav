@@ -117,7 +117,7 @@ export const TOUR_STEPS: TourStep[] = [
   info("roadmap", "/app/roadmap", ".pagehead", "What comes next",
     "None of it is live. It covers correlated defaults, manager signed NAV, a certificate key held in a TEE and more."),
   info("status", "/status", ".pagehead", "Data status",
-    "Every source this site reads, how each one is labelled, and when it was last read. Live, recorded and demo data are never mixed up."),
+    "Every source this site reads, how each one is labelled, and when it was last read. Live, recorded and demo data each carry their own label."),
   info("glossary", "/glossary", ".pagehead", "Glossary",
     "Plain definitions of the terms used here, such as TrueVal, TrueRange and double pledge. The question mark next to a metric opens the same text."),
   info("faq", "/faq", ".pagehead", "Questions and answers",

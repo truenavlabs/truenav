@@ -1,6 +1,6 @@
 {
   "schema": "truenav-attestation-evidence/v1",
-  "commit": "a7ce52ce3e3d1899b43943cf10c1afc6a737c68a",
+  "commit": "5dfdd24c5538fd0250824f31a1cf31fa71a12d44",
   "tree_clean": true,
   "ok": true,
   "commands": [
@@ -285,13 +285,14 @@
     "That the report's TLS certificate matches the live HTTPS connection to NEAR AI Cloud.",
     "Which prompt the servicer sent. A signed pass shows that the attested model replied to a request with that hash.",
     "That the registry holds these fingerprints. The fingerprint check reads no pledge state from the chain; it shows where the recorded loan hashes came from.",
+    "That these are the fingerprints a new pledge would use. The recorded runs come from the earlier OutLayer project (servicer.tnlab-718ca9.testnet/truenav-fingerprint); their attestations still verify.",
     "That the hardware itself is sound. Intel TDX and NVIDIA confidential computing, and the vendors' attestation services, are assumptions.",
     "That anything was re-run just now. This is a recorded run; repeat it with the two commands above."
   ],
   "ephemeral": {
-    "generated_at": "2026-11-14T11:52:55.114Z",
-    "wall_ms": 5650,
+    "generated_at": "2026-11-14T11:53:12.710Z",
+    "wall_ms": 5363,
     "node": "v24.22.1"
   },
-  "evidence_hash": "51a24faa02b2876a5d14aef7c30e2860a68af5e496197cb87683934eab87c64f"
+  "evidence_hash": "3a95399e9685dbf30c87fd37087f8feff4374192e71343ba11443d32846803dc"
 }

@@ -22,7 +22,7 @@ export function About() {
       body: (
         <>
           <p>TrueNav is built by TrueNav Labs for NEAR HACKATHON 2026, in the Privacy and Private AI and the Open Innovation tracks. It runs on NEAR testnet, and every fund, loan and document in it is fictional.</p>
-          <p>A separate NEAR HACKATHON 2026 entry by the same person, TendAI Custody, shares no code, contracts or testnet accounts with TrueNav.</p>
+          <p>The same submitter also entered <a href="https://tendaicustody.com" className="ln" target="_blank" rel="noopener noreferrer">TendAI Custody</a>.</p>
         </>
       ),
     },

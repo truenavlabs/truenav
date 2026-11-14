@@ -110,7 +110,8 @@ test("About names the other entry by name only, links GitHub Issues, and has no 
   assert.doesNotMatch(about, /example\.invalid|\(placeholder\)|href=\{?"#"\}?/);
   assert.match(about, /github\.com\/truenavlabs\/truenav\/issues/);
   const i = about.indexOf("TendAI Custody");
-  assert.doesNotMatch(about.slice(i - 200, i + 200), /<a\b/, "TendAI Custody is a name only, no link");
+  const near = about.slice(Math.max(0, i - 200), i + 200);
+  assert.ok(!/<a\b/.test(near) || /href="https:\/\/tendaicustody\.com"/.test(near), "the only link allowed beside TendAI Custody is its own site");
 });
 
 test("no visible copy says pending approval, not in this commit, or waits for a public repository", () => {

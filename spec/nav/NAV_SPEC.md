@@ -55,7 +55,7 @@ R1 Loan validation. Bad loan data never throws. An excluded loan counts 0 toward
 
 R2 A verified loan is open, valid, NFT held, not anomaly-flagged, not a duplicate nft_id and not a duplicate loan_hash. Every other open loan is unverified.
 
-R4 TrueVal and TrueRange as in section 1. Policy NAV = sum of the fund's marks on verified loans, each counted at most at its EAD (RT3-04, JS engine). A mark is `reported_value`, or EAD x (1 - policy markdown) when absent. Marks floor at 0. Known divergence: the Rust port (`outlayer/engine-v3/src/nav.rs`) does not apply the EAD cap yet, so an over-marked verified line scores differently in the two engines until the Rust side is changed and the engine is rebuilt.
+R4 TrueVal and TrueRange as in section 1. Policy NAV = sum of the fund's marks on verified loans, each counted at most at its EAD (RT3-04, both engines: `engine/src/score.mjs` and `outlayer/engine-v3/src/nav.rs`). A mark is `reported_value`, or EAD x (1 - policy markdown) when absent. Marks floor at 0. `tests/fixtures/nav-differential.json` cases D4 check the cap in both engines.
 
 R5 Listed book L = sum of marks on open listed loans. Residual = headline - (L + cash - liabilities). A positive residual is "not listed in book": unverified, and it lowers coverage. A negative residual is the flag "headline below book" with amount and percent, no extra penalty.
 

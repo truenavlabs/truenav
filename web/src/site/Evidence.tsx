@@ -1,5 +1,8 @@
 // Evidence: real testnet transactions and the commands that re-run each check. Every transaction, hash and block is
 // from the README and the deployment evidence notes, as recorded on 14 Nov 2026. Times are UTC as the explorer shows them.
+import evidence from "../../data/recorded/attestation-evidence.json";
+import registryRead from "../../data/recorded/registry-368aa2.json";
+import { lastVerifiedLine, type AttestationEvidence } from "../content/attestation-evidence";
 import { A } from "../ui";
 import { CODE_HASH, EXPLORER_TX, NEARBLOCKS_ADDR, NEARBLOCKS_TX, REGISTRY, SHOTS } from "./content";
 import { Band, Code, Cta, Ext, Facts, Hero, Pill, Shot, Table } from "./kit";
@@ -12,6 +15,9 @@ const TXS: { when: string; what: string; hash: string; block: string; base: stri
   { when: "11 Nov 2026, 19:21:11 UTC", what: "TEE signer registered", hash: "9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE", block: "277257550", base: EXPLORER_TX },
   { when: "14 Nov 2026, 10:28:50 UTC", what: "Query contract redeployed to its pinned build", hash: "2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8", block: "277644641", base: NEARBLOCKS_TX },
 ];
+
+const EV = evidence as unknown as AttestationEvidence;
+const readAt = new Date(registryRead.readAt).toISOString().replace("T", ", ").slice(0, 17) + " UTC";
 
 export function Evidence() {
   return (
@@ -31,6 +37,7 @@ export function Evidence() {
           ["code hash", CODE_HASH],
           ["build", "a host build, not a pinned reproducible build"],
           ["TEE verdicts", "16 honest verdicts on chain, signed by the attested key"],
+          ["recorded read", `block ${registryRead.block.height}, ${readAt}. A recorded copy, not live data. The command line check below reads the chain live.`],
           ["a refused double pledge", <Ext href={`${EXPLORER_TX}8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs`}>8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs</Ext>],
         ]} />
         <h3 className="mk-sub" style={{ marginTop: 32 }}>Transactions</h3>
@@ -62,7 +69,27 @@ npm run verify:fingerprints`}</Code>
         <p className="mk-p" style={{ marginTop: 14 }}>The eval is a sixth check: <code>npm run eval</code> verifies 86 of 86 signed replies against the attested key, and 40 of 40 on the frozen hold-out set, with no honest document flagged. It is 126 synthetic documents: a perfect score means no failure was found, not that the model cannot fail.</p>
       </Band>
 
-      <Band tone="white" label="the tamper test" title="Change one byte, watch the rows turn red.">
+      <Band tone="white" label="the attestation check" title="Recorded, with what it proves and what it does not." lead={lastVerifiedLine(EV)}>
+        <Facts rows={[
+          ["evidence hash", EV.evidence_hash],
+          ["OutLayer loans checked", `${EV.outlayer.loans_checked}, ${EV.outlayer.distinct_quotes} distinct Intel TDX quotes`],
+          ["NEAR AI Cloud report hash", EV.near_ai.report_sha256],
+          ["recorded verdicts signed", `${EV.near_ai.verdicts_signed}, by the attested key`],
+        ]} />
+        <div className="mk-two" style={{ marginTop: 28 }}>
+          <div>
+            <h3 className="mk-sub">It proves</h3>
+            <ul className="mk-list">{EV.proves.map((t) => <li key={t}>{t}</li>)}</ul>
+          </div>
+          <div>
+            <h3 className="mk-sub">It does not prove</h3>
+            <ul className="mk-list">{EV.not_proves.map((t) => <li key={t}>{t}</li>)}</ul>
+          </div>
+        </div>
+        <p className="mk-p"><A href="/trust" className="ln">The same record on the trust page, with the privacy boundary →</A></p>
+      </Band>
+
+      <Band tone="tint" label="the tamper test" title="Change one byte, watch the rows turn red.">
         <div className="mk-two">
           <Shot {...SHOTS.verify} caption="receipt checker with a tampered reply, demo data" />
           <div>

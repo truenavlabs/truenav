@@ -1,6 +1,7 @@
 // Privacy and security: what is real, what is public and private, what the TEE and the contract check, and the honest
 // limits. Restates the trust model, the threat model, the security policy and the known limits. Nothing here is a claim
 // the code does not back.
+import { A } from "../ui";
 import { Band, Card, Chip, Cta, Grid, Hero, Note, Pill, Table, type Status } from "./kit";
 import { SitePage } from "./Shell";
 
@@ -44,6 +45,7 @@ export function Security() {
             ["Blocked attempts and alerts, stored under the fund that tried", "The key that makes loan fingerprints"],
           ]}
         />
+        <p className="mk-p" style={{ marginTop: 14 }}><A href="/trust#t-privacy-boundary" className="ln">Who can see what, party by party, on the trust page →</A></p>
         <Note label="what it still reveals">
           A fund's totals are public, so a fund that holds one loan reveals that loan's value. The request hash in a verdict is not salted: someone who already holds a loan document can rebuild the request, try amounts until the hash matches, and link the document to its loan and fund. The signed reply also carries token counts, which show a document's length. A refused pledge says only that the loan is pledged elsewhere and does not name the other fund.
         </Note>

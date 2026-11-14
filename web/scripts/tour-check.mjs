@@ -147,9 +147,17 @@ async function checkStep(page, i, w, width) {
   if (overlapArea(pb, clip) > 1) fail(w, where, `popover covers the target (${Math.round(overlapArea(pb, clip))} px2)`);
   const gap = gapBetween(pb, clip);
   if (gap > 48) fail(w, where, `popover is ${Math.round(gap)} px from the target`);
-  const sp = await page.locator(".tour-spot").boundingBox().catch(() => null);
+  const clipNow = async () => { const t = await boxOf(tgt); if (!t) return clip; const x = Math.max(t.x, 4), y = Math.max(t.y, 4); return { x, y, width: Math.min(t.x + t.width, vp.width - 4) - x, height: Math.min(t.y + t.height, vp.height - 4) - y }; };
+  let cl = clip;
+  const surrounds = (b) => b && !(b.x > cl.x + 1.5 || b.y > cl.y + 1.5 || b.x + b.width < cl.x + cl.width - 1.5 || b.y + b.height < cl.y + cl.height - 1.5);
+  let sp = await page.locator(".tour-spot").boundingBox().catch(() => null);
+  for (let k = 0; k < 15 && !surrounds(sp); k++) {
+    await page.waitForTimeout(100);
+    cl = await clipNow();
+    sp = await page.locator(".tour-spot").boundingBox().catch(() => null);
+  }
   if (!sp) fail(w, where, "no spotlight");
-  else if (sp.x > clip.x + 1.5 || sp.y > clip.y + 1.5 || sp.x + sp.width < clip.x + clip.width - 1.5 || sp.y + sp.height < clip.y + clip.height - 1.5) fail(w, where, `spotlight does not surround the target: ${JSON.stringify(sp)} vs ${JSON.stringify(clip)}`);
+  else if (!surrounds(sp)) fail(w, where, `spotlight does not surround the target: ${JSON.stringify(sp)} vs ${JSON.stringify(cl)}`);
   const shows = SHOWS[s.id];
   if (shows && !shows.test((await tgt.innerText()).trim())) fail(w, where, `the highlighted thing does not show ${shows}: "${(await tgt.innerText()).trim().slice(0, 60)}"`);
   const num = String(i).padStart(2, "0");

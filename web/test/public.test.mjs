@@ -185,8 +185,8 @@ test("README has the Q-015 other entry section, About names the other entry with
   const about = readFileSync(join(src, "site", "About.tsx"), "utf8");
   assert.doesNotMatch(about, /same person/);
   assert.match(about, /TendAI Custody/);
-  assert.match(t, /https:\/\/truenav\.app \(launching after final pass/);
-  assert.doesNotMatch(t, /truenav\.app is live/i);
+  assert.match(t, /Live app: https:\/\/truenav\.app/);
+  assert.doesNotMatch(t, /not live yet|launching after final pass/i);
 });
 
 test("the registry storage headroom item is resolved by the 14 Nov top-up everywhere it was open", () => {

@@ -200,8 +200,7 @@ On-chain testnet transactions already listed in this README and in `docs/DEPLOYM
 ## Demo
 
 - Demo video: [88-second walkthrough](docs/media/truenav-demo.mp4)
-- X post: TBD
-- Live app: https://truenav.app (launching after final pass; not live yet)
+- Live app: https://truenav.app
 
 [![TrueNav demo](docs/media/demo-poster.png)](docs/media/truenav-demo.mp4)
 

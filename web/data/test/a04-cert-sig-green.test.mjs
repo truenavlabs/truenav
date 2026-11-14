@@ -4,7 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runWebChecks, webSummary } from "../verify.mjs";
-import { CHAIN_CHECK_IDS, chainReader } from "../../verifier/index.mjs";
+import { CHAIN_CHECK_IDS, chainReader, codeHashFromSha256 } from "../../verifier/index.mjs";
 import { loadEvidence } from "../../verifier/evidence.mjs";
 import { sha256Hex } from "../../verifier/eip191.mjs";
 
@@ -16,6 +16,27 @@ const ACCEPTED = json("web/data/recorded/tx-cert-accepted.json");
 const NOW = Date.parse("2026-11-20T00:00:00Z");
 
 /** A chain that answers like the live registry, from the committed evidence. */
+
+/** Happy-path fakes answer with the pinned v3 receipts deployment so registry tests are not failed by the receipts checks. */
+function attachPinnedReceipts(chain) {
+  const root = new URL("../../../", import.meta.url);
+  const pin = JSON.parse(readFileSync(new URL("receipts/pinned-builds.json", root), "utf8")).receipts;
+  const engine = JSON.parse(readFileSync(new URL("receipts/v3-build.json", root), "utf8")).engine.sha256;
+  const account = "receipts.tnlab-718ca9.testnet";
+  const cfg = { outlayer: "outlayer.testnet", project_id: `${account}/truenav-engine`, version_key: engine, method: "truenav-v3.0.1", secrets_profile: "engine", secrets_owner: account, max_instructions: 10000000000, max_memory_mb: 128, max_execution_seconds: 30, outlayer_deposit: "10000000000000000000000", storage_deposit: "350000000000000000000000", outlayer_tgas: 200, callback_tgas: 80 };
+  return {
+    ...chain,
+    receipts: account,
+    receiptsCodeHash: async () => codeHashFromSha256(pin),
+    receiptsView: async (m) => {
+      if (m === "get_config") return { admin: "tnlab-718ca9.testnet", pauser: "tnlab-718ca9.testnet", paused: false, next_request: 1, config: cfg };
+      if (m === "list_tokens") return [];
+      if (m === "get_latest_receipt" || m === "get_latest") return null;
+      throw new Error(`no view ${m}`);
+    },
+  };
+}
+
 function fakeChain(ev) {
   const firstByLoan = new Map();
   for (const r of ev.verdicts.results) if (!r.tampered && !firstByLoan.has(r.loan_hash)) firstByLoan.set(r.loan_hash, r);
@@ -29,12 +50,12 @@ function fakeChain(ev) {
     get_lock: ({ loan_hash }) => (firstByLoan.has(loan_hash) ? { fund_id: firstByLoan.get(loan_hash).fund_id, locked_at_ms: 0 } : null),
     get_latest_certificate: ({ fund_id }) => REG.funds.find((f) => f.fund_id === fund_id).certificate,
   };
-  return chainReader({
+  return attachPinnedReceipts(chainReader({
     contract: ev.status.registry,
     url: "fake",
     view: async (_c, m, a) => { if (!views[m]) throw new Error(`no view ${m}`); return views[m](a); },
     codeHash: async () => ev.liveRegistry.code_hash,
-  });
+  }));
 }
 
 /** Stub globalThis.fetch for the certificate transaction reads. mode: "ok" answers from the recorded txs, a number is an HTTP status. */

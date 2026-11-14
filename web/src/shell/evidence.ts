@@ -2,6 +2,8 @@
 import statusJson from "../../../tee/status.json";
 import liveRegistryJson from "../../../certify/live-registry.json";
 import verdictsJson from "../../../tee/fixtures/verdicts-368aa2.json";
+import v3BuildJson from "../../../receipts/v3-build.json";
+import pinnedBuildsJson from "../../../receipts/pinned-builds.json";
 
 export type VerdictRecord = {
   loan_id: string; fund_id: string; loan_hash: string; tampered: { id: string; expected_anomaly: string } | null;
@@ -18,5 +20,23 @@ export const recordFor = (hash: string) => VERDICTS.results.find((r) => r.loan_h
 /** Evidence object for the verifier data layer; the 388 KB attestation report loads only when asked for. */
 export async function loadVerifierEvidence() {
   const reportB64 = (await import("../../../tee/fixtures/attestation-report-368aa2.json.b64?raw")).default as string;
-  return { status: statusJson, liveRegistry: liveRegistryJson, verdicts: verdictsJson, reportB64, paths: { status: "tee/status.json", liveRegistry: "certify/live-registry.json", verdicts: STATUS.verdicts_file, report: STATUS.report_file } };
+  const build = v3BuildJson as { method_version?: string; engine?: { sha256?: string } };
+  const pinned = pinnedBuildsJson as { receipts?: string };
+  return {
+    status: statusJson,
+    liveRegistry: liveRegistryJson,
+    verdicts: verdictsJson,
+    reportB64,
+    receipts: {
+      account: "receipts.tnlab-718ca9.testnet",
+      sha256: pinned.receipts,
+      engineSha256: build.engine && build.engine.sha256,
+      method: build.method_version || "truenav-v3.0.1",
+      storage_deposit: "350000000000000000000000",
+      outlayer_tgas: 200,
+      callback_tgas: 80,
+      outlayer: "outlayer.testnet",
+    },
+    paths: { status: "tee/status.json", liveRegistry: "certify/live-registry.json", verdicts: STATUS.verdicts_file, report: STATUS.report_file, receiptsPin: "receipts/pinned-builds.json", receiptsBuild: "receipts/v3-build.json" },
+  };
 }

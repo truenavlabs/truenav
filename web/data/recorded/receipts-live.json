@@ -1,0 +1,40 @@
+{
+  "note": "Read-only capture of the live receipts contract from public testnet RPC. Not a credential. Used so offline tests evaluate the real deployment honestly.",
+  "capturedAt": "2026-11-14T08:07:53Z",
+  "capturedAtBangkok": "2026-11-14T15:07:53+07:00",
+  "rpc": "https://rpc.testnet.near.org",
+  "account": "receipts.tnlab-718ca9.testnet",
+  "code_hash": "HNCayZpizjrHK8djD7XpGmwA7R3mLZ8A4GZ864CaaGhS",
+  "code_sha256": "f32949b38eef2547d1bbe4441d0d2c5db215846db1a57a95f4f46dbcf7b29c9d",
+  "wasm_bytes": 266556,
+  "storage_usage": 268120,
+  "block_height": 277630289,
+  "block_hash": "3JTkuSsoh16QruAYA5kyVJmJrW28EnHXYkpHkK1brfD4",
+  "get_config": {
+    "admin": "tnlab-718ca9.testnet",
+    "pauser": "tnlab-718ca9.testnet",
+    "paused": false,
+    "config": {
+      "outlayer": "outlayer.testnet",
+      "project_id": "receipts.tnlab-718ca9.testnet/truenav-engine",
+      "version_key": "360cd47346db7060ffb213288e25a6d5e39050133bd4e20ad2f6f9280b1daa57",
+      "method": "cashflow-v2.1.0",
+      "secrets_profile": "engine",
+      "secrets_owner": "receipts.tnlab-718ca9.testnet",
+      "max_instructions": 10000000000,
+      "max_memory_mb": 128,
+      "max_execution_seconds": 30,
+      "outlayer_deposit": "10000000000000000000000",
+      "storage_deposit": "250000000000000000000000",
+      "outlayer_tgas": 230,
+      "callback_tgas": 50
+    },
+    "next_request": 3
+  },
+  "list_tokens": [
+    { "token_id": "DEMO-CREDIT", "kind": "credit", "receipts": 0 },
+    { "token_id": "DEMO-RENTAL", "kind": "rental", "receipts": 0 },
+    { "token_id": "HONEST-CREDIT", "kind": "credit", "receipts": 0 },
+    { "token_id": "HONEST-RENTAL", "kind": "rental", "receipts": 0 }
+  ]
+}

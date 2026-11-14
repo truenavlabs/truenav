@@ -13,7 +13,7 @@
     "features": []
   },
   "engine": {
-    "sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb",
+    "sha256": "4ce9e539b5bed2eb9dbcc0037168633297a337843d0f86ec0790e8d8342677a0",
     "bytes": null,
     "bytes_note": "Not printed by the CI build that produced this pin, which printed only the sha256; record it after the next pinned-image engine build.",
     "toolchain": "1.99.0",

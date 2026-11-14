@@ -244,7 +244,9 @@ pub fn score(fund: &Value, now: i64, history: &Value) -> Nav {
     let listed: f64 = open.iter().map(|l| l.mark).sum();
     let headline = n(fund, "headline_nav").unwrap_or(listed);
     let lih = headline + liab - if cash_attested { cash } else { 0.0 };
-    let policy: f64 = verified.iter().map(|l| l.mark).sum();
+    // RT3-04: a verified line counts toward Policy NAV at most its EAD (same cap as the 50% test below and as the JS
+    // engine), so a reported_value above EAD cannot buy coverage or gap.
+    let policy: f64 = verified.iter().map(|l| l.mark.min(l.ead.max(0.0))).sum();
     let trueval: f64 = verified.iter().map(|l| l.ead * (1.0 - l.pd * l.lgd)).sum();
     let variance: f64 = verified
         .iter()

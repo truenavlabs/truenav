@@ -176,3 +176,14 @@ test("docs that were moved out of the README exist and the README links each one
     assert.ok(t.includes(f), `README links ${f}`);
   }
 });
+
+test("README has the Q-015 other entry section, About names the other entry with no person reference", () => {
+  const t = readRepo("README.md");
+  assert.ok(t.includes("## Other entry (Q-015 disclosure)\n\nThe same submitter also entered [TendAI Custody](https://tendaicustody.com) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other."));
+  assert.doesNotMatch(t, /by the same person/);
+  const about = readFileSync(join(src, "site", "About.tsx"), "utf8");
+  assert.doesNotMatch(about, /same person/);
+  assert.match(about, /TendAI Custody/);
+  assert.match(t, /https:\/\/truenav\.app \(launching after final pass/);
+  assert.doesNotMatch(t, /truenav\.app is live/i);
+});

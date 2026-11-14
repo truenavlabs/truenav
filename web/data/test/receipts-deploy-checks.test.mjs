@@ -189,8 +189,8 @@ test("recorded live receipts deployment: both checks fail as mismatch, redeploy 
   assert.equal(c["receipts-config"].state, "fail", c["receipts-config"].detail);
   assert.match(c["receipts-code"].detail, /redeploy pending/i);
   assert.match(c["receipts-code"].detail, new RegExp(ACCOUNT.replace(/\./g, "\\.")));
-  assert.match(c["receipts-code"].detail, LIVE.code_hash);
-  assert.match(c["receipts-code"].detail, EXPECTED_CODE_HASH);
+  assert.ok(c["receipts-code"].detail.includes(LIVE.code_hash), c["receipts-code"].detail);
+  assert.ok(c["receipts-code"].detail.includes(EXPECTED_CODE_HASH), c["receipts-code"].detail);
   assert.match(c["receipts-config"].detail, /redeploy pending/i);
   assert.match(c["receipts-config"].detail, /cashflow-v2\.1\.0/);
   assert.match(c["receipts-config"].detail, /truenav-v3\.0\.1/);
@@ -210,7 +210,7 @@ test("matching receipts code and v3 config (no stored receipt) can be live, and 
   assert.equal(c["receipts-code"].state, "live", c["receipts-code"] && c["receipts-code"].detail);
   assert.equal(c["receipts-config"].state, "live", c["receipts-config"] && c["receipts-config"].detail);
   assert.match(c["receipts-code"].detail, new RegExp(ACCOUNT.replace(/\./g, "\\.")));
-  assert.match(c["receipts-code"].detail, EXPECTED_CODE_HASH);
+  assert.ok(c["receipts-code"].detail.includes(EXPECTED_CODE_HASH), c["receipts-code"].detail);
   assert.match(c["receipts-config"].detail, /truenav-v3\.0\.1/);
   assert.match(c["receipts-config"].detail, /098f5d86/);
   assert.equal(r.summary.counts.fail, 0, JSON.stringify(r.checks.filter((x) => x.state === "fail")));

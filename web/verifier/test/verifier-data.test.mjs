@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { runVerifierChecks, summarize, chainReader, STATES, CHAIN_CHECK_IDS, VERDICT_TTL_MS as TTL_WEB, bindingFor as bindingWeb } from "../checks.mjs";
+import { runVerifierChecks, summarize, chainReader, STATES, CHAIN_CHECK_IDS, VERDICT_TTL_MS as TTL_WEB, bindingFor as bindingWeb, codeHashFromSha256 } from "../checks.mjs";
 import { loadEvidence } from "../evidence.mjs";
 import { eip191Recover as recoverWeb, sha256Hex } from "../eip191.mjs";
 import { eip191Recover as recoverNode, bindingFor as bindingNode, VERDICT_TTL_MS as TTL_NODE } from "../../../tee/underwrite.mjs";
@@ -14,6 +14,27 @@ const fresh = async () => structuredClone(await loadEvidence(readText));
 const NOW = Date.parse("2026-11-20T00:00:00Z"); // inside the recorded set's 30 day window
 
 /** A chain that answers like the live registry, from the committed evidence (the set the live registry holds). */
+
+/** Happy-path fakes answer with the pinned v3 receipts deployment so registry tests are not failed by the receipts checks. */
+function attachPinnedReceipts(chain) {
+  const root = new URL("../../../", import.meta.url);
+  const pin = JSON.parse(readFileSync(new URL("receipts/pinned-builds.json", root), "utf8")).receipts;
+  const engine = JSON.parse(readFileSync(new URL("receipts/v3-build.json", root), "utf8")).engine.sha256;
+  const account = "receipts.tnlab-718ca9.testnet";
+  const cfg = { outlayer: "outlayer.testnet", project_id: `${account}/truenav-engine`, version_key: engine, method: "truenav-v3.0.1", secrets_profile: "engine", secrets_owner: account, max_instructions: 10000000000, max_memory_mb: 128, max_execution_seconds: 30, outlayer_deposit: "10000000000000000000000", storage_deposit: "350000000000000000000000", outlayer_tgas: 200, callback_tgas: 80 };
+  return {
+    ...chain,
+    receipts: account,
+    receiptsCodeHash: async () => codeHashFromSha256(pin),
+    receiptsView: async (m) => {
+      if (m === "get_config") return { admin: "tnlab-718ca9.testnet", pauser: "tnlab-718ca9.testnet", paused: false, next_request: 1, config: cfg };
+      if (m === "list_tokens") return [];
+      if (m === "get_latest_receipt" || m === "get_latest") return null;
+      throw new Error(`no view ${m}`);
+    },
+  };
+}
+
 function fakeChain(ev, over = {}) {
   const firstByLoan = new Map();
   for (const r of ev.verdicts.results) if (!r.tampered && !firstByLoan.has(r.loan_hash)) firstByLoan.set(r.loan_hash, r);
@@ -28,12 +49,12 @@ function fakeChain(ev, over = {}) {
     get_latest_certificate: ({ fund_id }) => ({ certificate: { fund_id, band: "green", score: 90 }, signer: ev.liveRegistry.certificate_signers[0], stored_at_ms: 1 }),
     ...over,
   };
-  return chainReader({
+  return attachPinnedReceipts(chainReader({
     contract: ev.status.registry,
     url: "fake",
     view: async (_c, m, a) => { if (!views[m]) throw new Error(`no view ${m}`); return views[m](a); },
     codeHash: async () => (over.codeHash ? over.codeHash() : ev.liveRegistry.code_hash),
-  });
+  }));
 }
 
 const byId = (rs) => Object.fromEntries(rs.map((r) => [r.id, r]));

@@ -31,15 +31,93 @@ function result(id, label, state, detail, source, evidenceDate) {
 }
 
 /** Wrap view/codeHash so every failure is a ChainReadError, and results come back as plain data. */
-export function chainReader({ contract = DEFAULT_CONTRACT, url = DEFAULT_RPC, view = chainView, codeHash = chainCodeHash } = {}) {
-  const wrap = (fn) => async (...a) => {
+export const DEFAULT_RECEIPTS = "receipts.tnlab-718ca9.testnet";
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const STORAGE_DEPOSIT_V3 = "350000000000000000000000";
+
+/** NEAR account code_hash is base58 of sha256(wasm). */
+export function codeHashFromSha256(hex) {
+  const h = String(hex || "").toLowerCase().replace(/^0x/, "");
+  if (!/^[0-9a-f]{64}$/.test(h)) throw new Error("pin is not a sha256 hex");
+  const bytes = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) bytes[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16);
+  let n = 0n;
+  for (const b of bytes) n = (n << 8n) + BigInt(b);
+  let out = "";
+  while (n > 0n) {
+    out = B58[Number(n % 58n)] + out;
+    n = n / 58n;
+  }
+  let pad = 0;
+  for (const b of bytes) {
+    if (b === 0) pad++;
+    else break;
+  }
+  return `${B58[0].repeat(pad)}${out}`;
+}
+
+function nearFromYocto(y) {
+  const s = String(y ?? "");
+  if (!/^\d+$/.test(s)) return s || "missing";
+  const padded = s.padStart(25, "0");
+  const i = padded.slice(0, -24);
+  const f = padded.slice(-24).replace(/0+$/, "");
+  return f ? `${i}.${f}` : i;
+}
+
+function receiptsExpect(ev) {
+  const r = ev.receipts || {};
+  const paths = ev.paths || {};
+  const pinPath = paths.receiptsPin || "receipts/pinned-builds.json";
+  const buildPath = paths.receiptsBuild || "receipts/v3-build.json";
+  const sha256 = String(r.sha256 || "").toLowerCase();
+  const engineSha256 = String(r.engineSha256 || "").toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(sha256)) throw new Error(`${pinPath} has no receipts sha256`);
+  if (!/^[0-9a-f]{64}$/.test(engineSha256)) throw new Error(`${buildPath} has no engine sha256`);
+  return {
+    account: r.account || DEFAULT_RECEIPTS,
+    sha256,
+    engineSha256,
+    method: r.method || "truenav-v3.0.1",
+    storage_deposit: String(r.storage_deposit || STORAGE_DEPOSIT_V3),
+    outlayer_tgas: Number(r.outlayer_tgas ?? 200),
+    callback_tgas: Number(r.callback_tgas ?? 80),
+    outlayer: r.outlayer || "outlayer.testnet",
+    codeHash: codeHashFromSha256(sha256),
+    pinPath,
+    buildPath,
+  };
+}
+
+function receiptsApi(c, account) {
+  const missing = (what) => async () => { throw new ChainReadError(`could not read ${account}: no receipts ${what}`); };
+  return {
+    account: c.receipts || account,
+    receiptsCodeHash: typeof c.receiptsCodeHash === "function" ? c.receiptsCodeHash : missing("code hash"),
+    receiptsView: typeof c.receiptsView === "function" ? c.receiptsView : missing("view"),
+  };
+}
+
+export function chainReader({ contract = DEFAULT_CONTRACT, url = DEFAULT_RPC, view = chainView, codeHash = chainCodeHash, receipts = DEFAULT_RECEIPTS, receiptsView, receiptsCodeHash } = {}) {
+  const wrap = (id) => (fn) => async (...a) => {
     try {
       return await fn(...a);
     } catch (e) {
-      throw new ChainReadError(`could not read ${contract}: ${e && e.message ? e.message : String(e)}`);
+      if (e instanceof ChainReadError) throw e;
+      throw new ChainReadError(`could not read ${id}: ${e && e.message ? e.message : String(e)}`);
     }
   };
-  return { contract, url, view: wrap((m, args = {}) => view(contract, m, args, url)), codeHash: wrap(() => codeHash(contract, url)) };
+  const wrapC = wrap(contract);
+  const wrapR = wrap(receipts);
+  return {
+    contract,
+    url,
+    receipts,
+    view: wrapC((m, args = {}) => view(contract, m, args, url)),
+    codeHash: wrapC(() => codeHash(contract, url)),
+    receiptsView: wrapR((m, args = {}) => (receiptsView ? receiptsView(m, args) : view(receipts, m, args, url))),
+    receiptsCodeHash: wrapR(() => (receiptsCodeHash ? receiptsCodeHash() : codeHash(receipts, url))),
+  };
 }
 
 /** Records of the verdict file whose signature recovers to the expected signer and whose reply passes the reply rule. */
@@ -101,6 +179,64 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
     return h === expected.code_hash
       ? result("registry-code", "Deployed contract code hash", "live", `${contract} code hash ${h} equals the hash in ${paths.liveRegistry}`, rpcSrc("view_account"))
       : result("registry-code", "Deployed contract code hash", "fail", `chain code hash ${h} differs from ${expected.code_hash} in ${paths.liveRegistry}`, rpcSrc("view_account"));
+  });
+
+  let expectedReceipts;
+  try { expectedReceipts = receiptsExpect(ev); } catch (e) { expectedReceipts = { error: e }; }
+  const receiptsSrc = (m) => `${c.url || "rpc"} ${m} on ${(expectedReceipts.account || DEFAULT_RECEIPTS)}`;
+
+  await run("receipts-code", "Deployed receipts contract code hash", receiptsSrc("view_account"), async () => {
+    if (expectedReceipts.error) throw expectedReceipts.error;
+    const api = receiptsApi(c, expectedReceipts.account);
+    const h = await api.receiptsCodeHash();
+    const src = receiptsSrc("view_account");
+    return h === expectedReceipts.codeHash
+      ? result("receipts-code", "Deployed receipts contract code hash", "live", `${expectedReceipts.account} code hash ${h} equals the pinned receipts build (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath})`, src)
+      : result("receipts-code", "Deployed receipts contract code hash", "fail", `${expectedReceipts.account} code hash ${h} differs from the pinned receipts build ${expectedReceipts.codeHash} (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath}). Redeploy pending.`, src);
+  });
+
+  await run("receipts-config", "Receipts contract config", receiptsSrc("get_config"), async () => {
+    if (expectedReceipts.error) throw expectedReceipts.error;
+    const api = receiptsApi(c, expectedReceipts.account);
+    const raw = await api.receiptsView("get_config", {});
+    const cfg = raw && raw.config ? raw.config : {};
+    const diffs = [];
+    if (cfg.method !== expectedReceipts.method) diffs.push(`method ${cfg.method || "missing"} (expected ${expectedReceipts.method})`);
+    if (String(cfg.version_key || "").toLowerCase() !== expectedReceipts.engineSha256) diffs.push(`version_key ${cfg.version_key || "missing"} (expected ${expectedReceipts.engineSha256})`);
+    try {
+      if (BigInt(String(cfg.storage_deposit ?? "")) !== BigInt(expectedReceipts.storage_deposit)) diffs.push(`storage_deposit ${nearFromYocto(cfg.storage_deposit)} NEAR (expected ${nearFromYocto(expectedReceipts.storage_deposit)})`);
+    } catch {
+      diffs.push(`storage_deposit ${cfg.storage_deposit || "missing"} (expected ${nearFromYocto(expectedReceipts.storage_deposit)} NEAR)`);
+    }
+    if (Number(cfg.outlayer_tgas) !== expectedReceipts.outlayer_tgas) diffs.push(`outlayer_tgas ${cfg.outlayer_tgas ?? "missing"} (expected ${expectedReceipts.outlayer_tgas})`);
+    if (Number(cfg.callback_tgas) !== expectedReceipts.callback_tgas) diffs.push(`callback_tgas ${cfg.callback_tgas ?? "missing"} (expected ${expectedReceipts.callback_tgas})`);
+    if (cfg.outlayer !== expectedReceipts.outlayer) diffs.push(`outlayer ${cfg.outlayer || "missing"} (expected ${expectedReceipts.outlayer})`);
+    const src = receiptsSrc("get_config");
+    if (diffs.length) {
+      return result("receipts-config", "Receipts contract config", "fail", `get_config on ${expectedReceipts.account} does not match the expected v3 config (redeploy pending): ${diffs.join(", ")}.`, src);
+    }
+    const receiptProblems = [];
+    let tokens = [];
+    try { tokens = await api.receiptsView("list_tokens", { from: 0, limit: 100 }); } catch { tokens = []; }
+    const stored = (Array.isArray(tokens) ? tokens : []).filter((t) => Number(t && t.receipts) > 0);
+    for (const t of stored) {
+      let latest;
+      try { latest = await api.receiptsView("get_latest_receipt", { token_id: t.token_id }); } catch {
+        try { latest = await api.receiptsView("get_latest", { token_id: t.token_id }); } catch (e) {
+          receiptProblems.push(`could not read the latest receipt on ${t.token_id}`);
+          continue;
+        }
+      }
+      const sha = latest && (latest.engine_code_sha256 || latest.engine_version_key);
+      if (String(sha || "").toLowerCase() !== expectedReceipts.engineSha256) {
+        receiptProblems.push(`latest receipt on ${t.token_id} has engine_code_sha256 ${sha || "missing"} (expected ${expectedReceipts.engineSha256})`);
+      }
+    }
+    if (receiptProblems.length) {
+      return result("receipts-config", "Receipts contract config", "fail", `get_config on ${expectedReceipts.account} matches the expected v3 config, but ${receiptProblems.join("; ")}.`, src);
+    }
+    const receiptNote = stored.length ? `The latest stored receipt engine_code_sha256 equals the pin.` : "No stored receipt yet.";
+    return result("receipts-config", "Receipts contract config", "live", `get_config on ${expectedReceipts.account} matches ${expectedReceipts.method}, version_key ${expectedReceipts.engineSha256}, storage_deposit ${nearFromYocto(expectedReceipts.storage_deposit)} NEAR, ${expectedReceipts.outlayer_tgas} and ${expectedReceipts.callback_tgas} Tgas, outlayer ${expectedReceipts.outlayer}. ${receiptNote}`, src);
   });
 
   await run("registry-roles", "Contract roles and pause flag", rpcSrc("get_roles"), async () => {
@@ -250,7 +386,7 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
 }
 
 /** Checks that need a chain read: when one of them is not live, the panel has no current chain result. */
-export const CHAIN_CHECK_IDS = Object.freeze(["registry-code", "registry-roles", "tee-signer", "attestation-hash", "onchain-verdicts", "certificate-signers", "certificates"]);
+export const CHAIN_CHECK_IDS = Object.freeze(["registry-code", "receipts-code", "receipts-config", "registry-roles", "tee-signer", "attestation-hash", "onchain-verdicts", "certificate-signers", "certificates"]);
 
 /** Counts per state. green is true only when nothing failed and every chain check was read live just now. */
 export function summarize(results) {
@@ -258,4 +394,25 @@ export function summarize(results) {
   for (const r of results) counts[r.state] = (counts[r.state] || 0) + 1;
   const chainLive = CHAIN_CHECK_IDS.every((id) => results.some((r) => r.id === id && r.state === "live"));
   return { counts, anyFail: counts.fail > 0, chainLive, green: counts.fail === 0 && chainLive };
+}
+
+/** Account, live code hash and engine version for the Verify summary. Pending when either receipts check failed. */
+export function deploymentStatus(results) {
+  const rows = Array.isArray(results) ? results : [];
+  const code = rows.find((r) => r.id === "receipts-code");
+  const cfg = rows.find((r) => r.id === "receipts-config");
+  const account = DEFAULT_RECEIPTS;
+  const hashRe = /code hash ([1-9A-HJ-NP-Za-km-z]{32,44})/;
+  const keyRe = /version_key ([0-9a-f]{64})/i;
+  const codeHash = (code && code.detail && (code.detail.match(hashRe) || [])[1]) || "";
+  const engineVersion = (cfg && cfg.detail && (cfg.detail.match(keyRe) || [])[1]) || "";
+  const pendingRedeploy = (code && code.state === "fail") || (cfg && cfg.state === "fail") || false;
+  const parts = [account];
+  if (codeHash) parts.push(`code hash ${codeHash}`);
+  if (engineVersion) parts.push(`engine version ${engineVersion}`);
+  let line = parts.join(", ");
+  if (pendingRedeploy) line = `${line}. Redeploy pending.`;
+  else if ((code && code.state === "unchecked") || (cfg && cfg.state === "unchecked")) line = `${line}. Receipts deployment not checked.`;
+  else if (code && cfg && code.state === "live" && cfg.state === "live") line = `${line}. Matches the pinned v3 build.`;
+  return { account, codeHash, engineVersion, pendingRedeploy, line };
 }

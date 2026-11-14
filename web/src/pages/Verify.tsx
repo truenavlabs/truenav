@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { runWebChecks, TAMPERS } from "../../data/verify.mjs";
-import { chainReader } from "../../verifier/index.mjs";
+import { chainReader, deploymentStatus } from "../../verifier/index.mjs";
 import { loadVerifierEvidence } from "../shell/evidence";
 import { clock } from "../shell/fmt";
 import { ErrorBox, Note, PageHead, Panel, Skel } from "../shell/kit";
@@ -27,6 +27,7 @@ export default function Verify({ q }: { q?: URLSearchParams }) {
   }, []);
   useEffect(() => { void go(tamper); }, [go, tamper]);
   const c = run?.summary.counts ?? {};
+  const dep = run ? (deploymentStatus as (checks: Check[]) => { line: string; pendingRedeploy: boolean })(run.checks) : null;
   return (
     <>
       <PageHead title="Verifier" lead="Every claim TrueNav makes about the live registry, checked in your browser against the chain and the committed evidence. Nothing is sent." right={<button className="xb" onClick={() => go(tamper)} disabled={busy}>{busy ? "Checking..." : "Run again"}</button>} />
@@ -41,10 +42,10 @@ export default function Verify({ q }: { q?: URLSearchParams }) {
       {!run ? <Skel rows={8} /> : (
         <>
           <div className="mt">
-            {c.fail ? <Note tone="bad">{c.fail} check{c.fail === 1 ? "" : "s"} failed{tamper !== "none" ? ": the tamper was caught." : "."}</Note>
-              : run.summary.runnableGreen ? <Note tone="ok">Every check this browser can run passed against the live registry, including signature recovery.{run.summary.pending.length ? ` ${run.summary.pending.length} could not run here.` : ""}</Note>
-              : run.summary.chainLive && run.summary.certificateSignatures !== "live" ? <Note tone="warn">No check failed, but the certificate signature check did not run, so this is not a pass. The certificate transactions could not be read just now. Run again, or see the last row.</Note>
-              : <Note tone="warn">No check failed, but some could not run. See the rows below.</Note>}
+            {c.fail ? <Note tone="bad">{c.fail} check{c.fail === 1 ? "" : "s"} failed{tamper !== "none" ? ": the tamper was caught." : "."}{dep ? ` ${dep.line}` : ""}</Note>
+              : run.summary.runnableGreen ? <Note tone="ok">Every check this browser can run passed against the live registry and the receipts contract, including signature recovery.{run.summary.pending.length ? ` ${run.summary.pending.length} could not run here.` : ""}{dep ? ` ${dep.line}` : ""}</Note>
+              : run.summary.chainLive && run.summary.certificateSignatures !== "live" ? <Note tone="warn">No check failed, but the certificate signature check did not run, so this is not a pass. The certificate transactions could not be read just now. Run again, or see the last row.{dep ? ` ${dep.line}` : ""}</Note>
+              : <Note tone="warn">No check failed, but some could not run. See the rows below.{dep ? ` ${dep.line}` : ""}</Note>}
           </div>
           <Panel className="mt" title={`${run.checks.length} checks`} sub={`Run at ${clock(run.at)} Bangkok in ${run.ms} ms. ${c.live ?? 0} checked now, ${c.recorded ?? 0} recorded, ${c.unchecked ?? 0} not checked, ${c.fail ?? 0} failed.`} pad={false}>
             {run.checks.map((x) => (

@@ -212,7 +212,7 @@ These links will be filled at launch. They are placeholders.
 
 ## Other entry (Q-015 disclosure)
 
-The same submitter also entered [TendAI Custody](https://tendaicustody.com) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other.
+The same submitter also entered [TendAI Custody](https://tendaicustody.app) in NEAR HACKATHON. The two projects are independent, with separate code, contracts and deployments, and neither depends on the other.
 
 Built at NEAR HACKATHON 2026 by TrueNav Labs. Repository: [https://github.com/truenavlabs/truenav](https://github.com/truenavlabs/truenav).
 

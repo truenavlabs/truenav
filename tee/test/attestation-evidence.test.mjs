@@ -99,7 +99,7 @@ test("the committed snapshot matches its own hash, its commit, the recorded file
   assert.equal(s.near_ai.report_sha256, createHash("sha256").update(raw).digest("hex"));
   assert.equal(s.near_ai.report_sha256, json("tee/fixtures/verdicts-368aa2.json").attestation.report_sha256);
   assert.ok(s.near_ai.checks.length >= 15 && s.near_ai.checks.every((c) => c.pass === true));
-  assert.equal(s.near_ai.verdicts_signed, json("tee/fixtures/verdicts-368aa2.json").verdicts?.length ?? s.near_ai.verdicts_signed);
+  assert.equal(s.near_ai.verdicts_signed, json("tee/fixtures/verdicts-368aa2.json").results.length);
 });
 
 test("every check label recorded for a fingerprint run exists in the code that runs it", () => {

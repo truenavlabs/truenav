@@ -36,6 +36,7 @@
     "eval:run": "node tee/eval/run.mjs",
     "check:chain-replies": "node certify/check-chain-replies.mjs",
     "verify:fingerprints": "node tee/verify-fingerprints.mjs",
+    "record:attestation": "node tee/record-attestation-evidence.mjs",
     "vault:testnet": "node certify/vault-demo.mjs",
     "cashflow:demo": "node cashflow/demo/print.mjs",
     "e2e:mirror": "node mirror/sandbox.mjs",

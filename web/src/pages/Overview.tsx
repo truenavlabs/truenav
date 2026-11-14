@@ -23,7 +23,7 @@ export default function Overview() {
         title="Private credit NAV, checked on NEAR"
         lead="TrueNav reads each fund's loans inside a sealed enclave, posts only a signed verdict on NEAR, and scores how far the reported NAV can be trusted. Every number below is read from the testnet registry in your browser, or recomputed from it."
         chips={<><SrcTag tag={tag} source={`registry.tnlab-368aa2.testnet via ${view.rpc || "public RPC"}`} at={loading ? "reading" : whenFull(view.readAt)} />{view.block ? <span className="tp mono">block #{int(view.block.height)}</span> : null}</>}
-        right={<><A href={tourStart()} className="xb">Take the judge tour</A><A href="/features" className="xb ghost">Verify it yourself</A><A href="/features/engine" className="xb ghost">Recompute a score</A></>}
+        right={<><A href={tourStart()} className="xb">Take the tour</A><A href="/features" className="xb ghost">Verify it yourself</A><A href="/features/engine" className="xb ghost">Recompute a score</A></>}
       />
       {state === "partial" ? <Note tone="warn">Some reads failed. Those values say "n/a" and the Verifier will not show green. See <A href="/status">Data status</A>.</Note> : null}
       <div className="kpirow">

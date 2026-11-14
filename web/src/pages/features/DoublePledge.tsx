@@ -85,12 +85,12 @@ function Simulator({ autorun }: { autorun?: boolean }) {
         <label className="ctl"><span>Nonce</span><div className="hrow" style={{ gap: 6 }}><input className="mono" value={short(nonce, 4, 6)} readOnly /><button type="button" className="xb sm ghost" onClick={() => setNonceN((n) => n + 1)}>New nonce</button></div><small>Reusing a nonce that already went through is refused.</small></label>
       </div>
       <div className="hrow mt" style={{ gap: 8 }}>
-        <button className="xb" onClick={run}>Simulate the call</button>
+        <button className="xb" data-tour="simulate-pledge" onClick={run}>Simulate the call</button>
         <button className="xb ghost" onClick={() => { setSession(null); setRes(null); }} disabled={!session}>Reset to the live state</button>
         <span className="dim">Simulation, nothing sent.{session ? " Session state includes your earlier simulated calls." : ""}</span>
       </div>
       {res ? (
-        <div className="twocol mt">
+        <div className="twocol mt" data-tour="pledge-result">
           <div>
             <h3>The contract would answer</h3>
             {res.kind === "panic"

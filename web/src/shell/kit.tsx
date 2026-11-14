@@ -39,11 +39,11 @@ export function Q({ id, children }: { id: string; children?: ReactNode }) {
   );
 }
 
-export function Panel({ title, sub, tags, right, children, className, id, pad = true }: {
-  title?: ReactNode; sub?: ReactNode; tags?: ReactNode; right?: ReactNode; children: ReactNode; className?: string; id?: string; pad?: boolean;
+export function Panel({ title, sub, tags, right, children, className, id, pad = true, tour }: {
+  title?: ReactNode; sub?: ReactNode; tags?: ReactNode; right?: ReactNode; children: ReactNode; className?: string; id?: string; pad?: boolean; tour?: string;
 }) {
   return (
-    <section className={`panel${className ? " " + className : ""}`} id={id}>
+    <section className={`panel${className ? " " + className : ""}`} id={id} data-tour={tour}>
       {title || tags || right ? (
         <header className="ph">
           <div className="pt">
@@ -213,7 +213,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: 
   return (
     <div className="tabbar" role="tablist">
       {tabs.map((t) => (
-        <button key={t.id} role="tab" aria-selected={value === t.id} className={value === t.id ? "on" : undefined} onClick={() => onChange(t.id)}>{t.label}</button>
+        <button key={t.id} role="tab" data-tab={t.id} aria-selected={value === t.id} className={value === t.id ? "on" : undefined} onClick={() => onChange(t.id)}>{t.label}</button>
       ))}
     </div>
   );
@@ -249,10 +249,10 @@ export function FeatureFrame({ what, status, tryIt, proves, notProves, run, sour
   return (
     <div className="feature">
       <div className="frow">
-        <Panel title="What it does" className="fwhat"><p>{what}</p></Panel>
+        <Panel title="What it does" className="fwhat" tour="f-what"><p>{what}</p></Panel>
         <Panel title="Status" className="fstatus">{status}</Panel>
       </div>
-      <Panel title="Try it" sub="Runs in your browser. Read-only: nothing is sent to the chain." className="ftry">{tryIt}</Panel>
+      <Panel title="Try it" sub="Runs in your browser. Read-only: nothing is sent to the chain." className="ftry" tour="f-try">{tryIt}</Panel>
       <div className="grid2">
         <Panel title="What this proves">
           <ul className="ticks">{proves.map((p, i) => <li key={i}>{p}</li>)}</ul>

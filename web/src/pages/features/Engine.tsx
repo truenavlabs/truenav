@@ -40,7 +40,7 @@ export default function Engine({ q }: { q?: URLSearchParams }) {
   const tryIt = (
     <>
       <div className="hrow" style={{ gap: 8, flexWrap: "wrap" }}>
-        <button className="xb" onClick={applyT1}>Apply the T1 flag</button>
+        <button className="xb" data-tour="apply-t1" onClick={applyT1}>Apply the T1 flag</button>
         <button className="xb ghost" onClick={reset} disabled={!whatIf}>Reset to certified inputs</button>
         {whatIf ? <span className="status" style={{ background: "var(--yellow-t)", color: "var(--yellow)" }}>What-if, not certified</span> : <span className="status s-live">Certified inputs</span>}
       </div>

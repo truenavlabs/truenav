@@ -26,11 +26,11 @@ export default function PaidReport() {
     <>
       <Note tone="demo">Simulation of the tested API in your browser. No NEAR moves and nothing is sent. Query is live on its pin; receipts is live v2, and v3 is pinned not deployed.</Note>
       <div className="hrow mt" style={{ gap: 8 }}>
-        {next ? <button className="xb" onClick={() => void next[1]()}>Step {log.length + 1}: {next[0]}</button> : <span className="ok">All six steps done.</span>}
+        {next ? <button className="xb" data-tour="paid-step" onClick={() => void next[1]()}>Step {log.length + 1}: {next[0]}</button> : <span className="ok">All six steps done.</span>}
         <button className="xb ghost" onClick={() => location.reload()} disabled={!log.length}>Start over</button>
         <span className="dim">Simulated spend so far: {(Number(sim.spent()) / 1e24).toFixed(2)} NEAR</span>
       </div>
-      <div className="stack mt">
+      <div className="stack mt" data-tour="paid-log">
         {log.map((s, i) => (
           <div key={i} className="panel" style={{ padding: 10 }}>
             <div className="hrow" style={{ gap: 8 }}><span className={`http ${s.res.status < 300 ? "h2xx" : ""}`} style={{ fontWeight: 700, color: s.res.status < 300 ? "var(--green)" : s.res.status === 402 ? "var(--yellow)" : "var(--red)" }}>{s.res.status}</span><code>{s.call}</code></div>

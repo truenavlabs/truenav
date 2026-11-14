@@ -79,7 +79,7 @@ export default function Loan({ hash }: { hash: string }) {
                 {loanId ? <tr><th>Demo loan id</th><td>{loanId} <SrcTag tag="recorded" source="tee/loans.json" /></td></tr> : null}
               </tbody></table>
             </Panel>
-            <Panel title="Latest verdict" tags={<SrcTag tag={data ? "live" : tag} source="get_latest_verdict" />}>
+            <Panel title="Latest verdict" tour="verdict-panel" tags={<SrcTag tag={data ? "live" : tag} source="get_latest_verdict" />}>
               {latest ? (
                 <table className="kvt"><tbody>
                   <tr><th>Verdict</th><td>{latest.verdict}</td></tr>
@@ -90,7 +90,7 @@ export default function Loan({ hash }: { hash: string }) {
                   <tr><th>Response sha256</th><td>{short(latest.response_sha256, 10, 8)}</td></tr>
                   <tr><th>Attestation sha256</th><td>{short(latest.attestation_sha256, 10, 8)}</td></tr>
                   <tr><th>Recorded reply hash</th><td>{respMatch === null ? "checking..." : respMatch ? <span className="ok">sha256 of the recorded signed reply equals the on-chain hash</span> : <span className="bad">differs</span>}</td></tr>
-                  {rec?.onchain ? <tr><th>Signature</th><td>{!sig ? <button className="xb sm" data-tour="check-signature" onClick={() => setSig(recoverVerdict(VERDICTS.model, rec.onchain!))}>Check signature</button>
+                  {rec?.onchain ? <tr><th>Signature</th><td data-tour="sig-result">{!sig ? <button className="xb sm" data-tour="check-signature" onClick={() => setSig(recoverVerdict(VERDICTS.model, rec.onchain!))}>Check signature</button>
                     : sig.address && sig.address === teeSigner ? <span className="ok">Signed inside the attested enclave by {short(sig.address, 6, 4)}, the registered TEE signer (recovered now in your browser). The document never touched the chain.</span>
                     : <span className="bad">recovers to {sig.address ?? sig.error}, not the registered TEE signer</span>}</td></tr> : null}
                 </tbody></table>
@@ -118,7 +118,7 @@ export default function Loan({ hash }: { hash: string }) {
 
           {SLOTS.LoanExtra ? <SLOTS.LoanExtra hash={hash} /> : null}
 
-          <Panel className="mt" title="Privacy">
+          <Panel className="mt" title="Privacy" tour="loan-privacy">
             <p>On chain: the loan hash, the holder, the verdict, anomaly codes, the request and response hashes. Not on chain: the document or the borrower. Someone who already holds the document can recompute the request hash and so link it to this loan and fund.</p>
             {fx ? <p className="dim">Engine input for this loan (fictional, from the committed fixtures): principal {usdWhole(fx.loan.principal)}, accrued {usdWhole(fx.loan.accrued)}, repaid {usdWhole(fx.loan.repaid)}. <SrcTag tag="recorded" source="spec/nav/fixtures.json" /></p> : null}
           </Panel>

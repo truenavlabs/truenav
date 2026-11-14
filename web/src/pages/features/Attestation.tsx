@@ -38,11 +38,11 @@ export default function Attestation() {
   const tryIt = (
     <>
       <Panel title="(a) Live: the published report is the one the registry points to" tags={<><SrcTag tag="computed" source="WebCrypto sha256 of tee/fixtures/attestation-report-368aa2.json.b64 (decoded)" /><SrcTag tag={tag} source="get_tee_signers attestation_sha256" /></>}
-        right={<button className={`xb sm ${flip ? "" : "ghost"}`} onClick={() => setFlip((f) => !f)}>{flip ? "Undo the flipped bit" : "Flip one bit of the report"}</button>}>
+        right={<button data-tour="flip-report" className={`xb sm ${flip ? "" : "ghost"}`} onClick={() => setFlip((f) => !f)}>{flip ? "Undo the flipped bit" : "Flip one bit of the report"}</button>}>
         <table className="kvt"><tbody>
           <tr><th>sha256 computed in your browser</th><td className="mono">{st ? `${short(st.sha, 16, 12)} (${st.bytes.toLocaleString("en-US")} bytes, ${st.ms} ms)` : "hashing..."}</td></tr>
           <tr><th>Hash stored with the TEE signer on chain</th><td className="mono">{short(onChain?.attestation_sha256, 16, 12)}</td></tr>
-          <tr><th>Result</th><td>{!st ? "" : <span className={bind?.state === "match" ? "ok" : "bad"}>{bind?.text}</span>}</td></tr>
+          <tr><th>Result</th><td data-tour="attest-result">{!st ? "" : <span className={bind?.state === "match" ? "ok" : "bad"}>{bind?.text}</span>}</td></tr>
         </tbody></table>
       </Panel>
       <Panel className="mt" title={`(b) Recorded: the ${checks.length} hardware and key-binding checks`} sub={`Run ${whenFull(Date.parse(att.checked_at))} with nonce ${short(att.nonce, 8, 6)}. The Intel quote check needs Intel collateral and the GPU check calls NVIDIA, so they are shown as recorded.`} tags={<SrcTag tag="recorded" source="tee/fixtures/verdicts-368aa2.json attestation" />} pad={false}>

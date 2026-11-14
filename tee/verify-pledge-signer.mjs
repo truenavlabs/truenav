@@ -5,9 +5,10 @@
 //
 // What this checks: the sha256 of the evidence file equals expected.attestation_sha256, the recorded
 // signing address matches, and tcb_status is UpToDate.
-// What this does not check: it does not verify Intel hardware, it does not call OutLayer, and it does
-// not prove the signer holds a loan. The chain checks the ticket signature against the registered
-// address. The evidence hash on chain is this file's sha256. Anyone can repeat this script.
+// What this does not check: it does not verify Intel hardware, it does not call OutLayer, it does not read
+// the chain, and it does not prove the signer holds a loan. It works on local files only. Whether the registry
+// stores this hash for the signer is a separate read (get_pledge_signers); this script does not make it.
+// Anyone can repeat this script.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -34,5 +35,5 @@ console.log("verify:pledge-signer PASS");
 console.log(`  evidence sha256 ${hash}`);
 console.log(`  signing_address ${evidence.signing_address}`);
 console.log("  checked: file hash, address, tcb_status UpToDate");
-console.log("  not checked: hardware quote, module measurement, loan holding");
-console.log("  on chain: the ticket signature is checked; this hash is stored; the quote is not checked");
+console.log("  not checked: hardware quote, module measurement, loan holding, the registry or any chain state");
+console.log("  chain: not read. This script uses local files only; it does not confirm that the registry stores this hash.");

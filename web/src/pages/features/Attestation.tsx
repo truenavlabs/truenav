@@ -4,6 +4,7 @@ import { short, whenFull } from "../../shell/fmt";
 import { FeatureFrame, Note, PageHead, Panel, SrcTag, StatusChip } from "../../shell/kit";
 import { useRegistry } from "../../shell/store";
 import { b64ToBytes, sha256Hex } from "../../lib/webhash";
+import { bindingResult, reportSigningAddress } from "../../lib/attestation-binding.mjs";
 
 const MUTATIONS: [string, string][] = [
   ["Wrong nonce", "Echoed nonce matches; quote binds the request nonce"],
@@ -17,7 +18,7 @@ const MUTATIONS: [string, string][] = [
 export default function Attestation() {
   const { view, tag } = useRegistry();
   const onChain = (view.teeSigners as { attestation_sha256?: string; address?: string }[] | undefined)?.[0];
-  const [st, setSt] = useState<{ sha: string | null; bytes: number; ms: number } | null>(null);
+  const [st, setSt] = useState<{ sha: string | null; bytes: number; ms: number; addr: string | null } | null>(null);
   const [flip, setFlip] = useState(false);
   useEffect(() => {
     let live = true;
@@ -27,10 +28,11 @@ export default function Attestation() {
       const bytes = b64ToBytes(m.default as string);
       if (flip) bytes[bytes.length >> 1] ^= 1;
       const sha = await sha256Hex(bytes);
-      if (live) setSt({ sha, bytes: bytes.length, ms: Math.round(performance.now() - t0) });
+      if (live) setSt({ sha, bytes: bytes.length, ms: Math.round(performance.now() - t0), addr: reportSigningAddress(bytes) });
     });
     return () => { live = false; };
   }, [flip]);
+  const bind = st ? bindingResult({ computedSha: st.sha ?? undefined, storedSha: onChain?.attestation_sha256, registryAddress: onChain?.address, reportAddress: st.addr }) : null;
   const att = VERDICTS.attestation;
   const checks = att.sections.flatMap((s) => s.checks.map((c) => ({ ...c, section: s.name })));
   const tryIt = (
@@ -40,7 +42,7 @@ export default function Attestation() {
         <table className="kvt"><tbody>
           <tr><th>sha256 computed in your browser</th><td className="mono">{st ? `${short(st.sha, 16, 12)} (${st.bytes.toLocaleString("en-US")} bytes, ${st.ms} ms)` : "hashing..."}</td></tr>
           <tr><th>Hash stored with the TEE signer on chain</th><td className="mono">{short(onChain?.attestation_sha256, 16, 12)}</td></tr>
-          <tr><th>Result</th><td>{!st ? "" : st.sha === onChain?.attestation_sha256 ? <span className="ok">match: the registry's TEE signer {short(onChain?.address, 6, 4)} is the key attested in this report</span> : <span className="bad">does not match</span>}</td></tr>
+          <tr><th>Result</th><td>{!st ? "" : <span className={bind?.state === "match" ? "ok" : "bad"}>{bind?.text}</span>}</td></tr>
         </tbody></table>
       </Panel>
       <Panel className="mt" title={`(b) Recorded: the ${checks.length} hardware and key-binding checks`} sub={`Run ${whenFull(Date.parse(att.checked_at))} with nonce ${short(att.nonce, 8, 6)}. The Intel quote check needs Intel collateral and the GPU check calls NVIDIA, so they are shown as recorded.`} tags={<SrcTag tag="recorded" source="tee/fixtures/verdicts-368aa2.json attestation" />} pad={false}>
@@ -61,7 +63,7 @@ export default function Attestation() {
         what={`NEAR AI Cloud returns an attestation report for the model's signing key: an Intel TDX quote and NVIDIA GPU evidence bound to our nonce. The registrar checked it off chain and registered the signer ${short(String(STATUS.tee_signer), 6, 4)} with the report's hash.`}
         status={<><StatusChip kind="live" /><p className="dim mt">Report hash checked live; hardware checks recorded.</p></>}
         tryIt={tryIt}
-        proves={["The registry's TEE signer is the key named in this exact report (hash match, live).", "On the recorded run, the quote was genuine, TCB up to date, debug off, and the key and our nonce were bound in the quote.", "Edits to the report are caught."]}
+        proves={["The report hashes to the value the registry stores, and its signing address is the registry's TEE signer (hash and address match, live).", "On the recorded run, the quote was genuine, TCB up to date, debug off, and the key and our nonce were bound in the quote.", "Edits to the report are caught."]}
         notProves={["That the model image is a specific pinned build: MRTD and RTMR0 to RTMR2 are not compared with pinned values (known limit).", "The NVIDIA token signature is not fully verified (known limit).", "The contract does not check the quote itself; the registrar does, off chain, and anyone can repeat it."]}
         run={["npm run verify:attestation"]}
         sources={["tee/attest.mjs", "tee/verify-attestation.mjs", "tee/fixtures/attestation-report-368aa2.json.b64", "tee/status.json"]}

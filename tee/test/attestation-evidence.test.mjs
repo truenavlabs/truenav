@@ -3,14 +3,23 @@
 // file with a generated-at time and commit that sit outside its evidence_hash. No network, no keys.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { canonical } from "../../judge/lib.mjs";
 import { parseFingerprintOutput, parseAttestationOutput, buildSnapshot, snapshotHash, SNAPSHOT_SCHEMA, PROVES, NOT_PROVES } from "../record-attestation-evidence.mjs";
 import { lastVerifiedLine } from "../../web/src/content/attestation-evidence.ts";
 
 const ROOT = new URL("../../", import.meta.url);
+// Whether this checkout has the history to resolve the snapshot's commit. A shallow clone (CI) or a tarball has not, and
+// git then exits 128 for a commit that is real. In both cases the commit is still checked as a 40 hex sha below, and
+// the history check is reported as skipped with the reason. A full clone that lacks the commit still fails.
+const gitIn = (...a) => spawnSync("git", a, { cwd: fileURLToPath(ROOT), encoding: "utf8" });
+const topLevel = gitIn("rev-parse", "--show-toplevel");
+const isOwnCheckout = topLevel.status === 0 && realpathSync(topLevel.stdout.trim()) === realpathSync(fileURLToPath(ROOT));
+const isShallow = isOwnCheckout && gitIn("rev-parse", "--is-shallow-repository").stdout.trim() === "true";
+const NO_HISTORY = !isOwnCheckout ? "not a git checkout (a tarball or a copy): no history to read" : isShallow ? "shallow clone: the snapshot's commit may be outside the fetched history" : false;
 const read = (p) => readFileSync(new URL(p, ROOT), "utf8");
 const json = (p) => JSON.parse(read(p));
 const FP_OUT = read("tee/test/fixtures/verify-fingerprints.out.txt");
@@ -85,8 +94,6 @@ test("the committed snapshot matches its own hash, its commit, the recorded file
   assert.equal(evidence_hash, createHash("sha256").update(canonical(hashed)).digest("hex"));
   assert.equal(snapshotHash(s), evidence_hash);
   assert.match(s.commit, /^[0-9a-f]{40}$/);
-  const g = spawnSync("git", ["cat-file", "-e", `${s.commit}^{commit}`], { cwd: new URL(".", ROOT) });
-  assert.equal(g.status, 0, "the snapshot's commit is not in this repository's history");
   assert.match(ephemeral.generated_at, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
   assert.ok(Date.parse(ephemeral.generated_at) <= Date.now(), "generated in the future");
   assert.deepEqual(s.commands, ["npm run verify:fingerprints", "npm run verify:attestation"]);
@@ -100,6 +107,12 @@ test("the committed snapshot matches its own hash, its commit, the recorded file
   assert.equal(s.near_ai.report_sha256, json("tee/fixtures/verdicts-368aa2.json").attestation.report_sha256);
   assert.ok(s.near_ai.checks.length >= 15 && s.near_ai.checks.every((c) => c.pass === true));
   assert.equal(s.near_ai.verdicts_signed, json("tee/fixtures/verdicts-368aa2.json").results.length);
+});
+
+test("the snapshot's commit is in this repository's history", { skip: NO_HISTORY }, () => {
+  const s = json("web/data/recorded/attestation-evidence.json");
+  const g = gitIn("cat-file", "-e", `${s.commit}^{commit}`);
+  assert.equal(g.status, 0, `the snapshot's commit ${s.commit} is not in this repository's history`);
 });
 
 test("every check label recorded for a fingerprint run exists in the code that runs it", () => {

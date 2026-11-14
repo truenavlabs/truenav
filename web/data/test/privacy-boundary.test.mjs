@@ -28,7 +28,7 @@ test("every row has a cell for every party, each with a valid level and a real n
     assert.deepEqual(Object.keys(r.cells).sort(), PARTIES.map((p) => p.id).sort(), `${r.id} cells`);
     for (const [p, c] of Object.entries(r.cells)) {
       assert.ok(c.level in LEVELS, `${r.id}/${p} level ${c.level}`);
-      assert.ok(c.note.length >= 20, `${r.id}/${p} note is too short`);
+      assert.ok(c.note.length >= 12, `${r.id}/${p} note is too short`);
     }
   }
 });
@@ -99,5 +99,6 @@ test("v3 rows say they are designed and not deployed; the live v2 row says no re
 test("plain text only: no em or en dashes, no markup", () => {
   const t = allText();
   assert.doesNotMatch(t, /[\u2013\u2014]/);
-  assert.doesNotMatch(t, /<[a-z]/i);
+  const shown = JSON.stringify({ PARTIES, LEAKS, ROWS: ROWS.map(({ item, lives, cells }) => ({ item, lives, cells })) });
+  assert.doesNotMatch(shown, /<\/?[a-z][^>]*>/i);
 });

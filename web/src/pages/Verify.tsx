@@ -7,9 +7,9 @@ import { ErrorBox, Note, PageHead, Panel, Skel } from "../shell/kit";
 import { ReceiptVerify } from "../shell/ReceiptVerify";
 import { A } from "../ui";
 
-type Check = { id: string; label: string; state: "live" | "recorded" | "unchecked" | "fail"; detail: string; source?: string; evidenceDate?: string; pendingLibrary?: boolean; webCrypto?: boolean };
-type Run = { checks: Check[]; summary: { counts: Record<string, number>; pending: string[]; runnableGreen: boolean; certificateSignatures: string; chainLive: boolean }; tamper: string; at: number; ms: number };
-const STATE_LABEL: Record<string, string> = { live: "Checked now", recorded: "Recorded", unchecked: "Not checked", fail: "Failed" };
+type Check = { id: string; label: string; state: "live" | "recorded" | "unchecked" | "info" | "fail"; detail: string; source?: string; evidenceDate?: string; pendingLibrary?: boolean; webCrypto?: boolean };
+type Run = { checks: Check[]; summary: { counts: Record<string, number>; pending: string[]; runnableGreen: boolean; okWithPlanB: boolean; certificateSignatures: string; chainLive: boolean }; tamper: string; at: number; ms: number };
+const STATE_LABEL: Record<string, string> = { live: "Checked now", recorded: "Recorded", unchecked: "Not checked", info: "Expected", fail: "Failed" };
 
 export default function Verify({ q }: { q?: URLSearchParams }) {
   const [tamper, setTamper] = useState<string>(q?.get("tamper") && q.get("tamper")! in TAMPERS ? q.get("tamper")! : "none");
@@ -44,13 +44,14 @@ export default function Verify({ q }: { q?: URLSearchParams }) {
           <div className="mt">
             {c.fail ? <Note tone="bad">{c.fail} check{c.fail === 1 ? "" : "s"} failed{tamper !== "none" ? ": the tamper was caught." : "."}{dep ? ` ${dep.line}` : ""}</Note>
               : run.summary.runnableGreen ? <Note tone="ok">Every check this browser can run passed against the live registry and the receipts contract, including signature recovery.{run.summary.pending.length ? ` ${run.summary.pending.length} could not run here.` : ""}{dep ? ` ${dep.line}` : ""}</Note>
+              : run.summary.okWithPlanB && run.summary.certificateSignatures === "live" ? <Note tone="info">No check failed. The receipts contract is live on v2 and no receipt is stored yet. v3 is pinned, not deployed: that is the expected state, not a failure.{dep ? ` ${dep.line}` : ""}</Note>
               : run.summary.chainLive && run.summary.certificateSignatures !== "live" ? <Note tone="warn">No check failed, but the certificate signature check did not run, so this is not a pass. The certificate transactions could not be read just now. Run again, or see the last row.{dep ? ` ${dep.line}` : ""}</Note>
               : <Note tone="warn">No check failed, but some could not run. See the rows below.{dep ? ` ${dep.line}` : ""}</Note>}
           </div>
-          <Panel className="mt" title={`${run.checks.length} checks`} sub={`Run at ${clock(run.at)} Bangkok in ${run.ms} ms. ${c.live ?? 0} checked now, ${c.recorded ?? 0} recorded, ${c.unchecked ?? 0} not checked, ${c.fail ?? 0} failed.`} pad={false}>
+          <Panel className="mt" title={`${run.checks.length} checks`} sub={`Run at ${clock(run.at)} Bangkok in ${run.ms} ms. ${c.live ?? 0} checked now, ${c.recorded ?? 0} recorded, ${c.info ?? 0} expected, ${c.unchecked ?? 0} not checked, ${c.fail ?? 0} failed.`} pad={false}>
             {run.checks.map((x) => (
               <div className="checkrow" key={x.id} style={{ gridTemplateColumns: "110px minmax(0,1fr)" }}>
-                <span className={`st st-${x.state}`}>{STATE_LABEL[x.state]}</span>
+                <span className={`st st-${x.state === "info" ? "recorded" : x.state}`}>{STATE_LABEL[x.state]}</span>
                 <div>
                   <div className="cl">{x.label}{x.webCrypto ? <span className="tp" style={{ marginLeft: 6 }}>WebCrypto</span> : null}</div>
                   <div className="cd">{x.detail}</div>

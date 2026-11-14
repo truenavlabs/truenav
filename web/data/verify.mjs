@@ -103,5 +103,8 @@ export function webSummary(checks) {
   const runnableChain = WEB_CHAIN_CHECK_IDS.filter((id) => !pending.includes(id));
   const runnableLive = runnableChain.every((id) => checks.some((c) => c.id === id && c.state === "live"));
   const certificateSignatures = (checks.find((c) => c.id === "certificate-signatures") || {}).state || "missing";
-  return { ...base, pending, certificateSignatures, runnableGreen: base.counts.fail === 0 && runnableLive };
+  // Plan B: receipts live on the known v2 build, v3 pinned and not deployed. Both rows are info, everything else must be live.
+  const planB = ["receipts-code", "receipts-config"].every((id) => checks.some((c) => c.id === id && c.state === "info"));
+  const okWithPlanB = planB && base.counts.fail === 0 && runnableChain.every((id) => checks.some((c) => c.id === id && (c.state === "live" || (c.state === "info" && id.startsWith("receipts-")))));
+  return { ...base, pending, certificateSignatures, planB, okWithPlanB, runnableGreen: base.counts.fail === 0 && runnableLive };
 }

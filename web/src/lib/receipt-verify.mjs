@@ -30,6 +30,10 @@ export const ACCOUNT_ID = /^[a-z0-9._-]{2,64}$/;
 export const EMPTY_DETAIL =
   "No runs have been stored on this receipts contract yet. get_config.next_request is 1, so the first request id has not been issued.";
 
+/** Plan B: ids were issued (two OutLayer runs timed out) but nothing was stored. Not an error. */
+export const NO_STORED_DETAIL =
+  "No live receipt is stored yet. The receipts contract is live on v2 and has not stored a receipt, so there is nothing to look up. Receipt checks run against the recorded fixtures until a run is stored.";
+
 const enc = new TextEncoder();
 
 function toHex(bytes) {
@@ -359,18 +363,19 @@ function summarize(checks) {
 }
 
 function emptyResult(config, parsed, extra = {}) {
+  const detail = extra.detail || EMPTY_DETAIL;
   const checks = [
     ...(extra.checks || []),
-    checkState("empty", "Stored runs", "unchecked", EMPTY_DETAIL, "receipts get_config.next_request"),
+    checkState("empty", "Stored runs", "unchecked", detail, extra.detail ? "receipts list_tokens" : "receipts get_config.next_request"),
     ...notCheckableChecks(null),
   ];
   return {
     kind: "empty",
     query: parsed,
     config,
-    nextRequest: "1",
-    detail: EMPTY_DETAIL,
+    nextRequest: extra.detail ? config.next_request : "1",
     ...extra,
+    detail,
     checks,
     summary: summarize(checks),
   };
@@ -878,6 +883,14 @@ export async function verifyReceipt({ query = "", viewReceipts, viewRegistry, rp
   let tx = null;
   let txLookup = null;
 
+  // No query: show the latest stored receipt, or an honest empty state when nothing is stored.
+  if (parsed.kind === "none") {
+    const tokens = boundList(await viewReceipts("list_tokens", { from: 0, limit: MAX_TOKENS }), MAX_TOKENS);
+    const stored = tokens.find((t) => isTokenId(boundStr(t && t.token_id, MAX_TOKEN_CHARS)) && Number(asDec(t.receipts) || "0") > 0);
+    if (!stored) return emptyResult(config, parsed, { detail: NO_STORED_DETAIL });
+    found = await loadByTokenSeq(viewReceipts, stored.token_id, asDec(stored.receipts));
+  }
+
   if (parsed.kind === "tx") {
     txLookup = await loadTx(rpc, parsed);
     if (txLookup.kind === "tx") tx = txLookup.tx;
@@ -911,6 +924,8 @@ export async function verifyReceipt({ query = "", viewReceipts, viewRegistry, rp
     } else {
       found = { kind: "missing", detail: "The transaction has no receipt_stored, run_requested or run_failed event that this panel can use to find a receipt." };
     }
+  } else if (parsed.kind === "none") {
+    // handled above
   } else if (parsed.kind === "receipt") {
     found = await loadByTokenSeq(viewReceipts, parsed.tokenId, parsed.seq);
   } else if (parsed.kind === "request_id") {

@@ -41,7 +41,7 @@ const NEW_SHA=pins.receipts;
 const NEW_BYTES=build.receipts.bytes;
 const ENGINE_PIN=build.engine.sha256;
 assert.equal(NEW_SHA.slice(0,8),'5f294c9a','the pin moved: update REDEPLOY_PLAN_v2.md and this rehearsal together');
-assert.equal(ENGINE_PIN.slice(0,8),'4ce9e539','the engine pin moved: update REDEPLOY_PLAN_v2.md and this rehearsal together');
+assert.equal(ENGINE_PIN.slice(0,8),'098f5d86','the engine pin moved: update REDEPLOY_PLAN_v2.md and this rehearsal together');
 // exact old bytes from git history
 const oldBytes=execFileSync('git',['show','5a2ea39:receipts/dist/truenav_receipts.wasm'],{cwd:root,stdio:['ignore','pipe','ignore'],maxBuffer:4*1024*1024});
 assert.equal(sha(oldBytes),OLD_SHA,'old bytes must be the exact f32949b3 build that is live');

@@ -209,6 +209,32 @@ test("an empty contract (next_request 1) is an honest empty state, including for
   assert.equal(v.calls.every((c) => c.method === "get_config"), true);
 });
 
+// Plan B state: next_request is 3 (two timed out runs used ids 1 and 2) but nothing is stored.
+const PLAN_B_TOKENS = ["DEMO-CREDIT", "DEMO-RENTAL", "HONEST-CREDIT", "HONEST-RENTAL"].map((token_id) => ({ token_id, kind: "credit", receipts: 0 }));
+
+test("no stored receipt with next_request above 1 is an honest empty state, not a parse error", async () => {
+  const v = views({ config: LIVE_CONFIG, rows: [], tokens: PLAN_B_TOKENS });
+  const r = await verifyReceipt({ query: "", ...v });
+  assert.equal(r.kind, "empty");
+  assert.equal(r.summary.counts.fail, 0, JSON.stringify(r.checks.filter((c) => c.state === "fail")));
+  assert.match(r.detail, /no live receipt is stored yet/i);
+  assert.match(r.detail, /v2/);
+  assert.doesNotMatch(r.detail, /could not be parsed/);
+  assert.equal(r.checks.some((c) => c.id === "empty" && c.state === "unchecked"), true);
+  assert.equal(r.checks.some((c) => c.id === "lookup"), false);
+});
+
+test("stored receipts with an empty query show the latest stored receipt, and a broken stored row still fails", async () => {
+  const ok = await verifyReceipt({ query: "", ...views({ rows: [ROW_1, ROW_2] }) });
+  assert.equal(ok.kind, "checked");
+  assert.equal(ok.receipt.seq, "2");
+  const bad = { ...ROW_2, receipt_sha256: "00".repeat(32) };
+  const r = await verifyReceipt({ query: "", ...views({ rows: [ROW_1, bad] }) });
+  assert.equal(r.kind, "checked");
+  assert.equal(r.checks.some((c) => c.state === "fail"), true);
+  assert.equal(r.summary.ok, false);
+});
+
 test("a tx hash on an empty contract still looks up the tx and keeps the empty state", async () => {
   const v = views({ config: EMPTY_CONFIG, rows: [], tokens: [] });
   const rpc = async () => txResult({ events: [eventLog("run_requested", { token_id: "DEMO-CREDIT", request_id: 1 })] });

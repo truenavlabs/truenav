@@ -1,5 +1,6 @@
 import { A } from "../ui";
 import { PageHead, Panel } from "../shell/kit";
+import { AttestationEvidence, EvidenceLedger, PrivacyBoundary } from "./trust/PrivacyProof";
 
 const CLAIMS: [string, string][] = [
   ["Refused pledges", "A pledge for a loan another fund holds is refused and stores one blocked attempt and one alert against the fund that tried. They are public and do not name the other fund."],
@@ -39,6 +40,9 @@ export default function Trust() {
             <tbody>{LIMITS.map(([a, b, c]) => <tr key={a}><td>{a}</td><td style={{ whiteSpace: "normal" }}>{b}</td><td>{c}</td></tr>)}</tbody></table>
         </div>
       </Panel>
+      <PrivacyBoundary />
+      <AttestationEvidence />
+      <EvidenceLedger />
       <Panel className="mt" title="This site">
         <div className="prose">
           <ul>

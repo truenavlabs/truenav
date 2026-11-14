@@ -1,9 +1,8 @@
 # TrueNav receipt v3 specification
 
-Status: FROZEN v3.0.0-rc3, pending the owner's final read (9 Nov 2026 Bangkok).
+Status: FROZEN v3.0.0-rc3, frozen by the owner on 9 Nov 2026 at 16:07 Bangkok. The owner approved the v3.0.1 amendment (SPEC_RECEIPT_V3_0_1.md) the same day, and new receipts use that method. The v3 design is not deployed on the live testnet account, which still runs the v2 receipt design.
 The owner's 9 Nov rc3 review: whole public score, private committed precision fields, known-answer vectors and benchmark cohorts.
-The owner's 9 Nov disclosure decision accepts the all-public-field measured bounds below. Status: FROZEN v3.0.0-rc3,
-pending the owner's final read. No disclosure field was removed or weakened to obtain a passing guard.
+The owner's 9 Nov disclosure decision accepts the all-public-field measured bounds below. No disclosure field was removed or weakened to obtain a passing guard.
 
 Design only, the owner decisions of 9 Nov 2026 Bangkok. No engine deployment or transaction is authorized by
 this document. Schema and interface tests are local artifacts only. Option A is LOCKED: one combined receipt per credit fund per reporting period on receipts.

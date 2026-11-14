@@ -93,11 +93,15 @@ export async function attestationHashWebCrypto(ev, chain, prev) {
   return Object.freeze({ ...base, state: ok ? "live" : "fail", detail: ok ? `sha256 ${sha} computed now in this browser (WebCrypto) equals the hash the contract stores for ${teeSigner}` : "the contract stores no TEE signer with this report hash", webCrypto: true });
 }
 
-/** Like summarize(), plus what this browser could run: green only if nothing failed and every runnable chain check was live. */
+/** Chain checks plus the browser-only certificate signature row. A04: green needs all of them live, so a missing or unreadable row is never green. */
+export const WEB_CHAIN_CHECK_IDS = Object.freeze([...CHAIN_CHECK_IDS, "certificate-signatures"]);
+
+/** Like summarize(), plus what this browser could run: green only if nothing failed and every runnable chain check, including the certificate signatures, was live. */
 export function webSummary(checks) {
   const base = summarize(checks);
   const pending = checks.filter((c) => c.pendingLibrary).map((c) => c.id);
-  const runnableChain = CHAIN_CHECK_IDS.filter((id) => !pending.includes(id));
+  const runnableChain = WEB_CHAIN_CHECK_IDS.filter((id) => !pending.includes(id));
   const runnableLive = runnableChain.every((id) => checks.some((c) => c.id === id && c.state === "live"));
-  return { ...base, pending, runnableGreen: base.counts.fail === 0 && runnableLive };
+  const certificateSignatures = (checks.find((c) => c.id === "certificate-signatures") || {}).state || "missing";
+  return { ...base, pending, certificateSignatures, runnableGreen: base.counts.fail === 0 && runnableLive };
 }

@@ -10,12 +10,136 @@ TrueNav informs only. It does not block any transfer. Testnet and fictional data
 
 **The one number.** A TEE flag on one altered loan document moves Harbor Credit Fund from 99.17 green to 51.59 red. Reproduce it with `npm run demo` (step 4 below).
 
-## Try it
+## Judges start here
 
-No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Everything runs offline or against public testnet views. `npm test` was run from `952bad9` on 14 Nov 2026 (Asia/Bangkok, UTC+7) on Linux x64 with Node v24.22.1, npm 11.21.1, system Python 3 with no importable `jsonschema`, and system Rust 1.85.1 (no Rust 1.99.0). Steps 2, 4, 5 and 6 were last recorded from a fresh checkout of `5833c91` on 12 Nov 2026; they were not re-run for `952bad9`. `npm test` is the long step. Full expected output for each step is in [Expected output](#expected-output).
+TrueNav is a credit scorecard for tokenized private-credit funds, built on NEAR. A model in a TEE checks each private loan document against the fund's claim, and TrueNav publishes three numbers per fund: TrueVal, TrueRange and a TrueNav score from 0 to 100. An investor can recompute those numbers and check the on-chain verdicts; TrueNav informs only and does not move or block funds. Testnet and fictional data only.
+
+Tracks: Privacy & Private AI (`privacy`, primary) and Open Innovation (`open`).
+
+### Run it locally
+
+Needs Node 22.22.2 or later. No keys, no NEAR account, no funds, no Docker. From a fresh clone of this repository:
 
 ```bash
-npm ci
+npm ci --ignore-scripts
+npm run demo
+npm test
+```
+
+`npm ci --ignore-scripts` exits 0 and prints `added 506 packages, and audited 536 packages` (14 Nov 2026, Linux x64, Node v24.22.1). The closing `npm audit` summary covers the whole tree including dev tools: `37 vulnerabilities (3 low, 6 moderate, 23 high, 5 critical)`. That is not the production audit: `npm audit --omit=dev --audit-level=high` exits 0 and prints `2 low severity vulnerabilities`.
+
+`npm run demo` reprints the recorded TEE-signed trap case: Harbor moves from 99.17 green to 51.59 red after one altered loan document is flagged. It does not call the TEE.
+
+`npm test` was run from `db601c5` on 14 Nov 2026 (Asia/Bangkok, UTC+7) on Linux x64 with Node v24.22.1, npm 11.21.1, system Python 3 with no importable `jsonschema`, and system Rust 1.85.1 (no Rust 1.99.0):
+
+```
+ℹ tests 819
+ℹ pass 814
+ℹ fail 0
+ℹ skipped 5
+```
+
+Exit 0, then `All worked example numbers match.` The 5 skipped tests are the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs` (needs Rust 1.99.0 cargo: `rustup +1.99.0`, or cargo 1.99 on `PATH`) and the four Python files `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` (need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON`; CI pins 4.23.0). The suite still exits 0 when they are skipped. Recompute with `npm test`.
+
+To open the app locally:
+
+```bash
+cd web
+npm ci --ignore-scripts
+npm test
+npm run build
+npm run dev
+```
+
+`npm ci --ignore-scripts` in `web/` exits 0 (`added 95 packages, and audited 96 packages`, 0 vulnerabilities, 14 Nov 2026). `npm test` prints `ℹ tests 128`, `ℹ pass 128`, `ℹ fail 0`. `npm run build` exits 0 and `visual-check: 11 of 11 pages clean`. `npm run dev` serves the app at `http://127.0.0.1:5173/` (verified 14 Nov 2026: `/`, `/verify`, `/overview`, `/funds` and `/funds/harbor-credit-fund` each return HTTP 200).
+
+The longer offline path, including `npm run judge -- --replay` (10 of 10 stages PASS in 13.0 s from `db601c5` on 14 Nov 2026) and exact expected output, is in [Try it](#try-it).
+
+### What to click
+
+Once the dev server is up, or later on the hosted app:
+
+1. `/` : the landing page.
+2. `/overview` : the dashboard overview of the demo funds.
+3. `/funds/harbor-credit-fund` : Harbor Credit Fund, 99 green (raw 99.17).
+4. `/funds/meridian-yield-fund` : Meridian Yield Fund, 43 red (raw 42.84).
+5. `/verify` : live testnet accounts compared with the pins in this repository. Query matches its pin. Receipts reads "live v2, v3 pinned not deployed".
+
+The hosted URL is not set yet (see [Demo](#demo)).
+
+### Verify on chain
+
+No keys. Public testnet reads only:
+
+```bash
+npm run chain:read
+```
+
+Verified exit 0 from `db601c5` on 14 Nov 2026 against `registry.tnlab-368aa2.testnet` (code hash `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`). Harbor prints `TrueNav score 99 green (raw 99.17)` with `TEE verdicts on chain: 11 pass, 0 flag, 0 pending, 0 overdue, 0 expired` and `-> matches the recomputed score`. Meridian prints `TrueNav score 43 red (raw 42.84)` with `TEE verdicts on chain: 5 pass, 0 flag, 0 pending, 0 overdue, 0 expired` and `-> matches the recomputed score`.
+
+Optional, also no keys: `npm run verify:attestation` checks the published attestation report; `npm run verify:fingerprints` checks the recorded demo loan fingerprints. Those two were not re-run in this pass (unverified today). Account pages: [registry](https://testnet.nearblocks.io/address/registry.tnlab-368aa2.testnet), [receipts](https://testnet.nearblocks.io/address/receipts.tnlab-718ca9.testnet), [query](https://testnet.nearblocks.io/address/query.tnlab-718ca9.testnet). The full pin table is in [Deployment evidence](#deployment-evidence) and `docs/DEPLOYMENT_EVIDENCE.md`.
+
+## What is real vs simulated
+
+Verified from this repository and `docs/DEPLOYMENT_EVIDENCE.md` on 14 Nov 2026. The deployment evidence table itself is unchanged.
+
+| Component | Status | What that means |
+| --- | --- | --- |
+| Live registry `registry.tnlab-368aa2.testnet` | Real, on NEAR testnet | Live `code_hash` matches `certify/live-registry.json`. Host build, not a pinned-image reproducible build. 16 honest TEE verdicts are on chain. |
+| Earlier registry `registry.tnlab-718ca9.testnet` | Real, recorded history only | Not the default live read. CI re-reads it in labelled earlier-instance steps. |
+| Receipts contract `receipts.tnlab-718ca9.testnet` | Real, live v2 | Live wasm sha256 prefix `f32949b3` does not match the v3 pin `5f294c9a`. Method `cashflow-v2.1.0`, unpaused. |
+| Receipts v3 wasm and v3 OutLayer engine | Pinned, not deployed | The v3 receipts pin was built in the pinned CI image, [run 43567288753](https://github.com/truenavlabs/truenav/actions/runs/43567288753). The Level 1B upgrade rehearsal runs green in CI. The live OutLayer project `p0000000000000177` still runs engine `360cd473`. The v3 engine `098f5d86` is not uploaded. |
+| Query contract `query.tnlab-718ca9.testnet` | Real, on NEAR testnet, matches pin | Wasm sha256 `dee5f216...`. Code-only redeploy on 14 Nov 2026 at 10:28:50 UTC. |
+| OutLayer TEE engine v2 | Real, live on testnet | Project `p0000000000000177`, version `360cd473`. The recorded loan fingerprints were made under the 718ca9 OutLayer project. |
+| NEAR AI Cloud underwriter | Real TEE used for live verdicts; offline path is a replay | The 16 on-chain verdicts were signed by the attested key `0x2665cce942fa427ef30d87f4b0bff67fb7645462`. `npm run demo` and `npm run judge -- --replay` replay recorded, TEE-signed replies and do not call the TEE. |
+| Mock bank and demo loan documents | Simulated, fictional | Committed so judges can replay them. The mock bank host serves synthetic data only (`X-Synthetic-Data: true`). |
+| Public score engine | Real code, runs locally, deterministic | Harbor 99.17 green, Meridian 42.84 red. Anyone can recompute from the same inputs. PD tables are demo, not calibrated. |
+| NEAR AI assist in the web app | Real integration, optional | The `/api/assist` function calls NEAR AI Cloud (`Qwen/Qwen3-VL-30B-A3B-Instruct`) when a key is configured. Not required for any step in [Try it](#try-it). Live key behaviour was not verified in this pass. |
+| Paid report API and buyer agent | Real code; the judge path uses a local fake chain | Sandbox end-to-end runs in CI with Docker (`npm run e2e:receipts`). Not run locally in this pass. |
+| Base Sepolia receipts mirror | Implemented, not deployed | Chain Signatures path in `mirror/` and `receipts/src/mirror.rs`. |
+| Receipts printed by `npm run demo` and the offline judge | Synthetic fixtures | Not a live read of `receipts.tnlab-718ca9.testnet`. |
+| Receipts v3 source registry | Public TEST fixture only | `engine/v3-core/tests/fixtures/source-registry.TEST.json`. Not a NEAR account, and not the live registry. |
+
+## Build window
+
+The NEAR HACKATHON development window is 1 Nov 2026 00:00 UTC to 14 Nov 2026 23:59 UTC (Q-001). There is no pre-hackathon baseline. The entire git history falls inside that window.
+
+Reproduce the dated range from this repository:
+
+```bash
+git log --reverse --format=%ci | head -1
+# 2026-11-05 11:46:26 +0700
+# first commit 4874363, 2026-11-05 04:46:26 UTC
+
+git log -1 --format=%ci
+# 2026-11-14 18:01:43 +0700
+# current main db601c5, 2026-11-14 11:01:43 UTC, at the time this section was written
+```
+
+These commits are after the 19 Oct 2026 announcement and before development ends. History may be squashed when the repository is made public. The dated range here is the record.
+
+On-chain testnet transactions already listed in this README and in `docs/DEPLOYMENT_EVIDENCE.md`, with block timestamps from the NearBlocks testnet API (`https://api-testnet.nearblocks.io/v1/txns/<hash>`), converted to UTC:
+
+- 2026-11-11 15:39:52 UTC: live registry deploy and init, [Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE](https://explorer.testnet.near.org/transactions/Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE), block 277235101.
+- 2026-11-11 15:41:36 UTC: a public test-key certificate was refused (`signer not registered`), [Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ](https://explorer.testnet.near.org/transactions/Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ), block 277235275.
+- 2026-11-11 15:41:40 UTC: a second pledge of an already pledged loan was refused (`already pledged elsewhere`), [8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs](https://explorer.testnet.near.org/transactions/8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs), block 277235283.
+- 2026-11-11 19:21:11 UTC: TEE signer registered, [9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE](https://explorer.testnet.near.org/transactions/9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE), block 277257550.
+- 2026-11-14 10:28:50 UTC: query contract code-only redeploy to the pinned wasm, [2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8](https://testnet.nearblocks.io/txns/2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8), block 277644641.
+
+## Demo
+
+These links will be filled at launch. They are placeholders.
+
+- Demo video: TBD
+- X post: TBD
+- Live app: TBD (custom domain, set at launch)
+
+## Try it
+
+No keys, no NEAR account, no funds, no Docker. Needs Node 22.22.2 or later. Everything runs offline or against public testnet views. Steps 1 to 6 were re-run from `db601c5` on 14 Nov 2026 (Asia/Bangkok, UTC+7) on Linux x64 with Node v24.22.1, npm 11.21.1, system Python 3 with no importable `jsonschema`, and system Rust 1.85.1 (no Rust 1.99.0). `npm test` is the long step. Full expected output for each step is in [Expected output](#expected-output).
+
+```bash
+npm ci --ignore-scripts
 npm run judge -- --replay
 npm test
 npm run demo
@@ -23,18 +147,18 @@ npm run eval
 npm run check:fixtures
 ```
 
-1. Do: `npm ci`
-   See: exit 0 and `added 506 packages, and audited 536 packages` (12 Nov 2026, Linux x64; 505 was recorded on another machine on 11 Nov 2026, so the count can differ by platform, cause unverified). The closing `npm audit` summary covers the whole tree including dev tools: `37 vulnerabilities (3 low, 6 moderate, 23 high, 5 critical)`. That is not the production audit: `npm audit --omit=dev --audit-level=high` exits 0 and prints `2 low severity vulnerabilities`.
+1. Do: `npm ci --ignore-scripts`
+   See: exit 0 and `added 506 packages, and audited 536 packages` (14 Nov 2026, Linux x64; 505 was recorded on another machine on 11 Nov 2026, so the count can differ by platform, cause unverified). The closing `npm audit` summary covers the whole tree including dev tools: `37 vulnerabilities (3 low, 6 moderate, 23 high, 5 critical)`. That is not the production audit: `npm audit --omit=dev --audit-level=high` exits 0 and prints `2 low severity vulnerabilities`.
 2. Do: `npm run judge -- --replay`
-   See: one `PASS` line for each of 10 stages (S1 fixtures, S2 tamper, S3 engine, S4 v3 pin, S5 failed head, S6 paid report, S7 dashboard data, S8 mirror, S9 attest local subset, S10 stamp), then `judge: 10 of 10 stages PASS, 0 skipped not verified, ok true`, and exit 0. It runs offline in about 14 s (13.6 and 13.7 s measured on 12 Nov 2026, 14.1 s on a second fresh clone the same day) and writes `out/judge-replay.json`. Details in [Step 2](#step-2-npm-run-judge-----replay).
+   See: one `PASS` line for each of 10 stages (S1 fixtures, S2 tamper, S3 engine, S4 v3 pin, S5 failed head, S6 paid report, S7 dashboard data, S8 mirror, S9 attest local subset, S10 stamp), then `judge: 10 of 10 stages PASS, 0 skipped not verified, ok true`, and exit 0. It runs offline in about 14 s (13.0 s measured from `db601c5` on 14 Nov 2026; 13.6, 13.7 and 14.1 s were measured on 12 Nov 2026) and writes `out/judge-replay.json`. Details in [Step 2](#step-2-npm-run-judge-----replay).
 3. Do: `npm test`
-   See: exit 0 and `fail 0`, then `All worked example numbers match.` The exact test and skip counts move as tests are added, and skips depend on whether Rust 1.99.0 cargo and an importable Python `jsonschema` are on PATH. Recompute with `npm test` (when the output is not a terminal, the same fields print as `# tests`, `# pass`, `# fail`, `# skipped`). On 14 Nov 2026, from `952bad9` on this machine (no Rust 1.99.0, no `jsonschema`): `tests 818`, `pass 813`, `fail 0`, `skipped 5`. CI job `fresh-clone` records the counts. The 5 skipped tests here are the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs` (needs Rust 1.99.0 cargo: `rustup +1.99.0`, or cargo 1.99 on `PATH`) and the four Python files `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` (need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON`; CI pins 4.23.0). With both tools present, those five run as well. The suite still exits 0 when they are skipped.
+   See: exit 0 and `fail 0`, then `All worked example numbers match.` The exact test and skip counts move as tests are added, and skips depend on whether Rust 1.99.0 cargo and an importable Python `jsonschema` are on PATH. Recompute with `npm test` (when the output is not a terminal, the same fields print as `# tests`, `# pass`, `# fail`, `# skipped`). On 14 Nov 2026, from `db601c5` on this machine (no Rust 1.99.0, no `jsonschema`): `tests 819`, `pass 814`, `fail 0`, `skipped 5`. CI job `fresh-clone` records the counts. The 5 skipped tests here are the OutLayer output-parity check in `receipts/attestation/output-parity.test.mjs` (needs Rust 1.99.0 cargo: `rustup +1.99.0`, or cargo 1.99 on `PATH`) and the four Python files `receipt-v3-schema.test.py`, `receipt-v3.0.1-schema.test.py`, `receipt-v3-privacy.test.py` and `engine-v3-privacy.test.py` (need an importable `jsonschema` in `python3` or `TRUENAV_PYTHON`; CI pins 4.23.0). With both tools present, those five run as well. The suite still exits 0 when they are skipped.
 4. Do: `npm run demo`
    See: `T1-altered-amount ... -> flag amount_mismatch`, `T2-hidden-injection ... -> flag amount_mismatch, injection_attempt`, `T3-duplicate-as-new ... -> flag duplicate_document`, `honest documents: 16 of 16 pass, every signature checked`, then Harbor `99.17 green` and, after the T1 flag, `51.59 red`.
 5. Do: `npm run eval`
    See: `main: 86 cases, 86 signatures verified against the attested TEE key` and `holdout: 40 cases, 40 signatures verified against the attested TEE key`, each with `precision 100%, recall 100%, false positive rate 0%` on this test set. Read the limits in [Security and limits](#security-and-limits).
 6. Do: `npm run check:fixtures`
-   See: 5 lines `PASS <fixture file>: <N> days left (minimum 10)` and 2 lines `PASS published attestation report ...`, one for `tee/fixtures/verdicts.json` and one for the current registry's set `tee/fixtures/verdicts-368aa2.json`. N counts down: on 12 Nov 2026 it was 24.6 for the four older files and 29.3 for `tee/fixtures/verdicts-368aa2.json`.
+   See: 5 lines `PASS <fixture file>: <N> days left (minimum 10)` and 2 lines `PASS published attestation report ...`, one for `tee/fixtures/verdicts.json` and one for the current registry's set `tee/fixtures/verdicts-368aa2.json`. N counts down: on 14 Nov 2026 it was 22.7 for the four older files and 27.3 for `tee/fixtures/verdicts-368aa2.json`.
 
 ## Expected output
 
@@ -71,12 +195,12 @@ How it behaves:
 - `--live` is not built. It prints `--live is not built: live reads run in CI only` and exits 2. The live reads are the optional steps below.
 - If this machine cannot listen on 127.0.0.1, the judge prints a `WARN` line first, saying loopback is unavailable and that S5, S6, S7 and S8 will fail, and each of those failures is labelled "this is a sandbox limit, not a product failure". Those four stages start a local API or a local EVM.
 
-Last lines of a real run (12 Nov 2026, `5833c91`):
+Last lines of a real run (14 Nov 2026, `db601c5`):
 
 ```
 PASS S10 stamp (README: "A wasm swapped after stamping is detected as stale.")
 judge: 10 of 10 stages PASS, 0 skipped not verified, ok true, evidence_hash <sha256, differs per commit>
-judge: wrote out/judge-replay.json, wall 13.7 s
+judge: wrote out/judge-replay.json, wall 13.0 s
 ```
 
 ### Step 3: `npm test`
@@ -86,11 +210,11 @@ export TRUENAV_PYTHON=python3   # optional: the interpreter that has jsonschema 
 npm test
 ```
 
-On 14 Nov 2026, from `952bad9` on this machine (no Rust 1.99.0, no importable `jsonschema`):
+On 14 Nov 2026, from `db601c5` on this machine (no Rust 1.99.0, no importable `jsonschema`):
 
 ```
-ℹ tests 818
-ℹ pass 813
+ℹ tests 819
+ℹ pass 814
 ℹ fail 0
 ℹ skipped 5
 ```
@@ -160,16 +284,16 @@ holdout: 40 cases, 40 signatures verified against the attested TEE key, 40 repli
 ### Step 6: `npm run check:fixtures`
 
 ```
-PASS tee/fixtures/verdicts.json: 24.6 days left (minimum 10)
-PASS tee/fixtures/verdicts-sandbox.json: 24.6 days left (minimum 10)
-PASS tee/fixtures/verdicts-unit.json: 24.6 days left (minimum 10)
-PASS contract/tests/fixtures/tee-verdicts.json: 24.6 days left (minimum 10)
-PASS tee/fixtures/verdicts-368aa2.json: 29.3 days left (minimum 10)
+PASS tee/fixtures/verdicts.json: 22.7 days left (minimum 10)
+PASS tee/fixtures/verdicts-sandbox.json: 22.7 days left (minimum 10)
+PASS tee/fixtures/verdicts-unit.json: 22.7 days left (minimum 10)
+PASS contract/tests/fixtures/tee-verdicts.json: 22.7 days left (minimum 10)
+PASS tee/fixtures/verdicts-368aa2.json: 27.3 days left (minimum 10)
 PASS published attestation report is the one tee/fixtures/verdicts.json was signed under
 PASS published attestation report tee/fixtures/attestation-report-368aa2.json.b64 is the one tee/fixtures/verdicts-368aa2.json was signed under
 ```
 
-Real output on 12 Nov 2026. The days-left figures count down. The command fails once any fixture has fewer than 10 days left.
+Real output on 14 Nov 2026 from `db601c5`. The days-left figures count down. The command fails once any fixture has fewer than 10 days left.
 
 At those figures the four 718ca9 sets reach the 10 day minimum around 27 Nov 2026 and the 368aa2 set around 1 Dec 2026, after judging (16 to 18 Nov). From then on `check:fixtures`, judge S1 and `npm test` fail by design until the sets are re-signed.
 
@@ -221,7 +345,7 @@ Related live accounts with no contract code: `tnlab-368aa2.testnet` (admin and r
 The recorded loan fingerprints were made under the 718ca9 OutLayer project, and `tee/fingerprint.mjs` accepts only that scope. See `docs/RECEIPTS_LIVE_PLAN.md`.
 
 1. Do: `npm run chain:read`
-   See: Harbor `99 green (raw 99.17)` and Meridian `43 red (raw 42.84)`, each followed by `-> matches the recomputed score`, and `TEE verdicts on chain: 11 pass, 0 flag, 0 pending, 0 overdue` for Harbor and `TEE verdicts on chain: 5 pass, 0 flag, 0 pending, 0 overdue` for Meridian. Verified exit 0 against `registry.tnlab-368aa2.testnet` on 12 Nov 2026. To read the earlier instance: `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read`.
+   See: Harbor `TrueNav score 99 green (raw 99.17)` and Meridian `TrueNav score 43 red (raw 42.84)`, each followed by `-> matches the recomputed score`, and `TEE verdicts on chain: 11 pass, 0 flag, 0 pending, 0 overdue, 0 expired` for Harbor and `TEE verdicts on chain: 5 pass, 0 flag, 0 pending, 0 overdue, 0 expired` for Meridian. Verified exit 0 against `registry.tnlab-368aa2.testnet` on 14 Nov 2026 from `db601c5`. To read the earlier instance: `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read`.
 2. Do: `npm run verify:attestation`
    See: PASS lines for the Intel TDX quote signature and TCB status, debug mode off, the signing address and our nonce bound in the quote's report data, MRCONFIGID equal to the report's own `app_compose`, RTMR3 equal to the replayed event log, and the NVIDIA NRAS verdict, then `Attestation verified: the key that signs TrueNav verdicts runs in an attested NEAR AI Cloud TEE.` The measurement checks are consistency checks inside one report: MRTD and RTMR0 to RTMR2 are not compared with pinned expected values (see [Known limits and disclosures](#known-limits-and-disclosures)). This reads the current registry's recorded set, `tee/fixtures/verdicts-368aa2.json`. For the earlier instance: `npm run verify:attestation -- --contract registry.tnlab-718ca9.testnet`.
 3. Do: `npm run verify:fingerprints`
@@ -241,20 +365,20 @@ Contract claims run in CI job `contract` (`cargo test` in `contract/`). It needs
 | Pledge, release and admin calls without 1 yoctoNEAR are refused. | `contract/tests/registry.rs`: `pledge_without_one_yocto_is_refused`, `admin_call_without_one_yocto_is_refused`, `release_without_one_yocto_is_refused` | Same CI job |
 | The contract stores a TEE verdict only if the signature recovers (`env::ecrecover`) to a registered TEE signer. Edited replies, unregistered signers, wrong contract or network, expired and replayed verdicts are refused. | `contract/src/lib.rs`, `contract/tests/tee_verdicts.rs` | Same CI job |
 | Each role (admin, registrar, pauser, servicer) is refused every other role's job. | `contract/tests/roles.rs` | Same CI job |
-| The TEE flags an altered amount, a hidden prompt injection and a reused document, and passes 16 of 16 honest documents. Every reply signature is checked. | `npm run demo`, judge S2 | Run locally, 12 Nov 2026 |
-| Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. | `npm test` (ends with `node spec/nav/check.mjs`), judge S3 | Run locally on 14 Nov 2026 from `952bad9`: 0 fail (see [Step 3](#step-3-npm-test) for that run's counts and skips). Recompute with `npm test`. |
-| TEE eval: 126 signed replies, 0 extra fields, 100% precision and recall on this synthetic set. | `npm run eval`, judge S3; limits in `tee/eval/REPORT.md` | Run locally, 12 Nov 2026 |
-| Recorded verdicts are at least 10 days from expiry and match the published attestation report. | `npm run check:fixtures`, judge S1 | Run locally, 12 Nov 2026 |
+| The TEE flags an altered amount, a hidden prompt injection and a reused document, and passes 16 of 16 honest documents. Every reply signature is checked. | `npm run demo`, judge S2 | Run locally, 14 Nov 2026 from `db601c5` |
+| Score engine: Harbor 99.17 green (public 99), Meridian 42.84 red (public 43); every worked-example field matches. | `npm test` (ends with `node spec/nav/check.mjs`), judge S3 | Run locally on 14 Nov 2026 from `db601c5`: 0 fail (see [Step 3](#step-3-npm-test) for that run's counts and skips). Recompute with `npm test`. |
+| TEE eval: 126 signed replies, 0 extra fields, 100% precision and recall on this synthetic set. | `npm run eval`, judge S3; limits in `tee/eval/REPORT.md` | Run locally, 14 Nov 2026 from `db601c5` |
+| Recorded verdicts are at least 10 days from expiry and match the published attestation report. | `npm run check:fixtures`, judge S1 | Run locally, 14 Nov 2026 from `db601c5` |
 | On a failed head, `/report` returns 409 `run_failed`, the entitlement is not used, and the agent buys nothing. This holds when the head the API reads is failed: the API refuses before it redeems. One window is open: see RT2-07 in [Security and limits](#security-and-limits). | `api/test/failed-head.test.mjs`, `agent/test/failed-head.test.mjs` (in `npm test`), judge S5; the RT2-07 window in `tests/security/rt2-report-race.test.mjs` | Passed locally, 12 Nov 2026 |
 | `/report` without an entitlement returns 402; a one-use entitlement works once. | `api/test/api.test.mjs` (in `npm test`), judge S6 | Passed locally, 12 Nov 2026 |
 | The agent accepts only the engine hash pinned in `receipts/v3-build.json`. Any other engine is declined `engine_hash`. | `agent/test/engine-pin.test.mjs` (in `npm test`), judge S4 | Passed locally, 12 Nov 2026 |
 | A wasm swapped after stamping is detected as stale. | `receipts/tests/wasm-stamp-integrity.test.mjs` (in `npm test`), judge S10 | Passed locally, 12 Nov 2026 |
 | The Base mirror contract accepts only the MPC signer and a rising sequence per token (local EVM, not deployed). | `mirror/test/mirror.test.mjs` (in `npm test`), judge S8 | Passed locally, 12 Nov 2026 |
-| Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts` on `5833c91`, [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646) (12 Nov 2026). Not re-checked for `952bad9` (unverified for this commit). Not run locally. |
-| Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from an earlier CI job `receipts` log: `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR`. Not re-read for `952bad9` (unverified for this commit). |
-| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path, fresh-clone. | CI workflow `.github/workflows/ci.yml` (9 jobs; count them in the file) | Check the Actions run for the commit you have checked out. For history: 9 of 9 jobs green on `5833c91` in [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646), 12 Nov 2026. Not claimed for `952bad9` here (unverified in this file). |
+| Sandbox e2e: HONEST-CREDIT `/report` 200 with `uses_left` 0; DEMO-CREDIT `/report` 409 `run_failed` with `uses_left` 1; agent on DEMO-CREDIT bought false, spent 0 yocto. | `npm run e2e:receipts` (needs Docker) | Passed in CI job `receipts` on `5833c91`, [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646) (12 Nov 2026). Not re-checked for `db601c5` (unverified for this commit). Not run locally. |
+| Receipts storage after D2 and D3: 558,867 bytes, 5.5887 NEAR locked of a 6.0 NEAR budget. | `npm run e2e:receipts` (needs Docker) | Read from an earlier CI job `receipts` log: `558867 bytes, 5.5887 NEAR locked of the 6.0 NEAR`. Not re-read for `db601c5` (unverified for this commit). |
+| CI is green: contract, engine, engine-v2, engine-v3, receipts, sandbox, secrets, judge-path, fresh-clone. | CI workflow `.github/workflows/ci.yml` (9 jobs; count them in the file) | Check the Actions run for the commit you have checked out. For history: 9 of 9 jobs green on `5833c91` in [run 43219416646](https://github.com/truenavlabs/truenav/actions/runs/43219416646), 12 Nov 2026. Not claimed for `db601c5` here (unverified in this file). |
 | Production `npm audit` has no high or critical findings. | `npm audit --omit=dev --audit-level=high` | Exit 0 locally on 12 Nov 2026 with `2 low severity vulnerabilities`; also a step of CI job `engine` |
-| The current testnet registry's on-chain scores match a local recompute. TEE verdicts for this contract are on chain (16 pass). | `npm run chain:read` | Exit 0 on 12 Nov 2026 against `registry.tnlab-368aa2.testnet`: Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), 11 + 5 verdicts on chain, all pass. Not re-run for this commit (unverified today). The live code hash was re-read on 14 Nov 2026 and still equals `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`. The earlier instance `registry.tnlab-718ca9.testnet` (source `d37b9d2`) still holds recorded TEE verdicts; read it with `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read`. |
+| The current testnet registry's on-chain scores match a local recompute. TEE verdicts for this contract are on chain (16 pass). | `npm run chain:read` | Exit 0 on 14 Nov 2026 from `db601c5` against `registry.tnlab-368aa2.testnet`: Harbor 99 green (raw 99.17), Meridian 43 red (raw 42.84), 11 + 5 verdicts on chain, all pass. The live code hash still equals `9Ki2kuenoxie3doBRYbdTPSmzTjwsTosQmUaGwQKCw7o`. The earlier instance `registry.tnlab-718ca9.testnet` (source `d37b9d2`) still holds recorded TEE verdicts; read it with `TRUENAV_CONTRACT=registry.tnlab-718ca9.testnet npm run chain:read`. |
 
 ## How it works
 
@@ -383,12 +507,12 @@ Open items, all Low or Info. None of them changes the offline judge path. Chain 
 
 ## Hackathon disclosures
 
-- **Window (Q-001, Q-003).** There is no pre-hackathon baseline. The first commit is `4874363` on 5 Nov 2026, after the 19 Oct 2026 announcement. The entire history is in the judging window. There is no `pre-hackathon` tag and no pre-hackathon diff to link.
+- **Window (Q-001, Q-003).** There is no pre-hackathon baseline. The first commit is `4874363` on 5 Nov 2026, after the 19 Oct 2026 announcement. The entire history is in the judging window. There is no `pre-hackathon` tag and no pre-hackathon diff to link. See [Build window](#build-window) for the dated commit range and on-chain timestamps.
 - **Other chains (Q-002).** TrueNav is not an existing product brought over from another chain. The Base Sepolia mirror is a Chain Signatures path so an EVM reader can see a receipt reference. It lives in `mirror/` and `receipts/src/mirror.rs`. It is not deployed.
 - **Libraries and tools (Q-005).** Pinned in `package-lock.json` and the Cargo lockfiles: near-sdk 5.30.1 and near-contract-standards (Rust), near-api-js 7.3.1, near-sandbox 0.3.4, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0, `@phala/dcap-qvl` 0.7.0, ganache 7.9.2, solc 0.8.30, viem 2.38.5, Python `jsonschema` 4.23.0, cargo-near and the `sourcescan/cargo-near:0.22.0-rust-1.99.0` build image. Runtime services: NEAR AI Cloud (`Qwen/Qwen3-VL-30B-A3B-Instruct`), OutLayer, NVIDIA NRAS for GPU attestation.
 - **AI tools (Q-005).** Code, tests and docs were written with cloud coding agents and AI assistants (including Claude Code, Codex and Cursor cloud agents) under the team's direction and review. Outside models (GPT-5.5, Gemini 3.1 Pro, Claude Opus 5.5 via OpenRouter) gave second opinions on scoring rules and contract audit findings. The findings and the status we gave each are in `AUDIT_FINDINGS.md`.
 - **Other project by the same person (Q-015).** TendAI Custody is a separate, independent NEAR HACKATHON entry by the same person. The two projects share no code, contracts or testnet accounts.
-- **Demo (Q-012).** There is no hosted demo. Every step in [Try it](#try-it) runs locally with no keys or funds. The demo video goes in the project's X post, linked from the submission.
+- **Demo (Q-012).** The demo video, X post and hosted app are not published yet. Placeholders are in [Demo](#demo) and will be filled at launch. Every step in [Try it](#try-it) runs locally with no keys or funds.
 
 Built at NEAR HACKATHON 2026 by TrueNav Labs. Repository: [https://github.com/truenavlabs/truenav](https://github.com/truenavlabs/truenav).
 

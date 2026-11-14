@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { rawView, VIEW_METHODS } from "../../data/registry.mjs";
-import { Copy, ErrorBox, Ext, Note, PageHead, Panel, SrcTag } from "../shell/kit";
+import { Copy, ErrorBox, Ext, PageHead, Panel, SrcTag } from "../shell/kit";
 import { srcUrl, when } from "../shell/fmt";
 import { useRegistry } from "../shell/store";
 

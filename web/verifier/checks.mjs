@@ -192,7 +192,7 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
     const src = receiptsSrc("view_account");
     return h === expectedReceipts.codeHash
       ? result("receipts-code", "Deployed receipts contract code hash", "live", `${expectedReceipts.account} code hash ${h} equals the pinned receipts build (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath})`, src)
-      : result("receipts-code", "Deployed receipts contract code hash", "fail", `${expectedReceipts.account} code hash ${h} differs from the pinned receipts build ${expectedReceipts.codeHash} (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath}). Redeploy pending.`, src);
+      : result("receipts-code", "Deployed receipts contract code hash", "fail", `${expectedReceipts.account} code hash ${h} differs from the pinned v3 receipts build ${expectedReceipts.codeHash} (sha256 ${expectedReceipts.sha256} in ${expectedReceipts.pinPath}). Live v2, v3 pinned not deployed.`, src);
   });
 
   await run("receipts-config", "Receipts contract config", receiptsSrc("get_config"), async () => {
@@ -213,7 +213,7 @@ export async function runVerifierChecks({ evidence, chain, now = Date.now() } = 
     if (cfg.outlayer !== expectedReceipts.outlayer) diffs.push(`outlayer ${cfg.outlayer || "missing"} (expected ${expectedReceipts.outlayer})`);
     const src = receiptsSrc("get_config");
     if (diffs.length) {
-      return result("receipts-config", "Receipts contract config", "fail", `get_config on ${expectedReceipts.account} does not match the expected v3 config (redeploy pending): ${diffs.join(", ")}.`, src);
+      return result("receipts-config", "Receipts contract config", "fail", `get_config on ${expectedReceipts.account} does not match the expected v3 config (live v2, v3 pinned not deployed): ${diffs.join(", ")}.`, src);
     }
     const receiptProblems = [];
     let tokens = [];
@@ -396,7 +396,7 @@ export function summarize(results) {
   return { counts, anyFail: counts.fail > 0, chainLive, green: counts.fail === 0 && chainLive };
 }
 
-/** Account, live code hash and engine version for the Verify summary. Pending when either receipts check failed. */
+/** Account, live code hash and engine version for the Verify summary. pendingRedeploy is true when either receipts check failed (live v2, v3 pinned not deployed). */
 export function deploymentStatus(results) {
   const rows = Array.isArray(results) ? results : [];
   const code = rows.find((r) => r.id === "receipts-code");
@@ -411,7 +411,7 @@ export function deploymentStatus(results) {
   if (codeHash) parts.push(`code hash ${codeHash}`);
   if (engineVersion) parts.push(`engine version ${engineVersion}`);
   let line = parts.join(", ");
-  if (pendingRedeploy) line = `${line}. Redeploy pending.`;
+  if (pendingRedeploy) line = `${line}. Live v2, v3 pinned not deployed.`;
   else if ((code && code.state === "unchecked") || (cfg && cfg.state === "unchecked")) line = `${line}. Receipts deployment not checked.`;
   else if (code && cfg && code.state === "live" && cfg.state === "live") line = `${line}. Matches the pinned v3 build.`;
   return { account, codeHash, engineVersion, pendingRedeploy, line };

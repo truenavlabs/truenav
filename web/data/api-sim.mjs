@@ -1,8 +1,9 @@
 // Browser simulation of the paid report API's entitlement rules (api/server.mjs). A fake in-memory chain stands in
-// for the query contract, which is not deployed. Same status codes and messages as the tested server. Nothing is sent.
+// for the query contract. This page does not send a transaction. The live query contract is query.tnlab-718ca9.testnet.
+// Same status codes and messages as the tested server.
 
 export const FEE_YOCTO = "10000000000000000000000"; // 0.01 NEAR, api/main.mjs default
-export const QUERY_CONTRACT = "the query contract (not deployed)";
+export const QUERY_CONTRACT = "query.tnlab-718ca9.testnet";
 
 const RECEIPTS = {
   "HONEST-CREDIT": { score: 100, band: "green", caps: [], holds: [], failed: false },

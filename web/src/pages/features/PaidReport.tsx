@@ -24,7 +24,7 @@ export default function PaidReport() {
   const next = log.length < steps.length ? steps[log.length] : null;
   const tryIt = (
     <>
-      <Note tone="demo">Simulation of the tested API in your browser. The query and receipts contracts are not deployed, so no NEAR moves and nothing is sent.</Note>
+      <Note tone="demo">Simulation of the tested API in your browser. No NEAR moves and nothing is sent. Query is live on its pin; receipts is live v2, and v3 is pinned not deployed.</Note>
       <div className="hrow mt" style={{ gap: 8 }}>
         {next ? <button className="xb" onClick={() => void next[1]()}>Step {log.length + 1}: {next[0]}</button> : <span className="ok">All six steps done.</span>}
         <button className="xb ghost" onClick={() => location.reload()} disabled={!log.length}>Start over</button>
@@ -51,10 +51,10 @@ export default function PaidReport() {
       <PageHead crumbs={[["Verify it yourself", "/features"], ["F8 Paid report API"]]} title="Paid report API" lead="An agent can read a fund's score for free and buy a one-use report for 0.01 testnet NEAR. A purchase never changes the score." />
       <FeatureFrame
         what="The API serves the free score from the receipts contract and the paid report only against a one-use entitlement bought on the query contract. Without one it answers 402 with exactly what to buy. A failed run is refused before anything is spent."
-        status={<><StatusChip kind="built" /><p className="dim mt">Query and receipts contracts not deployed. This page simulates the tested rules.</p></>}
+        status={<><StatusChip kind="built" /><p className="dim mt">Query is live on its pin. Receipts is live v2; v3 is pinned, not deployed. This page simulates the tested rules.</p></>}
         tryIt={tryIt}
         proves={["The status codes and messages the tested server returns, in order.", "One entitlement works once; the second use is refused.", "A failed run answers 409 run_failed and spends nothing."]}
-        notProves={["That payment works on chain. The contracts are not deployed.", "Anything about the score. The paid report carries the same public score."]}
+        notProves={["That this page sends a real payment. It is a browser simulation.", "Anything about the score. The paid report carries the same public score."]}
         run={["node --test api/test/api.test.mjs api/test/failed-head.test.mjs", "npm run judge -- --replay"]}
         sources={["api/server.mjs", "api/test/api.test.mjs", "web/data/api-sim.mjs"]}
       />

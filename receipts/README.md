@@ -82,10 +82,10 @@ Command: `cargo near build non-reproducible-wasm --locked` (not `reproducible-wa
 `/home/near/code/receipts`, query as the runner's own user in `/home/near/code/query`, as in the `receipts` job of
 `.github/workflows/ci.yml`.
 
-These are the pins of the local receipts v3 candidate (migration, combined receipts, mirror fixes, canonical body
-binding, append-only attestation metadata). The receipts pin was refreshed after A01 changed engine/v3-core, from
-the pinned-image build in CI at 6482300. The query pin is unchanged from 8cc9ede. Still a local build candidate,
-not deployed:
+These are the pins of the receipts v3 candidate (migration, combined receipts, mirror fixes, canonical body
+binding, append-only attestation metadata) and the query wasm. The receipts pin was refreshed after A01 changed engine/v3-core, from
+the pinned-image build in CI at 6482300. The query pin is unchanged from 8cc9ede. Receipts v3 is pinned, CI-built and rehearsed, not deployed.
+The query pin is live on `query.tnlab-718ca9.testnet` (code-only redeploy on 14 Nov 2026 at 17:29 Asia/Bangkok, tx `2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8`):
 
 | Contract | sha256 | bytes |
 | --- | --- | --- |

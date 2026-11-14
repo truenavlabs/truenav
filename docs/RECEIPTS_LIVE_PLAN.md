@@ -11,9 +11,9 @@ Labels used below: **repo** means a statement checked against a file in this rep
 | Pledged demo loans on the current registry `registry.tnlab-368aa2.testnet` | The registry holds the demo funds. `npm run chain:read` recomputes Harbor 99 green and Meridian 43 red against it. Whether every one of the 19 demo `loan_hash` values is pledged there was not re-read for this plan. | repo (README); pledge coverage **unverified** |
 | Recorded loan fingerprints | 17 records in `tee/fixtures/fingerprints.json`, produced by the OutLayer project `servicer.tnlab-718ca9.testnet/truenav-fingerprint`, domain `truenav-fp-v1`, pinned wasm `4a7c0e4e...07e3`. `tee/loans.json` lists 19 loans. | repo |
 | Fingerprint client | `tee/fingerprint.mjs` calls project `receipts.tnlab-718ca9.testnet/truenav-engine` (domain `truenav-fp-v4`) and accepts an attestation only if its project and caller are that pair or the recorded `servicer.tnlab-718ca9.testnet` pair. | repo |
-| Receipts contract | No live receipts contract on 368aa2. Receipts are synthetic fixtures. | repo (README) |
+| Receipts contract | No live receipts contract on 368aa2. Demo receipts in the judge path are synthetic fixtures. The live receipts contract is `receipts.tnlab-718ca9.testnet` (v2). | repo (README) |
 | Deploy script | `receipts/deploy-testnet.mjs` D0 to D4, print-only by default, master from `--master` or `TRUENAV_MASTER`, no default. | repo (this branch) |
-| Pinned builds | receipts `5f294c9a...f52e8606f`, query `dee5f216...8169d09`, reproduced byte for byte by the `receipts-pinned-build` workflow. Still a local build candidate, not deployed. | repo (`receipts/pinned-builds.json`) |
+| Pinned builds | receipts `5f294c9a...f52e8606f` is pinned, CI-built and rehearsed, not deployed. query `dee5f216...8169d09` is live on `query.tnlab-718ca9.testnet` (code-only redeploy 14 Nov 2026, 17:29 Asia/Bangkok, [tx 2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8](https://testnet.nearblocks.io/txns/2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8)). | repo (`receipts/pinned-builds.json`) |
 
 ## 2. Why a fresh run cannot reproduce the pledged hashes
 

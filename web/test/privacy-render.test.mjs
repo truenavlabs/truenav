@@ -41,7 +41,7 @@ test("attestation evidence section shows the last verified time, the hash, both 
   for (const x of [...s.proves, ...s.not_proves]) assert.ok(t.includes(x), x.slice(0, 50));
   for (const r of s.outlayer.records) assert.ok(t.includes(r.document_id) && sec.includes(r.proof_url), r.document_id);
   assert.ok(t.includes(String(s.outlayer.distinct_quotes)) && t.includes(String(s.outlayer.approved_measurement_sets)));
-  for (const c of s.near_ai.checks) assert.ok(t.includes(c.check), c.check);
+  for (const c of s.near_ai.checks) assert.ok(t.includes(c.check.replace(/\s+/g, " ")), c.check);
   assert.ok(t.indexOf("What these checks do not prove") > t.indexOf("What these checks prove"));
   assert.doesNotMatch(t, /guarantee|trustless|zero.knowledge|fully verified/i);
 });

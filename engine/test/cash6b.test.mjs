@@ -1,6 +1,7 @@
 // 6b (decided by owner 6 Nov 2026): only a valid ISO date within 168 h (and at most 10 minutes in the future)
-// attests cash. Expired, malformed, missing, future and never-claimed are all unattested cash with no freshness
-// penalty, each with its own flag, so none of them beats telling the truth.
+// attests cash. Expired, malformed, missing, future and never-claimed are all unattested cash, each with its own
+// flag, so none of them beats telling the truth. An expired claimed attestation also sets freshness to 0
+// (NAV_SPEC R8, 6 Nov 13:32; codex differential audit D2, 14 Nov 2026).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -21,7 +22,6 @@ test("valid attestation within 168 h attests cash: 100 green", () => {
 });
 
 const unattested = {
-  expired: [{ cash_attested: true, cash_asof: ago(200) }, "cash attestation expired"],
   malformed: [{ cash_attested: true, cash_asof: "invalid_string" }, "attestation date invalid"],
   "malformed but Date.parse-able": [{ cash_attested: true, cash_asof: "Nov 9 2026" }, "attestation date invalid"],
   missing: [{ cash_attested: true }, "attestation date invalid"],
@@ -38,6 +38,16 @@ for (const [name, [over, flag]] of Object.entries(unattested)) {
     if (flag) assert.ok(r.flags.includes(flag), r.flags.join("; "));
   });
 }
+
+test("expired: unattested cash and freshness 0 (R8): 67.86 yellow, below never claiming", () => {
+  const r = run({ cash_attested: true, cash_asof: ago(200) });
+  assert.equal(r.cash.attested, false);
+  assert.equal(r.cash.attestationStatus, "expired");
+  assert.equal(r.pillars.freshness, 0);
+  assert.equal(r2(r.raw), 67.86);
+  assert.equal(r.band, "yellow");
+  assert.ok(r.flags.includes("cash attestation expired"), r.flags.join("; "));
+});
 
 test("future within the 10-minute skew still counts as valid", () => {
   const r = run({ cash_attested: true, cash_asof: at(9 * 60000) });

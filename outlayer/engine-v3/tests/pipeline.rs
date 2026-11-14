@@ -1238,3 +1238,252 @@ fn redteam_r2_migration_alias_must_be_able_to_match_a_historical_v1_lock() {
         "lookup still pretends the historical v1 pipe string is a loan-terms-v2 hash"
     );
 }
+
+/// Registry keyed by fingerprint, like `get_lock`: an unknown fingerprint reads as an empty row.
+struct KeyedRead {
+    snapshot: Snapshot,
+    rows: BTreeMap<String, LockRead>,
+}
+impl RegistryReader for KeyedRead {
+    fn read(&self, _: &Scope, fp: &[String], _: &str) -> truenav_v3_core::Result<Snapshot> {
+        let mut s = self.snapshot.clone();
+        s.locks = fp
+            .iter()
+            .map(|f| {
+                self.rows
+                    .get(f)
+                    .cloned()
+                    .unwrap_or_else(|| registry_lock(f, None, None))
+            })
+            .collect();
+        Ok(s)
+    }
+}
+
+/// Codex audit A01: an invisible U+180F in signed terms gave a second fingerprint, hid another fund's
+/// lock and moved the fund from 59 conflict red to 97 green. The variant must still hit the foreign lock.
+#[test]
+fn a01_invisible_u180f_must_not_hide_a_foreign_lock() {
+    let (c, sources, p, r) = temporal_setup();
+    let mut rows: BTreeMap<String, LockRead> = r
+        .snapshot
+        .locks
+        .iter()
+        .map(|l| (l.fingerprint.clone(), l.clone()))
+        .collect();
+    let foreign = r.snapshot.locks[5].fingerprint.clone();
+    let row = rows.get_mut(&foreign).unwrap();
+    row.owner = Some("other.sim.testnet".into());
+    row.fund_token_id = Some("other-simulated-fund".into());
+    let keyed = KeyedRead {
+        snapshot: r.snapshot.clone(),
+        rows: rows.clone(),
+    };
+    let honest = evaluate(&c, &sources, &p, &keyed, &TestMac, &salt()).unwrap();
+    assert_eq!(honest.envelope["pledge_result"], "conflict");
+    assert_eq!(honest.envelope["score"], 59);
+    assert_eq!(honest.envelope["band"], "red");
+    for invisible in ['\u{180f}', '\u{2065}', '\u{e0002}'] {
+        let variant = LoanTerms {
+            version: "loan-terms-v2".into(),
+            borrower_namespace: "demo".into(),
+            borrower_id: "TEST TEMPORAL 5".into(),
+            origination_date: "2026-01-01".into(),
+            principal_cents: "10000000".into(),
+            currency: "USD".into(),
+            collateral_namespace: "demo".into(),
+            collateral_ref: format!("TEST TEMPORAL{invisible} 5"),
+        };
+        let tv = canonical_terms(&variant, &[]).unwrap();
+        let mut s = sources.clone();
+        s[0].payload["loans"][5]["terms"] = tv.clone();
+        s[3].payload["loan_terms"][5]["terms"] = tv;
+        for src in &mut s {
+            sign(src);
+        }
+        let out = evaluate(&c, &s, &p, &keyed, &TestMac, &salt()).unwrap();
+        let cp = invisible as u32;
+        assert_eq!(
+            out.envelope["pledge_result"], "conflict",
+            "U+{cp:04X} hid the foreign lock: score {} band {}",
+            out.envelope["score"], out.envelope["band"]
+        );
+        assert_eq!(out.envelope["score"], 59, "U+{cp:04X} lifted the score");
+        assert_eq!(out.envelope["band"], "red", "U+{cp:04X} changed the band");
+        assert!(out.envelope["caps"]
+            .as_array()
+            .unwrap()
+            .contains(&json!("pledge_conflict")));
+    }
+}
+
+/// Codex differential audit (14 Nov 2026): the JS engine and this NAV port must agree on the shared fixture,
+/// which tests/security/nav-differential.test.mjs checks against JS. D1: an excluded loan with a missing repaid
+/// is exposure for the 50% test only (R13), never a mark in the listed book (R1). D2: an expired claimed cash
+/// attestation sets freshness to 0, also at cash 0 (R8).
+#[test]
+fn nav_differential_cases_match_the_js_engine() {
+    let fx: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/nav-differential.json"
+    ))
+    .unwrap();
+    let now = truenav_v3_core::timestamp(fx["now"].as_str().unwrap()).unwrap();
+    let cents = |x: f64| (x * 100.0).round() as i64;
+    for c in fx["cases"].as_array().unwrap() {
+        let name = c["name"].as_str().unwrap();
+        let e = &c["expected"];
+        let n = nav::score(&c["fund"], now, &json!([]));
+        assert_eq!(n.status, e["status"].as_str().unwrap(), "{name}");
+        let scored = n.status == "scored";
+        let score = nav::half_up(n.raw);
+        let band = if score >= 85 {
+            "green"
+        } else if score >= 60 {
+            "yellow"
+        } else {
+            "red"
+        };
+        assert_eq!(
+            if scored { json!(score) } else { Value::Null },
+            e["score"],
+            "{name}"
+        );
+        assert_eq!(
+            if scored { json!(band) } else { Value::Null },
+            e["band"],
+            "{name}"
+        );
+        if let Some(f) = e["freshness"].as_f64() {
+            assert_eq!(n.fresh, f, "{name}");
+        }
+        if let Some(l) = e["listed_book"].as_f64() {
+            assert_eq!(cents(n.listed), cents(l), "{name}");
+        }
+        if let Some(d) = e["share_denominator"].as_f64() {
+            let uv = e["unverified_value"].as_f64().unwrap();
+            assert_eq!(cents(n.unverified_share.unwrap() * d), cents(uv), "{name}");
+        }
+    }
+}
+
+/// D1 through the full signed v3 pipeline: loans whose signed tape omits repaid must not enter the listed book
+/// at principal + accrued. Before the fix the fake marks raised the 50% denominator and the fund scored.
+#[test]
+fn d1_missing_repaid_is_not_a_valuation_mark_in_the_signed_pipeline() {
+    let (c, mut sources, p, r) = temporal_setup();
+    let honest = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(honest.envelope["status"], "scored");
+    for i in 50..90 {
+        sources[0].payload["loans"][i]
+            .as_object_mut()
+            .unwrap()
+            .remove("repaid");
+    }
+    for s in &mut sources {
+        sign(s);
+    }
+    let out = evaluate(&c, &sources, &p, &r, &TestMac, &salt()).unwrap();
+    assert_eq!(
+        out.envelope["status"], "disclaimed",
+        "missing repaid scored {} {}",
+        out.envelope["score"], out.envelope["band"]
+    );
+    assert_eq!(out.envelope["score"], Value::Null);
+}
+
+/// Codex audit A01 follow-up: U+03F9 (and U+03F2) are documented `c` lookalikes, but NFKC turned them
+/// into sigma before the lookalike map ran, so the signed conflict case went from 59 red to 97 green.
+/// Every documented lookalike written into the foreign-locked ref must keep the conflict cap.
+#[test]
+fn a01_every_documented_lookalike_keeps_the_conflict_cap() {
+    #[rustfmt::skip]
+    const LOOKALIKES: &[(char, char)] = &[
+        ('А', 'a'), ('а', 'a'), ('Α', 'a'), ('α', 'a'),
+        ('В', 'b'), ('в', 'b'), ('Β', 'b'), ('β', 'b'),
+        ('Е', 'e'), ('е', 'e'), ('Ε', 'e'), ('ε', 'e'),
+        ('К', 'k'), ('к', 'k'), ('Κ', 'k'), ('κ', 'k'),
+        ('М', 'm'), ('м', 'm'), ('Μ', 'm'), ('μ', 'm'),
+        ('Н', 'h'), ('н', 'h'), ('Η', 'h'), ('η', 'h'),
+        ('О', 'o'), ('о', 'o'), ('Ο', 'o'), ('ο', 'o'),
+        ('Р', 'p'), ('р', 'p'), ('Ρ', 'p'), ('ρ', 'p'),
+        ('С', 'c'), ('с', 'c'), ('Ϲ', 'c'), ('ϲ', 'c'),
+        ('Т', 't'), ('т', 't'), ('Τ', 't'), ('τ', 't'),
+        ('У', 'y'), ('у', 'y'),
+        ('Х', 'x'), ('х', 'x'), ('Χ', 'x'), ('χ', 'x'),
+        ('І', 'i'), ('і', 'i'), ('Ι', 'i'), ('ι', 'i'),
+        ('Ј', 'j'), ('ј', 'j'),
+        ('Ѕ', 's'), ('ѕ', 's'),
+    ];
+    const REF: &str = "TEST ABCEHIJKMOPSTXY 5";
+    let terms = |collateral_ref: String| LoanTerms {
+        version: "loan-terms-v2".into(),
+        borrower_namespace: "demo".into(),
+        borrower_id: "TEST TEMPORAL 5".into(),
+        origination_date: "2026-01-01".into(),
+        principal_cents: "10000000".into(),
+        currency: "USD".into(),
+        collateral_namespace: "demo".into(),
+        collateral_ref,
+    };
+    let (c, mut sources, p, mut r) = temporal_setup();
+    // Loan 5 carries a ref holding every Latin target letter; another fund holds its lock.
+    let honest = terms(REF.into());
+    let tv = canonical_terms(&honest, &[]).unwrap();
+    sources[0].payload["loans"][5]["terms"] = tv.clone();
+    sources[3].payload["loan_terms"][5]["terms"] = tv;
+    for s in &mut sources {
+        sign(s);
+    }
+    let foreign = fingerprint(&honest, "real_estate", &[], &TestMac).unwrap();
+    r.snapshot.locks[5].fingerprint = foreign.clone();
+    let mut rows: BTreeMap<String, LockRead> = r
+        .snapshot
+        .locks
+        .iter()
+        .map(|l| (l.fingerprint.clone(), l.clone()))
+        .collect();
+    let row = rows.get_mut(&foreign).unwrap();
+    row.owner = Some("other.sim.testnet".into());
+    row.fund_token_id = Some("other-simulated-fund".into());
+    let keyed = KeyedRead {
+        snapshot: r.snapshot.clone(),
+        rows,
+    };
+    let base = evaluate(&c, &sources, &p, &keyed, &TestMac, &salt()).unwrap();
+    assert_eq!(base.envelope["pledge_result"], "conflict");
+    assert_eq!(base.envelope["score"], 59);
+    assert_eq!(base.envelope["band"], "red");
+    let mut bad = Vec::new();
+    for &(l, t) in LOOKALIKES {
+        let upper = t.to_ascii_uppercase();
+        let at = REF[5..].find(upper).unwrap() + 5;
+        let variant = format!("{}{l}{}", &REF[..at], &REF[at + 1..]);
+        let tv = canonical_terms(&terms(variant.clone()), &[]).unwrap();
+        let mut s = sources.clone();
+        s[0].payload["loans"][5]["terms"] = tv.clone();
+        s[3].payload["loan_terms"][5]["terms"] = tv;
+        for src in &mut s {
+            sign(src);
+        }
+        let out = evaluate(&c, &s, &p, &keyed, &TestMac, &salt()).unwrap();
+        let score = out.envelope["score"].as_u64();
+        if out.envelope["pledge_result"] != "conflict"
+            || score.is_none_or(|x| x > 59)
+            || out.envelope["band"] == "green"
+        {
+            bad.push(format!(
+                "U+{:04X} in {variant:?}: {} {} {}",
+                l as u32,
+                out.envelope["pledge_result"],
+                out.envelope["score"],
+                out.envelope["band"]
+            ));
+        }
+    }
+    assert!(
+        bad.is_empty(),
+        "{} lookalikes escaped the cap: {:#?}",
+        bad.len(),
+        bad
+    );
+}

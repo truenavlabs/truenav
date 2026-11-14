@@ -453,7 +453,8 @@ export function scoreFund(model, fund, opts = {}) {
 
   // R20 cash statement (6b, decided by owner 6 Nov 2026): only a valid ISO 8601 date within 168 h, and no more
   // than 10 minutes in the future (clock skew), attests cash. Expired, malformed, missing, future and not-claimed
-  // attestations are all unattested cash with no freshness penalty, each flagged with its own reason.
+  // attestations are all unattested cash, each flagged with its own reason. An expired claimed attestation also
+  // sets freshness to 0 (R8); the others carry no freshness penalty.
   const cashClaimed = f.cash_attested === true;
   let cashStatus = cashClaimed ? "valid" : "not claimed";
   let cashAgeH = null;
@@ -546,7 +547,8 @@ export function scoreFund(model, fund, opts = {}) {
   const ages = asofs.map((x) => ageHours(x, now));
   // A missing or unparseable as-of makes the data age unknown: null, scored as stale with freshness 0.
   const dataAgeHours = ages.length && ages.every((x) => Number.isFinite(x)) ? Math.max(...ages) : null;
-  const freshPts = 20 * freshness(dataAgeHours);
+  // R8 (6 Nov 13:32): an expired claimed cash attestation sets freshness to 0, whatever the cash amount.
+  const freshPts = cashStatus === "expired" ? 0 : 20 * freshness(dataAgeHours);
 
   // R9 own penalty.
   const own = dedupeAttempts(f.blocked_attempts);

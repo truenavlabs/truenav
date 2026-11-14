@@ -177,7 +177,7 @@ test("CHAIN_CHECK_IDS includes receipts-code and receipts-config, so green requi
   assert.ok(CHAIN_CHECK_IDS.includes("receipts-config"), "receipts-config must be a chain check");
 });
 
-test("recorded live receipts deployment: both checks fail as mismatch, redeploy pending, and overall green is false", async () => {
+test("recorded live receipts deployment: both checks fail as mismatch, live v2 and v3 pinned not deployed, and overall green is false", async () => {
   const ev = await evidence();
   const chain = withReceipts(fakeRegistryChain(ev), LIVE);
   const r = await withTxFetch("ok", () => runWebChecks({ evidence: ev, chain, now: NOW }));
@@ -187,11 +187,13 @@ test("recorded live receipts deployment: both checks fail as mismatch, redeploy 
   assert.ok(c["receipts-config"], "receipts-config check must exist");
   assert.equal(c["receipts-code"].state, "fail", c["receipts-code"].detail);
   assert.equal(c["receipts-config"].state, "fail", c["receipts-config"].detail);
-  assert.match(c["receipts-code"].detail, /redeploy pending/i);
+  assert.match(c["receipts-code"].detail, /live v2, v3 pinned not deployed/i);
+  assert.doesNotMatch(c["receipts-code"].detail, /redeploy pending/i);
   assert.match(c["receipts-code"].detail, new RegExp(ACCOUNT.replace(/\./g, "\\.")));
   assert.ok(c["receipts-code"].detail.includes(LIVE.code_hash), c["receipts-code"].detail);
   assert.ok(c["receipts-code"].detail.includes(EXPECTED_CODE_HASH), c["receipts-code"].detail);
-  assert.match(c["receipts-config"].detail, /redeploy pending/i);
+  assert.match(c["receipts-config"].detail, /live v2, v3 pinned not deployed/i);
+  assert.doesNotMatch(c["receipts-config"].detail, /redeploy pending/i);
   assert.match(c["receipts-config"].detail, /cashflow-v2\.1\.0/);
   assert.match(c["receipts-config"].detail, /truenav-v3\.0\.1/);
   assert.match(c["receipts-config"].detail, /360cd473/);
@@ -224,7 +226,8 @@ test("a matching code hash with the old v2 config still fails receipts-config an
   const c = byId(rs);
   assert.equal(c["receipts-code"].state, "live");
   assert.equal(c["receipts-config"].state, "fail");
-  assert.match(c["receipts-config"].detail, /redeploy pending/i);
+  assert.match(c["receipts-config"].detail, /live v2, v3 pinned not deployed/i);
+  assert.doesNotMatch(c["receipts-config"].detail, /redeploy pending/i);
   assert.equal(summarize(rs).green, false);
 });
 
@@ -272,7 +275,7 @@ test("RPC cut on receipts reads: both checks are unchecked, never live, and not 
   assert.equal(summarize(rs).green, false);
 });
 
-test("deploymentStatus names the receipts account, code hash, engine version, and redeploy pending on the live read", async () => {
+test("deploymentStatus names the receipts account, code hash, engine version, and live v2 with v3 pinned not deployed on the live read", async () => {
   const ev = await evidence();
   const rs = await runVerifierChecks({ evidence: ev, chain: withReceipts(fakeRegistryChain(ev), LIVE), now: NOW });
   const mod = await import("../../verifier/checks.mjs");
@@ -283,7 +286,8 @@ test("deploymentStatus names the receipts account, code hash, engine version, an
   assert.ok(d.engineVersion === LIVE.get_config.config.version_key || d.engineVersion === ENGINE_PIN);
   assert.equal(d.pendingRedeploy, true);
   assert.match(d.line, new RegExp(ACCOUNT.replace(/\./g, "\\.")));
-  assert.match(d.line, /redeploy pending/i);
+  assert.match(d.line, /live v2, v3 pinned not deployed/i);
+  assert.doesNotMatch(d.line, /redeploy pending/i);
   assert.doesNotMatch(d.line, /[\u2013\u2014]/);
   const page = read("web/src/pages/Verify.tsx");
   assert.match(page, /deploymentStatus/, "the Verify page must show the deployment line beside the summary note");

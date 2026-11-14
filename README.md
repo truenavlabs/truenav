@@ -12,6 +12,9 @@ TrueNav informs only. It does not move or block any transfer. Testnet and fictio
 
 **Tracks.** Privacy & Private AI (`privacy`, primary) and Open Innovation (`open`). See [Tracks](#tracks).
 
+
+![The TrueNav overview, with Harbor green and Meridian red](docs/media/01-overview.png)
+
 ## Judges start here
 
 Needs Node 22.22.2 or later and Linux or WSL (the API spend store uses util-linux `flock`, so macOS and native Windows can fail some tests). No keys, no NEAR account, no funds, no Docker.
@@ -196,11 +199,27 @@ On-chain testnet transactions already listed in this README and in `docs/DEPLOYM
 
 ## Demo
 
-These links will be filled at launch. They are placeholders.
-
-- Demo video: TBD
+- Demo video: [88-second walkthrough](docs/media/truenav-demo.mp4)
 - X post: TBD
 - Live app: https://truenav.app (launching after final pass; not live yet)
+
+[![TrueNav demo](docs/media/demo-poster.png)](docs/media/truenav-demo.mp4)
+
+![A refused double pledge](docs/media/03-refused.png)
+
+*The registry refuses a second pledge of a loan another fund already holds.*
+
+![The score engine after a document flag](docs/media/04-engine.png)
+
+*Harbor moves from 99 green to 52 red when one recorded loan document is flagged.*
+
+![The verifier after a tamper](docs/media/05-tamper.png)
+
+*Changing the TEE signer turns the checks red. The tamper is caught.*
+
+![The live registry transaction list](docs/media/06-evidence.png)
+
+*Public transactions on the live registry, including the refused pledge.*
 
 ## Hackathon disclosures
 
@@ -208,7 +227,7 @@ These links will be filled at launch. They are placeholders.
 - **Other chains (Q-002).** TrueNav is not an existing product brought over from another chain. The Base Sepolia mirror is a Chain Signatures path so an EVM reader can see a receipt reference. It lives in `mirror/` and `receipts/src/mirror.rs`. It is not deployed.
 - **Libraries and tools (Q-005).** Pinned in `package-lock.json` and the Cargo lockfiles: near-sdk 5.30.1 and near-contract-standards (Rust), near-api-js 7.3.1, near-sandbox 0.3.4, `@noble/curves` 2.4.0, `@noble/hashes` 2.4.0, `@phala/dcap-qvl` 0.7.0, ganache 7.9.2, solc 0.8.30, viem 2.38.5, Python `jsonschema` 4.23.0, cargo-near and the `sourcescan/cargo-near:0.22.0-rust-1.99.0` build image. Runtime services: NEAR AI Cloud (`Qwen/Qwen3-VL-30B-A3B-Instruct`), OutLayer, NVIDIA NRAS for GPU attestation.
 - **AI tools (Q-005).** Code, tests and docs were written with cloud coding agents and AI assistants (including Claude Code, Codex and Cursor cloud agents) under the team's direction and review. Outside models (GPT-5.5, Gemini 3.1 Pro, Claude Opus 5.5 via OpenRouter) gave second opinions on scoring rules and contract audit findings. The findings and the status we gave each are in `AUDIT_FINDINGS.md`.
-- **Demo (Q-012).** The demo video, X post and hosted app are not published yet. Placeholders are in [Demo](#demo) and will be filled at launch. Every step in [docs/TRY_IT.md](docs/TRY_IT.md) runs locally with no keys or funds.
+- **Demo (Q-012).** The demo poster, stills and a compact walkthrough are in [Demo](#demo). The X post is not published yet. Every step in [docs/TRY_IT.md](docs/TRY_IT.md) runs locally with no keys or funds.
 
 ## Other entry (Q-015 disclosure)
 

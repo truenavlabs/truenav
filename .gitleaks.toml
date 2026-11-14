@@ -1,10 +1,29 @@
-# gitleaks configuration: the default rules, plus two documented allowlists.
+# gitleaks configuration: the default rules, plus documented allowlists.
 [extend]
 useDefault = true
 
 [[allowlists]]
-description = "Published NEAR AI Cloud attestation reports (both encodings; the earlier instance's and the one recorded for registry.tnlab-368aa2.testnet). The decoded text mentions credentials only as environment variable names such as ${MODEL_DISCOVERY_API_KEY}, never a value. Its signing_key fields are 32-byte public verification keys and its ohttp_key_config fields are public OHTTP key configurations (RFC 9458: key id, X25519 KEM 0x0020, public key, cipher suites), served by NEAR AI Cloud's public attestation endpoint. No private key is in these files."
+description = "Published NEAR AI Cloud attestation reports (both encodings; the earlier instance's and the one recorded for registry.tnlab-368aa2.testnet). gitleaks 8.30.1 decodes the .b64 body and, over this repo's history, reports generic-api-key hits only on public signing_key and ohttp key_config / ohttp_key_config fields (32-byte public verification keys and public OHTTP key configurations, RFC 9458: key id, X25519 KEM 0x0020, public key, cipher suites), served by NEAR AI Cloud's public attestation endpoint. The decoded text also mentions credentials only as environment variable names such as ${MODEL_DISCOVERY_API_KEY}, never a value. No private key is in these files. This entry covers only those files, only generic-api-key, and only a signing_key or key_config set to hex, or a ${ENV_VAR} name; any other value or rule is still reported."
+targetRules = ["generic-api-key"]
+condition = "AND"
 paths = ['''^tee/fixtures/attestation-report(-368aa2)?\.json(\.b64)?$''']
+regexTarget = "match"
+regexes = [
+  '''ing_key"\s*:\s*"?[0-9a-fA-F]{16,}''',
+  '''key_config"\s*:\s*"[0-9a-fA-F]{16,}''',
+  '''\$\{[A-Z][A-Z0-9_]+\}''',
+]
+
+[[allowlists]]
+description = "The same published attestation reports: gitleaks 8.30.1 also reports square-access-token on two fragments of the public Intel TDX quote body (base64 that happens to start with EAAA, including one that carries the ASCII system-preparing / app-id label). These are not Square tokens. This entry covers only those files, only square-access-token, and only the two exact fragments observed across history; any other value or rule is still reported."
+targetRules = ["square-access-token"]
+condition = "AND"
+paths = ['''^tee/fixtures/attestation-report(-368aa2)?\.json(\.b64)?$''']
+regexTarget = "secret"
+regexes = [
+  '''^EAAAgAQHN5c3RlbS1wcmVwYXJpbmcAAwAAAAEAAAgAGGFwcC1p$''',
+  '''^EAAAdldOmfIMsYJCgMTmOiqgnNZLKX59CVKBQzoZ3dY2cAV6aEnUCcG8g$''',
+]
 
 [[allowlists]]
 description = "Public wasm build SHA256 pins, not credentials. They appear as engine_version_key, engine_code_sha256 and version_key in test vectors, web fixtures and the OutLayer spike. Exact values only, generic-api-key only: any other value, and every other rule, is still reported. 098f5d86 is the current engine v3 pin (receipts/v3-build.json engine.sha256); 4ce9e539, 61fe33a0, 0ffb3e31, 8e3d8925 and c3299ccf are earlier engine v3 pins from this repo's history; 4e376db0 is the OutLayer spike wasm (outlayer/spike/BUILD.md); 360cd473 is the engine v2 build hash (outlayer/engine-v2/BUILD.md), the version_key the live receipts contract stores. Add a new pin here when it is published, after checking it is a build hash."

@@ -1,0 +1,24 @@
+contract registry.tnlab-368aa2.testnet; recorded set tee/fixtures/verdicts-368aa2.json (the current registry's set from tee/status.json)
+PASS published report sha256 05d451cc07311890... matches the recorded verdicts
+PASS registry.tnlab-368aa2.testnet stores this report hash for TEE signer 0x2665cce942fa427ef30d87f4b0bff67fb7645462
+Re-verifying the report (nonce c7fca6ba41b11f3e..., captured 2026-11-11T19:15:10.859Z)
+  NEAR AI Cloud gateway
+PASS   Intel TDX quote signature and collateral  TCB UpToDate
+PASS   TCB status accepted (UpToDate)  UpToDate
+PASS   TDX debug mode off
+PASS   Quote binds the signing address and the request nonce  ecdsa 0xb98a789cdc4817275f5155593ba73ef2a957e779
+PASS   Echoed nonce matches
+PASS   Measured config (MRCONFIGID) matches app_compose
+PASS   Event log replays to RTMR3
+  Model Qwen/Qwen3-VL-30B-A3B-Instruct  signer 0x2665cce942fa427ef30d87f4b0bff67fb7645462
+PASS   Intel TDX quote signature and collateral  TCB UpToDate
+PASS   TCB status accepted (UpToDate)  UpToDate
+PASS   TDX debug mode off
+PASS   Quote binds the signing address and the request nonce  ecdsa 0x2665cce942fa427ef30d87f4b0bff67fb7645462
+PASS   Echoed nonce matches
+PASS   Measured config (MRCONFIGID) matches app_compose
+PASS   Event log replays to RTMR3
+PASS   NVIDIA GPU attestation (NRAS) with our nonce  overall true
+PASS the attested model key signed all 19 recorded verdicts
+PASS the contract accepts exactly that key
+Attestation checks passed: the report hash is on chain, the TDX quote and TCB status verify, debug is off, the signing key and our nonce are bound in the quote, MRCONFIGID and RTMR3 match the report's own app_compose and event log, the NVIDIA NRAS verdict is true, and each recorded verdict signature recovers to that key. MRTD, RTMR0 to RTMR2 and the compose hash are not compared with published values, and the NRAS token signature is not verified, so this does not prove which image runs.

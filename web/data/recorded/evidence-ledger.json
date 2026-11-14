@@ -1,0 +1,179 @@
+{
+  "schema": "truenav-evidence-ledger/v1",
+  "network": "testnet",
+  "entries": [
+    {
+      "id": "registry_deploy",
+      "label": "Live registry deployed and initialised",
+      "shows": "The contract that holds pledges, verdicts and certificates went live. Its code hash is compared with the repository pin in docs/DEPLOYMENT_EVIDENCE.md.",
+      "tx_hash": "Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE",
+      "signer": "registry.tnlab-368aa2.testnet",
+      "receiver": "registry.tnlab-368aa2.testnet",
+      "actions": "DEPLOY_CONTRACT + new",
+      "outcome": {
+        "status": "success",
+        "result": "ok, no return value"
+      },
+      "block_height": 277235101,
+      "block_hash": "gHYMANUtbrp8LHDeQsfrPVH5c6oLXs6WuQ3s25CQVrR",
+      "block_time_ns": "1794411592176948787",
+      "block_time_utc": "2026-11-11T15:39:52.176Z",
+      "explorer_url": "https://testnet.nearblocks.io/txns/Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE",
+      "explorer_alt_url": "https://explorer.testnet.near.org/transactions/Hx1Gcbcoq3F7W5DDUYtgLoEsyKVPeVcn7vZ19Hy4BkXE",
+      "docs": [
+        "README.md",
+        "docs/DEPLOYMENT_EVIDENCE.md"
+      ],
+      "verified": {
+        "rpc": "archival-rpc.testnet.near.org",
+        "cross_check": "api-testnet.nearblocks.io",
+        "agree": true
+      }
+    },
+    {
+      "id": "refused_signer_not_registered",
+      "label": "Certificate from an unregistered signer refused",
+      "shows": "A certificate signed with a public test key was refused by the contract. Only registered certificate signers are accepted.",
+      "tx_hash": "Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ",
+      "signer": "tnlab-368aa2.testnet",
+      "receiver": "registry.tnlab-368aa2.testnet",
+      "actions": "submit_certificate",
+      "outcome": {
+        "status": "failure",
+        "result": "Smart contract panicked: signer not registered"
+      },
+      "block_height": 277235275,
+      "block_hash": "Gpp4K7DhP2vJTdW2uov7Kvrtf1w2YgVmzP8WjbsCHXfY",
+      "block_time_ns": "1794411696185068539",
+      "block_time_utc": "2026-11-11T15:41:36.185Z",
+      "explorer_url": "https://testnet.nearblocks.io/txns/Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ",
+      "explorer_alt_url": "https://explorer.testnet.near.org/transactions/Gbu7tKHuE2WVfSMduS1MNyuMRf6TQSQyou2gr9ozXrnQ",
+      "docs": [
+        "README.md",
+        "docs/TRY_IT.md"
+      ],
+      "verified": {
+        "rpc": "archival-rpc.testnet.near.org",
+        "cross_check": "api-testnet.nearblocks.io",
+        "agree": true
+      }
+    },
+    {
+      "id": "refused_already_pledged",
+      "label": "Second pledge of an already pledged loan refused",
+      "shows": "A second fund pledged a loan another fund already held. The contract returned a refusal, stored one blocked attempt and one alert, and did not name the holder.",
+      "tx_hash": "8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs",
+      "signer": "meridian.tnlab-368aa2.testnet",
+      "receiver": "registry.tnlab-368aa2.testnet",
+      "actions": "pledge_loan",
+      "outcome": {
+        "status": "success",
+        "result": "refused: already pledged elsewhere"
+      },
+      "block_height": 277235283,
+      "block_hash": "Hf1W7bcmaHLQCe5YKBaFLJfgnGEq53KXzTBfsSr3rRBx",
+      "block_time_ns": "1794411700298626355",
+      "block_time_utc": "2026-11-11T15:41:40.298Z",
+      "explorer_url": "https://testnet.nearblocks.io/txns/8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs",
+      "explorer_alt_url": "https://explorer.testnet.near.org/transactions/8VK1kUkpa7Gs8dStznffdDAM9uHVbfodHWBUvbfQMwrs",
+      "docs": [
+        "README.md",
+        "docs/KNOWN_LIMITS.md",
+        "docs/TRY_IT.md"
+      ],
+      "verified": {
+        "rpc": "archival-rpc.testnet.near.org",
+        "cross_check": "api-testnet.nearblocks.io",
+        "agree": true
+      }
+    },
+    {
+      "id": "tee_signer_registered",
+      "label": "TEE signer registered",
+      "shows": "The registrar registered the NEAR AI Cloud model key with the hash of its attestation report, after the off chain check that npm run verify:attestation repeats.",
+      "tx_hash": "9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE",
+      "signer": "tnlab-368aa2.testnet",
+      "receiver": "registry.tnlab-368aa2.testnet",
+      "actions": "add_tee_signer",
+      "outcome": {
+        "status": "success",
+        "result": "ok, no return value"
+      },
+      "block_height": 277257550,
+      "block_hash": "BEd6uvDL4sr7JFSFAo27HieTWVJ7KgTUZ38xJK8cxWc8",
+      "block_time_ns": "1794424871259244904",
+      "block_time_utc": "2026-11-11T19:21:11.259Z",
+      "explorer_url": "https://testnet.nearblocks.io/txns/9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE",
+      "explorer_alt_url": "https://explorer.testnet.near.org/transactions/9pWmjgBKN37VzMVBUo8vw3ygJ3PsPtnhp5D7wczaktvE",
+      "docs": [
+        "README.md",
+        "docs/DEPLOYMENT_EVIDENCE.md",
+        "docs/TEE_STATUS.md"
+      ],
+      "verified": {
+        "rpc": "archival-rpc.testnet.near.org",
+        "cross_check": "api-testnet.nearblocks.io",
+        "agree": true
+      }
+    },
+    {
+      "id": "query_redeploy",
+      "label": "Query contract redeployed to its pinned build",
+      "shows": "A code only redeploy of the paid query contract to the pinned wasm. Its live code hash now matches the pin in receipts/pinned-builds.json.",
+      "tx_hash": "2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8",
+      "signer": "query.tnlab-718ca9.testnet",
+      "receiver": "query.tnlab-718ca9.testnet",
+      "actions": "DEPLOY_CONTRACT",
+      "outcome": {
+        "status": "success",
+        "result": "ok, no return value"
+      },
+      "block_height": 277644641,
+      "block_hash": "Eb5UPvfbkhosRDqkVCvLwFdmfwY4mw2ttULqxWwcHEZt",
+      "block_time_ns": "1794652130779184149",
+      "block_time_utc": "2026-11-14T10:28:50.779Z",
+      "explorer_url": "https://testnet.nearblocks.io/txns/2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8",
+      "explorer_alt_url": "https://explorer.testnet.near.org/transactions/2UjogapG3eALhSTjq6GXiaymrqGBvBVX8ZrFbvGjhnq8",
+      "docs": [
+        "README.md",
+        "docs/DEPLOYMENT_EVIDENCE.md"
+      ],
+      "verified": {
+        "rpc": "archival-rpc.testnet.near.org",
+        "cross_check": "api-testnet.nearblocks.io",
+        "agree": true
+      }
+    },
+    {
+      "id": "registry_storage_topup",
+      "label": "Registry storage top up",
+      "shows": "1 testnet NEAR sent to the registry so wallet writes from a judge do not run out of storage. No mainnet funds.",
+      "tx_hash": "7wjnse7nQxVyZLn29RRH4nxQmVGCNfWDBkucnSwC5Eka",
+      "signer": "tnlab-368aa2.testnet",
+      "receiver": "registry.tnlab-368aa2.testnet",
+      "actions": "TRANSFER 1 NEAR",
+      "outcome": {
+        "status": "success",
+        "result": "ok, no return value"
+      },
+      "block_height": 277651685,
+      "block_hash": "962GhSPeWqFnJ3A1z427KqAcygRe7oEG4qabQEeBy9f2",
+      "block_time_ns": "1794656265643177981",
+      "block_time_utc": "2026-11-14T11:37:45.643Z",
+      "explorer_url": "https://testnet.nearblocks.io/txns/7wjnse7nQxVyZLn29RRH4nxQmVGCNfWDBkucnSwC5Eka",
+      "explorer_alt_url": "https://explorer.testnet.near.org/transactions/7wjnse7nQxVyZLn29RRH4nxQmVGCNfWDBkucnSwC5Eka",
+      "docs": [
+        "docs/KNOWN_LIMITS.md"
+      ],
+      "verified": {
+        "rpc": "archival-rpc.testnet.near.org",
+        "cross_check": "api-testnet.nearblocks.io",
+        "agree": true
+      }
+    }
+  ],
+  "ephemeral": {
+    "generated_at": "2026-11-14T11:54:54.374Z"
+  },
+  "evidence_hash": "dc8b2abe181017c6ed73a6824951fadc1c0d1a2278299b6cab8a0dac5c19c2f7"
+}

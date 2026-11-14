@@ -1,6 +1,6 @@
 {
   "schema": "truenav-judge-summary/v1",
-  "commit": "17fd17ae1fbd11825143e5267ef2f8be260cd616",
+  "commit": "0310de828a06cfd53db85e871bac094b7812edb1",
   "mode": "replay",
   "with_tests": false,
   "partial": false,
@@ -35,7 +35,7 @@
       "name": "v3 pin",
       "status": "pass",
       "claim": "The agent accepts only the engine hash pinned in receipts/v3-build.json. Any other engine is declined engine_hash.",
-      "evidence": "allowlist is exactly receipts/v3-build.json engine.sha256 61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb; another engine is declined engine_hash and bought 0, the pinned one bought 1 (fake chain); engine-pin tests 8 of 8 tests ok, 0 skipped; private pins 9917 / 4284 hold, public 99 / 43",
+      "evidence": "allowlist is exactly receipts/v3-build.json engine.sha256 098f5d86a94288d13fac1ca66b8aba9c20a2dc1b3585a64ef91d5bba5aa68788; another engine is declined engine_hash and bought 0, the pinned one bought 1 (fake chain); engine-pin tests 8 of 8 tests ok, 0 skipped; private pins 9917 / 4284 hold, public 99 / 43",
       "label": null
     },
     {
@@ -59,8 +59,8 @@
       "name": "dashboard data",
       "status": "pass",
       "claim": "Dashboard data: Harbor 99 green, Meridian 43 red, DEMO-CREDIT run_failed.",
-      "evidence": "wrote out/judge-dashboard.json (sha256 4e18fba233b6b96c03c7561d3b918e96cdd2263df9934c8b8215b0eb86e75856): Harbor 99 green, Meridian 43 red, DEMO-CREDIT run_failed",
-      "label": "data only, no UI; the dashboard UI is not in this commit"
+      "evidence": "wrote out/judge-dashboard.json (sha256 4405902e7205cb2e2403428cbdec3e6e76e1e94d842a9bb9c83b42e1d2209655): Harbor 99 green, Meridian 43 red, DEMO-CREDIT run_failed",
+      "label": "data only, no UI; the dashboard app is in web/"
     },
     {
       "id": "S8",
@@ -92,7 +92,7 @@
     "meridian_raw": 42.84,
     "harbor_score": 99,
     "meridian_score": 43,
-    "engine_sha256": "61fe33a0299ae77fcb42c6d804f782845cbe5f50cb3153b3b43dbe45ea63f0bb"
+    "engine_sha256": "098f5d86a94288d13fac1ca66b8aba9c20a2dc1b3585a64ef91d5bba5aa68788"
   },
   "skips": [],
   "expected": {
@@ -106,22 +106,22 @@
     "refused": []
   },
   "ephemeral": {
-    "generated_at": "2026-11-12T19:27:10.697Z",
-    "fixture_days_left_min": 24.3,
-    "wall_ms": 12622,
+    "generated_at": "2026-11-14T11:31:58.631Z",
+    "fixture_days_left_min": 22.6,
+    "wall_ms": 12746,
     "durations_ms": {
-      "S1": 137,
-      "S2": 139,
-      "S3": 338,
-      "S4": 219,
-      "S5": 655,
-      "S6": 502,
-      "S7": 0,
-      "S8": 10182,
-      "S9": 2,
-      "S10": 432
+      "S1": 145,
+      "S2": 142,
+      "S3": 330,
+      "S4": 222,
+      "S5": 688,
+      "S6": 526,
+      "S7": 4,
+      "S8": 10181,
+      "S9": 1,
+      "S10": 491
     },
     "node": "v24.22.1"
   },
-  "evidence_hash": "3bc3d966d5482eeee28b65c7076a9e8b5152f52bda5321f538f13758cb3ad578"
+  "evidence_hash": "40813ecc17672498e61f1af8d89cc6085ada062b17ddd4ffd885e4ec665248b6"
 }

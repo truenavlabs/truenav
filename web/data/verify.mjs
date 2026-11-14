@@ -6,8 +6,8 @@ import { runVerifierChecks, summarize, CHAIN_CHECK_IDS } from "../verifier/index
 import { checkCertificates } from "./sigs.mjs";
 
 // Kept for an old bundle that stubs the crypto library: such a failure shows as "unchecked", never as passed.
-export const PENDING_RE = /crypto library pending approval/;
-export const PENDING_DETAIL = "Needs the signature and hash library, which is pending approval for the web build. Not checked in this browser; run npm run judge or npm run verify:attestation to check it locally.";
+export const PENDING_RE = /crypto library unavailable in this build/;
+export const PENDING_DETAIL = "Not checked in this browser. Run npm run judge or npm run verify:attestation to check it locally.";
 
 export const TAMPERS = Object.freeze({
   none: "No tamper: the evidence exactly as committed.",

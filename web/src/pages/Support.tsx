@@ -11,7 +11,7 @@ export default function Support() {
         <Panel title="Questions and problems">
           <p>Open an issue on the TrueNav repository on GitHub.</p>
           <TicketAction page="/support" />
-          <p className="mt">You can also browse <Ext href={ISSUES_URL}>GitHub Issues</Ext> once the repository is public.</p>
+          <p className="mt">You can also browse <Ext href={ISSUES_URL}>GitHub Issues</Ext>.</p>
           <p className="mt">Many questions are answered in the <A href="/faq">FAQ</A> and the <A href="/glossary">Glossary</A>, or by the <strong>?</strong> button at the bottom right.</p>
         </Panel>
         <Panel title="Report a security issue">

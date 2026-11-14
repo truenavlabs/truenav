@@ -209,7 +209,7 @@ export const STAGES = [
   {
     id: "S7", name: "dashboard data",
     claim: "Dashboard data: Harbor 99 green, Meridian 43 red, DEMO-CREDIT run_failed.",
-    label: "data only, no UI; the dashboard UI is not in this commit",
+    label: "data only, no UI; the dashboard app is in web/",
     async run(ctx) {
       const deps = ["S3", "S4", "S5", "S6"].filter((id) => ctx.results.get(id)?.status !== "pass");
       if (deps.length) return done([`needs ${deps.join(", ")} to pass first`]);

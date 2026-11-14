@@ -66,7 +66,6 @@ export default function Data() {
           <li><Ext href={srcUrl("tee/status.json")}>tee/status.json</Ext></li>
           <li><Ext href={srcUrl("certify/live-registry.json")}>certify/live-registry.json (expected registry setup)</Ext></li>
         </ul>
-        <Note tone="info">Repository links work once the repository is public.</Note>
       </Panel>
     </>
   );

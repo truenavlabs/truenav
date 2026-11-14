@@ -1,5 +1,5 @@
 {
-  "note": "Local receipts v3 candidate: migration, combined receipts, existing mirror fixes, canonical body binding and append-only attestation metadata. No hardware quote validated on-chain. Not deployed; round-1 audit and separate approvals required. Receipts pin refreshed after A01 changed engine/v3-core, from the pinned-image build in CI at 6482300 (runs 43550384512 and 43550380252; receipts 555924 bytes). Query pin unchanged from the 8cc9ede build (162201 bytes).",
+  "note": "Local receipts v3 candidate: migration, combined receipts, existing mirror fixes, canonical body binding and append-only attestation metadata. No hardware quote validated on-chain. Not deployed; round-1 audit and separate approvals required. Receipts pin refreshed after A01 changed engine/v3-core, from the pinned-image build in CI at 6482300 (receipts 555924 bytes). Query pin unchanged from the 8cc9ede build (162201 bytes).",
   "receipts": "5f294c9a447d515d6b56fd8b2396b5c00e83dee4f622ac3ceede2edf52e8606f",
   "query": "dee5f216c7ed6a0b75e597b2c5dce643dfcb88dc6517e71e85c5bb96f8169d09",
   "dist": {
